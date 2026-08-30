@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ChevronDown,
   Plus,
@@ -7,12 +7,101 @@ import {
   Check,
   MessageCircle,
   ClipboardList,
+  Search,
 } from "lucide-react";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
 const LINE = "#D9DCE1";
+
+// Catálogo de ítems del presupuesto (Edificio 12 pisos).
+// Para actualizarlo con otro proyecto, reemplaza este arreglo.
+const CATALOGO_ITEMS = [
+  { item: "1.1", descripcion: "Localización y replanteo topográfico general", unidad: "M2", contractual: "700" },
+  { item: "1.2", descripcion: "Cerramiento provisional en lámina de zinc h=2.40 m", unidad: "ML", contractual: "110" },
+  { item: "1.3", descripcion: "Campamento, oficina de obra y baterías sanitarias provisionales", unidad: "GLB", contractual: "1" },
+  { item: "1.4", descripcion: "Descapote y limpieza general del terreno", unidad: "M2", contractual: "700" },
+  { item: "1.5", descripcion: "Demolición de estructuras existentes en el predio", unidad: "M3", contractual: "150" },
+  { item: "1.6", descripcion: "Estudio de suelos y geotecnia", unidad: "GLB", contractual: "1" },
+  { item: "1.7", descripcion: "Diseños arquitectónicos, estructurales, hidrosanitarios y eléctricos", unidad: "GLB", contractual: "1" },
+  { item: "1.8", descripcion: "Licencia de construcción y trámites de curaduría urbana", unidad: "GLB", contractual: "1" },
+  { item: "1.9", descripcion: "Vallas informativas, señalización y SISO de obra", unidad: "GLB", contractual: "1" },
+  { item: "2.1", descripcion: "Excavación mecánica para sótanos (2 niveles)", unidad: "M3", contractual: "4200" },
+  { item: "2.2", descripcion: "Cargue, transporte y disposición final de material sobrante", unidad: "M3", contractual: "5000" },
+  { item: "2.3", descripcion: "Entibado y contención perimetral (pantalla anclada / pilotes)", unidad: "M2", contractual: "850" },
+  { item: "2.4", descripcion: "Solado o cimiento ciclópeo de limpieza", unidad: "M3", contractual: "60" },
+  { item: "2.5", descripcion: "Concreto 3000 PSI para zapatas y dados de cimentación", unidad: "M3", contractual: "320" },
+  { item: "2.6", descripcion: "Concreto 3000 PSI para vigas de cimentación", unidad: "M3", contractual: "180" },
+  { item: "2.7", descripcion: "Losa de cimentación / placa contrapiso sótano e=0.15 m, 3000 PSI", unidad: "M2", contractual: "1200" },
+  { item: "2.8", descripcion: "Acero de refuerzo figurado y colocado (cimentación)", unidad: "KG", contractual: "42000" },
+  { item: "2.9", descripcion: "Impermeabilización de cimentación y muros de contención", unidad: "M2", contractual: "900" },
+  { item: "2.10", descripcion: "Muros de contención en concreto reforzado 3000 PSI", unidad: "M3", contractual: "280" },
+  { item: "2.11", descripcion: "Filtros y subdrenes perimetrales", unidad: "ML", contractual: "180" },
+  { item: "3.1", descripcion: "Columnas en concreto 4000 PSI, formaleta metálica", unidad: "M3", contractual: "850" },
+  { item: "3.2", descripcion: "Vigas en concreto 4000 PSI", unidad: "M3", contractual: "620" },
+  { item: "3.3", descripcion: "Placas de entrepiso aligeradas e=0.30 m (12 niveles)", unidad: "M2", contractual: "5760" },
+  { item: "3.4", descripcion: "Escaleras en concreto reforzado", unidad: "M3", contractual: "95" },
+  { item: "3.5", descripcion: "Muros estructurales / pantallas en concreto 4000 PSI", unidad: "M3", contractual: "340" },
+  { item: "3.6", descripcion: "Acero de refuerzo figurado y colocado (superestructura)", unidad: "KG", contractual: "195000" },
+  { item: "3.7", descripcion: "Formaletería metálica para muros, columnas y placas", unidad: "M2", contractual: "8500" },
+  { item: "3.8", descripcion: "Placa de cubierta y losa tanque elevado", unidad: "M2", contractual: "480" },
+  { item: "3.9", descripcion: "Junta de dilatación estructural", unidad: "ML", contractual: "72" },
+  { item: "4.1", descripcion: "Mampostería en bloque no. 5 - divisiones interiores", unidad: "M2", contractual: "4300" },
+  { item: "4.2", descripcion: "Mampostería en bloque no. 4 - muros de fachada", unidad: "M2", contractual: "2900" },
+  { item: "4.3", descripcion: "Pañete liso 1:4 en muros interiores", unidad: "M2", contractual: "8600" },
+  { item: "4.4", descripcion: "Pañete impermeabilizado en fachada", unidad: "M2", contractual: "2900" },
+  { item: "4.5", descripcion: "Filos, dilataciones, dinteles y remates varios", unidad: "ML", contractual: "1800" },
+  { item: "5.1", descripcion: "Cubierta en teja termoacústica sobre estructura metálica", unidad: "M2", contractual: "520" },
+  { item: "5.2", descripcion: "Impermeabilización de cubiertas, terrazas y balcones", unidad: "M2", contractual: "720" },
+  { item: "5.3", descripcion: "Canales y bajantes de aguas lluvias en lámina galvanizada", unidad: "ML", contractual: "220" },
+  { item: "5.4", descripcion: "Cuarto de máquinas y tanques de almacenamiento de agua", unidad: "GLB", contractual: "1" },
+  { item: "6.1", descripcion: "Redes internas de suministro de agua potable (PVC/CPVC)", unidad: "PTO", contractual: "220" },
+  { item: "6.2", descripcion: "Redes de desagües sanitarios y ventilación", unidad: "PTO", contractual: "200" },
+  { item: "6.3", descripcion: "Red contra incendio (gabinetes, red húmeda, siamesa)", unidad: "GLB", contractual: "1" },
+  { item: "6.4", descripcion: "Sistema de bombeo de agua potable (equipo hidroneumático)", unidad: "GLB", contractual: "1" },
+  { item: "6.5", descripcion: "Tanques de almacenamiento y reserva de agua (subterráneo + elevado)", unidad: "GLB", contractual: "1" },
+  { item: "6.6", descripcion: "Aparatos sanitarios y grifería (sanitarios, lavamanos, duchas)", unidad: "UND", contractual: "96" },
+  { item: "6.7", descripcion: "Redes de aguas lluvias internas (bajantes y colectores)", unidad: "ML", contractual: "380" },
+  { item: "6.8", descripcion: "Sistema de tratamiento y disposición de aguas residuales", unidad: "GLB", contractual: "1" },
+  { item: "7.1", descripcion: "Acometida eléctrica y subestación / transformador", unidad: "GLB", contractual: "1" },
+  { item: "7.2", descripcion: "Tablero general y tableros de distribución por piso", unidad: "UND", contractual: "13" },
+  { item: "7.3", descripcion: "Puntos eléctricos (tomas, iluminación, especiales)", unidad: "PTO", contractual: "1450" },
+  { item: "7.4", descripcion: "Sistema de puesta a tierra y pararrayos", unidad: "GLB", contractual: "1" },
+  { item: "7.5", descripcion: "Iluminación de zonas comunes y exteriores", unidad: "GLB", contractual: "1" },
+  { item: "7.6", descripcion: "Citofonía / portería eléctrica y control de acceso", unidad: "GLB", contractual: "1" },
+  { item: "7.7", descripcion: "Sistema de voz, datos y TV por suscripción (cableado estructurado)", unidad: "PTO", contractual: "240" },
+  { item: "7.8", descripcion: "Planta eléctrica de emergencia", unidad: "GLB", contractual: "1" },
+  { item: "8.1", descripcion: "Red interna de gas natural domiciliario por apartamento", unidad: "PTO", contractual: "48" },
+  { item: "8.2", descripcion: "Acometida y sistema de medición centralizada de gas", unidad: "GLB", contractual: "1" },
+  { item: "9.1", descripcion: "Suministro e instalación ascensor eléctrico, 8 pax, 12 paradas", unidad: "UND", contractual: "2" },
+  { item: "9.2", descripcion: "Foso, cuarto de máquinas y adecuación civil para ascensores", unidad: "GLB", contractual: "1" },
+  { item: "10.1", descripcion: "Puertas de madera entamboradas (interior apartamentos)", unidad: "UND", contractual: "240" },
+  { item: "10.2", descripcion: "Puerta de acceso principal por apartamento (seguridad)", unidad: "UND", contractual: "48" },
+  { item: "10.3", descripcion: "Ventanería en aluminio y vidrio (fachada)", unidad: "M2", contractual: "1650" },
+  { item: "10.4", descripcion: "Baranda metálica para escaleras y balcones", unidad: "ML", contractual: "480" },
+  { item: "10.5", descripcion: "Closets y muebles de cocina modulares", unidad: "M2", contractual: "620" },
+  { item: "10.6", descripcion: "Puertas cortafuego para escaleras de emergencia", unidad: "UND", contractual: "24" },
+  { item: "11.1", descripcion: "Piso en porcelanato - apartamentos y áreas sociales", unidad: "M2", contractual: "4900" },
+  { item: "11.2", descripcion: "Enchape de baños y cocinas", unidad: "M2", contractual: "1850" },
+  { item: "11.3", descripcion: "Cielo raso en drywall", unidad: "M2", contractual: "5200" },
+  { item: "11.4", descripcion: "Pintura tipo vinilo en muros y cielos interiores", unidad: "M2", contractual: "9800" },
+  { item: "11.5", descripcion: "Estuco y pintura de fachada", unidad: "M2", contractual: "2900" },
+  { item: "11.6", descripcion: "Piso en granito/porcelanato de alto tráfico - zonas comunes", unidad: "M2", contractual: "850" },
+  { item: "11.7", descripcion: "Guardaescobas en porcelanato o madera", unidad: "ML", contractual: "3200" },
+  { item: "12.1", descripcion: "Fachada en sistema de muro cortina / paneles arquitectónicos", unidad: "M2", contractual: "950" },
+  { item: "12.2", descripcion: "Aislamiento térmico y acústico de fachada", unidad: "M2", contractual: "2900" },
+  { item: "13.1", descripcion: "Andenes, accesos peatonales y vehiculares", unidad: "M2", contractual: "280" },
+  { item: "13.2", descripcion: "Zonas verdes, paisajismo y riego", unidad: "M2", contractual: "180" },
+  { item: "13.3", descripcion: "Cerramiento definitivo, portería y control vehicular", unidad: "GLB", contractual: "1" },
+  { item: "13.4", descripcion: "Demarcación y señalización de parqueaderos", unidad: "GLB", contractual: "1" },
+  { item: "13.5", descripcion: "Cuarto de basuras y shut de residuos sólidos", unidad: "GLB", contractual: "1" },
+  { item: "13.6", descripcion: "Amoblamiento zonas comunes (BBQ, salón social, gimnasio)", unidad: "GLB", contractual: "1" },
+  { item: "14.1", descripcion: "Aseo general y limpieza fina de entrega", unidad: "M2", contractual: "7200" },
+  { item: "14.2", descripcion: "Dotación contra incendios (extintores, señalización, planos)", unidad: "GLB", contractual: "1" },
+  { item: "14.3", descripcion: "Planos récord, manual de propiedad horizontal y actas de entrega", unidad: "GLB", contractual: "1" },
+  { item: "14.4", descripcion: "Póliza de estabilidad de obra y seguros de construcción (todo riesgo)", unidad: "GLB", contractual: "1" },
+];
 
 const emptyCantidad = () => ({
   ubicacion: "",
@@ -119,6 +208,99 @@ function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
         onFocus={(e) => (e.target.style.borderColor = GOLD)}
         onBlur={(e) => (e.target.style.borderColor = LINE)}
       />
+    </div>
+  );
+}
+
+function BuscadorItem({ value, onSelect }) {
+  const [texto, setTexto] = useState(value || "");
+  const [abierto, setAbierto] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    setTexto(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickFuera(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setAbierto(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, []);
+
+  const filtrados =
+    texto.trim().length > 0
+      ? CATALOGO_ITEMS.filter((it) =>
+          it.descripcion.toLowerCase().includes(texto.toLowerCase())
+        ).slice(0, 8)
+      : CATALOGO_ITEMS.slice(0, 8);
+
+  return (
+    <div className="col-span-2 relative" ref={wrapRef}>
+      <label
+        className="block text-[10px] uppercase tracking-wide mb-1 font-medium"
+        style={{ color: "#8A8F99" }}
+      >
+        Descripción del ítem (busca por nombre)
+      </label>
+      <div className="relative">
+        <Search
+          size={13}
+          className="absolute left-2.5 top-1/2 -translate-y-1/2"
+          style={{ color: "#8A8F99" }}
+        />
+        <input
+          type="text"
+          value={texto}
+          onChange={(e) => {
+            setTexto(e.target.value);
+            setAbierto(true);
+          }}
+          onFocus={() => setAbierto(true)}
+          placeholder="Ej. excavación, losa, muro..."
+          className="w-full text-[13.5px] pl-7 pr-2.5 py-2 rounded-md border outline-none"
+          style={{ borderColor: LINE, background: "white" }}
+          onBlur={(e) => (e.target.style.borderColor = LINE)}
+        />
+      </div>
+      {abierto && filtrados.length > 0 && (
+        <div
+          className="absolute z-20 w-full mt-1 rounded-md border shadow-lg max-h-56 overflow-y-auto"
+          style={{ borderColor: LINE, background: "white" }}
+        >
+          {filtrados.map((it) => (
+            <button
+              key={it.item}
+              type="button"
+              onClick={() => {
+                onSelect(it);
+                setTexto(it.descripcion);
+                setAbierto(false);
+              }}
+              className="w-full text-left px-3 py-2 text-[12.5px] border-b last:border-b-0 hover:bg-gray-50"
+              style={{ borderColor: LINE }}
+            >
+              <div style={{ color: NAVY }} className="font-medium">
+                {it.item} — {it.descripcion}
+              </div>
+              <div style={{ color: "#8A8F99" }} className="text-[10.5px]">
+                Unidad: {it.unidad} · Contractual: {it.contractual}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      {abierto && filtrados.length === 0 && (
+        <div
+          className="absolute z-20 w-full mt-1 rounded-md border p-2.5 text-[12px]"
+          style={{ borderColor: LINE, background: "white", color: "#8A8F99" }}
+        >
+          No se encontró ningún ítem del presupuesto con ese nombre.
+        </div>
+      )}
     </div>
   );
 }
@@ -383,11 +565,28 @@ export default function CapturaAvanceObra() {
         >
           {cantidades.map((r, i) => (
             <RowCard key={i} onRemove={() => removeRow(setCantidades, i)}>
+              <div className="col-span-2">
+                <BuscadorItem
+                  value={r.descripcion}
+                  onSelect={(it) =>
+                    setCantidades((rows) =>
+                      rows.map((row, idx) =>
+                        idx === i
+                          ? {
+                              ...row,
+                              descripcion: it.descripcion,
+                              item: it.item,
+                              unidad: it.unidad,
+                              contractual: it.contractual,
+                            }
+                          : row
+                      )
+                    )
+                  }
+                />
+              </div>
               <Field label="Ubicación" value={r.ubicacion} onChange={(v) => updateRow(setCantidades, i, "ubicacion", v)} />
               <Field label="Item" value={r.item} onChange={(v) => updateRow(setCantidades, i, "item", v)} />
-              <div className="col-span-2">
-                <Field label="Descripción del ítem" value={r.descripcion} onChange={(v) => updateRow(setCantidades, i, "descripcion", v)} />
-              </div>
               <Field label="Contractual" value={r.contractual} onChange={(v) => updateRow(setCantidades, i, "contractual", v)} />
               <Field label="Unidad" value={r.unidad} onChange={(v) => updateRow(setCantidades, i, "unidad", v)} />
               <Field label="Acum. anterior" type="number" value={r.acumAnterior} onChange={(v) => updateRow(setCantidades, i, "acumAnterior", v)} />
