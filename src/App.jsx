@@ -215,6 +215,28 @@ function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
   );
 }
 
+// --- Memoria de acumulados entre días (usa la memoria del navegador) ---
+const CLAVE_ACUMULADOS = "ryr_acumulados_items";
+
+function leerAcumuladosGuardados() {
+  try {
+    const raw = localStorage.getItem(CLAVE_ACUMULADOS);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function guardarAcumulado(clave, valor) {
+  try {
+    const actuales = leerAcumuladosGuardados();
+    actuales[clave] = valor;
+    localStorage.setItem(CLAVE_ACUMULADOS, JSON.stringify(actuales));
+  } catch (e) {
+    // Si el navegador bloquea localStorage, simplemente no se recuerda entre días.
+  }
+}
+
 function BuscadorItem({ value, onSelect }) {
   const [texto, setTexto] = useState(value || "");
   const [abierto, setAbierto] = useState(false);
@@ -557,6 +579,13 @@ export default function CapturaAvanceObra() {
           setCelda(ws, `K${r}`, item.acumAnterior);
           setCelda(ws, `L${r}`, item.avanceDiario);
           // M{r} conserva su fórmula original (=K+L)
+
+          // Guarda el nuevo acumulado para que el próximo día se autocomplete solo.
+          if (item.item) {
+            const anterior = parseFloat(item.acumAnterior) || 0;
+            const diario = parseFloat(item.avanceDiario) || 0;
+            guardarAcumulado(item.item, anterior + diario);
+          }
         });
 
       // --- Otras actividades (filas 24 a 29) ---
@@ -573,6 +602,12 @@ export default function CapturaAvanceObra() {
           setCelda(ws, `I${r}`, item.avanceDiario);
           setCelda(ws, `K${r}`, item.observaciones);
           // J{r} conserva su fórmula original (=H+I)
+
+          if (item.item) {
+            const anterior = parseFloat(item.acumAnterior) || 0;
+            const diario = parseFloat(item.avanceDiario) || 0;
+            guardarAcumulado(`otras_${item.item}`, anterior + diario);
+          }
         });
 
       // --- Mano de obra (filas 33 a 42) ---
@@ -716,7 +751,9 @@ export default function CapturaAvanceObra() {
               <div className="col-span-2">
                 <BuscadorItem
                   value={r.descripcion}
-                  onSelect={(it) =>
+                  onSelect={(it) => {
+                    const acumuladosGuardados = leerAcumuladosGuardados();
+                    const acumPrevio = acumuladosGuardados[it.item];
                     setCantidades((rows) =>
                       rows.map((row, idx) =>
                         idx === i
@@ -726,11 +763,13 @@ export default function CapturaAvanceObra() {
                               item: it.item,
                               unidad: it.unidad,
                               contractual: it.contractual,
+                              acumAnterior:
+                                acumPrevio !== undefined ? String(acumPrevio) : row.acumAnterior,
                             }
                           : row
                       )
-                    )
-                  }
+                    );
+                  }}
                 />
               </div>
               <Field label="Ubicación" value={r.ubicacion} onChange={(v) => updateRow(setCantidades, i, "ubicacion", v)} />
