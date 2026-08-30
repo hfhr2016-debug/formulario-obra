@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import * as XLSX from "xlsx";
 import {
   ChevronDown,
   Plus,
@@ -8,6 +9,8 @@ import {
   MessageCircle,
   ClipboardList,
   Search,
+  FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 
 const NAVY = "#1B2A45";
@@ -368,6 +371,8 @@ export default function CapturaAvanceObra() {
 
   const [resumen, setResumen] = useState("");
   const [copied, setCopied] = useState(false);
+  const [generandoExcel, setGenerandoExcel] = useState(false);
+  const [errorExcel, setErrorExcel] = useState("");
 
   function updateRow(setter, idx, key, value) {
     setter((rows) => rows.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
@@ -485,6 +490,149 @@ export default function CapturaAvanceObra() {
     }
 
     return L.join("\n");
+  }
+
+  // Reparte un texto largo en varias celdas de una sola línea cada una
+  // (misma lógica que el script de Excel, para que ambos caminos coincidan).
+  function repartirEnLineas(ws, celdas, texto) {
+    if (!texto) return;
+    const maxPorLinea = 110;
+    const palabras = texto.split(" ");
+    const lineas = [];
+    let actual = "";
+    for (const palabra of palabras) {
+      if ((actual + " " + palabra).trim().length > maxPorLinea) {
+        lineas.push(actual.trim());
+        actual = palabra;
+      } else {
+        actual = (actual + " " + palabra).trim();
+      }
+    }
+    if (actual) lineas.push(actual);
+    celdas.forEach((celda, i) => {
+      if (lineas[i]) {
+        ws[celda] = { t: "s", v: lineas[i] };
+      }
+    });
+  }
+
+  function setCelda(ws, ref, valor) {
+    if (valor === undefined || valor === null || valor === "") return;
+    ws[ref] = { t: "s", v: String(valor) };
+  }
+
+  async function generarExcel() {
+    setGenerandoExcel(true);
+    setErrorExcel("");
+    try {
+      const resp = await fetch("/plantilla-informe.xlsx");
+      if (!resp.ok) throw new Error("No se pudo cargar la plantilla");
+      const buffer = await resp.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array", cellStyles: true, bookImages: true });
+      const ws = wb.Sheets["RYR-FT-01"];
+      if (!ws) throw new Error("No se encontró la hoja RYR-FT-01 en la plantilla");
+
+      // --- Datos generales ---
+      setCelda(ws, "E2", general.objetoContrato);
+      setCelda(ws, "E3", general.noContrato);
+      setCelda(ws, "J3", general.fecha);
+      setCelda(ws, "J4", general.ubicacion);
+      setCelda(ws, "C5", general.horaEntrada);
+      setCelda(ws, "F5", general.horaApertura);
+      setCelda(ws, "H5", general.horaSalida);
+      setCelda(ws, "J5", general.especialidad);
+      setCelda(ws, "M5", general.informeNo);
+
+      // --- Cantidades de obra (filas 9 a 20) ---
+      cantidades
+        .filter((r) => r.descripcion || r.item || r.ubicacion)
+        .slice(0, 12)
+        .forEach((item, i) => {
+          const r = 9 + i;
+          setCelda(ws, `A${r}`, item.ubicacion);
+          setCelda(ws, `B${r}`, item.item);
+          setCelda(ws, `C${r}`, item.descripcion);
+          setCelda(ws, `I${r}`, item.contractual);
+          setCelda(ws, `J${r}`, item.unidad);
+          setCelda(ws, `K${r}`, item.acumAnterior);
+          setCelda(ws, `L${r}`, item.avanceDiario);
+          // M{r} conserva su fórmula original (=K+L)
+        });
+
+      // --- Otras actividades (filas 24 a 29) ---
+      otras
+        .filter((r) => r.descripcion || r.item || r.ubicacion)
+        .slice(0, 6)
+        .forEach((item, i) => {
+          const r = 24 + i;
+          setCelda(ws, `A${r}`, item.ubicacion);
+          setCelda(ws, `B${r}`, item.item);
+          setCelda(ws, `C${r}`, item.descripcion);
+          setCelda(ws, `G${r}`, item.unidad);
+          setCelda(ws, `H${r}`, item.acumAnterior);
+          setCelda(ws, `I${r}`, item.avanceDiario);
+          setCelda(ws, `K${r}`, item.observaciones);
+          // J{r} conserva su fórmula original (=H+I)
+        });
+
+      // --- Mano de obra (filas 33 a 42) ---
+      manoObra
+        .filter((r) => r.cargo)
+        .slice(0, 10)
+        .forEach((item, i) => {
+          const r = 33 + i;
+          setCelda(ws, `A${r}`, item.cargo);
+          setCelda(ws, `F${r}`, item.cant);
+          setCelda(ws, `G${r}`, item.tiempo);
+        });
+
+      // --- Equipos (filas 33 a 42) ---
+      equipos
+        .filter((r) => r.descripcion)
+        .slice(0, 10)
+        .forEach((item, i) => {
+          const r = 33 + i;
+          setCelda(ws, `I${r}`, item.descripcion);
+          setCelda(ws, `L${r}`, item.cant);
+          setCelda(ws, `M${r}`, item.tiempo);
+        });
+
+      // --- Descripción de actividades (4 líneas) ---
+      repartirEnLineas(ws, ["A44", "A45", "A46", "A47"], descActividades);
+
+      // --- Aspectos problemáticos / Plan de acción (3 líneas cada uno) ---
+      repartirEnLineas(ws, ["A49", "A50", "A51"], aspectosProblematicos);
+      repartirEnLineas(ws, ["H49", "H50", "H51"], planAccion);
+
+      // --- Horas perdidas (filas 54 a 57) ---
+      horasPerdidas
+        .filter((r) => r.motivo)
+        .slice(0, 4)
+        .forEach((item, i) => {
+          const r = 54 + i;
+          setCelda(ws, `A${r}`, item.motivo);
+          setCelda(ws, `E${r}`, item.inicio);
+          setCelda(ws, `F${r}`, item.fin);
+          setCelda(ws, `G${r}`, item.total);
+        });
+
+      // --- HSE ---
+      setCelda(ws, "H54", charlaDia);
+      repartirEnLineas(ws, ["H56", "H57"], observacionesHSE);
+
+      // --- Elaborado por ---
+      setCelda(ws, "B60", elaboradoNombre);
+      setCelda(ws, "B61", elaboradoCargo);
+
+      const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
+      XLSX.writeFile(wb, nombreArchivo);
+    } catch (err) {
+      setErrorExcel(
+        "No se pudo generar el Excel. Verifica tu conexión e intenta de nuevo."
+      );
+    } finally {
+      setGenerandoExcel(false);
+    }
   }
 
   function handleGenerar() {
@@ -709,14 +857,42 @@ export default function CapturaAvanceObra() {
           </div>
         </Section>
 
-        {/* Generate button */}
+        {/* Botón principal: descarga directa del Excel ya diligenciado */}
+        <div className="px-4 pt-4">
+          <button
+            onClick={generarExcel}
+            disabled={generandoExcel}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-white font-semibold text-[13.5px]"
+            style={{ background: NAVY, opacity: generandoExcel ? 0.7 : 1 }}
+          >
+            {generandoExcel ? (
+              <>
+                <Loader2 size={17} className="animate-spin" /> Generando Excel...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet size={17} /> Descargar informe Excel
+              </>
+            )}
+          </button>
+          {errorExcel && (
+            <div className="mt-2 text-[11px] text-center" style={{ color: "#B3401F" }}>
+              {errorExcel}
+            </div>
+          )}
+          <div className="mt-2 text-[10.5px] text-center" style={{ color: "#8A8F99" }}>
+            Descarga el formato RYR-FT-01 ya lleno con estos datos, listo para revisar y firmar.
+          </div>
+        </div>
+
+        {/* Generate button (resumen de texto / WhatsApp) */}
         <div className="p-4">
           <button
             onClick={handleGenerar}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-white font-semibold text-[13.5px]"
-            style={{ background: GOLD }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-[13.5px] border"
+            style={{ borderColor: GOLD, color: NAVY, background: "white" }}
           >
-            <ClipboardList size={17} /> Generar resumen del día
+            <ClipboardList size={17} /> Generar resumen de texto (WhatsApp)
           </button>
         </div>
 
