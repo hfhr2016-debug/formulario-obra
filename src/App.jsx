@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import {
   ChevronDown,
   Plus,
@@ -516,6 +516,8 @@ export default function CapturaAvanceObra() {
 
   // Reparte un texto largo en varias celdas de una sola línea cada una
   // (misma lógica que el script de Excel, para que ambos caminos coincidan).
+  // Reparte un texto largo en varias celdas de una sola línea cada una
+  // (misma lógica que el script de Excel, para que ambos caminos coincidan).
   function repartirEnLineas(ws, celdas, texto) {
     if (!texto) return;
     const maxPorLinea = 110;
@@ -533,14 +535,14 @@ export default function CapturaAvanceObra() {
     if (actual) lineas.push(actual);
     celdas.forEach((celda, i) => {
       if (lineas[i]) {
-        ws[celda] = { t: "s", v: lineas[i] };
+        ws.getCell(celda).value = lineas[i];
       }
     });
   }
 
   function setCelda(ws, ref, valor) {
     if (valor === undefined || valor === null || valor === "") return;
-    ws[ref] = { t: "s", v: String(valor) };
+    ws.getCell(ref).value = String(valor);
   }
 
   async function generarExcel() {
@@ -550,8 +552,9 @@ export default function CapturaAvanceObra() {
       const resp = await fetch("/plantilla-informe.xlsx");
       if (!resp.ok) throw new Error("No se pudo cargar la plantilla");
       const buffer = await resp.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: "array", cellStyles: true, bookImages: true });
-      const ws = wb.Sheets["RYR-FT-01"];
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.getWorksheet("RYR-FT-01");
       if (!ws) throw new Error("No se encontró la hoja RYR-FT-01 en la plantilla");
 
       // --- Datos generales ---
@@ -660,7 +663,18 @@ export default function CapturaAvanceObra() {
       setCelda(ws, "B61", elaboradoCargo);
 
       const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
-      XLSX.writeFile(wb, nombreArchivo);
+      const outBuffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([outBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
       setErrorExcel(
         "No se pudo generar el Excel. Verifica tu conexión e intenta de nuevo."
