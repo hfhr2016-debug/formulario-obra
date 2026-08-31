@@ -11,6 +11,8 @@ import {
   Search,
   FileSpreadsheet,
   Loader2,
+  Camera,
+  X,
 } from "lucide-react";
 
 const NAVY = "#1B2A45";
@@ -237,6 +239,97 @@ function guardarAcumulado(clave, valor) {
   }
 }
 
+// Comprime y redimensiona una foto en el navegador antes de insertarla en el Excel,
+// para que el archivo final no quede pesado. Devuelve un ArrayBuffer en JPEG.
+function comprimirFoto(file, maxAncho = 1000, calidad = 0.75) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxAncho) {
+        height = Math.round((height * maxAncho) / width);
+        width = maxAncho;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) return reject(new Error("No se pudo procesar la foto"));
+          blob.arrayBuffer().then(resolve).catch(reject);
+        },
+        "image/jpeg",
+        calidad
+      );
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function CasillaFoto({ foto, onChange, onRemove, numero }) {
+  const inputRef = useRef(null);
+
+  function manejarArchivo(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    onChange({ file, previewUrl, caption: foto.caption });
+  }
+
+  return (
+    <div className="border rounded-lg p-2.5 mb-2.5" style={{ borderColor: LINE, background: PAPER }}>
+      {foto.previewUrl ? (
+        <div className="relative">
+          <img
+            src={foto.previewUrl}
+            alt={`Foto ${numero}`}
+            className="w-full h-32 object-cover rounded-md"
+          />
+          <button
+            onClick={onRemove}
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center"
+            style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="w-full h-32 rounded-md border-2 border-dashed flex flex-col items-center justify-center gap-1.5"
+          style={{ borderColor: GOLD, color: NAVY }}
+        >
+          <Camera size={22} />
+          <span className="text-[11px] font-medium">Foto {numero}</span>
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={manejarArchivo}
+      />
+      {foto.previewUrl && (
+        <input
+          type="text"
+          value={foto.caption}
+          onChange={(e) => onChange({ ...foto, caption: e.target.value })}
+          placeholder="Descripción de la foto"
+          className="w-full mt-2 text-[12px] px-2 py-1.5 rounded-md border outline-none"
+          style={{ borderColor: LINE, background: "white" }}
+        />
+      )}
+    </div>
+  );
+}
+
 function BuscadorItem({ value, onSelect }) {
   const [texto, setTexto] = useState(value || "");
   const [abierto, setAbierto] = useState(false);
@@ -395,6 +488,21 @@ export default function CapturaAvanceObra() {
   const [copied, setCopied] = useState(false);
   const [generandoExcel, setGenerandoExcel] = useState(false);
   const [errorExcel, setErrorExcel] = useState("");
+  const [fotos, setFotos] = useState([
+    { file: null, previewUrl: "", caption: "" },
+    { file: null, previewUrl: "", caption: "" },
+    { file: null, previewUrl: "", caption: "" },
+    { file: null, previewUrl: "", caption: "" },
+  ]);
+
+  function actualizarFoto(idx, nuevaFoto) {
+    setFotos((fs) => fs.map((f, i) => (i === idx ? nuevaFoto : f)));
+  }
+  function quitarFoto(idx) {
+    setFotos((fs) =>
+      fs.map((f, i) => (i === idx ? { file: null, previewUrl: "", caption: "" } : f))
+    );
+  }
 
   function updateRow(setter, idx, key, value) {
     setter((rows) => rows.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
@@ -662,6 +770,25 @@ export default function CapturaAvanceObra() {
       setCelda(ws, "B60", elaboradoNombre);
       setCelda(ws, "B61", elaboradoCargo);
 
+      // --- Registro fotográfico (4 casillas: filas 63-74 y 76-87) ---
+      const posicionesFotos = [
+        { tl: { col: 0, row: 62 }, br: { col: 6, row: 74 }, captionCell: "A75" }, // Foto 1
+        { tl: { col: 7, row: 62 }, br: { col: 13, row: 74 }, captionCell: "H75" }, // Foto 2
+        { tl: { col: 0, row: 75 }, br: { col: 6, row: 87 }, captionCell: "A88" }, // Foto 3
+        { tl: { col: 7, row: 75 }, br: { col: 13, row: 87 }, captionCell: "H88" }, // Foto 4
+      ];
+      for (let i = 0; i < fotos.length; i++) {
+        const foto = fotos[i];
+        if (!foto.file) continue;
+        const buffer = await comprimirFoto(foto.file);
+        const imageId = workbook.addImage({ buffer, extension: "jpeg" });
+        const pos = posicionesFotos[i];
+        ws.addImage(imageId, { tl: pos.tl, br: pos.br });
+        if (foto.caption) {
+          ws.getCell(pos.captionCell).value = foto.caption;
+        }
+      }
+
       const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -869,6 +996,27 @@ export default function CapturaAvanceObra() {
             <TextArea label="Descripción de actividades" value={descActividades} onChange={setDescActividades} placeholder="Resumen de lo realizado hoy" />
             <TextArea label="Aspectos problemáticos" value={aspectosProblematicos} onChange={setAspectosProblematicos} rows={2} placeholder="Dejar vacío si no hubo" />
             <TextArea label="Plan de acción" value={planAccion} onChange={setPlanAccion} rows={2} />
+          </div>
+        </Section>
+
+        <Section
+          id="fotos"
+          title="Registro fotográfico"
+          subtitle="Hasta 4 fotos del avance"
+          open={active === "fotos"}
+          onToggle={toggle}
+          count={fotos.filter((f) => f.file).length}
+        >
+          <div className="grid grid-cols-2 gap-2.5">
+            {fotos.map((foto, i) => (
+              <CasillaFoto
+                key={i}
+                foto={foto}
+                numero={i + 1}
+                onChange={(nuevaFoto) => actualizarFoto(i, nuevaFoto)}
+                onRemove={() => quitarFoto(i)}
+              />
+            ))}
           </div>
         </Section>
 
