@@ -770,22 +770,30 @@ export default function CapturaAvanceObra() {
       setCelda(ws, "B60", elaboradoNombre);
       setCelda(ws, "B61", elaboradoCargo);
 
-      // --- Registro fotográfico (4 casillas en una sola fila: filas 59-68) ---
+      // --- Registro fotográfico (4 casillas del mismo tamaño exacto, en una sola fila) ---
+      // Se usa un ancho/alto fijo en píxeles para las 4, así quedan siempre parejas
+      // sin depender del ancho variable de las columnas de la plantilla.
+      const ANCHO_FOTO = 300;
+      const ALTO_FOTO = 190;
       const posicionesFotos = [
-        { tl: { col: 0, row: 58 }, br: { col: 3, row: 68 }, captionCell: "A69" }, // Foto 1
-        { tl: { col: 3, row: 58 }, br: { col: 6, row: 68 }, captionCell: "D69" }, // Foto 2
-        { tl: { col: 6, row: 58 }, br: { col: 9, row: 68 }, captionCell: "G69" }, // Foto 3
-        { tl: { col: 9, row: 58 }, br: { col: 13, row: 68 }, captionCell: "J69" }, // Foto 4
+        { tl: { col: 0, row: 58, nativeColOff: 0, nativeRowOff: 0 } }, // Foto 1 (col A)
+        { tl: { col: 3, row: 58, nativeColOff: 0, nativeRowOff: 0 } }, // Foto 2 (col D)
+        { tl: { col: 6, row: 58, nativeColOff: 0, nativeRowOff: 0 } }, // Foto 3 (col G)
+        { tl: { col: 9, row: 58, nativeColOff: 0, nativeRowOff: 0 } }, // Foto 4 (col J)
       ];
+      const captionsFotos = ["A69", "D69", "G69", "J69"];
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
         if (!foto.file) continue;
         const buffer = await comprimirFoto(foto.file);
         const imageId = workbook.addImage({ buffer, extension: "jpeg" });
         const pos = posicionesFotos[i];
-        ws.addImage(imageId, { tl: pos.tl, br: pos.br });
+        ws.addImage(imageId, {
+          tl: pos.tl,
+          ext: { width: ANCHO_FOTO, height: ALTO_FOTO },
+        });
         if (foto.caption) {
-          ws.getCell(pos.captionCell).value = foto.caption;
+          ws.getCell(captionsFotos[i]).value = foto.caption;
         }
       }
 
