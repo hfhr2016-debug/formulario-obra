@@ -20,6 +20,18 @@ const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
 const LINE = "#D9DCE1";
 
+// Fecha de HOY según la hora local del dispositivo (no UTC), en formato YYYY-MM-DD.
+// Usar new Date().toISOString() aquí causaría que, en Colombia (UTC-5), pasadas
+// las 7pm ya muestre la fecha del día siguiente — por eso se arma a mano con
+// los valores locales en vez de convertir a UTC.
+function fechaLocalHoy() {
+  const d = new Date();
+  const año = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${año}-${mes}-${dia}`;
+}
+
 // Catálogo de ítems del presupuesto (Edificio 12 pisos).
 // Para actualizarlo con otro proyecto, reemplaza este arreglo.
 const CATALOGO_ITEMS = [
@@ -458,7 +470,7 @@ export default function CapturaAvanceObra() {
   const toggle = (id) => setActive((cur) => (cur === id ? "" : id));
 
   const [general, setGeneral] = useState({
-    fecha: new Date().toISOString().slice(0, 10),
+    fecha: fechaLocalHoy(),
     informeNo: "",
     objetoContrato: "",
     noContrato: "",
