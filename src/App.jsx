@@ -770,12 +770,12 @@ export default function CapturaAvanceObra() {
       setCelda(ws, "B60", elaboradoNombre);
       setCelda(ws, "B61", elaboradoCargo);
 
-      // --- Registro fotográfico (4 casillas: filas 63-74 y 76-87) ---
+      // --- Registro fotográfico (4 casillas en una sola fila: filas 59-68) ---
       const posicionesFotos = [
-        { tl: { col: 0, row: 62 }, br: { col: 6, row: 74 }, captionCell: "A75" }, // Foto 1
-        { tl: { col: 7, row: 62 }, br: { col: 13, row: 74 }, captionCell: "H75" }, // Foto 2
-        { tl: { col: 0, row: 75 }, br: { col: 6, row: 87 }, captionCell: "A88" }, // Foto 3
-        { tl: { col: 7, row: 75 }, br: { col: 13, row: 87 }, captionCell: "H88" }, // Foto 4
+        { tl: { col: 0, row: 58 }, br: { col: 3, row: 68 }, captionCell: "A69" }, // Foto 1
+        { tl: { col: 3, row: 58 }, br: { col: 6, row: 68 }, captionCell: "D69" }, // Foto 2
+        { tl: { col: 6, row: 58 }, br: { col: 9, row: 68 }, captionCell: "G69" }, // Foto 3
+        { tl: { col: 9, row: 58 }, br: { col: 13, row: 68 }, captionCell: "J69" }, // Foto 4
       ];
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
