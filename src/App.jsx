@@ -465,7 +465,7 @@ function AddButton({ onClick, label }) {
   );
 }
 
-export default function CapturaAvanceObra() {
+function CapturaAvanceObra({ onVolver }) {
   const [active, setActive] = useState("general");
   const toggle = (id) => setActive((cur) => (cur === id ? "" : id));
 
@@ -851,6 +851,17 @@ export default function CapturaAvanceObra() {
 
       {/* Header */}
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
+        {onVolver && (
+          <button
+            onClick={onVolver}
+            className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Menú SAIEA OBRAS
+          </button>
+        )}
         <div className="flex items-center gap-2.5">
           <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
             <path d="M20 4L4 18H8V36H32V18H36L20 4Z" fill={GOLD} />
@@ -1149,4 +1160,82 @@ export default function CapturaAvanceObra() {
       </div>
     </div>
   );
+}
+
+// ============================================================
+// PANTALLA DE INICIO — Portal SAIEA OBRAS
+// ============================================================
+const MODULOS = [
+  { id: "diario", nombre: "Informe Diario", icono: "/icons/icon-informe-diario.png", activo: true },
+  { id: "apus", nombre: "APU's", icono: "/icons/icon-apus.png", activo: false },
+  { id: "presupuesto", nombre: "Presupuesto", icono: "/icons/icon-presupuesto.png", activo: false },
+  { id: "cronograma", nombre: "Cronograma", icono: "/icons/icon-cronograma.png", activo: false },
+  { id: "cantidades", nombre: "Cantidades de Obra", icono: "/icons/icon-cantidades.png", activo: false },
+  { id: "semanal", nombre: "Informe Semanal", icono: "/icons/icon-informe-semanal.png", activo: false },
+  { id: "mensual", nombre: "Informe Mensual", icono: "/icons/icon-informe-mensual.png", activo: false },
+  { id: "memorias", nombre: "Memorias de Cálculo", icono: "/icons/icon-memorias.png", activo: false },
+  { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: false },
+  { id: "ficha", nombre: "Ficha Técnica", icono: "/icons/icon-ficha-tecnica.png", activo: false },
+];
+
+function Inicio({ onSeleccionar }) {
+  return (
+    <div className="min-h-full" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5 text-center" style={{ background: NAVY }}>
+        <div
+          className="text-white font-bold text-[17px] tracking-wide"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+          SAIEA OBRAS
+        </div>
+        <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+          Sistema Automatizado de Ingeniería y Administración de Obras
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-4">
+        {MODULOS.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => m.activo && onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-2 relative"
+            style={{
+              background: "white",
+              border: `1px solid ${LINE}`,
+              opacity: m.activo ? 1 : 0.55,
+            }}
+          >
+            <img src={m.icono} alt={m.nombre} className="w-16 h-16 object-contain" />
+            <div className="text-[12px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div
+                className="absolute top-2 right-2 text-[8.5px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: LINE, color: NAVY }}
+              >
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [vista, setVista] = useState("inicio");
+
+  if (vista === "inicio") {
+    return <Inicio onSeleccionar={setVista} />;
+  }
+  if (vista === "diario") {
+    return <CapturaAvanceObra onVolver={() => setVista("inicio")} />;
+  }
+  return <Inicio onSeleccionar={setVista} />;
 }
