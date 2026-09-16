@@ -261,17 +261,17 @@ export default function FormularioAPU({ onVolver }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.getWorksheet("Apu's");
 
-      ws.getCell("A13").value = actividad.actividad;
+      ws.getCell("A10").value = actividad.actividad;
       ws.getCell("L4").value = actividad.unidad;
       ws.getCell("O4").value = cuadrilla;
       ws.getCell("Q4").value = Number(jornada) || 0;
       ws.getCell("R4").value = Number(rendimiento) || 0;
       ws.getCell("S4").value = unidadRendimiento;
 
-      ws.getCell("B16").value = proyecto;
-      ws.getCell("B17").value = noContrato;
-      ws.getCell("F17").value = fechaDDMMYYYY();
-      ws.getCell("F18").value = ubicacion;
+      ws.getCell("B13").value = proyecto;
+      ws.getCell("B14").value = noContrato;
+      ws.getCell("F14").value = fechaDDMMYYYY();
+      ws.getCell("F15").value = ubicacion;
 
       const escribirFilas = (filas, filaInicio) => {
         filas.forEach((f, i) => {
@@ -283,14 +283,14 @@ export default function FormularioAPU({ onVolver }) {
           ws.getCell(`E${r}`).value = Number(f.vrUnit) || 0;
         });
       };
-      escribirFilas(materiales, 22);
-      escribirFilas(manoObra, 31);
-      escribirFilas(equipos, 40);
+      escribirFilas(materiales, 19);
+      escribirFilas(manoObra, 28);
+      escribirFilas(equipos, 37);
 
-      ws.getCell("B54").value = elaboradoNombre;
-      ws.getCell("B55").value = elaboradoCargo;
-      ws.getCell("E54").value = interventoriaNombre;
-      ws.getCell("E55").value = interventoriaCargo;
+      ws.getCell("B51").value = elaboradoNombre;
+      ws.getCell("B52").value = elaboradoCargo;
+      ws.getCell("E51").value = interventoriaNombre;
+      ws.getCell("E52").value = interventoriaCargo;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
