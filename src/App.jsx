@@ -1166,16 +1166,16 @@ function CapturaAvanceObra({ onVolver }) {
 // PANTALLA DE INICIO — Portal SAIEA OBRAS
 // ============================================================
 const MODULOS = [
-  { id: "diario", nombre: "Informe Diario", icono: "/icons/icon-informe-diario.png", activo: true },
+  { id: "ficha", nombre: "Ficha Técnica", icono: "/icons/icon-ficha-tecnica.png", activo: false },
   { id: "apus", nombre: "APU's", icono: "/icons/icon-apus.png", activo: false },
   { id: "presupuesto", nombre: "Presupuesto", icono: "/icons/icon-presupuesto.png", activo: false },
   { id: "cronograma", nombre: "Cronograma", icono: "/icons/icon-cronograma.png", activo: false },
   { id: "cantidades", nombre: "Cantidades de Obra", icono: "/icons/icon-cantidades.png", activo: false },
+  { id: "diario", nombre: "Informe Diario", icono: "/icons/icon-informe-diario.png", activo: true },
   { id: "semanal", nombre: "Informe Semanal", icono: "/icons/icon-informe-semanal.png", activo: false },
   { id: "mensual", nombre: "Informe Mensual", icono: "/icons/icon-informe-mensual.png", activo: false },
   { id: "memorias", nombre: "Memorias de Cálculo", icono: "/icons/icon-memorias.png", activo: false },
   { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: false },
-  { id: "ficha", nombre: "Ficha Técnica", icono: "/icons/icon-ficha-tecnica.png", activo: false },
 ];
 
 function Inicio({ onSeleccionar }) {
