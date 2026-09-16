@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import ExcelJS from "exceljs";
 import FormularioAPU from "./FormularioAPU";
+import FormularioFicha from "./FormularioFicha";
 import {
   ChevronDown,
   Plus,
@@ -1170,7 +1171,7 @@ function CapturaAvanceObra({ onVolver }) {
 // PANTALLA DE INICIO — Portal SAIEA OBRAS
 // ============================================================
 const MODULOS = [
-  { id: "ficha", nombre: "Ficha Técnica", icono: "/icons/icon-ficha-tecnica.png", activo: false },
+  { id: "ficha", nombre: "Ficha Técnica", icono: "/icons/icon-ficha-tecnica.png", activo: true },
   { id: "apus", nombre: "APU's", icono: "/icons/icon-apus.png", activo: true },
   { id: "presupuesto", nombre: "Presupuesto", icono: "/icons/icon-presupuesto.png", activo: false },
   { id: "cronograma", nombre: "Cronograma", icono: "/icons/icon-cronograma.png", activo: false },
@@ -1248,6 +1249,9 @@ export default function App() {
   }
   if (vista === "apus") {
     return <FormularioAPU onVolver={() => setVista("inicio")} />;
+  }
+  if (vista === "ficha") {
+    return <FormularioFicha onVolver={() => setVista("inicio")} />;
   }
   return <Inicio onSeleccionar={setVista} />;
 }
