@@ -863,7 +863,8 @@ function CapturaAvanceObra({ onVolver }) {
             Menú SAIEA OBRAS
           </button>
         )}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
           <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
             <path d="M20 4L4 18H8V36H32V18H36L20 4Z" fill={GOLD} />
             <rect x="14" y="22" width="12" height="14" fill={NAVY} stroke="white" strokeWidth="1" />
@@ -879,6 +880,8 @@ function CapturaAvanceObra({ onVolver }) {
               Captura de avance diario de obra · RYR-FT-01
             </div>
           </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-9 w-auto" />
         </div>
       </div>
 
@@ -1186,15 +1189,20 @@ function Inicio({ onSeleccionar }) {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      <div className="px-4 pt-6 pb-5 text-center" style={{ background: NAVY }}>
-        <div
-          className="text-white font-bold text-[17px] tracking-wide"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-        >
-          SAIEA OBRAS
-        </div>
-        <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
-          Sistema Automatizado de Ingeniería y Administración de Obras
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div
+              className="text-white font-bold text-[17px] tracking-wide"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              SAIEA OBRAS
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Sistema Automatizado de Ingeniería y Administración de Obras
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-10 w-auto" />
         </div>
       </div>
 

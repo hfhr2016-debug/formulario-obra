@@ -327,11 +327,16 @@ export default function FormularioAPU({ onVolver }) {
           </svg>
           Menú SAIEA OBRAS
         </button>
-        <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          ANÁLISIS DE PRECIOS UNITARIOS
-        </div>
-        <div className="text-[11px]" style={{ color: GOLD }}>
-          Reformas y Remodelaciones
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              ANÁLISIS DE PRECIOS UNITARIOS
+            </div>
+            <div className="text-[11px]" style={{ color: GOLD }}>
+              Reformas y Remodelaciones
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-9 w-auto" />
         </div>
       </div>
 
