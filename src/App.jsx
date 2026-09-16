@@ -841,7 +841,7 @@ function CapturaAvanceObra({ onVolver }) {
 
   return (
     <div
-      className="min-h-full"
+      className="min-h-screen"
       style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}
     >
       <link
@@ -1187,7 +1187,7 @@ function Inicio({ onSeleccionar }) {
     backgroundRepeat: 'no-repeat',
   };
   return (
-    <div className="min-h-full" style={{ ...patronFondo, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen" style={{ ...patronFondo, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
