@@ -1179,8 +1179,16 @@ const MODULOS = [
 ];
 
 function Inicio({ onSeleccionar }) {
+  const patronFondo = {
+    backgroundColor: PAPER,
+    backgroundImage: 'url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20800%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22g1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23F5F7FA%22/%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23EEF1F6%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22800%22%20height%3D%22800%22%20fill%3D%22url%28%23g1%29%22/%3E%20%3Cg%20opacity%3D%220.055%22%20stroke%3D%22%231B2A45%22%20stroke-width%3D%222%22%20fill%3D%22none%22%3E%20%3Crect%20x%3D%2260%22%20y%3D%22480%22%20width%3D%2270%22%20height%3D%22220%22/%3E%20%3Crect%20x%3D%22150%22%20y%3D%22420%22%20width%3D%2255%22%20height%3D%22280%22/%3E%20%3Crect%20x%3D%22225%22%20y%3D%22500%22%20width%3D%2290%22%20height%3D%22200%22/%3E%20%3Cline%20x1%3D%22270%22%20y1%3D%22500%22%20x2%3D%22270%22%20y2%3D%22340%22/%3E%20%3Cline%20x1%3D%22210%22%20y1%3D%22360%22%20x2%3D%22330%22%20y2%3D%22360%22/%3E%20%3Cline%20x1%3D%22270%22%20y1%3D%22340%22%20x2%3D%22360%22%20y2%3D%22300%22/%3E%20%3Crect%20x%3D%22580%22%20y%3D%22460%22%20width%3D%2280%22%20height%3D%22240%22/%3E%20%3Crect%20x%3D%22670%22%20y%3D%22510%22%20width%3D%2260%22%20height%3D%22190%22/%3E%20%3Cline%20x1%3D%22620%22%20y1%3D%22460%22%20x2%3D%22620%22%20y2%3D%22300%22/%3E%20%3Cline%20x1%3D%22560%22%20y1%3D%22320%22%20x2%3D%22680%22%20y2%3D%22320%22/%3E%20%3C/g%3E%20%3Cg%20opacity%3D%220.05%22%20fill%3D%22%231B2A45%22%3E%20%3Crect%20x%3D%220%22%20y%3D%22690%22%20width%3D%22800%22%20height%3D%224%22/%3E%20%3C/g%3E%20%3Cpolygon%20points%3D%220%2C800%200%2C720%2090%2C800%22%20fill%3D%22%23D9A233%22%20opacity%3D%220.10%22/%3E%20%3Cpolygon%20points%3D%220%2C800%200%2C760%2050%2C800%22%20fill%3D%22%231B2A45%22%20opacity%3D%220.10%22/%3E%20%3Cpolygon%20points%3D%22800%2C800%20800%2C720%20710%2C800%22%20fill%3D%22%23D9A233%22%20opacity%3D%220.10%22/%3E%20%3Cpolygon%20points%3D%22800%2C800%20800%2C760%20750%2C800%22%20fill%3D%22%231B2A45%22%20opacity%3D%220.10%22/%3E%20%3C/svg%3E")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center bottom',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
+  };
   return (
-    <div className="min-h-full" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div className="min-h-full" style={{ ...patronFondo, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
