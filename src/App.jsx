@@ -881,7 +881,7 @@ function CapturaAvanceObra({ onVolver }) {
             </div>
           </div>
           </div>
-          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-9 w-auto" />
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>
       </div>
 
@@ -1202,7 +1202,7 @@ function Inicio({ onSeleccionar }) {
               Sistema Automatizado de Ingeniería y Administración de Obras
             </div>
           </div>
-          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-10 w-auto" />
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>
       </div>
 

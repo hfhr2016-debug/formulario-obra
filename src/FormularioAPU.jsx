@@ -336,7 +336,7 @@ export default function FormularioAPU({ onVolver }) {
               Reformas y Remodelaciones
             </div>
           </div>
-          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-9 w-auto" />
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>
       </div>
 
