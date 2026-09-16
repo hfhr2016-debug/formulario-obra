@@ -287,6 +287,24 @@ export default function FormularioAPU({ onVolver }) {
       escribirFilas(manoObra, 28);
       escribirFilas(equipos, 37);
 
+      const sumar = (filas) =>
+        filas.reduce((acc, f) => acc + (Number(f.cant) || 0) * (Number(f.vrUnit) || 0), 0);
+      const totalDirectoUnitario = sumar(materiales) + sumar(manoObra) + sumar(equipos);
+
+      try {
+        const clave = "ryr_apus_guardados";
+        const guardados = JSON.parse(localStorage.getItem(clave) || "{}");
+        guardados[actividad.actividad.trim().toLowerCase()] = {
+          actividad: actividad.actividad,
+          unidad: actividad.unidad,
+          total: totalDirectoUnitario,
+          fecha: fechaLocalHoy(),
+        };
+        localStorage.setItem(clave, JSON.stringify(guardados));
+      } catch (e) {
+        console.warn("No se pudo guardar el APU en memoria local:", e);
+      }
+
       ws.getCell("B51").value = elaboradoNombre;
       ws.getCell("B52").value = elaboradoCargo;
       ws.getCell("E51").value = interventoriaNombre;

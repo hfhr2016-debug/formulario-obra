@@ -243,6 +243,36 @@ export default function FormularioPresupuesto({ onVolver }) {
     }
   }
 
+  async function cargarApusGuardados() {
+    try {
+      const clave = "ryr_apus_guardados";
+      const guardados = JSON.parse(localStorage.getItem(clave) || "{}");
+      const cantidad = Object.keys(guardados).length;
+      if (cantidad === 0) {
+        alert("Todavía no hay APU's guardados en este dispositivo. Genera al menos uno desde el formulario de APU's primero.");
+        return;
+      }
+      let coincidencias = 0;
+      const nuevos = { ...valores };
+      CAPITULOS.forEach((cap, ci) => {
+        cap.items.forEach((it, ii) => {
+          const key = (it.actividad || "").trim().toLowerCase();
+          const guardado = guardados[key];
+          if (guardado) {
+            const k = `${ci}-${ii}`;
+            nuevos[k] = { ...(nuevos[k] || { cant: "" }), precio: guardado.total };
+            coincidencias++;
+          }
+        });
+      });
+      setValores(nuevos);
+      alert(`Precios cargados desde la memoria de este dispositivo: ${coincidencias} de ${cantidad} APU's guardados coincidieron.`);
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo leer la memoria de APU's de este dispositivo.");
+    }
+  }
+
   async function cargarApus(files) {
     setCargando(true);
     try {
@@ -457,7 +487,18 @@ export default function FormularioPresupuesto({ onVolver }) {
         </div>
         <div className="p-3 border border-t-0" style={{ borderColor: LINE, background: "white" }}>
           <div className="text-[11.5px] text-gray-500 mb-2">
-            Puedes llenar cantidad y precio a mano en cada ítem, o cargarlos automáticamente desde archivos que ya tengas generados:
+            Puedes llenar cantidad y precio a mano, o cargarlos automáticamente:
+          </div>
+          <button
+            type="button"
+            onClick={cargarApusGuardados}
+            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            ⚡ Usar precios de APU's ya generados en este dispositivo
+          </button>
+          <div className="text-[10.5px] text-gray-400 mb-2 text-center">
+            — o, si vienes de otro dispositivo / necesitas cargar cantidades —
           </div>
           <div className="grid grid-cols-2 gap-2 mb-1">
             <label className="text-center py-2 rounded-lg text-[12px] font-semibold border-2 cursor-pointer" style={{ borderColor: GOLD, color: NAVY }}>
@@ -468,7 +509,7 @@ export default function FormularioPresupuesto({ onVolver }) {
               />
             </label>
             <label className="text-center py-2 rounded-lg text-[12px] font-semibold border-2 cursor-pointer" style={{ borderColor: GOLD, color: NAVY }}>
-              💲 Cargar APU's (varios)
+              💲 Cargar archivos de APU
               <input
                 type="file" accept=".xlsx" multiple className="hidden"
                 onChange={(e) => e.target.files.length && cargarApus(e.target.files)}
