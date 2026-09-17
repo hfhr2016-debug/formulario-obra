@@ -329,30 +329,28 @@ export default function FormularioAPU({ onVolver }) {
       const ws = workbook.getWorksheet("Apu's");
 
       ws.getCell("A10").value = actividad.actividad;
-      ws.getCell("L4").value = actividad.unidad;
-      ws.getCell("O4").value = cuadrilla;
-      ws.getCell("Q4").value = Number(jornada) || 0;
-      ws.getCell("R4").value = Number(rendimiento) || 0;
-      ws.getCell("S4").value = unidadRendimiento;
+      ws.getCell("S4").value = cuadrilla;
+      ws.getCell("U4").value = Number(jornada) || 0;
+      ws.getCell("V4").value = Number(rendimiento) || 0;
 
-      ws.getCell("B13").value = proyecto;
-      ws.getCell("B14").value = noContrato;
-      ws.getCell("F14").value = fechaDDMMYYYY();
-      ws.getCell("F15").value = ubicacion;
+      ws.getCell("C13").value = proyecto;
+      ws.getCell("C14").value = noContrato;
+      ws.getCell("I14").value = fechaDDMMYYYY();
+      ws.getCell("I15").value = ubicacion;
 
       const escribirFilas = (filas, filaInicio) => {
         filas.forEach((f, i) => {
           const r = filaInicio + i;
           if (!f.desc) return;
-          ws.getCell(`B${r}`).value = f.desc;
-          ws.getCell(`C${r}`).value = f.und;
-          ws.getCell(`D${r}`).value = Number(f.cant) || 0;
-          ws.getCell(`E${r}`).value = Number(f.vrUnit) || 0;
+          ws.getCell(`A${r}`).value = f.desc;
+          ws.getCell(`E${r}`).value = f.und;
+          ws.getCell(`F${r}`).value = Number(f.cant) || 0;
+          ws.getCell(`H${r}`).value = Number(f.vrUnit) || 0;
         });
       };
-      escribirFilas(materiales, 19);
-      escribirFilas(manoObra, 28);
-      escribirFilas(equipos, 37);
+      escribirFilas(materiales, 23);
+      escribirFilas(manoObra, 32);
+      escribirFilas(equipos, 41);
 
       const sumar = (filas) =>
         filas.reduce((acc, f) => acc + (Number(f.cant) || 0) * (Number(f.vrUnit) || 0), 0);
@@ -373,10 +371,10 @@ export default function FormularioAPU({ onVolver }) {
         console.warn("No se pudo guardar el APU en memoria local:", e);
       }
 
-      ws.getCell("B51").value = elaboradoNombre;
-      ws.getCell("B52").value = elaboradoCargo;
-      ws.getCell("E51").value = interventoriaNombre;
-      ws.getCell("E52").value = interventoriaCargo;
+      ws.getCell("C55").value = elaboradoNombre;
+      ws.getCell("C56").value = elaboradoCargo;
+      ws.getCell("H55").value = interventoriaNombre;
+      ws.getCell("H56").value = interventoriaCargo;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
