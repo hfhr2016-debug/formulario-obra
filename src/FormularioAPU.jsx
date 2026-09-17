@@ -31,11 +31,18 @@ function BuscadorActividad({ value, onSelect }) {
   const resultados = useMemo(() => {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
-    return CATALOGO_APU.filter(
+    const coincide = CATALOGO_APU.filter(
       (it) =>
         it.actividad.toLowerCase().includes(q) ||
         it.capitulo.toLowerCase().includes(q)
-    ).slice(0, 8);
+    );
+    coincide.sort((a, b) => {
+      const aEmpieza = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
+      const bEmpieza = b.actividad.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
+      return a.actividad.length - b.actividad.length;
+    });
+    return coincide.slice(0, 10);
   }, [texto]);
 
   return (
@@ -111,7 +118,14 @@ function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder }) {
   const resultados = useMemo(() => {
     if (!texto || texto.length < 2 || !catalogo) return [];
     const q = texto.toLowerCase();
-    return catalogo.filter((it) => it.descripcion.toLowerCase().includes(q)).slice(0, 6);
+    const coincide = catalogo.filter((it) => it.descripcion.toLowerCase().includes(q));
+    coincide.sort((a, b) => {
+      const aEmpieza = a.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
+      const bEmpieza = b.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
+      return a.descripcion.length - b.descripcion.length;
+    });
+    return coincide.slice(0, 10);
   }, [texto, catalogo]);
 
   return (
