@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuesto from "./FormularioPresupuesto";
+import FormularioCronograma from "./FormularioCronograma";
 import {
   ChevronDown,
   Plus,
@@ -1175,7 +1176,7 @@ const MODULOS = [
   { id: "ficha", nombre: "Ficha Técnica", icono: "/icons/icon-ficha-tecnica.png", activo: true },
   { id: "apus", nombre: "APU's", icono: "/icons/icon-apus.png", activo: true },
   { id: "presupuesto", nombre: "Presupuesto", icono: "/icons/icon-presupuesto.png", activo: true },
-  { id: "cronograma", nombre: "Cronograma", icono: "/icons/icon-cronograma.png", activo: false },
+  { id: "cronograma", nombre: "Cronograma", icono: "/icons/icon-cronograma.png", activo: true },
   { id: "cantidades", nombre: "Cantidades de Obra", icono: "/icons/icon-cantidades.png", activo: false },
   { id: "diario", nombre: "Informe Diario", icono: "/icons/icon-informe-diario.png", activo: true },
   { id: "semanal", nombre: "Informe Semanal", icono: "/icons/icon-informe-semanal.png", activo: false },
@@ -1256,6 +1257,9 @@ export default function App() {
   }
   if (vista === "presupuesto") {
     return <FormularioPresupuesto onVolver={() => setVista("inicio")} />;
+  }
+  if (vista === "cronograma") {
+    return <FormularioCronograma onVolver={() => setVista("inicio")} />;
   }
   return <Inicio onSeleccionar={setVista} />;
 }

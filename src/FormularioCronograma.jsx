@@ -1,0 +1,347 @@
+import React, { useState, useMemo } from "react";
+import ExcelJS from "exceljs";
+
+const NAVY = "#1B2A45";
+const GOLD = "#D9A233";
+const PAPER = "#F7F7F5";
+const LINE = "#D9DCE1";
+
+function fechaLocalHoy() {
+  const d = new Date();
+  const año = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${año}-${mes}-${dia}`;
+}
+function aFechaDDMMYYYY(iso) {
+  if (!iso) return "";
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
+function sumarDias(fechaISO, dias) {
+  const d = new Date(fechaISO + "T00:00:00");
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+function Campo({ label, children }) {
+  return (
+    <div className="mb-3">
+      <label className="block text-[12px] font-semibold mb-1" style={{ color: NAVY }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+function Input(props) {
+  return (
+    <input
+      {...props}
+      className="w-full border rounded-lg px-3 py-2.5 text-[14px]"
+      style={{ borderColor: LINE }}
+    />
+  );
+}
+
+const CATALOGO_ACTIVIDADES = [{"actividad": "Replanteo general de ejes y niveles", "unidad": "ml"}, {"actividad": "Cerramiento provisional de obra", "unidad": "ml"}, {"actividad": "Instalación de campamento y oficinas provisionales", "unidad": "m²"}, {"actividad": "Adecuación de área de almacenamiento", "unidad": "m²"}, {"actividad": "Señalización preventiva e informativa de obra", "unidad": "und"}, {"actividad": "Instalaciones provisionales de agua y energía", "unidad": "gl"}, {"actividad": "Protección de elementos existentes", "unidad": "m²"}, {"actividad": "Desmonte y limpieza inicial", "unidad": "m²"}, {"actividad": "Demoliciones preliminares", "unidad": "m³"}, {"actividad": "Excavación manual en material común", "unidad": "m³"}, {"actividad": "Excavación mecánica", "unidad": "m³"}, {"actividad": "Excavación en roca", "unidad": "m³"}, {"actividad": "Perfilado y conformación de excavaciones", "unidad": "m²"}, {"actividad": "Relleno con material seleccionado compactado", "unidad": "m³"}, {"actividad": "Relleno con material proveniente de excavación", "unidad": "m³"}, {"actividad": "Suministro, extendido y compactación de subbase", "unidad": "m³"}, {"actividad": "Suministro, extendido y compactación de base granular", "unidad": "m³"}, {"actividad": "Cargue de material sobrante", "unidad": "m³"}, {"actividad": "Transporte de material sobrante", "unidad": "m³"}, {"actividad": "Disposición final de sobrantes", "unidad": "m³"}, {"actividad": "Concreto de limpieza / solado", "unidad": "m³"}, {"actividad": "Concreto para zapatas", "unidad": "m³"}, {"actividad": "Concreto para vigas de cimentación", "unidad": "m³"}, {"actividad": "Concreto para losas de cimentación", "unidad": "m³"}, {"actividad": "Concreto para pedestales", "unidad": "m³"}, {"actividad": "Acero de refuerzo en cimentación", "unidad": "kg"}, {"actividad": "Formaleta para elementos de cimentación", "unidad": "m²"}, {"actividad": "Concreto para columnas", "unidad": "m³"}, {"actividad": "Concreto para vigas", "unidad": "m³"}, {"actividad": "Concreto para losas", "unidad": "m³"}, {"actividad": "Concreto para escaleras", "unidad": "m³"}, {"actividad": "Concreto para muros estructurales", "unidad": "m³"}, {"actividad": "Acero de refuerzo de columnas", "unidad": "kg"}, {"actividad": "Acero de refuerzo de vigas", "unidad": "kg"}, {"actividad": "Acero de refuerzo de losas", "unidad": "kg"}, {"actividad": "Formaleta de columnas", "unidad": "m²"}, {"actividad": "Formaleta de vigas", "unidad": "m²"}, {"actividad": "Formaleta de losas", "unidad": "m²"}, {"actividad": "Formaleta de escaleras", "unidad": "m²"}, {"actividad": "Suministro y montaje de perfiles metálicos", "unidad": "kg"}, {"actividad": "Placas, pernos y conexiones metálicas", "unidad": "kg"}, {"actividad": "Mampostería en bloque de concreto", "unidad": "m²"}, {"actividad": "Mampostería en ladrillo", "unidad": "m²"}, {"actividad": "Mampostería estructural", "unidad": "m²"}, {"actividad": "Muros en sistema liviano / drywall", "unidad": "m²"}, {"actividad": "Dinteles sobre vanos", "unidad": "ml"}, {"actividad": "Alfajías y remates", "unidad": "ml"}, {"actividad": "Anclajes y refuerzos de mampostería", "unidad": "und"}, {"actividad": "Estructura metálica o de madera para cubierta", "unidad": "kg"}, {"actividad": "Cerchas y elementos estructurales", "unidad": "kg"}, {"actividad": "Suministro e instalación de teja", "unidad": "m²"}, {"actividad": "Impermeabilización de cubierta", "unidad": "m²"}, {"actividad": "Aislamiento térmico/acústico", "unidad": "m²"}, {"actividad": "Canales de aguas lluvias", "unidad": "ml"}, {"actividad": "Bajantes de aguas lluvias", "unidad": "ml"}, {"actividad": "Impermeabilización de losas y terrazas", "unidad": "m²"}, {"actividad": "Impermeabilización de muros", "unidad": "m²"}, {"actividad": "Impermeabilización de zonas húmedas", "unidad": "m²"}, {"actividad": "Pañete / revoque interior", "unidad": "m²"}, {"actividad": "Pañete / revoque exterior", "unidad": "m²"}, {"actividad": "Pañete impermeabilizado", "unidad": "m²"}, {"actividad": "Estuco plástico o tradicional", "unidad": "m²"}, {"actividad": "Mortero de nivelación", "unidad": "m²"}, {"actividad": "Piso cerámico", "unidad": "m²"}, {"actividad": "Piso en porcelanato", "unidad": "m²"}, {"actividad": "Piso vinílico", "unidad": "m²"}, {"actividad": "Piso laminado", "unidad": "m²"}, {"actividad": "Enchape cerámico en muros", "unidad": "m²"}, {"actividad": "Guardaescoba", "unidad": "ml"}, {"actividad": "Juntas de dilatación / construcción", "unidad": "ml"}, {"actividad": "Pintura vinílica interior", "unidad": "m²"}, {"actividad": "Pintura exterior", "unidad": "m²"}, {"actividad": "Pintura esmalte en superficies metálicas/madera", "unidad": "m²"}, {"actividad": "Pintura anticorrosiva", "unidad": "m²"}, {"actividad": "Sellador / imprimante", "unidad": "m²"}, {"actividad": "Puertas de madera", "unidad": "und"}, {"actividad": "Muebles fijos de madera", "unidad": "ml"}, {"actividad": "Puertas metálicas", "unidad": "und"}, {"actividad": "Barandas metálicas", "unidad": "ml"}, {"actividad": "Pasamanos", "unidad": "ml"}, {"actividad": "Ventanas de aluminio", "unidad": "m²"}, {"actividad": "Divisiones de aluminio", "unidad": "m²"}, {"actividad": "Vidrio templado", "unidad": "m²"}, {"actividad": "Vidrio laminado", "unidad": "m²"}, {"actividad": "Espejos", "unidad": "m²"}, {"actividad": "Sellos y silicona", "unidad": "ml"}, {"actividad": "Tubería de agua fría", "unidad": "ml"}, {"actividad": "Tubería de agua caliente", "unidad": "ml"}, {"actividad": "Válvulas y accesorios", "unidad": "und"}, {"actividad": "Tubería sanitaria", "unidad": "ml"}, {"actividad": "Tubería de aguas lluvias", "unidad": "ml"}, {"actividad": "Cajas de inspección", "unidad": "und"}, {"actividad": "Aparatos sanitarios", "unidad": "und"}, {"actividad": "Lavamanos", "unidad": "und"}, {"actividad": "Griferías", "unidad": "und"}, {"actividad": "Duchas", "unidad": "und"}, {"actividad": "Pruebas hidráulicas y de estanqueidad", "unidad": "gl"}, {"actividad": "Tubería/conduit eléctrica", "unidad": "ml"}, {"actividad": "Bandejas portacables", "unidad": "ml"}, {"actividad": "Cajas eléctricas", "unidad": "und"}, {"actividad": "Cableado de fuerza", "unidad": "ml"}, {"actividad": "Cableado de iluminación", "unidad": "ml"}, {"actividad": "Tableros eléctricos", "unidad": "und"}, {"actividad": "Tomacorrientes", "unidad": "und"}, {"actividad": "Interruptores", "unidad": "und"}, {"actividad": "Luminarias", "unidad": "und"}, {"actividad": "Sistema de puesta a tierra", "unidad": "gl"}, {"actividad": "Pruebas y certificaciones", "unidad": "gl"}, {"actividad": "Cableado estructurado de datos", "unidad": "ml"}, {"actividad": "Rack de comunicaciones", "unidad": "und"}, {"actividad": "Cámaras y sistema CCTV", "unidad": "und"}, {"actividad": "Control de acceso", "unidad": "und"}, {"actividad": "Sistema de citofonía", "unidad": "und"}, {"actividad": "Sistema de detección de incendios", "unidad": "gl"}, {"actividad": "Equipos de aire acondicionado", "unidad": "und"}, {"actividad": "Ductos de ventilación", "unidad": "m²"}, {"actividad": "Tubería de refrigerante", "unidad": "ml"}, {"actividad": "Rejillas y difusores", "unidad": "und"}, {"actividad": "Red interna de gas", "unidad": "ml"}, {"actividad": "Válvulas y accesorios", "unidad": "und"}, {"actividad": "Pruebas y certificación", "unidad": "gl"}, {"actividad": "Construcción de andenes", "unidad": "m²"}, {"actividad": "Placas de concreto exteriores", "unidad": "m³"}, {"actividad": "Pavimento en adoquín", "unidad": "m²"}, {"actividad": "Sardineles y bordillos", "unidad": "ml"}, {"actividad": "Sumideros exteriores", "unidad": "und"}, {"actividad": "Suministro y extendido de tierra vegetal", "unidad": "m³"}, {"actividad": "Siembra y jardinería", "unidad": "m²"}, {"actividad": "Rejas metálicas", "unidad": "m²"}, {"actividad": "Escaleras metálicas", "unidad": "kg"}, {"actividad": "Elementos metálicos especiales", "unidad": "kg"}, {"actividad": "Mobiliario fijo de obra", "unidad": "und"}, {"actividad": "Limpieza gruesa y fina de obra", "unidad": "m²"}, {"actividad": "Limpieza final para entrega", "unidad": "m²"}, {"actividad": "Pruebas, puesta en marcha y ajustes", "unidad": "gl"}, {"actividad": "Actualización de planos récord / as-built", "unidad": "gl"}, {"actividad": "Entrega, manuales y acta de recibo", "unidad": "gl"}, {"actividad": "Suministro e instalación de ascensor eléctrico", "unidad": "und"}, {"actividad": "Estudio de suelos y geotecnia", "unidad": "gl"}, {"actividad": "Diseños arquitectónicos, estructurales, hidrosanitarios y eléctricos", "unidad": "gl"}, {"actividad": "Licencia de construcción y trámites de curaduría urbana", "unidad": "gl"}, {"actividad": "Póliza de estabilidad de obra y seguros de construcción (todo riesgo)", "unidad": "gl"}];
+
+function BuscadorActividadTarea({ value, onSeleccionar }) {
+  const [texto, setTexto] = useState(value || "");
+  const [abierto, setAbierto] = useState(false);
+  const resultados = React.useMemo(() => {
+    if (!texto || texto.length < 2) return [];
+    const q = texto.toLowerCase();
+    return CATALOGO_ACTIVIDADES.filter((it) => it.actividad.toLowerCase().includes(q)).slice(0, 6);
+  }, [texto]);
+  return (
+    <div className="relative">
+      <input
+        placeholder="Nombre de la tarea (busca en el catálogo o escribe libre)"
+        value={texto}
+        onChange={(e) => {
+          setTexto(e.target.value);
+          setAbierto(true);
+          onSeleccionar({ actividad: e.target.value });
+        }}
+        onFocus={() => setAbierto(true)}
+        onBlur={() => setTimeout(() => setAbierto(false), 150)}
+        className="w-full border rounded-lg px-3 py-2.5 text-[14px] mb-1.5"
+        style={{ borderColor: LINE }}
+      />
+      {abierto && resultados.length > 0 && (
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-56 overflow-y-auto" style={{ borderColor: LINE }}>
+          {resultados.map((it, i) => (
+            <button
+              key={i}
+              type="button"
+              onMouseDown={() => {
+                setTexto(it.actividad);
+                setAbierto(false);
+                onSeleccionar({ actividad: it.actividad, unidad: it.unidad });
+              }}
+              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50"
+              style={{ borderColor: LINE }}
+            >
+              <div className="text-[12px] font-medium" style={{ color: NAVY }}>{it.actividad}</div>
+              <div className="text-[10.5px] text-gray-500">{it.unidad}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function sugerirDuracion(nombreActividad) {
+  try {
+    const key = (nombreActividad || "").trim().toLowerCase();
+    if (!key) return null;
+    const apus = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
+    const cantidades = JSON.parse(localStorage.getItem("ryr_presupuesto_cantidades") || "{}");
+    const apu = apus[key];
+    const pres = cantidades[key];
+    if (apu && apu.rendimiento > 0 && pres && pres.cantidad > 0) {
+      return Math.max(1, Math.ceil(pres.cantidad / apu.rendimiento));
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+  return null;
+}
+
+const tareaVacia = () => ({ nombre: "", duracion: "", predecesora: "" });
+
+export default function FormularioCronograma({ onVolver }) {
+  const [proyecto, setProyecto] = useState("");
+  const [noContrato, setNoContrato] = useState("");
+  const [ubicacion, setUbicacion] = useState("");
+  const [especialidad, setEspecialidad] = useState("");
+  const [fechaInicio, setFechaInicio] = useState(fechaLocalHoy());
+
+  const [tareas, setTareas] = useState([tareaVacia()]);
+  const [generando, setGenerando] = useState(false);
+
+  const actualizarTarea = (i, campo, val) => {
+    const nuevas = [...tareas];
+    nuevas[i] = { ...nuevas[i], [campo]: val };
+    setTareas(nuevas);
+  };
+  const agregarTarea = () => setTareas([...tareas, tareaVacia()]);
+  const quitarTarea = (i) => setTareas(tareas.filter((_, idx) => idx !== i));
+
+  // Calcular fechas de inicio/fin de cada tarea según su predecesora (encadenado simple)
+  const calculadas = useMemo(() => {
+    const resultado = [];
+    tareas.forEach((t, i) => {
+      const duracion = Math.max(1, Number(t.duracion) || 1);
+      let inicio = fechaInicio;
+      const numPred = Number(t.predecesora);
+      if (t.predecesora && numPred >= 1 && numPred <= tareas.length && resultado[numPred - 1]) {
+        inicio = sumarDias(resultado[numPred - 1].fin, 1);
+      }
+      const fin = sumarDias(inicio, duracion - 1);
+      resultado.push({ inicio, fin, duracion });
+    });
+    return resultado;
+  }, [tareas, fechaInicio]);
+
+  const fechaFinProyecto = calculadas.length
+    ? calculadas.reduce((max, t) => (t.fin > max ? t.fin : max), calculadas[0].fin)
+    : fechaInicio;
+  const duracionTotalDias =
+    Math.round((new Date(fechaFinProyecto) - new Date(fechaInicio)) / 86400000) + 1;
+
+  async function generarExcel() {
+    if (tareas.every((t) => !t.nombre)) {
+      alert("Agrega al menos una tarea con nombre.");
+      return;
+    }
+    setGenerando(true);
+    try {
+      const resp = await fetch("/plantilla-cronograma.xlsx");
+      const buffer = await resp.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.getWorksheet("Cronograma ");
+
+      ws.getCell("B11").value = proyecto;
+      ws.getCell("I11").value = aFechaDDMMYYYY(fechaLocalHoy());
+      ws.getCell("B12").value = noContrato;
+      ws.getCell("I12").value = ubicacion;
+      ws.getCell("I13").value = especialidad;
+
+      const meses = (duracionTotalDias / 30.4).toFixed(1);
+      ws.getCell("A8").value =
+        `Inicio: ${aFechaDDMMYYYY(fechaInicio)}   |   Fin: ${aFechaDDMMYYYY(fechaFinProyecto)}   |   Duración: ${duracionTotalDias} días calendario (≈${meses} meses)`;
+
+      tareas.forEach((t, i) => {
+        if (!t.nombre) return;
+        const r = 15 + i;
+        const c = calculadas[i];
+        ws.getCell(`A${r}`).value = i + 1;
+        ws.getCell(`B${r}`).value = t.nombre;
+        ws.getCell(`C${r}`).value = `${c.duracion}d`;
+        ws.getCell(`D${r}`).value = aFechaDDMMYYYY(c.inicio);
+        ws.getCell(`E${r}`).value = aFechaDDMMYYYY(c.fin);
+        ws.getCell(`H${r}`).value = t.predecesora ? `Depende de tarea #${t.predecesora}` : "";
+      });
+
+      const outBuffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([outBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const nombreArchivo = `Cronograma_${(proyecto || "proyecto").slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}_${fechaLocalHoy()}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error generando el Excel. Revisa la consola.");
+    } finally {
+      setGenerando(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <button onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Menú SAIEA OBRAS
+            </button>
+            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              CRONOGRAMA DE OBRA
+            </div>
+            <div className="text-[11px]" style={{ color: GOLD }}>
+              Reformas y Remodelaciones
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <div className="p-4 max-w-xl mx-auto">
+        <div className="grid grid-cols-2 gap-3">
+          <Campo label="Proyecto">
+            <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} />
+          </Campo>
+          <Campo label="No. de Contrato">
+            <Input value={noContrato} onChange={(e) => setNoContrato(e.target.value)} />
+          </Campo>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Campo label="Ubicación">
+            <Input value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} />
+          </Campo>
+          <Campo label="Especialidad">
+            <Input value={especialidad} onChange={(e) => setEspecialidad(e.target.value)} />
+          </Campo>
+        </div>
+        <Campo label="Fecha de inicio del proyecto">
+          <Input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+        </Campo>
+
+        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2" style={{ background: NAVY }}>
+          TAREAS
+        </div>
+        <div className="border border-t-0 rounded-b-lg p-3" style={{ borderColor: LINE }}>
+          <div className="text-[11px] text-gray-500 mb-3">
+            En "Depende de" escribe el número de la tarea de la lista que debe terminar antes de que esta empiece (déjalo vacío si no depende de ninguna).
+          </div>
+          {tareas.map((t, i) => (
+            <div key={i} className="mb-3 pb-3 border-b last:border-b-0" style={{ borderColor: LINE }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11.5px] font-bold" style={{ color: NAVY }}>
+                  Tarea #{i + 1}
+                </span>
+                {tareas.length > 1 && (
+                  <button onClick={() => quitarTarea(i)} className="text-[11px] text-red-500">
+                    Quitar
+                  </button>
+                )}
+              </div>
+              <BuscadorActividadTarea
+                value={t.nombre}
+                onSeleccionar={(sel) => {
+                  const nuevas = [...tareas];
+                  const sugerida = sugerirDuracion(sel.actividad);
+                  nuevas[i] = {
+                    ...nuevas[i],
+                    nombre: sel.actividad,
+                    duracion: sugerida !== null ? String(sugerida) : nuevas[i].duracion,
+                  };
+                  setTareas(nuevas);
+                }}
+              />
+              {sugerirDuracion(t.nombre) !== null && (
+                <div className="text-[10.5px] mb-1.5" style={{ color: GOLD }}>
+                  ⚡ Duración sugerida según APU + Presupuesto guardados: {sugerirDuracion(t.nombre)} días (editable)
+                </div>
+              )}
+              <div className="flex gap-1.5">
+                <input
+                  placeholder="Duración (días)"
+                  type="number"
+                  value={t.duracion}
+                  onChange={(e) => actualizarTarea(i, "duracion", e.target.value)}
+                  className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"
+                  style={{ borderColor: LINE }}
+                />
+                <input
+                  placeholder="Depende de tarea #"
+                  type="number"
+                  value={t.predecesora}
+                  onChange={(e) => actualizarTarea(i, "predecesora", e.target.value)}
+                  className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"
+                  style={{ borderColor: LINE }}
+                />
+              </div>
+              {t.nombre && calculadas[i] && (
+                <div className="text-[11px] text-gray-500 mt-1">
+                  {aFechaDDMMYYYY(calculadas[i].inicio)} → {aFechaDDMMYYYY(calculadas[i].fin)}
+                </div>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={agregarTarea}
+            className="w-full py-2 rounded-lg text-[12.5px] font-semibold border-2"
+            style={{ borderColor: GOLD, color: NAVY }}
+          >
+            + Agregar otra tarea
+          </button>
+        </div>
+
+        <div className="p-3 rounded-lg my-4 text-center" style={{ background: NAVY }}>
+          <div className="text-[11px]" style={{ color: GOLD }}>DURACIÓN TOTAL DEL PROYECTO</div>
+          <div className="text-white font-bold text-[16px]">
+            {aFechaDDMMYYYY(fechaInicio)} — {aFechaDDMMYYYY(fechaFinProyecto)} ({duracionTotalDias} días)
+          </div>
+        </div>
+
+        <button
+          onClick={generarExcel}
+          disabled={generando}
+          className="w-full py-3.5 rounded-xl text-white font-bold text-[14.5px]"
+          style={{ background: generando ? "#9AA0A8" : GOLD }}
+        >
+          {generando ? "Generando..." : "Descargar Cronograma en Excel"}
+        </button>
+      </div>
+    </div>
+  );
+}
