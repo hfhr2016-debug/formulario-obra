@@ -298,6 +298,7 @@ export default function FormularioAPU({ onVolver }) {
           actividad: actividad.actividad,
           unidad: actividad.unidad,
           total: totalDirectoUnitario,
+          rendimiento: Number(rendimiento) || 0,
           fecha: fechaLocalHoy(),
         };
         localStorage.setItem(clave, JSON.stringify(guardados));

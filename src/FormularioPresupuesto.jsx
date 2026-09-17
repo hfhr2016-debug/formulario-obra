@@ -352,6 +352,26 @@ export default function FormularioPresupuesto({ onVolver }) {
         });
       });
 
+      try {
+        const clave = "ryr_presupuesto_cantidades";
+        const guardadas = {};
+        CAPITULOS.forEach((cap, ci) => {
+          cap.items.forEach((it, ii) => {
+            const v = valores[`${ci}-${ii}`];
+            if (v && Number(v.cant) > 0) {
+              guardadas[it.actividad.trim().toLowerCase()] = {
+                actividad: it.actividad,
+                unidad: it.unidad,
+                cantidad: Number(v.cant),
+              };
+            }
+          });
+        });
+        localStorage.setItem(clave, JSON.stringify(guardadas));
+      } catch (e) {
+        console.warn("No se pudieron guardar las cantidades en memoria local:", e);
+      }
+
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
