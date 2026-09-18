@@ -314,7 +314,7 @@ export default function FormularioCantidades({ onVolver }) {
     }
     setGenerando(true);
     try {
-      const resp = await fetch("/plantilla-cantidades.xlsx");
+      const resp = await fetch("/plantilla-cantidades.xlsx", { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);

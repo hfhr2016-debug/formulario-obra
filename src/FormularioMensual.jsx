@@ -297,7 +297,7 @@ export default function FormularioMensual({ onVolver }) {
     try {
       let buffer;
       if (archivoBase) buffer = await archivoBase.arrayBuffer();
-      else { const resp = await fetch("/plantilla-mensual.xlsx"); buffer = await resp.arrayBuffer(); }
+      else { const resp = await fetch("/plantilla-mensual.xlsx", { cache: "no-store" }); buffer = await resp.arrayBuffer(); }
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
       const wsFicha = workbook.getWorksheet("Ficha Técnica del Proyecto");

@@ -316,7 +316,7 @@ export default function FormularioPresupuesto({ onVolver }) {
       if (archivoBase) {
         buffer = await archivoBase.arrayBuffer();
       } else {
-        const resp = await fetch("/plantilla-presupuesto.xlsx");
+        const resp = await fetch("/plantilla-presupuesto.xlsx", { cache: "no-store" });
         buffer = await resp.arrayBuffer();
       }
       const workbook = new ExcelJS.Workbook();

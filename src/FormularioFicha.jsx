@@ -60,7 +60,7 @@ export default function FormularioFicha({ onVolver }) {
   async function generarExcel() {
     setGenerando(true);
     try {
-      const resp = await fetch("/plantilla-ficha.xlsx");
+      const resp = await fetch("/plantilla-ficha.xlsx", { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
