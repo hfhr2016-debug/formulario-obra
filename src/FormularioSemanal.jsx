@@ -181,8 +181,6 @@ export default function FormularioSemanal({ onVolver }) {
   const [avances, setAvances] = useState({}); // { capIndex: {prog, real} }
 
   const [actividades, setActividades] = useState([{ ubicacion: "", descripcion: "", avance: "", responsable: "", observaciones: "" }]);
-  const [ingresos, setIngresos] = useState([{ concepto: "", fecha: "", valor: "" }]);
-  const [egresos, setEgresos] = useState([{ concepto: "", fecha: "", valor: "" }]);
 
   const [horasHombre, setHorasHombre] = useState("");
   const [observacionesHSE, setObservacionesHSE] = useState("");
@@ -206,9 +204,6 @@ export default function FormularioSemanal({ onVolver }) {
   }
 
   const [generando, setGenerando] = useState(false);
-
-  const totalIngresos = ingresos.reduce((acc, i) => acc + (Number(i.valor) || 0), 0);
-  const totalEgresos = egresos.reduce((acc, e) => acc + (Number(e.valor) || 0), 0);
 
   async function cargarArchivoExistente(file) {
     setCargando(true);
@@ -329,23 +324,6 @@ export default function FormularioSemanal({ onVolver }) {
         wsSem.getCell(`G${r}`).value = act.avance;
         wsSem.getCell(`I${r}`).value = act.responsable;
         wsSem.getCell(`K${r}`).value = act.observaciones;
-      });
-
-      ingresos.forEach((ing, i) => {
-        if (!ing.concepto) return;
-        const r = 61 + i;
-        if (r > 65) return;
-        wsSem.getCell(`A${r}`).value = ing.concepto;
-        wsSem.getCell(`D${r}`).value = ing.fecha ? aFechaDDMMYYYY(ing.fecha) : "";
-        wsSem.getCell(`E${r}`).value = Number(ing.valor) || 0;
-      });
-      egresos.forEach((eg, i) => {
-        if (!eg.concepto) return;
-        const r = 61 + i;
-        if (r > 65) return;
-        wsSem.getCell(`H${r}`).value = eg.concepto;
-        wsSem.getCell(`K${r}`).value = eg.fecha ? aFechaDDMMYYYY(eg.fecha) : "";
-        wsSem.getCell(`M${r}`).value = Number(eg.valor) || 0;
       });
 
       wsSem.getCell("A71").value = Number(horasHombre) || 0;
@@ -535,40 +513,6 @@ export default function FormularioSemanal({ onVolver }) {
               + Agregar actividad
             </button>
           )}
-        </div>
-
-        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>AVANCE FINANCIERO — INGRESOS Y EGRESOS</div>
-        <div className="p-3 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
-          <div className="text-[12px] font-bold mb-2" style={{ color: NAVY }}>Ingresos del período</div>
-          {ingresos.map((ing, i) => (
-            <div key={i} className="flex gap-1.5 mb-1.5">
-              <input placeholder="Concepto" value={ing.concepto} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], concepto: e.target.value }; setIngresos(c); }} className="flex-[2] border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
-              <input type="date" value={ing.fecha} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], fecha: e.target.value }; setIngresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[11px] min-w-0" style={{ borderColor: LINE }} />
-              <input placeholder="Valor" type="number" value={ing.valor} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], valor: e.target.value }; setIngresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
-            </div>
-          ))}
-          {ingresos.length < 5 && (
-            <button type="button" onClick={() => setIngresos([...ingresos, { concepto: "", fecha: "", valor: "" }])} className="w-full py-1.5 rounded-lg text-[11.5px] font-semibold border mb-3" style={{ borderColor: GOLD, color: NAVY }}>
-              + Agregar ingreso
-            </button>
-          )}
-          <div className="text-[12px] font-bold mb-2 mt-2" style={{ color: NAVY }}>Egresos / Gastos del período</div>
-          {egresos.map((eg, i) => (
-            <div key={i} className="flex gap-1.5 mb-1.5">
-              <input placeholder="Concepto" value={eg.concepto} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], concepto: e.target.value }; setEgresos(c); }} className="flex-[2] border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
-              <input type="date" value={eg.fecha} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], fecha: e.target.value }; setEgresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[11px] min-w-0" style={{ borderColor: LINE }} />
-              <input placeholder="Valor" type="number" value={eg.valor} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], valor: e.target.value }; setEgresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
-            </div>
-          ))}
-          {egresos.length < 5 && (
-            <button type="button" onClick={() => setEgresos([...egresos, { concepto: "", fecha: "", valor: "" }])} className="w-full py-1.5 rounded-lg text-[11.5px] font-semibold border" style={{ borderColor: GOLD, color: NAVY }}>
-              + Agregar egreso
-            </button>
-          )}
-          <div className="mt-3 p-2 rounded-lg text-center" style={{ background: "#F0F2F5" }}>
-            <div className="text-[11px] text-gray-500">Balance del período</div>
-            <div className="text-[15px] font-bold" style={{ color: NAVY }}>{formatoMoneda(totalIngresos - totalEgresos)}</div>
-          </div>
         </div>
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>ASPECTOS HSE Y AMBIENTALES</div>
