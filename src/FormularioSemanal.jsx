@@ -472,6 +472,36 @@ export default function FormularioSemanal({ onVolver }) {
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>AVANCE POR CAPÍTULO (% Programado y % Real)</div>
         <div className="p-2 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const guardados = JSON.parse(localStorage.getItem("ryr_avance_diario_capitulos") || "{}");
+                const nombres = Object.keys(guardados);
+                if (nombres.length === 0) {
+                  alert("Todavía no hay avances por capítulo guardados desde el Informe Diario en este dispositivo.");
+                  return;
+                }
+                const nuevos = { ...avances };
+                let coincidencias = 0;
+                CAPITULOS.forEach((cap, ci) => {
+                  if (guardados[cap.nombre] !== undefined) {
+                    nuevos[ci] = { ...(nuevos[ci] || { prog: "" }), real: String(guardados[cap.nombre].porcentaje) };
+                    coincidencias++;
+                  }
+                });
+                setAvances(nuevos);
+                alert(`% Real cargado desde el Informe Diario: ${coincidencias} capítulo(s) actualizados.`);
+              } catch (err) {
+                console.error(err);
+                alert("No se pudo leer la memoria del Informe Diario.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            ⚡ Cargar % Real desde el Informe Diario guardado en este dispositivo
+          </button>
           <div className="text-[11px] text-gray-500 mb-2 px-1">Escribe el % de avance programado y el % real ejecutado de cada capítulo, como decimal entre 0 y 1 en pantalla, o directo el número entero (ej: escribe 25 para 25%).</div>
           {CAPITULOS.map((cap, ci) => (
             <CapituloAvance
