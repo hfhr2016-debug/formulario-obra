@@ -7,6 +7,7 @@ import FormularioCronograma from "./FormularioCronograma";
 import FormularioCantidades from "./FormularioCantidades";
 import FormularioSemanal from "./FormularioSemanal";
 import FormularioActa from "./FormularioActa";
+import FormularioMensual from "./FormularioMensual";
 import {
   ChevronDown,
   Plus,
@@ -1250,7 +1251,7 @@ const MODULOS = [
   { id: "cantidades", nombre: "Cantidades de Obra", icono: "/icons/icon-cantidades.png", activo: true },
   { id: "diario", nombre: "Informe Diario", icono: "/icons/icon-informe-diario.png", activo: true },
   { id: "semanal", nombre: "Informe Semanal", icono: "/icons/icon-informe-semanal.png", activo: true },
-  { id: "mensual", nombre: "Informe Mensual", icono: "/icons/icon-informe-mensual.png", activo: false },
+  { id: "mensual", nombre: "Informe Mensual", icono: "/icons/icon-informe-mensual.png", activo: true },
   { id: "memorias", nombre: "Memorias de Cálculo", icono: "/icons/icon-memorias.png", activo: false },
   { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: true },
 ];
@@ -1339,6 +1340,9 @@ export default function App() {
   }
   if (vista === "acta") {
     return <FormularioActa onVolver={() => setVista("inicio")} />;
+  }
+  if (vista === "mensual") {
+    return <FormularioMensual onVolver={() => setVista("inicio")} />;
   }
   return <Inicio onSeleccionar={setVista} />;
 }
