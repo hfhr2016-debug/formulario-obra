@@ -6,6 +6,7 @@ import FormularioPresupuesto from "./FormularioPresupuesto";
 import FormularioCronograma from "./FormularioCronograma";
 import FormularioCantidades from "./FormularioCantidades";
 import FormularioSemanal from "./FormularioSemanal";
+import FormularioActa from "./FormularioActa";
 import {
   ChevronDown,
   Plus,
@@ -147,6 +148,8 @@ const emptyOtra = () => ({
 const emptyManoObra = () => ({ cargo: "", cant: "", tiempo: "" });
 const emptyEquipo = () => ({ descripcion: "", cant: "", tiempo: "" });
 const emptyHoraPerdida = () => ({ motivo: "", inicio: "", fin: "", total: "" });
+const emptyAvanceCap = () => ({ capitulo: "", porcentaje: "" });
+const NOMBRES_CAPITULOS = ["PRELIMINARES", "MOVIMIENTO DE TIERRAS", "CIMENTACIONES", "ESTRUCTURA", "MAMPOSTERÍA", "CUBIERTAS", "IMPERMEABILIZACIONES", "PAÑETES Y REVOQUES", "PISOS Y ENCHAPES", "PINTURA", "CARPINTERÍA", "VIDRIOS", "INSTALACIONES HIDROSANITARIAS", "INSTALACIONES ELÉCTRICAS", "COMUNICACIONES Y SEGURIDAD", "CLIMATIZACIÓN Y VENTILACIÓN", "GAS", "URBANISMO Y EXTERIORES", "OBRAS COMPLEMENTARIAS", "ASEO, ENTREGA Y CIERRE", "ASCENSORES", "GESTIÓN, DISEÑO Y ADMINISTRACIÓN"];
 
 function Section({ id, title, subtitle, open, onToggle, children, count }) {
   return (
@@ -490,6 +493,7 @@ function CapturaAvanceObra({ onVolver }) {
 
   const [cantidades, setCantidades] = useState([emptyCantidad()]);
   const [otras, setOtras] = useState([emptyOtra()]);
+  const [avanceCapitulos, setAvanceCapitulos] = useState([emptyAvanceCap()]);
   const [manoObra, setManoObra] = useState([emptyManoObra()]);
   const [equipos, setEquipos] = useState([emptyEquipo()]);
   const [horasPerdidas, setHorasPerdidas] = useState([emptyHoraPerdida()]);
@@ -807,6 +811,37 @@ function CapturaAvanceObra({ onVolver }) {
         }
       }
 
+      try {
+        const clave = "ryr_avance_diario_capitulos";
+        const guardados = JSON.parse(localStorage.getItem(clave) || "{}");
+        avanceCapitulos
+          .filter((r) => r.capitulo && r.porcentaje !== "")
+          .forEach((r) => {
+            guardados[r.capitulo] = { porcentaje: Number(r.porcentaje) || 0, fecha: general.fecha || "" };
+          });
+        localStorage.setItem(clave, JSON.stringify(guardados));
+      } catch (e) {
+        console.warn("No se pudo guardar el avance por capítulo en memoria local:", e);
+      }
+
+      try {
+        const parsearHoras = (texto) => {
+          const m = String(texto || "").match(/[\d.]+/);
+          return m ? parseFloat(m[0]) : 0;
+        };
+        const horasHoyManoObra = manoObra
+          .filter((r) => r.cargo)
+          .reduce((acc, r) => acc + (Number(r.cant) || 0) * parsearHoras(r.tiempo), 0);
+        if (horasHoyManoObra > 0 && general.fecha) {
+          const claveHoras = "ryr_horas_hombre_diario";
+          const guardadasHoras = JSON.parse(localStorage.getItem(claveHoras) || "{}");
+          guardadasHoras[general.fecha] = horasHoyManoObra;
+          localStorage.setItem(claveHoras, JSON.stringify(guardadasHoras));
+        }
+      } catch (e) {
+        console.warn("No se pudieron guardar las horas hombre en memoria local:", e);
+      }
+
       const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -979,6 +1014,39 @@ function CapturaAvanceObra({ onVolver }) {
             </RowCard>
           ))}
           <AddButton onClick={() => addRow(setOtras, emptyOtra)} label="Agregar actividad" />
+        </Section>
+
+        <Section
+          id="avanceCapitulos"
+          title="Avance por capítulo (para Informe Semanal)"
+          subtitle="Opcional — conecta con el Informe Semanal"
+          open={active === "avanceCapitulos"}
+          onToggle={toggle}
+          count={countFilled(avanceCapitulos)}
+        >
+          <div className="text-[11px] mb-2" style={{ color: "#7A7F87" }}>
+            Reporta aquí el % real acumulado de avance (0 a 100) de los capítulos en los que trabajaste hoy. Se guarda en este dispositivo para que el Informe Semanal lo sugiera solo.
+          </div>
+          {avanceCapitulos.map((r, i) => (
+            <RowCard key={i} onRemove={() => removeRow(setAvanceCapitulos, i)}>
+              <div className="col-span-2">
+                <label className="block text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Capítulo</label>
+                <select
+                  value={r.capitulo}
+                  onChange={(e) => updateRow(setAvanceCapitulos, i, "capitulo", e.target.value)}
+                  className="w-full text-[13px] px-2.5 py-2 rounded-lg border outline-none"
+                  style={{ borderColor: LINE }}
+                >
+                  <option value="">Selecciona...</option>
+                  {NOMBRES_CAPITULOS.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <Field label="% Real acumulado" type="number" value={r.porcentaje} onChange={(v) => updateRow(setAvanceCapitulos, i, "porcentaje", v)} placeholder="Ej: 35" />
+            </RowCard>
+          ))}
+          <AddButton onClick={() => addRow(setAvanceCapitulos, emptyAvanceCap)} label="Agregar capítulo" />
         </Section>
 
         <Section
@@ -1184,7 +1252,7 @@ const MODULOS = [
   { id: "semanal", nombre: "Informe Semanal", icono: "/icons/icon-informe-semanal.png", activo: true },
   { id: "mensual", nombre: "Informe Mensual", icono: "/icons/icon-informe-mensual.png", activo: false },
   { id: "memorias", nombre: "Memorias de Cálculo", icono: "/icons/icon-memorias.png", activo: false },
-  { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: false },
+  { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: true },
 ];
 
 function Inicio({ onSeleccionar }) {
@@ -1268,6 +1336,9 @@ export default function App() {
   }
   if (vista === "semanal") {
     return <FormularioSemanal onVolver={() => setVista("inicio")} />;
+  }
+  if (vista === "acta") {
+    return <FormularioActa onVolver={() => setVista("inicio")} />;
   }
   return <Inicio onSeleccionar={setVista} />;
 }
