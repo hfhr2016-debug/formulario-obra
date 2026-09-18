@@ -190,7 +190,7 @@ export default function FormularioActa({ onVolver }) {
   async function generarExcel() {
     setGenerando(true);
     try {
-      const resp = await fetch("/plantilla-acta.xlsx", { cache: "no-store" });
+      const resp = await fetch("/plantilla-acta.xlsx?v=" + Date.now(), { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);

@@ -322,7 +322,7 @@ export default function FormularioAPU({ onVolver }) {
     }
     setGenerando(true);
     try {
-      const resp = await fetch("/plantilla-apu.xlsx", { cache: "no-store" });
+      const resp = await fetch("/plantilla-apu.xlsx?v=" + Date.now(), { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);

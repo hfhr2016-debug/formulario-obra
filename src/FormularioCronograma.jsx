@@ -231,7 +231,7 @@ export default function FormularioCronograma({ onVolver }) {
     }
     setGenerando(true);
     try {
-      const resp = await fetch("/plantilla-cronograma.xlsx", { cache: "no-store" });
+      const resp = await fetch("/plantilla-cronograma.xlsx?v=" + Date.now(), { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);

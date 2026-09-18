@@ -273,7 +273,7 @@ export default function FormularioSemanal({ onVolver }) {
     try {
       let buffer;
       if (archivoBase) buffer = await archivoBase.arrayBuffer();
-      else { const resp = await fetch("/plantilla-semanal.xlsx", { cache: "no-store" }); buffer = await resp.arrayBuffer(); }
+      else { const resp = await fetch("/plantilla-semanal.xlsx?v=" + Date.now(), { cache: "no-store" }); buffer = await resp.arrayBuffer(); }
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
       const wsFicha = workbook.getWorksheet("Ficha Técnica del Proyecto");
