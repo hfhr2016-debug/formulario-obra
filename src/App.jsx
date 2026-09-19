@@ -887,6 +887,21 @@ function CapturaAvanceObra({ onVolver }) {
         console.warn("No se pudieron guardar las horas hombre en memoria local:", e);
       }
 
+      try {
+        const claveAvances = "ryr_avance_diario_actividades";
+        const lista = JSON.parse(localStorage.getItem(claveAvances) || "[]");
+        [...cantidades, ...otras].forEach((r) => {
+          const nombreAct = (r.descripcion || "").trim();
+          const cant = Number(r.avanceDiario) || 0;
+          if (nombreAct && cant > 0 && general.fecha) {
+            lista.push({ actividad: nombreAct, fecha: general.fecha, cantidad: cant, unidad: r.unidad || "" });
+          }
+        });
+        localStorage.setItem(claveAvances, JSON.stringify(lista.slice(-500)));
+      } catch (e) {
+        console.warn("No se pudo guardar el avance diario por actividad:", e);
+      }
+
       const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
