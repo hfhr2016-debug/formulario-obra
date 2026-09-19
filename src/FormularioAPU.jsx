@@ -393,9 +393,9 @@ export default function FormularioAPU({ onVolver }) {
           ws.getCell(`H${r}`).value = Number(f.vrUnit) || 0;
         });
       };
-      escribirFilas(materiales, 23);
-      escribirFilas(manoObra, 32);
-      escribirFilas(equipos, 41);
+      escribirFilas(materiales, 22);
+      escribirFilas(manoObra, 31);
+      escribirFilas(equipos, 40);
 
       const sumar = (filas) =>
         filas.reduce((acc, f) => acc + (Number(f.cant) || 0) * (Number(f.vrUnit) || 0), 0);
@@ -421,10 +421,10 @@ export default function FormularioAPU({ onVolver }) {
         console.warn("No se pudo guardar el APU en memoria local:", e);
       }
 
-      ws.getCell("C55").value = elaboradoNombre;
-      ws.getCell("C56").value = elaboradoCargo;
-      ws.getCell("H55").value = interventoriaNombre;
-      ws.getCell("H56").value = interventoriaCargo;
+      ws.getCell("C54").value = elaboradoNombre;
+      ws.getCell("C55").value = elaboradoCargo;
+      ws.getCell("H54").value = interventoriaNombre;
+      ws.getCell("H55").value = interventoriaCargo;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
