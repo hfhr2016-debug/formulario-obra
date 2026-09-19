@@ -179,7 +179,7 @@ function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
   );
 }
 
-const itemVacio = () => ({ actividad: "", unidad: "", cantContractual: "", cantAnterior: "", cantActa: "", observacion: "" });
+const itemVacio = () => ({ actividad: "", unidad: "", cantContractual: "", cantAnterior: "", cantActa: "", precioUnitario: "", observacion: "" });
 
 export default function FormularioActa({ onVolver }) {
   const [actaNo, setActaNo] = useState("");
@@ -205,7 +205,9 @@ export default function FormularioActa({ onVolver }) {
 
   const [valorContractual, setValorContractual] = useState("");
   const [valorActasAnteriores, setValorActasAnteriores] = useState("");
-  const [valorPresenteActa, setValorPresenteActa] = useState("");
+  const valorPresenteActa = useMemo(() => {
+    return items.reduce((acc, it) => acc + (Number(it.cantActa) || 0) * (Number(it.precioUnitario) || 0), 0);
+  }, [items]);
   const [anticipo, setAnticipo] = useState("");
   const [amortizacion, setAmortizacion] = useState("");
   const [retenciones, setRetenciones] = useState("");
@@ -272,12 +274,12 @@ export default function FormularioActa({ onVolver }) {
         ws.getCell(`F${r}`).value = Number(it.cantContractual) || 0;
         ws.getCell(`G${r}`).value = Number(it.cantAnterior) || 0;
         ws.getCell(`H${r}`).value = Number(it.cantActa) || 0;
+        ws.getCell(`M${r}`).value = Number(it.precioUnitario) || 0;
         ws.getCell(`L${r}`).value = it.observacion;
       });
 
       ws.getCell("E36").value = Number(valorContractual) || 0;
       ws.getCell("H36").value = Number(valorActasAnteriores) || 0;
-      ws.getCell("K36").value = Number(valorPresenteActa) || 0;
       ws.getCell("H37").value = Number(anticipo) || 0;
       ws.getCell("K37").value = Number(amortizacion) || 0;
       ws.getCell("N37").value = Number(retenciones) || 0;
@@ -490,6 +492,7 @@ export default function FormularioActa({ onVolver }) {
                   const copia = [...items];
                   let cantContractual = copia[i].cantContractual;
                   let cantAnterior = copia[i].cantAnterior;
+                  let precioUnitario = copia[i].precioUnitario;
                   try {
                     const pres = JSON.parse(localStorage.getItem("ryr_presupuesto_cantidades") || "{}");
                     const match = Object.values(pres).find((p) => p.actividad === v);
@@ -499,7 +502,12 @@ export default function FormularioActa({ onVolver }) {
                     const acum = JSON.parse(localStorage.getItem("ryr_acta_acumulado") || "{}");
                     if (acum[v] !== undefined) cantAnterior = String(acum[v]);
                   } catch (e) {}
-                  copia[i] = { ...copia[i], actividad: v, unidad: LISTA_ACTIVIDADES_INFO[v]?.unidad || copia[i].unidad, cantContractual, cantAnterior };
+                  try {
+                    const apus = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
+                    const apu = apus[v.trim().toLowerCase()];
+                    if (apu && apu.total) precioUnitario = String(apu.total);
+                  } catch (e) {}
+                  copia[i] = { ...copia[i], actividad: v, unidad: LISTA_ACTIVIDADES_INFO[v]?.unidad || copia[i].unidad, cantContractual, cantAnterior, precioUnitario };
                   setItems(copia);
                 }}
                 catalogo={LISTA_ACTIVIDADES}
@@ -510,6 +518,12 @@ export default function FormularioActa({ onVolver }) {
                 <input placeholder="Cant. contractual" type="number" value={it.cantContractual} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantContractual: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Cant. anterior" type="number" value={it.cantAnterior} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantAnterior: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Cant. esta acta" type="number" value={it.cantActa} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantActa: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+              </div>
+              <div className="mt-1.5">
+                <input placeholder="Precio unitario" type="number" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                {it.cantActa && it.precioUnitario && (
+                  <div className="text-[11px] text-gray-500 mt-1">Valor de esta actividad: {(Number(it.cantActa) * Number(it.precioUnitario)).toLocaleString("es-CO")}</div>
+                )}
               </div>
               <input placeholder="Observación" value={it.observacion} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], observacion: e.target.value }; setItems(c); }} className="w-full border rounded px-2 py-1.5 text-[12px] mt-1.5" style={{ borderColor: LINE }} />
             </div>
@@ -547,40 +561,11 @@ export default function FormularioActa({ onVolver }) {
             ⚡ Sumar desde actas anteriores guardadas (mismo proyecto)
           </button>
           <Campo label="Valor presente acta">
-            <Input type="number" value={valorPresenteActa} onChange={(e) => setValorPresenteActa(e.target.value)} />
+            <div className="w-full border rounded-lg px-3 py-2.5 text-[14px] font-semibold" style={{ borderColor: LINE, background: PAPER, color: NAVY }}>
+              {valorPresenteActa.toLocaleString("es-CO")}
+            </div>
           </Campo>
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                const guardados = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
-                let total = 0;
-                let sinPrecio = [];
-                items.forEach((it) => {
-                  if (!it.actividad || !it.cantActa) return;
-                  const apu = guardados[it.actividad.trim().toLowerCase()];
-                  if (apu && apu.total) {
-                    total += Number(it.cantActa) * apu.total;
-                  } else {
-                    sinPrecio.push(it.actividad);
-                  }
-                });
-                setValorPresenteActa(String(Math.round(total)));
-                if (sinPrecio.length > 0) {
-                  alert(`Calculado, pero estas actividades no tienen APU guardado (no se sumaron): ${sinPrecio.join(", ")}`);
-                } else {
-                  alert(`Valor calculado: ${total.toLocaleString("es-CO")} (cantidad de esta acta × precio unitario del APU guardado, por actividad).`);
-                }
-              } catch (err) {
-                alert("No se pudo calcular. Verifica que hayas generado los APU's de estas actividades.");
-              }
-            }}
-            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
-            style={{ background: NAVY }}
-          >
-            ⚡ Calcular desde Cant. esta acta × precio unitario (APU's guardados)
-          </button>
-          <div className="text-[11px] text-gray-500 mb-3">Este valor queda guardado en la memoria del dispositivo para que Informe Mensual lo pueda usar como Ingreso del período. <b>Nota:</b> el Acta de Obra no tiene una sección propia de AIU/IVA — si tus precios de APU's son de costo directo, súmale el AIU/IVA manualmente antes de poner el valor aquí, o usa el "Valor Total" de Presupuesto (que ya incluye AIU) como referencia.</div>
+          <div className="text-[11px] text-gray-500 mb-3">Se calcula solo (Cant. esta acta × Precio unitario, sumado de todas las actividades). <b>Nota:</b> si tus precios de APU's son de costo directo, súmale el AIU/IVA al precio unitario de cada actividad, o usa el "Valor Total" de Presupuesto (que ya incluye AIU) como referencia.</div>
           <div className="grid grid-cols-3 gap-2">
             <Campo label="Anticipo"><Input type="number" value={anticipo} onChange={(e) => setAnticipo(e.target.value)} /></Campo>
             <Campo label="Amortización"><Input type="number" value={amortizacion} onChange={(e) => setAmortizacion(e.target.value)} /></Campo>
