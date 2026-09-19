@@ -273,8 +273,8 @@ export default function FormularioActa({ onVolver }) {
         ws.getCell(`E${r}`).value = it.unidad;
         ws.getCell(`F${r}`).value = Number(it.cantContractual) || 0;
         ws.getCell(`G${r}`).value = Number(it.cantAnterior) || 0;
-        ws.getCell(`H${r}`).value = Number(it.precioUnitario) || 0;
-        ws.getCell(`J${r}`).value = Number(it.cantActa) || 0;
+        ws.getCell(`H${r}`).value = Number(it.cantActa) || 0;
+        ws.getCell(`I${r}`).value = Number(it.precioUnitario) || 0;
         ws.getCell(`N${r}`).value = it.observacion;
       });
 
@@ -519,8 +519,8 @@ export default function FormularioActa({ onVolver }) {
                 <input placeholder="Cant. anterior" type="number" value={it.cantAnterior} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantAnterior: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               </div>
               <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-                <input placeholder="Precio unitario" type="number" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Cant. esta acta" type="number" value={it.cantActa} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantActa: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Precio unitario" type="number" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               </div>
               <div className="mt-1.5">
                 {it.cantActa && it.precioUnitario && (
