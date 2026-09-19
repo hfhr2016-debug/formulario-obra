@@ -273,9 +273,9 @@ export default function FormularioActa({ onVolver }) {
         ws.getCell(`E${r}`).value = it.unidad;
         ws.getCell(`F${r}`).value = Number(it.cantContractual) || 0;
         ws.getCell(`G${r}`).value = Number(it.cantAnterior) || 0;
-        ws.getCell(`H${r}`).value = Number(it.cantActa) || 0;
-        ws.getCell(`M${r}`).value = Number(it.precioUnitario) || 0;
-        ws.getCell(`L${r}`).value = it.observacion;
+        ws.getCell(`H${r}`).value = Number(it.precioUnitario) || 0;
+        ws.getCell(`J${r}`).value = Number(it.cantActa) || 0;
+        ws.getCell(`N${r}`).value = it.observacion;
       });
 
       ws.getCell("E36").value = Number(valorContractual) || 0;
@@ -514,13 +514,15 @@ export default function FormularioActa({ onVolver }) {
                 placeholder="Actividad / partida"
               />
               {it.unidad && <div className="text-[10.5px] text-gray-500 mt-1 mb-1.5">Unidad: {it.unidad} · Cant. contractual y anterior se sugieren solas desde Presupuesto y actas anteriores (editables)</div>}
-              <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+              <div className="grid grid-cols-2 gap-1.5 mt-1.5">
                 <input placeholder="Cant. contractual" type="number" value={it.cantContractual} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantContractual: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Cant. anterior" type="number" value={it.cantAnterior} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantAnterior: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                <input placeholder="Precio unitario" type="number" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Cant. esta acta" type="number" value={it.cantActa} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantActa: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               </div>
               <div className="mt-1.5">
-                <input placeholder="Precio unitario" type="number" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 {it.cantActa && it.precioUnitario && (
                   <div className="text-[11px] text-gray-500 mt-1">Valor de esta actividad: {(Number(it.cantActa) * Number(it.precioUnitario)).toLocaleString("es-CO")}</div>
                 )}
