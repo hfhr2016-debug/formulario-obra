@@ -287,6 +287,20 @@ export default function FormularioActa({ onVolver }) {
         console.warn("No se pudo guardar el valor del acta en memoria local:", e);
       }
 
+      try {
+        const claveAcum = "ryr_acta_acumulado";
+        const acum = JSON.parse(localStorage.getItem(claveAcum) || "{}");
+        items.forEach((it) => {
+          if (!it.actividad) return;
+          const anterior = Number(it.cantAnterior) || 0;
+          const estaActa = Number(it.cantActa) || 0;
+          acum[it.actividad] = anterior + estaActa;
+        });
+        localStorage.setItem(claveAcum, JSON.stringify(acum));
+      } catch (e) {
+        console.warn("No se pudo guardar el acumulado de cantidades:", e);
+      }
+
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const nombreArchivo = `Acta_de_Obra_${actaNo || fechaLocalHoy()}.xlsx`;
@@ -382,13 +396,24 @@ export default function FormularioActa({ onVolver }) {
                 value={it.actividad}
                 onChange={(v) => {
                   const copia = [...items];
-                  copia[i] = { ...copia[i], actividad: v, unidad: LISTA_ACTIVIDADES_INFO[v]?.unidad || copia[i].unidad };
+                  let cantContractual = copia[i].cantContractual;
+                  let cantAnterior = copia[i].cantAnterior;
+                  try {
+                    const pres = JSON.parse(localStorage.getItem("ryr_presupuesto_cantidades") || "{}");
+                    const match = Object.values(pres).find((p) => p.actividad === v);
+                    if (match && match.cantidad) cantContractual = String(match.cantidad);
+                  } catch (e) {}
+                  try {
+                    const acum = JSON.parse(localStorage.getItem("ryr_acta_acumulado") || "{}");
+                    if (acum[v] !== undefined) cantAnterior = String(acum[v]);
+                  } catch (e) {}
+                  copia[i] = { ...copia[i], actividad: v, unidad: LISTA_ACTIVIDADES_INFO[v]?.unidad || copia[i].unidad, cantContractual, cantAnterior };
                   setItems(copia);
                 }}
                 catalogo={LISTA_ACTIVIDADES}
                 placeholder="Actividad / partida"
               />
-              {it.unidad && <div className="text-[10.5px] text-gray-500 mt-1 mb-1.5">Unidad: {it.unidad}</div>}
+              {it.unidad && <div className="text-[10.5px] text-gray-500 mt-1 mb-1.5">Unidad: {it.unidad} · Cant. contractual y anterior se sugieren solas desde Presupuesto y actas anteriores (editables)</div>}
               <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                 <input placeholder="Cant. contractual" type="number" value={it.cantContractual} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantContractual: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Cant. anterior" type="number" value={it.cantAnterior} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantAnterior: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
@@ -460,7 +485,13 @@ export default function FormularioActa({ onVolver }) {
               <div className="grid grid-cols-3 gap-1.5">
                 <input placeholder="Responsable" value={o.responsable} onChange={(e) => { const c = [...observaciones]; c[i] = { ...c[i], responsable: e.target.value }; setObservaciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input type="date" value={o.fecha} onChange={(e) => { const c = [...observaciones]; c[i] = { ...c[i], fecha: e.target.value }; setObservaciones(c); }} className="border rounded px-2 py-1.5 text-[11px]" style={{ borderColor: LINE }} />
-                <input placeholder="Estado" value={o.estado} onChange={(e) => { const c = [...observaciones]; c[i] = { ...c[i], estado: e.target.value }; setObservaciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <select value={o.estado} onChange={(e) => { const c = [...observaciones]; c[i] = { ...c[i], estado: e.target.value }; setObservaciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }}>
+                  <option value="">Estado...</option>
+                  <option>Abierto</option>
+                  <option>En proceso</option>
+                  <option>Cerrado</option>
+                  <option>Pendiente por terceros</option>
+                </select>
               </div>
             </div>
           ))}
@@ -474,9 +505,12 @@ export default function FormularioActa({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>EVIDENCIA FOTOGRÁFICA</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-2">
-            {fotos.map((foto, i) => (
+            {fotos.slice(0, 4).map((foto, i) => (
               <CasillaFoto key={i} foto={foto} numero={i + 1} onChange={(f) => actualizarFoto(i, f)} onRemove={() => quitarFoto(i)} />
             ))}
+          </div>
+          <div className="w-1/2 mx-auto mt-2">
+            <CasillaFoto foto={fotos[4]} numero={5} onChange={(f) => actualizarFoto(4, f)} onRemove={() => quitarFoto(4)} />
           </div>
         </div>
 
