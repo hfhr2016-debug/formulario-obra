@@ -84,6 +84,51 @@ function CasillaFoto({ foto, onChange, onRemove, numero }) {
   );
 }
 
+function CampoNombre({ value, onChange, placeholder }) {
+  const [abierto, setAbierto] = useState(false);
+  const resultados = useMemo(() => {
+    if (!value || value.length < 1) return [];
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const q = value.toLowerCase();
+      return nombres.filter((n) => n.toLowerCase().includes(q)).slice(0, 6);
+    } catch (e) { return []; }
+  }, [value]);
+  function guardarNombre(v) {
+    if (!v || v.trim().length < 3) return;
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const limpio = v.trim();
+      if (!nombres.includes(limpio)) {
+        nombres.unshift(limpio);
+        localStorage.setItem("ryr_nombres_usados", JSON.stringify(nombres.slice(0, 200)));
+      }
+    } catch (e) {}
+  }
+  return (
+    <div className="relative">
+      <input
+        placeholder={placeholder || "Nombre"}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setAbierto(true); }}
+        onFocus={() => setAbierto(true)}
+        onBlur={() => { guardarNombre(value); setTimeout(() => setAbierto(false), 150); }}
+        className="w-full border rounded-lg px-3 py-2.5 text-[14px]"
+      />
+      {abierto && resultados.length > 0 && (
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {resultados.map((r, i) => (
+            <button key={i} type="button" onMouseDown={() => { onChange(r); setAbierto(false); }}
+              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50 text-[12.5px]">
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Campo({ label, children }) {
   return (
     <div className="mb-3">
@@ -365,19 +410,41 @@ export default function FormularioActa({ onVolver }) {
             <Campo label="Días de avance"><Input type="number" value={diasAvance} onChange={(e) => setDiasAvance(e.target.value)} /></Campo>
             <Campo label="% Tiempo avance"><Input type="number" value={porcentajeTiempo} onChange={(e) => setPorcentajeTiempo(e.target.value)} /></Campo>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const datos = JSON.parse(localStorage.getItem("ryr_cronograma_fechas") || "null");
+                if (!datos) { alert("No hay un Cronograma guardado todavía. Genera uno primero."); return; }
+                if (!hasta) { alert('Primero llena la fecha "Hasta" del acta (arriba).'); return; }
+                const dc = Number(datos.duracionTotalDias) || 0;
+                const da = Math.max(0, Math.round((new Date(hasta) - new Date(datos.fechaInicio)) / 86400000) + 1);
+                const pt = dc > 0 ? Math.min(100, (da / dc) * 100) : 0;
+                setDiasContractuales(String(dc));
+                setDiasAvance(String(da));
+                setPorcentajeTiempo(pt.toFixed(1));
+              } catch (err) {
+                alert("No se pudo leer el Cronograma guardado.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12px] font-semibold text-white mb-3"
+            style={{ background: NAVY }}
+          >
+            ⚡ Calcular desde Cronograma
+          </button>
           <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Contratante</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <Input placeholder="Nombre" value={contratanteNombre} onChange={(e) => setContratanteNombre(e.target.value)} />
+            <CampoNombre value={contratanteNombre} onChange={setContratanteNombre} />
             <BuscadorTexto value={contratanteCargo} onChange={setContratanteCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           </div>
           <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Contratista</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <Input placeholder="Nombre" value={contratistaNombre} onChange={(e) => setContratistaNombre(e.target.value)} />
+            <CampoNombre value={contratistaNombre} onChange={setContratistaNombre} />
             <BuscadorTexto value={contratistaCargo} onChange={setContratistaCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           </div>
           <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Interventor</div>
           <div className="grid grid-cols-2 gap-2">
-            <Input placeholder="Nombre" value={interventorNombre} onChange={(e) => setInterventorNombre(e.target.value)} />
+            <CampoNombre value={interventorNombre} onChange={setInterventorNombre} />
             <BuscadorTexto value={interventorCargo} onChange={setInterventorCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           </div>
         </div>
@@ -573,17 +640,17 @@ export default function FormularioActa({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>9. APROBACIONES Y FIRMAS</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="text-[11.5px] font-semibold mb-1.5" style={{ color: NAVY }}>Elaboró / Contratista</div>
-          <Input placeholder="Nombre" value={elabNombre} onChange={(e) => setElabNombre(e.target.value)} />
+          <CampoNombre value={elabNombre} onChange={setElabNombre} />
           <div className="h-2" />
           <BuscadorTexto value={elabCargo} onChange={setElabCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
 
           <div className="text-[11.5px] font-semibold mb-1.5 mt-3" style={{ color: NAVY }}>Revisó / Supervisión</div>
-          <Input placeholder="Nombre" value={revNombre} onChange={(e) => setRevNombre(e.target.value)} />
+          <CampoNombre value={revNombre} onChange={setRevNombre} />
           <div className="h-2" />
           <BuscadorTexto value={revCargo} onChange={setRevCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
 
           <div className="text-[11.5px] font-semibold mb-1.5 mt-3" style={{ color: NAVY }}>Aprobó / Contratante</div>
-          <Input placeholder="Nombre" value={aprNombre} onChange={(e) => setAprNombre(e.target.value)} />
+          <CampoNombre value={aprNombre} onChange={setAprNombre} />
           <div className="h-2" />
           <BuscadorTexto value={aprCargo} onChange={setAprCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
         </div>

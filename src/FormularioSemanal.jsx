@@ -29,6 +29,51 @@ function formatoMoneda(n) {
   return "$ " + Math.round(n || 0).toLocaleString("es-CO");
 }
 
+function CampoNombre({ value, onChange, placeholder }) {
+  const [abierto, setAbierto] = useState(false);
+  const resultados = useMemo(() => {
+    if (!value || value.length < 1) return [];
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const q = value.toLowerCase();
+      return nombres.filter((n) => n.toLowerCase().includes(q)).slice(0, 6);
+    } catch (e) { return []; }
+  }, [value]);
+  function guardarNombre(v) {
+    if (!v || v.trim().length < 3) return;
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const limpio = v.trim();
+      if (!nombres.includes(limpio)) {
+        nombres.unshift(limpio);
+        localStorage.setItem("ryr_nombres_usados", JSON.stringify(nombres.slice(0, 200)));
+      }
+    } catch (e) {}
+  }
+  return (
+    <div className="relative">
+      <input
+        placeholder={placeholder || "Nombre"}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setAbierto(true); }}
+        onFocus={() => setAbierto(true)}
+        onBlur={() => { guardarNombre(value); setTimeout(() => setAbierto(false), 150); }}
+        className="w-full border rounded-lg px-3 py-2.5 text-[14px]"
+      />
+      {abierto && resultados.length > 0 && (
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {resultados.map((r, i) => (
+            <button key={i} type="button" onMouseDown={() => { onChange(r); setAbierto(false); }}
+              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50 text-[12.5px]">
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Campo({ label, children }) {
   return (
     <div className="mb-3">
@@ -584,15 +629,15 @@ export default function FormularioSemanal({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>FIRMAS</div>
         <div className="p-3 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
           <div className="text-[11.5px] font-semibold mb-1.5" style={{ color: NAVY }}>Elaborado por</div>
-          <Input placeholder="Nombre" value={elabNombre} onChange={(e) => setElabNombre(e.target.value)} />
+          <CampoNombre value={elabNombre} onChange={setElabNombre} />
           <div className="h-2" />
           <BuscadorTexto value={elabCargo} onChange={setElabCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           <div className="text-[11.5px] font-semibold mb-1.5 mt-3" style={{ color: NAVY }}>Revisado por</div>
-          <Input placeholder="Nombre" value={revNombre} onChange={(e) => setRevNombre(e.target.value)} />
+          <CampoNombre value={revNombre} onChange={setRevNombre} />
           <div className="h-2" />
           <BuscadorTexto value={revCargo} onChange={setRevCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           <div className="text-[11.5px] font-semibold mb-1.5 mt-3" style={{ color: NAVY }}>Aprobado por</div>
-          <Input placeholder="Nombre" value={aprNombre} onChange={(e) => setAprNombre(e.target.value)} />
+          <CampoNombre value={aprNombre} onChange={setAprNombre} />
           <div className="h-2" />
           <BuscadorTexto value={aprCargo} onChange={setAprCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
         </div>

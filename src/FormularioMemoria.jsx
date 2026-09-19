@@ -84,6 +84,51 @@ function CasillaFoto({ foto, onChange, onRemove, numero }) {
   );
 }
 
+function CampoNombre({ value, onChange, placeholder }) {
+  const [abierto, setAbierto] = useState(false);
+  const resultados = useMemo(() => {
+    if (!value || value.length < 1) return [];
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const q = value.toLowerCase();
+      return nombres.filter((n) => n.toLowerCase().includes(q)).slice(0, 6);
+    } catch (e) { return []; }
+  }, [value]);
+  function guardarNombre(v) {
+    if (!v || v.trim().length < 3) return;
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const limpio = v.trim();
+      if (!nombres.includes(limpio)) {
+        nombres.unshift(limpio);
+        localStorage.setItem("ryr_nombres_usados", JSON.stringify(nombres.slice(0, 200)));
+      }
+    } catch (e) {}
+  }
+  return (
+    <div className="relative">
+      <input
+        placeholder={placeholder || "Nombre"}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setAbierto(true); }}
+        onFocus={() => setAbierto(true)}
+        onBlur={() => { guardarNombre(value); setTimeout(() => setAbierto(false), 150); }}
+        className="w-full border rounded-lg px-3 py-2.5 text-[14px]"
+      />
+      {abierto && resultados.length > 0 && (
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {resultados.map((r, i) => (
+            <button key={i} type="button" onMouseDown={() => { onChange(r); setAbierto(false); }}
+              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50 text-[12.5px]">
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Campo({ label, children }) {
   return (
     <div className="mb-3">
@@ -152,9 +197,9 @@ export default function FormularioMemoria({ onVolver }) {
   function actualizarFoto(idx, nuevaFoto) { setFotos((fs) => fs.map((f, i) => (i === idx ? nuevaFoto : f))); }
   function quitarFoto(idx) { setFotos((fs) => fs.map((f, i) => (i === idx ? { file: null, previewUrl: null } : f))); }
 
-  const [elabTexto, setElabTexto] = useState("");
-  const [revTexto, setRevTexto] = useState("");
-  const [aprTexto, setAprTexto] = useState("");
+  const [elabNombre, setElabNombre] = useState(""); const [elabCargo, setElabCargo] = useState("");
+  const [revNombre, setRevNombre] = useState(""); const [revCargo, setRevCargo] = useState("");
+  const [aprNombre, setAprNombre] = useState(""); const [aprCargo, setAprCargo] = useState("");
 
   const [generando, setGenerando] = useState(false);
 
@@ -209,9 +254,9 @@ export default function FormularioMemoria({ onVolver }) {
         ws.addImage(imageId, posicionesFotos[i]);
       }
 
-      ws.getCell("B96").value = elabTexto;
-      ws.getCell("E96").value = revTexto;
-      ws.getCell("I96").value = aprTexto;
+      ws.getCell("B96").value = elabCargo ? `${elabNombre} - ${elabCargo}` : elabNombre;
+      ws.getCell("E96").value = revCargo ? `${revNombre} - ${revCargo}` : revNombre;
+      ws.getCell("I96").value = aprCargo ? `${aprNombre} - ${aprCargo}` : aprNombre;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -317,15 +362,20 @@ export default function FormularioMemoria({ onVolver }) {
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>07 | RESPONSABLES Y TRAZABILIDAD</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
-          <Campo label="Elaboró (Nombre / cargo)">
-            <textarea value={elabTexto} onChange={(e) => setElabTexto(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-[13px]" style={{ borderColor: LINE }} />
-          </Campo>
-          <Campo label="Revisó (Nombre / cargo)">
-            <textarea value={revTexto} onChange={(e) => setRevTexto(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-[13px]" style={{ borderColor: LINE }} />
-          </Campo>
-          <Campo label="Aprobó (Nombre / cargo)">
-            <textarea value={aprTexto} onChange={(e) => setAprTexto(e.target.value)} rows={2} className="w-full border rounded-lg px-3 py-2 text-[13px]" style={{ borderColor: LINE }} />
-          </Campo>
+          <div className="text-[11.5px] font-semibold mb-1.5" style={{ color: NAVY }}>Elaboró</div>
+          <CampoNombre value={elabNombre} onChange={setElabNombre} />
+          <div className="h-2" />
+          <BuscadorTexto value={elabCargo} onChange={setElabCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
+
+          <div className="text-[11.5px] font-semibold mb-1.5 mt-3" style={{ color: NAVY }}>Revisó</div>
+          <CampoNombre value={revNombre} onChange={setRevNombre} />
+          <div className="h-2" />
+          <BuscadorTexto value={revCargo} onChange={setRevCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
+
+          <div className="text-[11.5px] font-semibold mb-1.5 mt-3" style={{ color: NAVY }}>Aprobó</div>
+          <CampoNombre value={aprNombre} onChange={setAprNombre} />
+          <div className="h-2" />
+          <BuscadorTexto value={aprCargo} onChange={setAprCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
         </div>
 
         <button onClick={generarExcel} disabled={generando} className="w-full py-3.5 rounded-xl text-white font-bold text-[14.5px]" style={{ background: generando ? "#9AA0A8" : GOLD }}>
