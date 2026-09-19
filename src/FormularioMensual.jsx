@@ -242,16 +242,16 @@ export default function FormularioMensual({ onVolver }) {
 
       if (wsFicha) {
         setProyecto(wsFicha.getCell("B2").value || "");
-        setPisos(wsFicha.getCell("B9").value || ""); setSotanos(wsFicha.getCell("B10").value || "");
-        setAreaLote(wsFicha.getCell("B11").value || ""); setAreaTipicaPiso(wsFicha.getCell("B12").value || "");
-        setAreaSotanos(wsFicha.getCell("B14").value || ""); setAreaCubierta(wsFicha.getCell("B15").value || "");
-        setNumApartamentos(wsFicha.getCell("B17").value || ""); setAreaPromedioApto(wsFicha.getCell("B18").value || "");
-        setNumParqueaderos(wsFicha.getCell("B19").value || ""); setNumAscensores(wsFicha.getCell("B20").value || "");
-        setAlturaTotal(wsFicha.getCell("B21").value || "");
-        const a = wsFicha.getCell("B24").value; if (typeof a === "number") setAdministracion(a * 100);
-        const im = wsFicha.getCell("B25").value; if (typeof im === "number") setImprevistos(im * 100);
-        const u = wsFicha.getCell("B26").value; if (typeof u === "number") setUtilidad(u * 100);
-        const iv = wsFicha.getCell("B27").value; if (typeof iv === "number") setIvaUtilidad(iv * 100);
+        setPisos(wsFicha.getCell("B14").value || ""); setSotanos(wsFicha.getCell("B15").value || "");
+        setAreaLote(wsFicha.getCell("B16").value || ""); setAreaTipicaPiso(wsFicha.getCell("B17").value || "");
+        setAreaSotanos(wsFicha.getCell("B19").value || ""); setAreaCubierta(wsFicha.getCell("B20").value || "");
+        setNumApartamentos(wsFicha.getCell("B22").value || ""); setAreaPromedioApto(wsFicha.getCell("B23").value || "");
+        setNumParqueaderos(wsFicha.getCell("B24").value || ""); setNumAscensores(wsFicha.getCell("B25").value || "");
+        setAlturaTotal(wsFicha.getCell("B26").value || "");
+        const a = wsFicha.getCell("B29").value; if (typeof a === "number") setAdministracion(a * 100);
+        const im = wsFicha.getCell("B30").value; if (typeof im === "number") setImprevistos(im * 100);
+        const u = wsFicha.getCell("B31").value; if (typeof u === "number") setUtilidad(u * 100);
+        const iv = wsFicha.getCell("B32").value; if (typeof iv === "number") setIvaUtilidad(iv * 100);
       }
       if (wsPres) {
         const nuevosValores = {};
@@ -305,14 +305,16 @@ export default function FormularioMensual({ onVolver }) {
       const wsMen = workbook.getWorksheet("Informe Mensual");
 
       wsFicha.getCell("B2").value = proyecto;
-      wsFicha.getCell("B9").value = Number(pisos) || 0; wsFicha.getCell("B10").value = Number(sotanos) || 0;
-      wsFicha.getCell("B11").value = Number(areaLote) || 0; wsFicha.getCell("B12").value = Number(areaTipicaPiso) || 0;
-      wsFicha.getCell("B14").value = Number(areaSotanos) || 0; wsFicha.getCell("B15").value = Number(areaCubierta) || 0;
-      wsFicha.getCell("B17").value = Number(numApartamentos) || 0; wsFicha.getCell("B18").value = Number(areaPromedioApto) || 0;
-      wsFicha.getCell("B19").value = Number(numParqueaderos) || 0; wsFicha.getCell("B20").value = Number(numAscensores) || 0;
-      wsFicha.getCell("B21").value = Number(alturaTotal) || 0;
-      wsFicha.getCell("B24").value = Number(administracion) / 100; wsFicha.getCell("B25").value = Number(imprevistos) / 100;
-      wsFicha.getCell("B26").value = Number(utilidad) / 100; wsFicha.getCell("B27").value = Number(ivaUtilidad) / 100;
+      wsFicha.getCell("B9").value = proyecto;
+      wsFicha.getCell("B10").value = noContrato;
+      wsFicha.getCell("B14").value = Number(pisos) || 0; wsFicha.getCell("B15").value = Number(sotanos) || 0;
+      wsFicha.getCell("B16").value = Number(areaLote) || 0; wsFicha.getCell("B17").value = Number(areaTipicaPiso) || 0;
+      wsFicha.getCell("B19").value = Number(areaSotanos) || 0; wsFicha.getCell("B20").value = Number(areaCubierta) || 0;
+      wsFicha.getCell("B22").value = Number(numApartamentos) || 0; wsFicha.getCell("B23").value = Number(areaPromedioApto) || 0;
+      wsFicha.getCell("B24").value = Number(numParqueaderos) || 0; wsFicha.getCell("B25").value = Number(numAscensores) || 0;
+      wsFicha.getCell("B26").value = Number(alturaTotal) || 0;
+      wsFicha.getCell("B29").value = Number(administracion) / 100; wsFicha.getCell("B30").value = Number(imprevistos) / 100;
+      wsFicha.getCell("B31").value = Number(utilidad) / 100; wsFicha.getCell("B32").value = Number(ivaUtilidad) / 100;
 
       CAPITULOS.forEach((cap, ci) => {
         cap.items.forEach((it, ii) => {

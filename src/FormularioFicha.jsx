@@ -13,6 +13,11 @@ function fechaLocalHoy() {
   const dia = String(d.getDate()).padStart(2, "0");
   return `${año}-${mes}-${dia}`;
 }
+function aFechaDDMMYYYY(iso) {
+  if (!iso) return "";
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
 
 function Campo({ label, unidad, children }) {
   return (
@@ -37,6 +42,9 @@ function Input(props) {
 
 export default function FormularioFicha({ onVolver }) {
   const [proyecto, setProyecto] = useState("");
+  const [noContrato, setNoContrato] = useState("");
+  const [contratista, setContratista] = useState("Reformas y Remodelaciones");
+  const [ubicacion, setUbicacion] = useState("");
 
   const [pisos, setPisos] = useState("");
   const [sotanos, setSotanos] = useState("");
@@ -67,23 +75,28 @@ export default function FormularioFicha({ onVolver }) {
       const ws = workbook.getWorksheet("Ficha Técnica del Proyecto");
 
       ws.getCell("B2").value = proyecto;
+      ws.getCell("B9").value = proyecto;
+      ws.getCell("B10").value = noContrato;
+      ws.getCell("D10").value = aFechaDDMMYYYY(fechaLocalHoy());
+      ws.getCell("B11").value = contratista;
+      ws.getCell("B12").value = ubicacion;
 
-      ws.getCell("B9").value = Number(pisos) || 0;
-      ws.getCell("B10").value = Number(sotanos) || 0;
-      ws.getCell("B11").value = Number(areaLote) || 0;
-      ws.getCell("B12").value = Number(areaTipicaPiso) || 0;
-      ws.getCell("B14").value = Number(areaSotanos) || 0;
-      ws.getCell("B15").value = Number(areaCubierta) || 0;
-      ws.getCell("B17").value = Number(numApartamentos) || 0;
-      ws.getCell("B18").value = Number(areaPromedioApto) || 0;
-      ws.getCell("B19").value = Number(numParqueaderos) || 0;
-      ws.getCell("B20").value = Number(numAscensores) || 0;
-      ws.getCell("B21").value = Number(alturaTotal) || 0;
+      ws.getCell("B14").value = Number(pisos) || 0;
+      ws.getCell("B15").value = Number(sotanos) || 0;
+      ws.getCell("B16").value = Number(areaLote) || 0;
+      ws.getCell("B17").value = Number(areaTipicaPiso) || 0;
+      ws.getCell("B19").value = Number(areaSotanos) || 0;
+      ws.getCell("B20").value = Number(areaCubierta) || 0;
+      ws.getCell("B22").value = Number(numApartamentos) || 0;
+      ws.getCell("B23").value = Number(areaPromedioApto) || 0;
+      ws.getCell("B24").value = Number(numParqueaderos) || 0;
+      ws.getCell("B25").value = Number(numAscensores) || 0;
+      ws.getCell("B26").value = Number(alturaTotal) || 0;
 
-      ws.getCell("B24").value = Number(administracion) / 100;
-      ws.getCell("B25").value = Number(imprevistos) / 100;
-      ws.getCell("B26").value = Number(utilidad) / 100;
-      ws.getCell("B27").value = Number(ivaUtilidad) / 100;
+      ws.getCell("B29").value = Number(administracion) / 100;
+      ws.getCell("B30").value = Number(imprevistos) / 100;
+      ws.getCell("B31").value = Number(utilidad) / 100;
+      ws.getCell("B32").value = Number(ivaUtilidad) / 100;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -136,6 +149,17 @@ export default function FormularioFicha({ onVolver }) {
       <div className="p-4 max-w-xl mx-auto">
         <Campo label="Proyecto">
           <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} placeholder="Nombre del proyecto" />
+        </Campo>
+        <div className="grid grid-cols-2 gap-3">
+          <Campo label="No de Contrato">
+            <Input value={noContrato} onChange={(e) => setNoContrato(e.target.value)} />
+          </Campo>
+          <Campo label="Ubicación">
+            <Input value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} placeholder="Ciudad" />
+          </Campo>
+        </div>
+        <Campo label="Contratista">
+          <Input value={contratista} onChange={(e) => setContratista(e.target.value)} />
         </Campo>
 
         <div
