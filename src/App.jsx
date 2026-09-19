@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
@@ -62,7 +62,7 @@ const CATALOGO_EQUIPOS_NOMBRES = ["Andamiaje para Aplicar la Carga (Equipos Sust
 
 function BuscadorTexto({ value, onChange, catalogo, placeholder }) {
   const [abierto, setAbierto] = useState(false);
-  const resultados = React.useMemo(() => {
+  const resultados = useMemo(() => {
     if (!value || value.length < 1) return [];
     const q = value.toLowerCase();
     const filtrados = catalogo.filter((it) => it.toLowerCase().includes(q));
