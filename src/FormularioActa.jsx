@@ -384,6 +384,31 @@ export default function FormularioActa({ onVolver }) {
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>3. AVANCE FÍSICO Y CANTIDADES EJECUTADAS</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
+          {(desde && hasta) && (
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const lista = JSON.parse(localStorage.getItem("ryr_avance_diario_actividades") || "[]");
+                  const nuevos = items.map((it) => {
+                    if (!it.actividad) return it;
+                    const suma = lista
+                      .filter((e) => e.actividad.trim().toLowerCase() === it.actividad.trim().toLowerCase() && e.fecha >= desde && e.fecha <= hasta)
+                      .reduce((acc, e) => acc + e.cantidad, 0);
+                    return suma > 0 ? { ...it, cantActa: String(suma) } : it;
+                  });
+                  setItems(nuevos);
+                  alert(`Sumado desde Informes Diarios entre ${desde} y ${hasta}.`);
+                } catch (err) {
+                  alert("No se pudo leer la memoria de Informes Diarios.");
+                }
+              }}
+              className="w-full text-center py-2.5 rounded-lg text-[12px] font-semibold text-white mb-3"
+              style={{ background: NAVY }}
+            >
+              ⚡ Calcular "Cant. esta acta" desde Informes Diarios ({desde} a {hasta})
+            </button>
+          )}
           {items.map((it, i) => (
             <div key={i} className="mb-3 pb-3 border-b last:border-b-0" style={{ borderColor: LINE }}>
               <div className="flex items-center justify-between mb-1.5">
@@ -438,7 +463,38 @@ export default function FormularioActa({ onVolver }) {
           <Campo label="Valor presente acta">
             <Input type="number" value={valorPresenteActa} onChange={(e) => setValorPresenteActa(e.target.value)} />
           </Campo>
-          <div className="text-[11px] text-gray-500 mb-3">Este valor queda guardado en la memoria del dispositivo para que Informe Mensual lo pueda usar como Ingreso del período.</div>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const guardados = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
+                let total = 0;
+                let sinPrecio = [];
+                items.forEach((it) => {
+                  if (!it.actividad || !it.cantActa) return;
+                  const apu = guardados[it.actividad.trim().toLowerCase()];
+                  if (apu && apu.total) {
+                    total += Number(it.cantActa) * apu.total;
+                  } else {
+                    sinPrecio.push(it.actividad);
+                  }
+                });
+                setValorPresenteActa(String(Math.round(total)));
+                if (sinPrecio.length > 0) {
+                  alert(`Calculado, pero estas actividades no tienen APU guardado (no se sumaron): ${sinPrecio.join(", ")}`);
+                } else {
+                  alert(`Valor calculado: ${total.toLocaleString("es-CO")} (cantidad de esta acta × precio unitario del APU guardado, por actividad).`);
+                }
+              } catch (err) {
+                alert("No se pudo calcular. Verifica que hayas generado los APU's de estas actividades.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            ⚡ Calcular desde Cant. esta acta × precio unitario (APU's guardados)
+          </button>
+          <div className="text-[11px] text-gray-500 mb-3">Este valor queda guardado en la memoria del dispositivo para que Informe Mensual lo pueda usar como Ingreso del período. <b>Nota:</b> el Acta de Obra no tiene una sección propia de AIU/IVA — si tus precios de APU's son de costo directo, súmale el AIU/IVA manualmente antes de poner el valor aquí, o usa el "Valor Total" de Presupuesto (que ya incluye AIU) como referencia.</div>
           <div className="grid grid-cols-3 gap-2">
             <Campo label="Anticipo"><Input type="number" value={anticipo} onChange={(e) => setAnticipo(e.target.value)} /></Campo>
             <Campo label="Amortización"><Input type="number" value={amortizacion} onChange={(e) => setAmortizacion(e.target.value)} /></Campo>
