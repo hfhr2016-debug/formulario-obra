@@ -527,6 +527,25 @@ export default function FormularioActa({ onVolver }) {
             <Campo label="Valor contractual"><Input type="number" value={valorContractual} onChange={(e) => setValorContractual(e.target.value)} /></Campo>
             <Campo label="Valor actas anteriores"><Input type="number" value={valorActasAnteriores} onChange={(e) => setValorActasAnteriores(e.target.value)} /></Campo>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const guardadas = JSON.parse(localStorage.getItem("ryr_actas_valor_presente") || "{}");
+                const suma = Object.values(guardadas)
+                  .filter((a) => a.actaNo !== actaNo && (!proyecto || a.proyecto === proyecto))
+                  .reduce((acc, a) => acc + (Number(a.valor) || 0), 0);
+                setValorActasAnteriores(String(Math.round(suma)));
+                alert(`Sumado desde ${Object.values(guardadas).filter((a) => a.actaNo !== actaNo && (!proyecto || a.proyecto === proyecto)).length} acta(s) anterior(es) del mismo proyecto.`);
+              } catch (err) {
+                alert("No se pudo leer las actas guardadas.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12px] font-semibold text-white mb-3"
+            style={{ background: NAVY }}
+          >
+            ⚡ Sumar desde actas anteriores guardadas (mismo proyecto)
+          </button>
           <Campo label="Valor presente acta">
             <Input type="number" value={valorPresenteActa} onChange={(e) => setValorPresenteActa(e.target.value)} />
           </Campo>
