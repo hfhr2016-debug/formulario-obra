@@ -158,7 +158,7 @@ function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
   );
 }
 
-const tareaVacia = () => ({ nombre: "", duracion: "", predecesora: "" });
+const tareaVacia = () => ({ nombre: "", duracion: "", predecesora: "", recursos: "" });
 
 export default function FormularioCronograma({ onVolver }) {
   const [proyecto, setProyecto] = useState("");
@@ -256,7 +256,10 @@ export default function FormularioCronograma({ onVolver }) {
         ws.getCell(`C${r}`).value = `${c.duracion}d`;
         ws.getCell(`D${r}`).value = aFechaDDMMYYYY(c.inicio);
         ws.getCell(`E${r}`).value = aFechaDDMMYYYY(c.fin);
-        ws.getCell(`H${r}`).value = t.predecesora ? `Depende de tarea #${t.predecesora}` : "";
+        const partesH = [];
+        if (t.recursos) partesH.push(`Recursos: ${t.recursos}`);
+        if (t.predecesora) partesH.push(`Depende de tarea #${t.predecesora}`);
+        ws.getCell(`H${r}`).value = partesH.join(" | ");
       });
 
       const outBuffer = await workbook.xlsx.writeBuffer();
@@ -359,13 +362,32 @@ export default function FormularioCronograma({ onVolver }) {
                 onSeleccionar={(sel) => {
                   const nuevas = [...tareas];
                   const sugerida = sugerirDuracion(sel.actividad);
+                  let recursosSugeridos = nuevas[i].recursos;
+                  try {
+                    const guardados = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
+                    const apu = guardados[sel.actividad.trim().toLowerCase()];
+                    if (apu) {
+                      const partes = [];
+                      if (apu.cuadrilla) partes.push(apu.cuadrilla);
+                      if (apu.equipos) partes.push(apu.equipos);
+                      if (partes.length > 0) recursosSugeridos = partes.join(" · ");
+                    }
+                  } catch (e) {}
                   nuevas[i] = {
                     ...nuevas[i],
                     nombre: sel.actividad,
                     duracion: sugerida !== null ? String(sugerida) : nuevas[i].duracion,
+                    recursos: recursosSugeridos,
                   };
                   setTareas(nuevas);
                 }}
+              />
+              <input
+                placeholder="Recursos asignados (mano de obra / equipo)"
+                value={t.recursos}
+                onChange={(e) => { const c = [...tareas]; c[i] = { ...c[i], recursos: e.target.value }; setTareas(c); }}
+                className="w-full border rounded px-2 py-1.5 text-[12px] mt-1.5"
+                style={{ borderColor: LINE }}
               />
               {sugerirDuracion(t.nombre) !== null && (
                 <div className="text-[10.5px] mb-1.5" style={{ color: GOLD }}>

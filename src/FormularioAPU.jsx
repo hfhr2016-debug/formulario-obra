@@ -359,11 +359,16 @@ export default function FormularioAPU({ onVolver }) {
       try {
         const clave = "ryr_apus_guardados";
         const guardados = JSON.parse(localStorage.getItem(clave) || "{}");
+        const equiposUsados = equipos.filter((e) => e.desc).map((e) => e.desc).join(", ");
+        const moUsada = manoObra.filter((m) => m.desc).map((m) => m.desc).join(", ");
         guardados[actividad.actividad.trim().toLowerCase()] = {
           actividad: actividad.actividad,
           unidad: actividad.unidad,
           total: totalDirectoUnitario,
           rendimiento: Number(rendimiento) || 0,
+          cuadrilla: cuadrilla || "",
+          equipos: equiposUsados,
+          manoObra: moUsada,
           fecha: fechaLocalHoy(),
         };
         localStorage.setItem(clave, JSON.stringify(guardados));
