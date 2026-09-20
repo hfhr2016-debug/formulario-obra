@@ -67,6 +67,51 @@ function aFechaDDMMYYYY(iso) {
   return `${d}/${m}/${a}`;
 }
 
+function CampoNombre({ value, onChange, placeholder }) {
+  const [abierto, setAbierto] = useState(false);
+  const resultados = useMemo(() => {
+    if (!value || value.length < 1) return [];
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const q = value.toLowerCase();
+      return nombres.filter((n) => n.toLowerCase().includes(q)).slice(0, 6);
+    } catch (e) { return []; }
+  }, [value]);
+  function guardarNombre(v) {
+    if (!v || v.trim().length < 3) return;
+    try {
+      const nombres = JSON.parse(localStorage.getItem("ryr_nombres_usados") || "[]");
+      const limpio = v.trim();
+      if (!nombres.includes(limpio)) {
+        nombres.unshift(limpio);
+        localStorage.setItem("ryr_nombres_usados", JSON.stringify(nombres.slice(0, 200)));
+      }
+    } catch (e) {}
+  }
+  return (
+    <div className="relative">
+      <input
+        placeholder={placeholder || "Nombre"}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setAbierto(true); }}
+        onFocus={() => setAbierto(true)}
+        onBlur={() => { guardarNombre(value); setTimeout(() => setAbierto(false), 150); }}
+        className="w-full border rounded-lg px-3 py-2.5 text-[14px]"
+      />
+      {abierto && resultados.length > 0 && (
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {resultados.map((r, i) => (
+            <button key={i} type="button" onMouseDown={() => { onChange(r); setAbierto(false); }}
+              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50 text-[12.5px]">
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function calcularNeta(unidad, sub) {
   const L = Number(sub.largo) || 0;
   const A = Number(sub.ancho) || 0;
@@ -74,14 +119,17 @@ function calcularNeta(unidad, sub) {
   const N = Number(sub.numElementos) || 1;
   const R = Number(sub.repeticiones) || 1;
   const F = Number(sub.factor) || 1;
-  const D = Number(sub.deduccion) || 0;
+  const dedLargo = Number(sub.dedLargo) || 0;
+  const dedAncho = Number(sub.dedAncho) || 1;
+  const dedAlto = Number(sub.dedAlto) || 1;
+  const D = dedLargo * dedAncho * dedAlto;
+  const CD = Number(sub.cantidadDirecta) || 0;
   const u = (unidad || "").toLowerCase();
   let bruta = 0;
-  if (u === "m²" || u === "m2") bruta = L * A * N * R * F;
+  if (esUnidadDirecta(unidad)) bruta = CD * N * R * F;
+  else if (u === "m²" || u === "m2") bruta = L * A * N * R * F;
   else if (u === "m³" || u === "m3") bruta = L * A * H * N * R * F;
   else if (u === "ml") bruta = L * N * R * F;
-  else if (u === "und") bruta = N * R * F;
-  else if (u === "kg") bruta = L * N * R * F;
   else bruta = L * A * H * N * R * F;
   return Math.round((bruta - D) * 1000) / 1000;
 }
@@ -135,6 +183,8 @@ function BuscadorActividadCantidad({ onSeleccionar }) {
 const subMedicionVacia = () => ({
   ubicacion: "", plano: "", largo: "", ancho: "", alto: "",
   numElementos: "", repeticiones: "", factor: "", deduccion: "",
+  cantidadDirecta: "",
+  dedLargo: "", dedAncho: "", dedAlto: "",
 });
 
 const actividadVacia = (nombre) => ({
@@ -147,7 +197,15 @@ const actividadVacia = (nombre) => ({
   subs: [subMedicionVacia()],
 });
 
-function FilaSub({ sub, actualizar, quitar, mostrarQuitar }) {
+const UNIDADES_SIN_DIMENSIONES = ["kg", "gl", "gb", "und", "un", "ton", "kit", "glb"];
+
+function esUnidadDirecta(unidad) {
+  return UNIDADES_SIN_DIMENSIONES.includes((unidad || "").toLowerCase());
+}
+
+function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad }) {
+  const directa = esUnidadDirecta(unidad);
+  const dedCalculada = (Number(sub.dedLargo) || 0) * (Number(sub.dedAncho) || 1) * (Number(sub.dedAlto) || 1);
   return (
     <div className="border rounded-lg p-2 mb-2" style={{ borderColor: LINE, background: "#FAFAF9" }}>
       <div className="flex items-center justify-between mb-1.5">
@@ -164,16 +222,35 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar }) {
           </button>
         )}
       </div>
+      {directa ? (
+        <div className="mb-1.5">
+          <input placeholder={`Cantidad (${unidad})`} type="number" value={sub.cantidadDirecta} onChange={(e) => actualizar({ ...sub, cantidadDirecta: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+          <input placeholder="Largo" type="number" value={sub.largo} onChange={(e) => actualizar({ ...sub, largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder="Ancho" type="number" value={sub.ancho} onChange={(e) => actualizar({ ...sub, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder="Alto/Prof." type="number" value={sub.alto} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-        <input placeholder="Largo" type="number" value={sub.largo} onChange={(e) => actualizar({ ...sub, largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Ancho" type="number" value={sub.ancho} onChange={(e) => actualizar({ ...sub, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Alto/Prof." type="number" value={sub.alto} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-      </div>
-      <div className="grid grid-cols-3 gap-1.5">
         <input placeholder="N° elem." type="number" value={sub.numElementos} onChange={(e) => actualizar({ ...sub, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         <input placeholder="Repeticiones" type="number" value={sub.repeticiones} onChange={(e) => actualizar({ ...sub, repeticiones: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Deducción" type="number" value={sub.deduccion} onChange={(e) => actualizar({ ...sub, deduccion: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Factor" type="number" value={sub.factor} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
       </div>
+      {!directa && (
+        <div>
+          <div className="text-[10px] text-gray-500 mb-1">Deducción (opcional) — largo × ancho × alto de lo que se descuenta:</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <input placeholder="Largo desc." type="number" value={sub.dedLargo} onChange={(e) => actualizar({ ...sub, dedLargo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Ancho desc." type="number" value={sub.dedAncho} onChange={(e) => actualizar({ ...sub, dedAncho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Alto desc." type="number" value={sub.dedAlto} onChange={(e) => actualizar({ ...sub, dedAlto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          </div>
+          {(sub.dedLargo || sub.dedAncho) && (
+            <div className="text-[10.5px] text-gray-500 mt-1">Deducción calculada: {dedCalculada.toFixed(3)}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -226,6 +303,7 @@ function TarjetaActividad({ a, actualizar, quitar }) {
               actualizar={(n) => actualizarSub(i, n)}
               quitar={() => quitarSub(i)}
               mostrarQuitar={a.subs.length > 1}
+              unidad={unidad}
             />
           ))}
           <button
@@ -261,12 +339,10 @@ function TarjetaActividad({ a, actualizar, quitar }) {
               ⚡ Sugerido: {(DESPERDICIO_REFERENCIA[a.actividad] * 100).toFixed(0)}% (promedio del sector — ajústalo según tu experiencia)
             </div>
           )}
-          <input
-            placeholder="Responsable"
+          <CampoNombre
             value={a.responsable}
-            onChange={(e) => actualizar({ ...a, responsable: e.target.value })}
-            className="w-full border rounded px-2 py-1.5 text-[12.5px] mb-2"
-            style={{ borderColor: LINE }}
+            onChange={(v) => actualizar({ ...a, responsable: v })}
+            placeholder="Responsable"
           />
           <div className="mb-2">
             <BuscadorTexto value={a.cargo} onChange={(v) => actualizar({ ...a, cargo: v })} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
@@ -342,15 +418,23 @@ export default function FormularioCantidades({ onVolver }) {
         wsCant.getCell(`X${filaCant}`).value = aFechaDDMMYYYY(fechaLocalHoy());
         wsCant.getCell(`Y${filaCant}`).value = a.estado;
         if (a.subs.length === 1) {
-          wsCant.getCell(`F${filaCant}`).value = a.subs[0].ubicacion;
-          wsCant.getCell(`G${filaCant}`).value = a.subs[0].plano;
-          wsCant.getCell(`J${filaCant}`).value = Number(a.subs[0].largo) || 0;
-          wsCant.getCell(`K${filaCant}`).value = Number(a.subs[0].ancho) || 0;
-          wsCant.getCell(`L${filaCant}`).value = Number(a.subs[0].alto) || 0;
-          wsCant.getCell(`N${filaCant}`).value = Number(a.subs[0].numElementos) || 0;
-          wsCant.getCell(`O${filaCant}`).value = Number(a.subs[0].repeticiones) || 0;
-          wsCant.getCell(`P${filaCant}`).value = Number(a.subs[0].factor) || 0;
-          wsCant.getCell(`Q${filaCant}`).value = Number(a.subs[0].deduccion) || 0;
+          const s0 = a.subs[0];
+          wsCant.getCell(`F${filaCant}`).value = s0.ubicacion;
+          wsCant.getCell(`G${filaCant}`).value = s0.plano;
+          if (esUnidadDirecta(unidad)) {
+            wsCant.getCell(`J${filaCant}`).value = Number(s0.cantidadDirecta) || 0;
+            wsCant.getCell(`K${filaCant}`).value = 1;
+            wsCant.getCell(`L${filaCant}`).value = 1;
+          } else {
+            wsCant.getCell(`J${filaCant}`).value = Number(s0.largo) || 0;
+            wsCant.getCell(`K${filaCant}`).value = Number(s0.ancho) || 0;
+            wsCant.getCell(`L${filaCant}`).value = Number(s0.alto) || 0;
+          }
+          wsCant.getCell(`N${filaCant}`).value = Number(s0.numElementos) || 0;
+          wsCant.getCell(`O${filaCant}`).value = Number(s0.repeticiones) || 0;
+          wsCant.getCell(`P${filaCant}`).value = Number(s0.factor) || 0;
+          const dedTotal = (Number(s0.dedLargo) || 0) * (Number(s0.dedAncho) || 1) * (Number(s0.dedAlto) || 1);
+          wsCant.getCell(`Q${filaCant}`).value = dedTotal;
         } else {
           wsCant.getCell(`F${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
         }
@@ -363,13 +447,19 @@ export default function FormularioCantidades({ onVolver }) {
           wsCalc.getCell(`E${filaCalc}`).value = s.ubicacion;
           wsCalc.getCell(`F${filaCalc}`).value = s.plano;
           wsCalc.getCell(`H${filaCalc}`).value = unidad;
-          wsCalc.getCell(`I${filaCalc}`).value = Number(s.largo) || 0;
-          wsCalc.getCell(`J${filaCalc}`).value = Number(s.ancho) || 0;
-          wsCalc.getCell(`K${filaCalc}`).value = Number(s.alto) || 0;
+          if (esUnidadDirecta(unidad)) {
+            wsCalc.getCell(`I${filaCalc}`).value = Number(s.cantidadDirecta) || 0;
+            wsCalc.getCell(`J${filaCalc}`).value = 1;
+            wsCalc.getCell(`K${filaCalc}`).value = 1;
+          } else {
+            wsCalc.getCell(`I${filaCalc}`).value = Number(s.largo) || 0;
+            wsCalc.getCell(`J${filaCalc}`).value = Number(s.ancho) || 0;
+            wsCalc.getCell(`K${filaCalc}`).value = Number(s.alto) || 0;
+          }
           wsCalc.getCell(`L${filaCalc}`).value = Number(s.numElementos) || 0;
           wsCalc.getCell(`M${filaCalc}`).value = Number(s.repeticiones) || 0;
           wsCalc.getCell(`N${filaCalc}`).value = Number(s.factor) || 0;
-          wsCalc.getCell(`O${filaCalc}`).value = Number(s.deduccion) || 0;
+          wsCalc.getCell(`O${filaCalc}`).value = (Number(s.dedLargo) || 0) * (Number(s.dedAncho) || 1) * (Number(s.dedAlto) || 1);
           wsCalc.getCell(`P${filaCalc}`).value = desperdicio;
           wsCalc.getCell(`Q${filaCalc}`).value = neta;
           wsCalc.getCell(`R${filaCalc}`).value = final;
@@ -453,6 +543,10 @@ export default function FormularioCantidades({ onVolver }) {
             quitar={() => quitarActividad(i)}
           />
         ))}
+
+        <div className="text-[11.5px] text-center py-2.5 mb-2 rounded-lg" style={{ background: PAPER, color: NAVY }}>
+          ¿Terminaste con esta actividad? ⬆️ Vuelve a buscar arriba para agregar la siguiente.
+        </div>
 
         <button
           onClick={generarExcel}
