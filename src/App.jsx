@@ -1290,7 +1290,7 @@ function Inicio({ onSeleccionar }) {
               opacity: m.activo ? 1 : 0.55,
             }}
           >
-            <img src={m.icono} alt={m.nombre} className="w-[74px] h-[74px] object-contain" />
+            <img src={m.icono} alt={m.nombre} className="w-[70px] h-[70px] object-contain" />
             <div className="text-[12px] font-semibold text-center" style={{ color: NAVY }}>
               {m.nombre}
             </div>
