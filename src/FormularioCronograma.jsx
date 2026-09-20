@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -206,9 +213,9 @@ export default function FormularioCronograma({ onVolver }) {
   const calculadas = useMemo(() => {
     const resultado = [];
     tareas.forEach((t, i) => {
-      const duracion = Math.max(1, Number(t.duracion) || 1);
+      const duracion = Math.max(1, numES(t.duracion) || 1);
       let inicio = fechaInicio;
-      const numPred = Number(t.predecesora);
+      const numPred = numES(t.predecesora);
       if (t.predecesora && numPred >= 1 && numPred <= tareas.length && resultado[numPred - 1]) {
         inicio = sumarDias(resultado[numPred - 1].fin, 1);
       }
@@ -228,6 +235,13 @@ export default function FormularioCronograma({ onVolver }) {
     if (tareas.every((t) => !t.nombre)) {
       alert("Agrega al menos una tarea con nombre.");
       return;
+    }
+    try {
+      localStorage.setItem("ryr_cronograma_fechas", JSON.stringify({
+        fechaInicio, fechaFinProyecto, duracionTotalDias, proyecto,
+      }));
+    } catch (e) {
+      console.warn("No se pudo guardar las fechas del cronograma:", e);
     }
     setGenerando(true);
     try {
@@ -397,7 +411,7 @@ export default function FormularioCronograma({ onVolver }) {
               <div className="flex gap-1.5">
                 <input
                   placeholder="Duración (días)"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={t.duracion}
                   onChange={(e) => actualizarTarea(i, "duracion", e.target.value)}
                   className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"
@@ -405,7 +419,7 @@ export default function FormularioCronograma({ onVolver }) {
                 />
                 <input
                   placeholder="Depende de tarea #"
-                  type="number"
+                  type="text" inputMode="decimal"
                   value={t.predecesora}
                   onChange={(e) => actualizarTarea(i, "predecesora", e.target.value)}
                   className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"

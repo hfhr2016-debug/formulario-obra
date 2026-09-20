@@ -2,6 +2,13 @@ import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
 import { Camera, X } from "lucide-react";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -229,16 +236,16 @@ export default function FormularioMemoria({ onVolver }) {
         const r = 16 + i;
         if (r > 25) return;
         ws.getCell(`B${r}`).value = m.descripcion;
-        ws.getCell(`C${r}`).value = Number(m.cant) || 0;
-        ws.getCell(`D${r}`).value = Number(m.largo) || 0;
-        ws.getCell(`E${r}`).value = Number(m.ancho) || 0;
-        ws.getCell(`F${r}`).value = Number(m.altoPeso) || 0;
-        ws.getCell(`G${r}`).value = Number(m.factor) || 1;
+        ws.getCell(`C${r}`).value = numES(m.cant) || 0;
+        ws.getCell(`D${r}`).value = numES(m.largo) || 0;
+        ws.getCell(`E${r}`).value = numES(m.ancho) || 0;
+        ws.getCell(`F${r}`).value = numES(m.altoPeso) || 0;
+        ws.getCell(`G${r}`).value = numES(m.factor) || 1;
         ws.getCell(`I${r}`).value = unidad;
         ws.getCell(`J${r}`).value = m.observacion;
       });
 
-      ws.getCell("D30").value = Number(cantidadContractual) || 0;
+      ws.getCell("D30").value = numES(cantidadContractual) || 0;
 
       const posicionesFotos = [
         { tl: { col: 0, row: 40 }, br: { col: 7, row: 55 } },
@@ -325,11 +332,11 @@ export default function FormularioMemoria({ onVolver }) {
               </div>
               <input placeholder="Descripción" value={m.descripcion} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], descripcion: e.target.value }; setMediciones(c); }} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} />
               <div className="grid grid-cols-5 gap-1.5 mb-1.5">
-                <input placeholder="Cant." type="number" value={m.cant} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], cant: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Largo" type="number" value={m.largo} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], largo: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Ancho" type="number" value={m.ancho} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], ancho: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Alto/Peso" type="number" value={m.altoPeso} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], altoPeso: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Factor" type="number" value={m.factor} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], factor: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Cant." type="text" inputMode="decimal" value={m.cant} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], cant: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Largo" type="text" inputMode="decimal" value={m.largo} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], largo: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Ancho" type="text" inputMode="decimal" value={m.ancho} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], ancho: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Alto/Peso" type="text" inputMode="decimal" value={m.altoPeso} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], altoPeso: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Factor" type="text" inputMode="decimal" value={m.factor} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], factor: e.target.value }; setMediciones(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               </div>
               <div className="text-[10px] text-gray-400 mb-1.5">Factor: multiplicador de ajuste — úsalo para desperdicio, traslape o cualquier corrección (ej: 1.05 = +5%). Déjalo en 1 o vacío si no aplica.</div>
               <input placeholder="Observación" value={m.observacion} onChange={(e) => { const c = [...mediciones]; c[i] = { ...c[i], observacion: e.target.value }; setMediciones(c); }} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
@@ -345,7 +352,7 @@ export default function FormularioMemoria({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>03 | RESUMEN Y CONTROL DE CANTIDADES</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <Campo label="Cantidad contractual">
-            <Input type="number" value={cantidadContractual} onChange={(e) => setCantidadContractual(e.target.value)} />
+            <Input type="text" inputMode="decimal" value={cantidadContractual} onChange={(e) => setCantidadContractual(e.target.value)} />
           </Campo>
           <div className="text-[11px] text-gray-500">La cantidad calculada, el saldo, el % ejecutado y el estado se calculan solos en el Excel a partir de los registros de arriba.</div>
         </div>

@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -311,7 +318,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
             />
             <input
               placeholder="Cant."
-              type="number"
+              type="text" inputMode="decimal"
               value={f.cant}
               onChange={(e) => actualizar(i, "cant", e.target.value)}
               className="flex-[0.8] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
@@ -319,7 +326,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
             />
             <input
               placeholder="Vr Unit."
-              type="number"
+              type="text" inputMode="decimal"
               value={f.vrUnit}
               onChange={(e) => actualizar(i, "vrUnit", e.target.value)}
               className="flex-[1] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
@@ -375,8 +382,8 @@ export default function FormularioAPU({ onVolver }) {
 
       ws.getCell("A10").value = (actividad.actividad || "").toUpperCase();
       ws.getCell("S4").value = cuadrilla;
-      ws.getCell("U4").value = Number(jornada) || 0;
-      ws.getCell("V4").value = Number(rendimiento) || 0;
+      ws.getCell("U4").value = numES(jornada) || 0;
+      ws.getCell("V4").value = numES(rendimiento) || 0;
 
       ws.getCell("C13").value = proyecto;
       ws.getCell("C14").value = noContrato;
@@ -389,8 +396,8 @@ export default function FormularioAPU({ onVolver }) {
           if (!f.desc) return;
           ws.getCell(`A${r}`).value = f.desc;
           ws.getCell(`E${r}`).value = f.und;
-          ws.getCell(`F${r}`).value = Number(f.cant) || 0;
-          ws.getCell(`H${r}`).value = Number(f.vrUnit) || 0;
+          ws.getCell(`F${r}`).value = numES(f.cant) || 0;
+          ws.getCell(`H${r}`).value = numES(f.vrUnit) || 0;
         });
       };
       escribirFilas(materiales, 22);
@@ -398,7 +405,7 @@ export default function FormularioAPU({ onVolver }) {
       escribirFilas(equipos, 40);
 
       const sumar = (filas) =>
-        filas.reduce((acc, f) => acc + (Number(f.cant) || 0) * (Number(f.vrUnit) || 0), 0);
+        filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (numES(f.vrUnit) || 0), 0);
       const totalDirectoUnitario = sumar(materiales) + sumar(manoObra) + sumar(equipos);
 
       try {
@@ -410,7 +417,7 @@ export default function FormularioAPU({ onVolver }) {
           actividad: actividad.actividad,
           unidad: actividad.unidad,
           total: totalDirectoUnitario,
-          rendimiento: Number(rendimiento) || 0,
+          rendimiento: numES(rendimiento) || 0,
           cuadrilla: cuadrilla || "",
           equipos: equiposUsados,
           manoObra: moUsada,
@@ -529,11 +536,11 @@ export default function FormularioAPU({ onVolver }) {
         {rendimientoBase !== null && (
           <Campo label="Número de cuadrillas trabajando en paralelo">
             <input
-              type="number"
+              type="text" inputMode="decimal"
               min="1"
               value={numCuadrillas}
               onChange={(e) => {
-                const n = Math.max(1, Number(e.target.value) || 1);
+                const n = Math.max(1, numES(e.target.value) || 1);
                 setNumCuadrillas(n);
                 setRendimiento(String(rendimientoBase * n));
                 if (cuadrillaBase) {
@@ -558,10 +565,10 @@ export default function FormularioAPU({ onVolver }) {
             />
           </Campo>
           <Campo label="Jornada (h)">
-            <Input type="number" value={jornada} onChange={(e) => setJornada(e.target.value)} />
+            <Input type="text" inputMode="decimal" value={jornada} onChange={(e) => setJornada(e.target.value)} />
           </Campo>
           <Campo label={`Rendimiento (${unidadRendimiento || "…"})`}>
-            <Input type="number" value={rendimiento} onChange={(e) => setRendimiento(e.target.value)} />
+            <Input type="text" inputMode="decimal" value={rendimiento} onChange={(e) => setRendimiento(e.target.value)} />
           </Campo>
         </div>
 

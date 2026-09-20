@@ -2,6 +2,13 @@ import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
 import { Camera, X } from "lucide-react";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -206,7 +213,7 @@ export default function FormularioActa({ onVolver }) {
   const [valorContractual, setValorContractual] = useState("");
   const [valorActasAnteriores, setValorActasAnteriores] = useState("");
   const valorPresenteActa = useMemo(() => {
-    return items.reduce((acc, it) => acc + (Number(it.cantActa) || 0) * (Number(it.precioUnitario) || 0), 0);
+    return items.reduce((acc, it) => acc + (numES(it.cantActa) || 0) * (numES(it.precioUnitario) || 0), 0);
   }, [items]);
   const [anticipo, setAnticipo] = useState("");
   const [amortizacion, setAmortizacion] = useState("");
@@ -229,8 +236,8 @@ export default function FormularioActa({ onVolver }) {
 
   const [generando, setGenerando] = useState(false);
 
-  const saldoContractual = (Number(valorContractual) || 0) - (Number(valorActasAnteriores) || 0) - (Number(valorPresenteActa) || 0);
-  const porcentajeEjecutado = valorContractual ? (((Number(valorActasAnteriores) || 0) + (Number(valorPresenteActa) || 0)) / Number(valorContractual)) * 100 : 0;
+  const saldoContractual = (numES(valorContractual) || 0) - (numES(valorActasAnteriores) || 0) - (numES(valorPresenteActa) || 0);
+  const porcentajeEjecutado = valorContractual ? (((numES(valorActasAnteriores) || 0) + (numES(valorPresenteActa) || 0)) / numES(valorContractual)) * 100 : 0;
 
   function actualizarFoto(idx, nuevaFoto) { setFotos((fs) => fs.map((f, i) => (i === idx ? nuevaFoto : f))); }
   function quitarFoto(idx) { setFotos((fs) => fs.map((f, i) => (i === idx ? { file: null, previewUrl: null } : f))); }
@@ -257,9 +264,9 @@ export default function FormularioActa({ onVolver }) {
       ws.getCell("J15").value = aFechaDDMMYYYY(hasta);
       ws.getCell("D16").value = objeto;
 
-      ws.getCell("F20").value = Number(diasContractuales) || 0;
-      ws.getCell("J20").value = Number(diasAvance) || 0;
-      ws.getCell("N20").value = (Number(porcentajeTiempo) || 0) / 100;
+      ws.getCell("F20").value = numES(diasContractuales) || 0;
+      ws.getCell("J20").value = numES(diasAvance) || 0;
+      ws.getCell("N20").value = (numES(porcentajeTiempo) || 0) / 100;
       ws.getCell("C21").value = contratanteNombre; ws.getCell("C22").value = contratanteCargo;
       ws.getCell("H21").value = contratistaNombre; ws.getCell("H22").value = contratistaCargo;
       ws.getCell("L21").value = interventorNombre; ws.getCell("L22").value = interventorCargo;
@@ -271,18 +278,18 @@ export default function FormularioActa({ onVolver }) {
         ws.getCell(`A${r}`).value = i + 1;
         ws.getCell(`B${r}`).value = it.actividad;
         ws.getCell(`E${r}`).value = it.unidad;
-        ws.getCell(`F${r}`).value = Number(it.cantContractual) || 0;
-        ws.getCell(`G${r}`).value = Number(it.cantAnterior) || 0;
-        ws.getCell(`H${r}`).value = Number(it.cantActa) || 0;
-        ws.getCell(`I${r}`).value = Number(it.precioUnitario) || 0;
+        ws.getCell(`F${r}`).value = numES(it.cantContractual) || 0;
+        ws.getCell(`G${r}`).value = numES(it.cantAnterior) || 0;
+        ws.getCell(`H${r}`).value = numES(it.cantActa) || 0;
+        ws.getCell(`I${r}`).value = numES(it.precioUnitario) || 0;
         ws.getCell(`N${r}`).value = it.observacion;
       });
 
-      ws.getCell("E36").value = Number(valorContractual) || 0;
-      ws.getCell("H36").value = Number(valorActasAnteriores) || 0;
-      ws.getCell("H37").value = Number(anticipo) || 0;
-      ws.getCell("K37").value = Number(amortizacion) || 0;
-      ws.getCell("N37").value = Number(retenciones) || 0;
+      ws.getCell("E36").value = numES(valorContractual) || 0;
+      ws.getCell("H36").value = numES(valorActasAnteriores) || 0;
+      ws.getCell("H37").value = numES(anticipo) || 0;
+      ws.getCell("K37").value = numES(amortizacion) || 0;
+      ws.getCell("N37").value = numES(retenciones) || 0;
 
       ws.getCell("C41").value = calidadEstado; ws.getCell("A42").value = calidadRef;
       ws.getCell("G41").value = sstEstado; ws.getCell("F42").value = sstRef;
@@ -326,7 +333,7 @@ export default function FormularioActa({ onVolver }) {
         const guardadas = JSON.parse(localStorage.getItem(clave) || "{}");
         guardadas[actaNo || fechaLocalHoy()] = {
           actaNo, proyecto,
-          valor: Number(valorPresenteActa) || 0,
+          valor: numES(valorPresenteActa) || 0,
           fecha: fechaLocalHoy(),
         };
         localStorage.setItem(clave, JSON.stringify(guardadas));
@@ -339,8 +346,8 @@ export default function FormularioActa({ onVolver }) {
         const acum = JSON.parse(localStorage.getItem(claveAcum) || "{}");
         items.forEach((it) => {
           if (!it.actividad) return;
-          const anterior = Number(it.cantAnterior) || 0;
-          const estaActa = Number(it.cantActa) || 0;
+          const anterior = numES(it.cantAnterior) || 0;
+          const estaActa = numES(it.cantActa) || 0;
           acum[it.actividad] = anterior + estaActa;
         });
         localStorage.setItem(claveAcum, JSON.stringify(acum));
@@ -408,9 +415,9 @@ export default function FormularioActa({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>2. PARTICIPANTES Y CONTROL DEL PERÍODO</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-3 gap-2 mb-3">
-            <Campo label="Días contractuales"><Input type="number" value={diasContractuales} onChange={(e) => setDiasContractuales(e.target.value)} /></Campo>
-            <Campo label="Días de avance"><Input type="number" value={diasAvance} onChange={(e) => setDiasAvance(e.target.value)} /></Campo>
-            <Campo label="% Tiempo avance"><Input type="number" value={porcentajeTiempo} onChange={(e) => setPorcentajeTiempo(e.target.value)} /></Campo>
+            <Campo label="Días contractuales"><Input type="text" inputMode="decimal" value={diasContractuales} onChange={(e) => setDiasContractuales(e.target.value)} /></Campo>
+            <Campo label="Días de avance"><Input type="text" inputMode="decimal" value={diasAvance} onChange={(e) => setDiasAvance(e.target.value)} /></Campo>
+            <Campo label="% Tiempo avance"><Input type="text" inputMode="decimal" value={porcentajeTiempo} onChange={(e) => setPorcentajeTiempo(e.target.value)} /></Campo>
           </div>
           <button
             type="button"
@@ -419,7 +426,7 @@ export default function FormularioActa({ onVolver }) {
                 const datos = JSON.parse(localStorage.getItem("ryr_cronograma_fechas") || "null");
                 if (!datos) { alert("No hay un Cronograma guardado todavía. Genera uno primero."); return; }
                 if (!hasta) { alert('Primero llena la fecha "Hasta" del acta (arriba).'); return; }
-                const dc = Number(datos.duracionTotalDias) || 0;
+                const dc = numES(datos.duracionTotalDias) || 0;
                 const da = Math.max(0, Math.round((new Date(hasta) - new Date(datos.fechaInicio)) / 86400000) + 1);
                 const pt = dc > 0 ? Math.min(100, (da / dc) * 100) : 0;
                 setDiasContractuales(String(dc));
@@ -515,16 +522,16 @@ export default function FormularioActa({ onVolver }) {
               />
               {it.unidad && <div className="text-[10.5px] text-gray-500 mt-1 mb-1.5">Unidad: {it.unidad} · Cant. contractual y anterior se sugieren solas desde Presupuesto y actas anteriores (editables)</div>}
               <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-                <input placeholder="Cant. contractual" type="number" value={it.cantContractual} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantContractual: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Cant. anterior" type="number" value={it.cantAnterior} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantAnterior: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Cant. contractual" type="text" inputMode="decimal" value={it.cantContractual} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantContractual: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Cant. anterior" type="text" inputMode="decimal" value={it.cantAnterior} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantAnterior: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               </div>
               <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-                <input placeholder="Cant. esta acta" type="number" value={it.cantActa} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantActa: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Precio unitario" type="number" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Cant. esta acta" type="text" inputMode="decimal" value={it.cantActa} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], cantActa: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Precio unitario" type="text" inputMode="decimal" value={it.precioUnitario} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], precioUnitario: e.target.value }; setItems(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               </div>
               <div className="mt-1.5">
                 {it.cantActa && it.precioUnitario && (
-                  <div className="text-[11px] text-gray-500 mt-1">Valor de esta actividad: {(Number(it.cantActa) * Number(it.precioUnitario)).toLocaleString("es-CO")}</div>
+                  <div className="text-[11px] text-gray-500 mt-1">Valor de esta actividad: {(numES(it.cantActa) * numES(it.precioUnitario)).toLocaleString("es-CO")}</div>
                 )}
               </div>
               <input placeholder="Observación" value={it.observacion} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], observacion: e.target.value }; setItems(c); }} className="w-full border rounded px-2 py-1.5 text-[12px] mt-1.5" style={{ borderColor: LINE }} />
@@ -540,8 +547,8 @@ export default function FormularioActa({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>4. CONTROL ECONÓMICO DEL ACTA</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Valor contractual"><Input type="number" value={valorContractual} onChange={(e) => setValorContractual(e.target.value)} /></Campo>
-            <Campo label="Valor actas anteriores"><Input type="number" value={valorActasAnteriores} onChange={(e) => setValorActasAnteriores(e.target.value)} /></Campo>
+            <Campo label="Valor contractual"><Input type="text" inputMode="decimal" value={valorContractual} onChange={(e) => setValorContractual(e.target.value)} /></Campo>
+            <Campo label="Valor actas anteriores"><Input type="text" inputMode="decimal" value={valorActasAnteriores} onChange={(e) => setValorActasAnteriores(e.target.value)} /></Campo>
           </div>
           <button
             type="button"
@@ -550,7 +557,7 @@ export default function FormularioActa({ onVolver }) {
                 const guardadas = JSON.parse(localStorage.getItem("ryr_actas_valor_presente") || "{}");
                 const suma = Object.values(guardadas)
                   .filter((a) => a.actaNo !== actaNo && (!proyecto || a.proyecto === proyecto))
-                  .reduce((acc, a) => acc + (Number(a.valor) || 0), 0);
+                  .reduce((acc, a) => acc + (numES(a.valor) || 0), 0);
                 setValorActasAnteriores(String(Math.round(suma)));
                 alert(`Sumado desde ${Object.values(guardadas).filter((a) => a.actaNo !== actaNo && (!proyecto || a.proyecto === proyecto)).length} acta(s) anterior(es) del mismo proyecto.`);
               } catch (err) {
@@ -569,9 +576,9 @@ export default function FormularioActa({ onVolver }) {
           </Campo>
           <div className="text-[11px] text-gray-500 mb-3">Se calcula solo (Cant. esta acta × Precio unitario, sumado de todas las actividades). <b>Nota:</b> si tus precios de APU's son de costo directo, súmale el AIU/IVA al precio unitario de cada actividad, o usa el "Valor Total" de Presupuesto (que ya incluye AIU) como referencia.</div>
           <div className="grid grid-cols-3 gap-2">
-            <Campo label="Anticipo"><Input type="number" value={anticipo} onChange={(e) => setAnticipo(e.target.value)} /></Campo>
-            <Campo label="Amortización"><Input type="number" value={amortizacion} onChange={(e) => setAmortizacion(e.target.value)} /></Campo>
-            <Campo label="Retenciones"><Input type="number" value={retenciones} onChange={(e) => setRetenciones(e.target.value)} /></Campo>
+            <Campo label="Anticipo"><Input type="text" inputMode="decimal" value={anticipo} onChange={(e) => setAnticipo(e.target.value)} /></Campo>
+            <Campo label="Amortización"><Input type="text" inputMode="decimal" value={amortizacion} onChange={(e) => setAmortizacion(e.target.value)} /></Campo>
+            <Campo label="Retenciones"><Input type="text" inputMode="decimal" value={retenciones} onChange={(e) => setRetenciones(e.target.value)} /></Campo>
           </div>
           <div className="mt-2 p-2 rounded-lg text-center" style={{ background: "#F0F2F5" }}>
             <div className="text-[11px] text-gray-500">Saldo contractual: {saldoContractual.toLocaleString("es-CO")} · % Ejecutado: {porcentajeEjecutado.toFixed(1)}%</div>

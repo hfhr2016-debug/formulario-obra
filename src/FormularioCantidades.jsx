@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -113,17 +120,17 @@ function CampoNombre({ value, onChange, placeholder }) {
 }
 
 function calcularNeta(unidad, sub) {
-  const L = Number(sub.largo) || 0;
-  const A = Number(sub.ancho) || 0;
-  const H = Number(sub.alto) || 0;
-  const N = Number(sub.numElementos) || 1;
-  const R = Number(sub.repeticiones) || 1;
-  const F = Number(sub.factor) || 1;
-  const dedLargo = Number(sub.dedLargo) || 0;
-  const dedAncho = Number(sub.dedAncho) || 1;
-  const dedAlto = Number(sub.dedAlto) || 1;
+  const L = numES(sub.largo) || 0;
+  const A = numES(sub.ancho) || 0;
+  const H = numES(sub.alto) || 0;
+  const N = numES(sub.numElementos) || 1;
+  const R = numES(sub.repeticiones) || 1;
+  const F = numES(sub.factor) || 1;
+  const dedLargo = numES(sub.dedLargo) || 0;
+  const dedAncho = numES(sub.dedAncho) || 1;
+  const dedAlto = numES(sub.dedAlto) || 1;
   const D = dedLargo * dedAncho * dedAlto;
-  const CD = Number(sub.cantidadDirecta) || 0;
+  const CD = numES(sub.cantidadDirecta) || 0;
   const u = (unidad || "").toLowerCase();
   let bruta = 0;
   if (esUnidadDirecta(unidad)) bruta = CD * N * R * F;
@@ -205,7 +212,7 @@ function esUnidadDirecta(unidad) {
 
 function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad }) {
   const directa = esUnidadDirecta(unidad);
-  const dedCalculada = (Number(sub.dedLargo) || 0) * (Number(sub.dedAncho) || 1) * (Number(sub.dedAlto) || 1);
+  const dedCalculada = (numES(sub.dedLargo) || 0) * (numES(sub.dedAncho) || 1) * (numES(sub.dedAlto) || 1);
   return (
     <div className="border rounded-lg p-2 mb-2" style={{ borderColor: LINE, background: "#FAFAF9" }}>
       <div className="flex items-center justify-between mb-1.5">
@@ -224,27 +231,27 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad }) {
       </div>
       {directa ? (
         <div className="mb-1.5">
-          <input placeholder={`Cantidad (${unidad})`} type="number" value={sub.cantidadDirecta} onChange={(e) => actualizar({ ...sub, cantidadDirecta: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder={`Cantidad (${unidad})`} type="text" inputMode="decimal" value={sub.cantidadDirecta} onChange={(e) => actualizar({ ...sub, cantidadDirecta: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-          <input placeholder="Largo" type="number" value={sub.largo} onChange={(e) => actualizar({ ...sub, largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-          <input placeholder="Ancho" type="number" value={sub.ancho} onChange={(e) => actualizar({ ...sub, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-          <input placeholder="Alto/Prof." type="number" value={sub.alto} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder="Largo" type="text" inputMode="decimal" value={sub.largo} onChange={(e) => actualizar({ ...sub, largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho} onChange={(e) => actualizar({ ...sub, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder="Alto/Prof." type="text" inputMode="decimal" value={sub.alto} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         </div>
       )}
       <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-        <input placeholder="N° elem." type="number" value={sub.numElementos} onChange={(e) => actualizar({ ...sub, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Repeticiones" type="number" value={sub.repeticiones} onChange={(e) => actualizar({ ...sub, repeticiones: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Factor" type="number" value={sub.factor} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="N° elem." type="text" inputMode="decimal" value={sub.numElementos} onChange={(e) => actualizar({ ...sub, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Repeticiones" type="text" inputMode="decimal" value={sub.repeticiones} onChange={(e) => actualizar({ ...sub, repeticiones: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Factor" type="text" inputMode="decimal" value={sub.factor} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
       </div>
       {!directa && (
         <div>
           <div className="text-[10px] text-gray-500 mb-1">Deducción (opcional) — largo × ancho × alto de lo que se descuenta:</div>
           <div className="grid grid-cols-3 gap-1.5">
-            <input placeholder="Largo desc." type="number" value={sub.dedLargo} onChange={(e) => actualizar({ ...sub, dedLargo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-            <input placeholder="Ancho desc." type="number" value={sub.dedAncho} onChange={(e) => actualizar({ ...sub, dedAncho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-            <input placeholder="Alto desc." type="number" value={sub.dedAlto} onChange={(e) => actualizar({ ...sub, dedAlto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Largo desc." type="text" inputMode="decimal" value={sub.dedLargo} onChange={(e) => actualizar({ ...sub, dedLargo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Ancho desc." type="text" inputMode="decimal" value={sub.dedAncho} onChange={(e) => actualizar({ ...sub, dedAncho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Alto desc." type="text" inputMode="decimal" value={sub.dedAlto} onChange={(e) => actualizar({ ...sub, dedAlto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           </div>
           {(sub.dedLargo || sub.dedAncho) && (
             <div className="text-[10.5px] text-gray-500 mt-1">Deducción calculada: {dedCalculada.toFixed(3)}</div>
@@ -264,7 +271,7 @@ function TarjetaActividad({ a, actualizar, quitar }) {
     () => a.subs.reduce((acc, s) => acc + calcularNeta(unidad, s), 0),
     [a.subs, unidad]
   );
-  const totalFinal = Math.round(totalNeta * (1 + (Number(a.desperdicio) || 0)) * 1000) / 1000;
+  const totalFinal = Math.round(totalNeta * (1 + (numES(a.desperdicio) || 0)) * 1000) / 1000;
 
   const actualizarSub = (i, nuevo) => {
     const subs = [...a.subs];
@@ -317,7 +324,7 @@ function TarjetaActividad({ a, actualizar, quitar }) {
           <div className="grid grid-cols-2 gap-2 mb-1">
             <input
               placeholder="Desperdicio (ej: 0.05 = 5%)"
-              type="number"
+              type="text" inputMode="decimal"
               value={a.desperdicio}
               onChange={(e) => actualizar({ ...a, desperdicio: e.target.value })}
               className="border rounded px-2 py-1.5 text-[12.5px]"
@@ -407,7 +414,7 @@ export default function FormularioCantidades({ onVolver }) {
         const filaCant = info.fila;
 
         const totalNeta = a.subs.reduce((acc, s) => acc + calcularNeta(unidad, s), 0);
-        const desperdicio = Number(a.desperdicio) || 0;
+        const desperdicio = numES(a.desperdicio) || 0;
         const totalFinal = Math.round(totalNeta * (1 + desperdicio) * 1000) / 1000;
 
         wsCant.getCell(`R${filaCant}`).value = desperdicio;
@@ -422,18 +429,18 @@ export default function FormularioCantidades({ onVolver }) {
           wsCant.getCell(`F${filaCant}`).value = s0.ubicacion;
           wsCant.getCell(`G${filaCant}`).value = s0.plano;
           if (esUnidadDirecta(unidad)) {
-            wsCant.getCell(`J${filaCant}`).value = Number(s0.cantidadDirecta) || 0;
+            wsCant.getCell(`J${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
             wsCant.getCell(`K${filaCant}`).value = 1;
             wsCant.getCell(`L${filaCant}`).value = 1;
           } else {
-            wsCant.getCell(`J${filaCant}`).value = Number(s0.largo) || 0;
-            wsCant.getCell(`K${filaCant}`).value = Number(s0.ancho) || 0;
-            wsCant.getCell(`L${filaCant}`).value = Number(s0.alto) || 0;
+            wsCant.getCell(`J${filaCant}`).value = numES(s0.largo) || 0;
+            wsCant.getCell(`K${filaCant}`).value = numES(s0.ancho) || 0;
+            wsCant.getCell(`L${filaCant}`).value = numES(s0.alto) || 0;
           }
-          wsCant.getCell(`N${filaCant}`).value = Number(s0.numElementos) || 0;
-          wsCant.getCell(`O${filaCant}`).value = Number(s0.repeticiones) || 0;
-          wsCant.getCell(`P${filaCant}`).value = Number(s0.factor) || 0;
-          const dedTotal = (Number(s0.dedLargo) || 0) * (Number(s0.dedAncho) || 1) * (Number(s0.dedAlto) || 1);
+          wsCant.getCell(`N${filaCant}`).value = numES(s0.numElementos) || 0;
+          wsCant.getCell(`O${filaCant}`).value = numES(s0.repeticiones) || 0;
+          wsCant.getCell(`P${filaCant}`).value = numES(s0.factor) || 0;
+          const dedTotal = (numES(s0.dedLargo) || 0) * (numES(s0.dedAncho) || 1) * (numES(s0.dedAlto) || 1);
           wsCant.getCell(`Q${filaCant}`).value = dedTotal;
         } else {
           wsCant.getCell(`F${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
@@ -448,18 +455,18 @@ export default function FormularioCantidades({ onVolver }) {
           wsCalc.getCell(`F${filaCalc}`).value = s.plano;
           wsCalc.getCell(`H${filaCalc}`).value = unidad;
           if (esUnidadDirecta(unidad)) {
-            wsCalc.getCell(`I${filaCalc}`).value = Number(s.cantidadDirecta) || 0;
+            wsCalc.getCell(`I${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
             wsCalc.getCell(`J${filaCalc}`).value = 1;
             wsCalc.getCell(`K${filaCalc}`).value = 1;
           } else {
-            wsCalc.getCell(`I${filaCalc}`).value = Number(s.largo) || 0;
-            wsCalc.getCell(`J${filaCalc}`).value = Number(s.ancho) || 0;
-            wsCalc.getCell(`K${filaCalc}`).value = Number(s.alto) || 0;
+            wsCalc.getCell(`I${filaCalc}`).value = numES(s.largo) || 0;
+            wsCalc.getCell(`J${filaCalc}`).value = numES(s.ancho) || 0;
+            wsCalc.getCell(`K${filaCalc}`).value = numES(s.alto) || 0;
           }
-          wsCalc.getCell(`L${filaCalc}`).value = Number(s.numElementos) || 0;
-          wsCalc.getCell(`M${filaCalc}`).value = Number(s.repeticiones) || 0;
-          wsCalc.getCell(`N${filaCalc}`).value = Number(s.factor) || 0;
-          wsCalc.getCell(`O${filaCalc}`).value = (Number(s.dedLargo) || 0) * (Number(s.dedAncho) || 1) * (Number(s.dedAlto) || 1);
+          wsCalc.getCell(`L${filaCalc}`).value = numES(s.numElementos) || 0;
+          wsCalc.getCell(`M${filaCalc}`).value = numES(s.repeticiones) || 0;
+          wsCalc.getCell(`N${filaCalc}`).value = numES(s.factor) || 0;
+          wsCalc.getCell(`O${filaCalc}`).value = (numES(s.dedLargo) || 0) * (numES(s.dedAncho) || 1) * (numES(s.dedAlto) || 1);
           wsCalc.getCell(`P${filaCalc}`).value = desperdicio;
           wsCalc.getCell(`Q${filaCalc}`).value = neta;
           wsCalc.getCell(`R${filaCalc}`).value = final;

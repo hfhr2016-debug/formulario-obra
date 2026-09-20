@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -45,11 +52,11 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap }) {
   const totalCap = capitulo.items.reduce((acc, it, i) => {
     const v = valores[`${indexCap}-${i}`];
     if (!v) return acc;
-    return acc + (Number(v.cant) || 0) * (Number(v.precio) || 0);
+    return acc + (numES(v.cant) || 0) * (numES(v.precio) || 0);
   }, 0);
   const itemsLlenos = capitulo.items.filter((_, i) => {
     const v = valores[`${indexCap}-${i}`];
-    return v && Number(v.cant) > 0;
+    return v && numES(v.cant) > 0;
   }).length;
 
   return (
@@ -78,7 +85,7 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap }) {
           {capitulo.items.map((it, i) => {
             const key = `${indexCap}-${i}`;
             const v = valores[key] || { cant: "", precio: "" };
-            const subtotal = (Number(v.cant) || 0) * (Number(v.precio) || 0);
+            const subtotal = (numES(v.cant) || 0) * (numES(v.precio) || 0);
             return (
               <div key={i} className="py-2 border-b last:border-b-0" style={{ borderColor: LINE }}>
                 <div className="text-[12px] mb-1" style={{ color: NAVY }}>
@@ -87,7 +94,7 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap }) {
                 <div className="flex gap-1.5 items-center">
                   <input
                     placeholder="Cant."
-                    type="number"
+                    type="text" inputMode="decimal"
                     value={v.cant}
                     onChange={(e) => setValor(key, { ...v, cant: e.target.value })}
                     className="flex-1 border rounded px-2 py-1.5 text-[12.5px] min-w-0"
@@ -95,7 +102,7 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap }) {
                   />
                   <input
                     placeholder="Vr Unit."
-                    type="number"
+                    type="text" inputMode="decimal"
                     value={v.precio}
                     onChange={(e) => setValor(key, { ...v, precio: e.target.value })}
                     className="flex-1 border rounded px-2 py-1.5 text-[12.5px] min-w-0"
@@ -146,7 +153,7 @@ export default function FormularioPresupuesto({ onVolver }) {
     CAPITULOS.forEach((cap, ci) => {
       cap.items.forEach((_, ii) => {
         const v = valores[`${ci}-${ii}`];
-        if (v) t += (Number(v.cant) || 0) * (Number(v.precio) || 0);
+        if (v) t += (numES(v.cant) || 0) * (numES(v.precio) || 0);
       });
     });
     return t;
@@ -326,29 +333,29 @@ export default function FormularioPresupuesto({ onVolver }) {
 
       wsFicha.getCell("B2").value = proyecto;
       wsFicha.getCell("B9").value = proyecto;
-      wsFicha.getCell("B14").value = Number(pisos) || 0;
-      wsFicha.getCell("B15").value = Number(sotanos) || 0;
-      wsFicha.getCell("B16").value = Number(areaLote) || 0;
-      wsFicha.getCell("B17").value = Number(areaTipicaPiso) || 0;
-      wsFicha.getCell("B19").value = Number(areaSotanos) || 0;
-      wsFicha.getCell("B20").value = Number(areaCubierta) || 0;
-      wsFicha.getCell("B22").value = Number(numApartamentos) || 0;
-      wsFicha.getCell("B23").value = Number(areaPromedioApto) || 0;
-      wsFicha.getCell("B24").value = Number(numParqueaderos) || 0;
-      wsFicha.getCell("B25").value = Number(numAscensores) || 0;
-      wsFicha.getCell("B26").value = Number(alturaTotal) || 0;
-      wsFicha.getCell("B29").value = Number(administracion) / 100;
-      wsFicha.getCell("B30").value = Number(imprevistos) / 100;
-      wsFicha.getCell("B31").value = Number(utilidad) / 100;
-      wsFicha.getCell("B32").value = Number(ivaUtilidad) / 100;
+      wsFicha.getCell("B14").value = numES(pisos) || 0;
+      wsFicha.getCell("B15").value = numES(sotanos) || 0;
+      wsFicha.getCell("B16").value = numES(areaLote) || 0;
+      wsFicha.getCell("B17").value = numES(areaTipicaPiso) || 0;
+      wsFicha.getCell("B19").value = numES(areaSotanos) || 0;
+      wsFicha.getCell("B20").value = numES(areaCubierta) || 0;
+      wsFicha.getCell("B22").value = numES(numApartamentos) || 0;
+      wsFicha.getCell("B23").value = numES(areaPromedioApto) || 0;
+      wsFicha.getCell("B24").value = numES(numParqueaderos) || 0;
+      wsFicha.getCell("B25").value = numES(numAscensores) || 0;
+      wsFicha.getCell("B26").value = numES(alturaTotal) || 0;
+      wsFicha.getCell("B29").value = numES(administracion) / 100;
+      wsFicha.getCell("B30").value = numES(imprevistos) / 100;
+      wsFicha.getCell("B31").value = numES(utilidad) / 100;
+      wsFicha.getCell("B32").value = numES(ivaUtilidad) / 100;
 
       CAPITULOS.forEach((cap, ci) => {
         cap.items.forEach((it, ii) => {
           const fila = cap.items_start + ii;
           const v = valores[`${ci}-${ii}`];
           if (v && (v.cant || v.precio)) {
-            wsPres.getCell(`D${fila}`).value = Number(v.cant) || 0;
-            wsPres.getCell(`E${fila}`).value = Number(v.precio) || 0;
+            wsPres.getCell(`D${fila}`).value = numES(v.cant) || 0;
+            wsPres.getCell(`E${fila}`).value = numES(v.precio) || 0;
           }
         });
       });
@@ -359,11 +366,11 @@ export default function FormularioPresupuesto({ onVolver }) {
         CAPITULOS.forEach((cap, ci) => {
           cap.items.forEach((it, ii) => {
             const v = valores[`${ci}-${ii}`];
-            if (v && Number(v.cant) > 0) {
+            if (v && numES(v.cant) > 0) {
               guardadas[it.actividad.trim().toLowerCase()] = {
                 actividad: it.actividad,
                 unidad: it.unidad,
-                cantidad: Number(v.cant),
+                cantidad: numES(v.cant),
               };
             }
           });
@@ -469,26 +476,26 @@ export default function FormularioPresupuesto({ onVolver }) {
         </div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Número de pisos"><Input type="number" value={pisos} onChange={(e) => setPisos(e.target.value)} /></Campo>
-            <Campo label="Número de sótanos"><Input type="number" value={sotanos} onChange={(e) => setSotanos(e.target.value)} /></Campo>
+            <Campo label="Número de pisos"><Input type="text" inputMode="decimal" value={pisos} onChange={(e) => setPisos(e.target.value)} /></Campo>
+            <Campo label="Número de sótanos"><Input type="text" inputMode="decimal" value={sotanos} onChange={(e) => setSotanos(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Área del lote" unidad="m²"><Input type="number" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} /></Campo>
-            <Campo label="Área típica por piso" unidad="m²"><Input type="number" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} /></Campo>
+            <Campo label="Área del lote" unidad="m²"><Input type="text" inputMode="decimal" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} /></Campo>
+            <Campo label="Área típica por piso" unidad="m²"><Input type="text" inputMode="decimal" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Área sótanos" unidad="m²"><Input type="number" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} /></Campo>
-            <Campo label="Área cubierta" unidad="m²"><Input type="number" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} /></Campo>
+            <Campo label="Área sótanos" unidad="m²"><Input type="text" inputMode="decimal" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} /></Campo>
+            <Campo label="Área cubierta" unidad="m²"><Input type="text" inputMode="decimal" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="No. apartamentos"><Input type="number" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} /></Campo>
-            <Campo label="Área prom. apto." unidad="m²"><Input type="number" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} /></Campo>
+            <Campo label="No. apartamentos"><Input type="text" inputMode="decimal" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} /></Campo>
+            <Campo label="Área prom. apto." unidad="m²"><Input type="text" inputMode="decimal" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="No. parqueaderos"><Input type="number" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} /></Campo>
-            <Campo label="No. ascensores"><Input type="number" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} /></Campo>
+            <Campo label="No. parqueaderos"><Input type="text" inputMode="decimal" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} /></Campo>
+            <Campo label="No. ascensores"><Input type="text" inputMode="decimal" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} /></Campo>
           </div>
-          <Campo label="Altura total" unidad="m"><Input type="number" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} /></Campo>
+          <Campo label="Altura total" unidad="m"><Input type="text" inputMode="decimal" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} /></Campo>
         </div>
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>
@@ -496,12 +503,12 @@ export default function FormularioPresupuesto({ onVolver }) {
         </div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Administración" unidad="%"><Input type="number" value={administracion} onChange={(e) => setAdministracion(e.target.value)} /></Campo>
-            <Campo label="Imprevistos" unidad="%"><Input type="number" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} /></Campo>
+            <Campo label="Administración" unidad="%"><Input type="text" inputMode="decimal" value={administracion} onChange={(e) => setAdministracion(e.target.value)} /></Campo>
+            <Campo label="Imprevistos" unidad="%"><Input type="text" inputMode="decimal" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Utilidad" unidad="%"><Input type="number" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} /></Campo>
-            <Campo label="IVA sobre Utilidad" unidad="%"><Input type="number" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} /></Campo>
+            <Campo label="Utilidad" unidad="%"><Input type="text" inputMode="decimal" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} /></Campo>
+            <Campo label="IVA sobre Utilidad" unidad="%"><Input type="text" inputMode="decimal" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} /></Campo>
           </div>
         </div>
 

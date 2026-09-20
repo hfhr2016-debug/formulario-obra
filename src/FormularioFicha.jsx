@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import ExcelJS from "exceljs";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -121,22 +128,22 @@ export default function FormularioFicha({ onVolver }) {
       ws.getCell("B11").value = contratista;
       ws.getCell("B12").value = ubicacion;
 
-      ws.getCell("B14").value = Number(pisos) || 0;
-      ws.getCell("B15").value = Number(sotanos) || 0;
-      ws.getCell("B16").value = Number(areaLote) || 0;
-      ws.getCell("B17").value = Number(areaTipicaPiso) || 0;
-      ws.getCell("B19").value = Number(areaSotanos) || 0;
-      ws.getCell("B20").value = Number(areaCubierta) || 0;
-      ws.getCell("B22").value = Number(numApartamentos) || 0;
-      ws.getCell("B23").value = Number(areaPromedioApto) || 0;
-      ws.getCell("B24").value = Number(numParqueaderos) || 0;
-      ws.getCell("B25").value = Number(numAscensores) || 0;
-      ws.getCell("B26").value = Number(alturaTotal) || 0;
+      ws.getCell("B14").value = numES(pisos) || 0;
+      ws.getCell("B15").value = numES(sotanos) || 0;
+      ws.getCell("B16").value = numES(areaLote) || 0;
+      ws.getCell("B17").value = numES(areaTipicaPiso) || 0;
+      ws.getCell("B19").value = numES(areaSotanos) || 0;
+      ws.getCell("B20").value = numES(areaCubierta) || 0;
+      ws.getCell("B22").value = numES(numApartamentos) || 0;
+      ws.getCell("B23").value = numES(areaPromedioApto) || 0;
+      ws.getCell("B24").value = numES(numParqueaderos) || 0;
+      ws.getCell("B25").value = numES(numAscensores) || 0;
+      ws.getCell("B26").value = numES(alturaTotal) || 0;
 
-      ws.getCell("B29").value = Number(administracion) / 100;
-      ws.getCell("B30").value = Number(imprevistos) / 100;
-      ws.getCell("B31").value = Number(utilidad) / 100;
-      ws.getCell("B32").value = Number(ivaUtilidad) / 100;
+      ws.getCell("B29").value = numES(administracion) / 100;
+      ws.getCell("B30").value = numES(imprevistos) / 100;
+      ws.getCell("B31").value = numES(utilidad) / 100;
+      ws.getCell("B32").value = numES(ivaUtilidad) / 100;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -211,46 +218,46 @@ export default function FormularioFicha({ onVolver }) {
         <div className="border border-t-0 rounded-b-lg p-3" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Número de pisos" unidad="pisos">
-              <Input type="number" value={pisos} onChange={(e) => setPisos(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={pisos} onChange={(e) => setPisos(e.target.value)} />
             </Campo>
             <Campo label="Número de sótanos" unidad="niveles">
-              <Input type="number" value={sotanos} onChange={(e) => setSotanos(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={sotanos} onChange={(e) => setSotanos(e.target.value)} />
             </Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Área del lote" unidad="m²">
-              <Input type="number" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} />
             </Campo>
             <Campo label="Área típica por piso" unidad="m²">
-              <Input type="number" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} />
             </Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Área construida - sótanos" unidad="m²">
-              <Input type="number" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} />
             </Campo>
             <Campo label="Área cubierta / cto. máquinas" unidad="m²">
-              <Input type="number" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} />
             </Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Número de apartamentos" unidad="und">
-              <Input type="number" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} />
             </Campo>
             <Campo label="Área promedio apto." unidad="m²">
-              <Input type="number" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} />
             </Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Número de parqueaderos" unidad="und">
-              <Input type="number" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} />
             </Campo>
             <Campo label="Número de ascensores" unidad="und">
-              <Input type="number" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} />
             </Campo>
           </div>
           <Campo label="Altura total aproximada" unidad="m">
-            <Input type="number" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} />
+            <Input type="text" inputMode="decimal" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} />
           </Campo>
         </div>
 
@@ -263,23 +270,23 @@ export default function FormularioFicha({ onVolver }) {
         <div className="border border-t-0 rounded-b-lg p-3" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Administración (A)" unidad="%">
-              <Input type="number" value={administracion} onChange={(e) => setAdministracion(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={administracion} onChange={(e) => setAdministracion(e.target.value)} />
             </Campo>
             <Campo label="Imprevistos (I)" unidad="%">
-              <Input type="number" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} />
             </Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Utilidad (U)" unidad="%">
-              <Input type="number" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} />
             </Campo>
             <Campo label="IVA sobre Utilidad" unidad="%">
-              <Input type="number" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} />
+              <Input type="text" inputMode="decimal" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} />
             </Campo>
           </div>
           <div className="text-[11.5px] text-gray-500 mt-1">
             AIU total: <b style={{ color: NAVY }}>
-              {(Number(administracion || 0) + Number(imprevistos || 0) + Number(utilidad || 0)).toFixed(1)}%
+              {(numES(administracion || 0) + numES(imprevistos || 0) + numES(utilidad || 0)).toFixed(1)}%
             </b>
           </div>
         </div>

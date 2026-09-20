@@ -2,6 +2,13 @@ import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
 import { Camera, X } from "lucide-react";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -185,13 +192,13 @@ function BuscadorTexto({ value, onChange, catalogo, placeholder }) {
 }
 
 function CapituloAvance({ capitulo, prog, real, setProgReal }) {
-  const dif = (Number(real) || 0) - (Number(prog) || 0);
+  const dif = (numES(real) || 0) - (numES(prog) || 0);
   return (
     <div className="border rounded-lg p-2 mb-1.5" style={{ borderColor: LINE }}>
       <div className="text-[12px] font-medium mb-1.5" style={{ color: NAVY }}>{capitulo.nombre}</div>
       <div className="grid grid-cols-3 gap-1.5 items-center">
-        <input placeholder="Prog. %" type="number" value={prog} onChange={(e) => setProgReal(e.target.value, real)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Real %" type="number" value={real} onChange={(e) => setProgReal(prog, e.target.value)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Prog. %" type="text" inputMode="decimal" value={prog} onChange={(e) => setProgReal(e.target.value, real)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Real %" type="text" inputMode="decimal" value={real} onChange={(e) => setProgReal(prog, e.target.value)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         <div className="text-[11px] text-center font-semibold" style={{ color: dif < 0 ? "#C0392B" : NAVY }}>
           Dif: {(dif * 100).toFixed(1)}%
         </div>
@@ -239,8 +246,8 @@ export default function FormularioMensual({ onVolver }) {
 
   const [generando, setGenerando] = useState(false);
 
-  const totalIngresos = ingresos.reduce((acc, i) => acc + (Number(i.valor) || 0), 0);
-  const totalEgresos = egresos.reduce((acc, e) => acc + (Number(e.valor) || 0), 0);
+  const totalIngresos = ingresos.reduce((acc, i) => acc + (numES(i.valor) || 0), 0);
+  const totalEgresos = egresos.reduce((acc, e) => acc + (numES(e.valor) || 0), 0);
 
   function cargarActaComoIngreso() {
     try {
@@ -265,7 +272,7 @@ export default function FormularioMensual({ onVolver }) {
   function cargarHorasDesdeDiario() {
     try {
       const guardadas = JSON.parse(localStorage.getItem("ryr_horas_hombre_diario") || "{}");
-      const total = Object.values(guardadas).reduce((acc, h) => acc + (Number(h) || 0), 0);
+      const total = Object.values(guardadas).reduce((acc, h) => acc + (numES(h) || 0), 0);
       if (total === 0) {
         alert("Todavía no hay horas guardadas desde el Informe Diario en este dispositivo.");
         return;
@@ -354,22 +361,22 @@ export default function FormularioMensual({ onVolver }) {
       wsFicha.getCell("B2").value = proyecto;
       wsFicha.getCell("B9").value = proyecto;
       wsFicha.getCell("B10").value = noContrato;
-      wsFicha.getCell("B14").value = Number(pisos) || 0; wsFicha.getCell("B15").value = Number(sotanos) || 0;
-      wsFicha.getCell("B16").value = Number(areaLote) || 0; wsFicha.getCell("B17").value = Number(areaTipicaPiso) || 0;
-      wsFicha.getCell("B19").value = Number(areaSotanos) || 0; wsFicha.getCell("B20").value = Number(areaCubierta) || 0;
-      wsFicha.getCell("B22").value = Number(numApartamentos) || 0; wsFicha.getCell("B23").value = Number(areaPromedioApto) || 0;
-      wsFicha.getCell("B24").value = Number(numParqueaderos) || 0; wsFicha.getCell("B25").value = Number(numAscensores) || 0;
-      wsFicha.getCell("B26").value = Number(alturaTotal) || 0;
-      wsFicha.getCell("B29").value = Number(administracion) / 100; wsFicha.getCell("B30").value = Number(imprevistos) / 100;
-      wsFicha.getCell("B31").value = Number(utilidad) / 100; wsFicha.getCell("B32").value = Number(ivaUtilidad) / 100;
+      wsFicha.getCell("B14").value = numES(pisos) || 0; wsFicha.getCell("B15").value = numES(sotanos) || 0;
+      wsFicha.getCell("B16").value = numES(areaLote) || 0; wsFicha.getCell("B17").value = numES(areaTipicaPiso) || 0;
+      wsFicha.getCell("B19").value = numES(areaSotanos) || 0; wsFicha.getCell("B20").value = numES(areaCubierta) || 0;
+      wsFicha.getCell("B22").value = numES(numApartamentos) || 0; wsFicha.getCell("B23").value = numES(areaPromedioApto) || 0;
+      wsFicha.getCell("B24").value = numES(numParqueaderos) || 0; wsFicha.getCell("B25").value = numES(numAscensores) || 0;
+      wsFicha.getCell("B26").value = numES(alturaTotal) || 0;
+      wsFicha.getCell("B29").value = numES(administracion) / 100; wsFicha.getCell("B30").value = numES(imprevistos) / 100;
+      wsFicha.getCell("B31").value = numES(utilidad) / 100; wsFicha.getCell("B32").value = numES(ivaUtilidad) / 100;
 
       CAPITULOS.forEach((cap, ci) => {
         cap.items.forEach((it, ii) => {
           const fila = cap.items_start + ii;
           const v = valoresPresupuesto[`${ci}-${ii}`];
           if (v && (v.cant || v.precio)) {
-            wsPres.getCell(`D${fila}`).value = Number(v.cant) || 0;
-            wsPres.getCell(`E${fila}`).value = Number(v.precio) || 0;
+            wsPres.getCell(`D${fila}`).value = numES(v.cant) || 0;
+            wsPres.getCell(`E${fila}`).value = numES(v.precio) || 0;
           }
         });
       });
@@ -384,8 +391,8 @@ export default function FormularioMensual({ onVolver }) {
         const fila = 25 + ci;
         const av = avances[ci];
         if (av) {
-          wsMen.getCell(`E${fila}`).value = Number(av.prog) / 100 || 0;
-          wsMen.getCell(`F${fila}`).value = Number(av.real) / 100 || 0;
+          wsMen.getCell(`E${fila}`).value = numES(av.prog) / 100 || 0;
+          wsMen.getCell(`F${fila}`).value = numES(av.real) / 100 || 0;
         }
       });
 
@@ -406,7 +413,7 @@ export default function FormularioMensual({ onVolver }) {
         if (r > 66) return;
         wsMen.getCell(`A${r}`).value = ing.concepto;
         wsMen.getCell(`D${r}`).value = ing.fecha ? aFechaDDMMYYYY(ing.fecha) : "";
-        wsMen.getCell(`E${r}`).value = Number(ing.valor) || 0;
+        wsMen.getCell(`E${r}`).value = numES(ing.valor) || 0;
       });
       egresos.forEach((eg, i) => {
         if (!eg.concepto) return;
@@ -414,10 +421,10 @@ export default function FormularioMensual({ onVolver }) {
         if (r > 66) return;
         wsMen.getCell(`H${r}`).value = eg.concepto;
         wsMen.getCell(`K${r}`).value = eg.fecha ? aFechaDDMMYYYY(eg.fecha) : "";
-        wsMen.getCell(`M${r}`).value = Number(eg.valor) || 0;
+        wsMen.getCell(`M${r}`).value = numES(eg.valor) || 0;
       });
 
-      wsMen.getCell("A70").value = Number(horasHombre) || 0;
+      wsMen.getCell("A70").value = numES(horasHombre) || 0;
       wsMen.getCell("A72").value = observacionesHSE;
 
       const posicionesFotos = [
@@ -510,37 +517,37 @@ export default function FormularioMensual({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2" style={{ background: NAVY }}>DATOS GENERALES (FICHA TÉCNICA)</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Número de pisos"><Input type="number" value={pisos} onChange={(e) => setPisos(e.target.value)} /></Campo>
-            <Campo label="Número de sótanos"><Input type="number" value={sotanos} onChange={(e) => setSotanos(e.target.value)} /></Campo>
+            <Campo label="Número de pisos"><Input type="text" inputMode="decimal" value={pisos} onChange={(e) => setPisos(e.target.value)} /></Campo>
+            <Campo label="Número de sótanos"><Input type="text" inputMode="decimal" value={sotanos} onChange={(e) => setSotanos(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Área del lote"><Input type="number" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} /></Campo>
-            <Campo label="Área típica por piso"><Input type="number" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} /></Campo>
+            <Campo label="Área del lote"><Input type="text" inputMode="decimal" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} /></Campo>
+            <Campo label="Área típica por piso"><Input type="text" inputMode="decimal" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Área sótanos"><Input type="number" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} /></Campo>
-            <Campo label="Área cubierta"><Input type="number" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} /></Campo>
+            <Campo label="Área sótanos"><Input type="text" inputMode="decimal" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} /></Campo>
+            <Campo label="Área cubierta"><Input type="text" inputMode="decimal" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="No. apartamentos"><Input type="number" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} /></Campo>
-            <Campo label="Área prom. apto."><Input type="number" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} /></Campo>
+            <Campo label="No. apartamentos"><Input type="text" inputMode="decimal" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} /></Campo>
+            <Campo label="Área prom. apto."><Input type="text" inputMode="decimal" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="No. parqueaderos"><Input type="number" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} /></Campo>
-            <Campo label="No. ascensores"><Input type="number" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} /></Campo>
+            <Campo label="No. parqueaderos"><Input type="text" inputMode="decimal" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} /></Campo>
+            <Campo label="No. ascensores"><Input type="text" inputMode="decimal" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} /></Campo>
           </div>
-          <Campo label="Altura total"><Input type="number" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} /></Campo>
+          <Campo label="Altura total"><Input type="text" inputMode="decimal" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} /></Campo>
         </div>
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>AIU</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Administración %"><Input type="number" value={administracion} onChange={(e) => setAdministracion(e.target.value)} /></Campo>
-            <Campo label="Imprevistos %"><Input type="number" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} /></Campo>
+            <Campo label="Administración %"><Input type="text" inputMode="decimal" value={administracion} onChange={(e) => setAdministracion(e.target.value)} /></Campo>
+            <Campo label="Imprevistos %"><Input type="text" inputMode="decimal" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Utilidad %"><Input type="number" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} /></Campo>
-            <Campo label="IVA sobre Utilidad %"><Input type="number" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} /></Campo>
+            <Campo label="Utilidad %"><Input type="text" inputMode="decimal" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} /></Campo>
+            <Campo label="IVA sobre Utilidad %"><Input type="text" inputMode="decimal" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} /></Campo>
           </div>
         </div>
 
@@ -598,7 +605,7 @@ export default function FormularioMensual({ onVolver }) {
             <div key={i} className="flex gap-1.5 mb-1.5">
               <input placeholder="Concepto" value={ing.concepto} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], concepto: e.target.value }; setIngresos(c); }} className="flex-[2] border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
               <input type="date" value={ing.fecha} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], fecha: e.target.value }; setIngresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[11px] min-w-0" style={{ borderColor: LINE }} />
-              <input placeholder="Valor" type="number" value={ing.valor} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], valor: e.target.value }; setIngresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
+              <input placeholder="Valor" type="text" inputMode="decimal" value={ing.valor} onChange={(e) => { const c = [...ingresos]; c[i] = { ...c[i], valor: e.target.value }; setIngresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
             </div>
           ))}
           {ingresos.length < 5 && (
@@ -611,7 +618,7 @@ export default function FormularioMensual({ onVolver }) {
             <div key={i} className="flex gap-1.5 mb-1.5">
               <input placeholder="Concepto" value={eg.concepto} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], concepto: e.target.value }; setEgresos(c); }} className="flex-[2] border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
               <input type="date" value={eg.fecha} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], fecha: e.target.value }; setEgresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[11px] min-w-0" style={{ borderColor: LINE }} />
-              <input placeholder="Valor" type="number" value={eg.valor} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], valor: e.target.value }; setEgresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
+              <input placeholder="Valor" type="text" inputMode="decimal" value={eg.valor} onChange={(e) => { const c = [...egresos]; c[i] = { ...c[i], valor: e.target.value }; setEgresos(c); }} className="flex-1 border rounded px-2 py-1.5 text-[12px] min-w-0" style={{ borderColor: LINE }} />
             </div>
           ))}
           {egresos.length < 5 && (
@@ -628,7 +635,7 @@ export default function FormularioMensual({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>ASPECTOS HSE Y AMBIENTALES</div>
         <div className="p-3 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
           <Campo label="Horas hombre trabajadas">
-            <Input type="number" value={horasHombre} onChange={(e) => setHorasHombre(e.target.value)} />
+            <Input type="text" inputMode="decimal" value={horasHombre} onChange={(e) => setHorasHombre(e.target.value)} />
             <button type="button" onClick={cargarHorasDesdeDiario} className="w-full mt-1.5 text-center py-2 rounded-lg text-[11.5px] font-semibold text-white" style={{ background: NAVY }}>
               ⚡ Calcular desde Informe Diario guardado en este dispositivo
             </button>

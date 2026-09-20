@@ -2,6 +2,13 @@ import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
 import { Camera, X } from "lucide-react";
 
+function numES(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -189,13 +196,13 @@ function CasillaFoto({ foto, onChange, onRemove, numero }) {
   );
 }
 
-function CapituloAvance({ capitulo, prog, real, setProgReal }) {  const dif = (Number(real) || 0) - (Number(prog) || 0);
+function CapituloAvance({ capitulo, prog, real, setProgReal }) {  const dif = (numES(real) || 0) - (numES(prog) || 0);
   return (
     <div className="border rounded-lg p-2 mb-1.5" style={{ borderColor: LINE }}>
       <div className="text-[12px] font-medium mb-1.5" style={{ color: NAVY }}>{capitulo.nombre}</div>
       <div className="grid grid-cols-3 gap-1.5 items-center">
-        <input placeholder="Prog. %" type="number" value={prog} onChange={(e) => setProgReal(e.target.value, real)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Real %" type="number" value={real} onChange={(e) => setProgReal(prog, e.target.value)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Prog. %" type="text" inputMode="decimal" value={prog} onChange={(e) => setProgReal(e.target.value, real)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Real %" type="text" inputMode="decimal" value={real} onChange={(e) => setProgReal(prog, e.target.value)} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         <div className="text-[11px] text-center font-semibold" style={{ color: dif < 0 ? "#C0392B" : NAVY }}>
           Dif: {(dif * 100).toFixed(1)}%
         </div>
@@ -329,22 +336,22 @@ export default function FormularioSemanal({ onVolver }) {
       wsFicha.getCell("B2").value = proyecto;
       wsFicha.getCell("B9").value = proyecto;
       wsFicha.getCell("B10").value = noContrato;
-      wsFicha.getCell("B14").value = Number(pisos) || 0; wsFicha.getCell("B15").value = Number(sotanos) || 0;
-      wsFicha.getCell("B16").value = Number(areaLote) || 0; wsFicha.getCell("B17").value = Number(areaTipicaPiso) || 0;
-      wsFicha.getCell("B19").value = Number(areaSotanos) || 0; wsFicha.getCell("B20").value = Number(areaCubierta) || 0;
-      wsFicha.getCell("B22").value = Number(numApartamentos) || 0; wsFicha.getCell("B23").value = Number(areaPromedioApto) || 0;
-      wsFicha.getCell("B24").value = Number(numParqueaderos) || 0; wsFicha.getCell("B25").value = Number(numAscensores) || 0;
-      wsFicha.getCell("B26").value = Number(alturaTotal) || 0;
-      wsFicha.getCell("B29").value = Number(administracion) / 100; wsFicha.getCell("B30").value = Number(imprevistos) / 100;
-      wsFicha.getCell("B31").value = Number(utilidad) / 100; wsFicha.getCell("B32").value = Number(ivaUtilidad) / 100;
+      wsFicha.getCell("B14").value = numES(pisos) || 0; wsFicha.getCell("B15").value = numES(sotanos) || 0;
+      wsFicha.getCell("B16").value = numES(areaLote) || 0; wsFicha.getCell("B17").value = numES(areaTipicaPiso) || 0;
+      wsFicha.getCell("B19").value = numES(areaSotanos) || 0; wsFicha.getCell("B20").value = numES(areaCubierta) || 0;
+      wsFicha.getCell("B22").value = numES(numApartamentos) || 0; wsFicha.getCell("B23").value = numES(areaPromedioApto) || 0;
+      wsFicha.getCell("B24").value = numES(numParqueaderos) || 0; wsFicha.getCell("B25").value = numES(numAscensores) || 0;
+      wsFicha.getCell("B26").value = numES(alturaTotal) || 0;
+      wsFicha.getCell("B29").value = numES(administracion) / 100; wsFicha.getCell("B30").value = numES(imprevistos) / 100;
+      wsFicha.getCell("B31").value = numES(utilidad) / 100; wsFicha.getCell("B32").value = numES(ivaUtilidad) / 100;
 
       CAPITULOS.forEach((cap, ci) => {
         cap.items.forEach((it, ii) => {
           const fila = cap.items_start + ii;
           const v = valoresPresupuesto[`${ci}-${ii}`];
           if (v && (v.cant || v.precio)) {
-            wsPres.getCell(`D${fila}`).value = Number(v.cant) || 0;
-            wsPres.getCell(`E${fila}`).value = Number(v.precio) || 0;
+            wsPres.getCell(`D${fila}`).value = numES(v.cant) || 0;
+            wsPres.getCell(`E${fila}`).value = numES(v.precio) || 0;
           }
         });
       });
@@ -359,8 +366,8 @@ export default function FormularioSemanal({ onVolver }) {
         const fila = 24 + ci;
         const av = avances[ci];
         if (av) {
-          wsSem.getCell(`E${fila}`).value = Number(av.prog) / 100 || 0;
-          wsSem.getCell(`F${fila}`).value = Number(av.real) / 100 || 0;
+          wsSem.getCell(`E${fila}`).value = numES(av.prog) / 100 || 0;
+          wsSem.getCell(`F${fila}`).value = numES(av.real) / 100 || 0;
         }
       });
 
@@ -375,7 +382,7 @@ export default function FormularioSemanal({ onVolver }) {
         wsSem.getCell(`K${r}`).value = act.observaciones;
       });
 
-      wsSem.getCell("A71").value = Number(horasHombre) || 0;
+      wsSem.getCell("A71").value = numES(horasHombre) || 0;
       wsSem.getCell("A73").value = observacionesHSE;
       wsSem.getCell("A78").value = aspectosAmbientales;
 
@@ -472,37 +479,37 @@ export default function FormularioSemanal({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2" style={{ background: NAVY }}>DATOS GENERALES (FICHA TÉCNICA)</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Número de pisos"><Input type="number" value={pisos} onChange={(e) => setPisos(e.target.value)} /></Campo>
-            <Campo label="Número de sótanos"><Input type="number" value={sotanos} onChange={(e) => setSotanos(e.target.value)} /></Campo>
+            <Campo label="Número de pisos"><Input type="text" inputMode="decimal" value={pisos} onChange={(e) => setPisos(e.target.value)} /></Campo>
+            <Campo label="Número de sótanos"><Input type="text" inputMode="decimal" value={sotanos} onChange={(e) => setSotanos(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Área del lote"><Input type="number" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} /></Campo>
-            <Campo label="Área típica por piso"><Input type="number" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} /></Campo>
+            <Campo label="Área del lote"><Input type="text" inputMode="decimal" value={areaLote} onChange={(e) => setAreaLote(e.target.value)} /></Campo>
+            <Campo label="Área típica por piso"><Input type="text" inputMode="decimal" value={areaTipicaPiso} onChange={(e) => setAreaTipicaPiso(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Área sótanos"><Input type="number" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} /></Campo>
-            <Campo label="Área cubierta"><Input type="number" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} /></Campo>
+            <Campo label="Área sótanos"><Input type="text" inputMode="decimal" value={areaSotanos} onChange={(e) => setAreaSotanos(e.target.value)} /></Campo>
+            <Campo label="Área cubierta"><Input type="text" inputMode="decimal" value={areaCubierta} onChange={(e) => setAreaCubierta(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="No. apartamentos"><Input type="number" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} /></Campo>
-            <Campo label="Área prom. apto."><Input type="number" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} /></Campo>
+            <Campo label="No. apartamentos"><Input type="text" inputMode="decimal" value={numApartamentos} onChange={(e) => setNumApartamentos(e.target.value)} /></Campo>
+            <Campo label="Área prom. apto."><Input type="text" inputMode="decimal" value={areaPromedioApto} onChange={(e) => setAreaPromedioApto(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="No. parqueaderos"><Input type="number" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} /></Campo>
-            <Campo label="No. ascensores"><Input type="number" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} /></Campo>
+            <Campo label="No. parqueaderos"><Input type="text" inputMode="decimal" value={numParqueaderos} onChange={(e) => setNumParqueaderos(e.target.value)} /></Campo>
+            <Campo label="No. ascensores"><Input type="text" inputMode="decimal" value={numAscensores} onChange={(e) => setNumAscensores(e.target.value)} /></Campo>
           </div>
-          <Campo label="Altura total"><Input type="number" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} /></Campo>
+          <Campo label="Altura total"><Input type="text" inputMode="decimal" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} /></Campo>
         </div>
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>AIU</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Administración %"><Input type="number" value={administracion} onChange={(e) => setAdministracion(e.target.value)} /></Campo>
-            <Campo label="Imprevistos %"><Input type="number" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} /></Campo>
+            <Campo label="Administración %"><Input type="text" inputMode="decimal" value={administracion} onChange={(e) => setAdministracion(e.target.value)} /></Campo>
+            <Campo label="Imprevistos %"><Input type="text" inputMode="decimal" value={imprevistos} onChange={(e) => setImprevistos(e.target.value)} /></Campo>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Campo label="Utilidad %"><Input type="number" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} /></Campo>
-            <Campo label="IVA sobre Utilidad %"><Input type="number" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} /></Campo>
+            <Campo label="Utilidad %"><Input type="text" inputMode="decimal" value={utilidad} onChange={(e) => setUtilidad(e.target.value)} /></Campo>
+            <Campo label="IVA sobre Utilidad %"><Input type="text" inputMode="decimal" value={ivaUtilidad} onChange={(e) => setIvaUtilidad(e.target.value)} /></Campo>
           </div>
         </div>
 
@@ -545,7 +552,7 @@ export default function FormularioSemanal({ onVolver }) {
                 const datos = JSON.parse(localStorage.getItem("ryr_cronograma_fechas") || "null");
                 if (!datos) { alert("No hay un Cronograma guardado todavía. Genera uno primero."); return; }
                 if (!hastaSemana) { alert('Primero llena la fecha "Hasta" del período (arriba).'); return; }
-                const dc = Number(datos.duracionTotalDias) || 0;
+                const dc = numES(datos.duracionTotalDias) || 0;
                 const da = Math.max(0, Math.round((new Date(hastaSemana) - new Date(datos.fechaInicio)) / 86400000) + 1);
                 const pct = dc > 0 ? Math.min(1, da / dc) : 0;
                 const nuevos = {};
@@ -616,13 +623,13 @@ export default function FormularioSemanal({ onVolver }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>ASPECTOS HSE Y AMBIENTALES</div>
         <div className="p-3 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
           <Campo label="Horas hombre trabajadas">
-            <Input type="number" value={horasHombre} onChange={(e) => setHorasHombre(e.target.value)} />
+            <Input type="text" inputMode="decimal" value={horasHombre} onChange={(e) => setHorasHombre(e.target.value)} />
             <button
               type="button"
               onClick={() => {
                 try {
                   const guardadas = JSON.parse(localStorage.getItem("ryr_horas_hombre_diario") || "{}");
-                  const total = Object.values(guardadas).reduce((acc, h) => acc + (Number(h) || 0), 0);
+                  const total = Object.values(guardadas).reduce((acc, h) => acc + (numES(h) || 0), 0);
                   if (total === 0) {
                     alert("Todavía no hay horas guardadas desde el Informe Diario en este dispositivo.");
                     return;
