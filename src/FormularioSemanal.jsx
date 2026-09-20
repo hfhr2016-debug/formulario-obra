@@ -385,11 +385,12 @@ export default function FormularioSemanal({ onVolver }) {
 
       // --- Registro fotográfico (4 casillas, 2 filas de 2) ---
       const posicionesFotos = [
-        { tl: { col: 0, row: 79 }, br: { col: 7, row: 95 } },   // A80:G95
-        { tl: { col: 7, row: 79 }, br: { col: 14, row: 95 } },  // H80:N95
-        { tl: { col: 0, row: 95 }, br: { col: 7, row: 111 } },  // A96:G111
-        { tl: { col: 7, row: 95 }, br: { col: 14, row: 111 } }, // H96:N111
+        { tl: { col: 0, row: 79 }, br: { col: 7, row: 93 } },   // A80:G93 (imagen) + A94:G95 (descripción)
+        { tl: { col: 7, row: 79 }, br: { col: 14, row: 93 } },  // H80:N93 + H94:N95
+        { tl: { col: 0, row: 95 }, br: { col: 7, row: 109 } },  // A96:G109 + A110:G111
+        { tl: { col: 7, row: 95 }, br: { col: 14, row: 109 } }, // H96:N109 + H110:N111
       ];
+      const celdasCaption = ["A94", "H94", "A110", "H110"];
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
         if (!foto.file) continue;
@@ -397,6 +398,7 @@ export default function FormularioSemanal({ onVolver }) {
         const imageId = workbook.addImage({ buffer, extension: "jpeg" });
         const pos = posicionesFotos[i];
         wsSem.addImage(imageId, { tl: pos.tl, br: pos.br });
+        wsSem.getCell(celdasCaption[i]).value = foto.caption || "";
       }
 
       const idxSem = workbook.worksheets.indexOf(wsSem);

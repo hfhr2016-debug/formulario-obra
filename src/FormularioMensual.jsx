@@ -63,7 +63,7 @@ function CasillaFoto({ foto, onChange, onRemove, numero }) {
   function manejarArchivo(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    onChange({ file, previewUrl: URL.createObjectURL(file) });
+    onChange({ file, previewUrl: URL.createObjectURL(file), caption: foto.caption });
   }
   return (
     <div className="border rounded-lg p-2.5" style={{ borderColor: LINE, background: PAPER }}>
@@ -84,6 +84,8 @@ function CasillaFoto({ foto, onChange, onRemove, numero }) {
         </button>
       )}
       <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={manejarArchivo} />
+      <input type="text" value={foto.caption || ""} onChange={(e) => onChange({ ...foto, caption: e.target.value })}
+        placeholder="Descripción de la foto" className="w-full mt-1.5 text-[11px] px-2 py-1.5 rounded border" style={{ borderColor: LINE }} />
     </div>
   );
 }
@@ -227,9 +229,9 @@ export default function FormularioMensual({ onVolver }) {
   const [horasHombre, setHorasHombre] = useState("");
   const [observacionesHSE, setObservacionesHSE] = useState("");
 
-  const [fotos, setFotos] = useState(Array.from({ length: 6 }, () => ({ file: null, previewUrl: null })));
+  const [fotos, setFotos] = useState(Array.from({ length: 6 }, () => ({ file: null, previewUrl: null, caption: "" })));
   function actualizarFoto(idx, nuevaFoto) { setFotos((fs) => fs.map((f, i) => (i === idx ? nuevaFoto : f))); }
-  function quitarFoto(idx) { setFotos((fs) => fs.map((f, i) => (i === idx ? { file: null, previewUrl: null } : f))); }
+  function quitarFoto(idx) { setFotos((fs) => fs.map((f, i) => (i === idx ? { file: null, previewUrl: null, caption: "" } : f))); }
 
   const [elabFirma, setElabFirma] = useState(""); const [elabNombre, setElabNombre] = useState(""); const [elabCargo, setElabCargo] = useState("");
   const [revFirma, setRevFirma] = useState(""); const [revNombre, setRevNombre] = useState(""); const [revCargo, setRevCargo] = useState("");
@@ -419,19 +421,21 @@ export default function FormularioMensual({ onVolver }) {
       wsMen.getCell("A72").value = observacionesHSE;
 
       const posicionesFotos = [
-        { tl: { col: 0, row: 72 }, br: { col: 7, row: 88 } },
-        { tl: { col: 7, row: 72 }, br: { col: 14, row: 88 } },
-        { tl: { col: 0, row: 88 }, br: { col: 7, row: 104 } },
-        { tl: { col: 7, row: 88 }, br: { col: 14, row: 104 } },
-        { tl: { col: 0, row: 104 }, br: { col: 7, row: 120 } },
-        { tl: { col: 7, row: 104 }, br: { col: 14, row: 120 } },
+        { tl: { col: 0, row: 72 }, br: { col: 7, row: 86 } },
+        { tl: { col: 7, row: 72 }, br: { col: 14, row: 86 } },
+        { tl: { col: 0, row: 88 }, br: { col: 7, row: 102 } },
+        { tl: { col: 7, row: 88 }, br: { col: 14, row: 102 } },
+        { tl: { col: 0, row: 104 }, br: { col: 7, row: 118 } },
+        { tl: { col: 7, row: 104 }, br: { col: 14, row: 118 } },
       ];
+      const celdasCaption = ["A87", "H87", "A103", "H103", "A119", "H119"];
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
         if (!foto.file) continue;
         const bufferFoto = await comprimirFoto(foto.file);
         const imageId = workbook.addImage({ buffer: bufferFoto, extension: "jpeg" });
         wsMen.addImage(imageId, posicionesFotos[i]);
+        wsMen.getCell(celdasCaption[i]).value = foto.caption || "";
       }
 
       wsMen.getCell("B124").value = elabFirma; wsMen.getCell("B126").value = elabNombre; wsMen.getCell("B128").value = elabCargo;
