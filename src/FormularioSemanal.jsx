@@ -211,7 +211,8 @@ export default function FormularioSemanal({ onVolver }) {
 
   const [proyecto, setProyecto] = useState("");
   const [noContrato, setNoContrato] = useState("");
-  const [mes, setMes] = useState("");
+  const [desdeSemana, setDesdeSemana] = useState("");
+  const [hastaSemana, setHastaSemana] = useState("");
   const [elaboradoPor, setElaboradoPor] = useState("");
 
   const [pisos, setPisos] = useState(""); const [sotanos, setSotanos] = useState("");
@@ -288,7 +289,7 @@ export default function FormularioSemanal({ onVolver }) {
       }
       if (wsSem) {
         setNoContrato(wsSem.getCell("E14").value || "");
-        setMes(wsSem.getCell("L15").value || "");
+        // Período (Desde/Hasta) no se recupera automáticamente al cargar un archivo existente; se debe reingresar.
         setElaboradoPor(wsSem.getCell("E16").value || "");
         const nuevosAvances = {};
         CAPITULOS.forEach((_, ci) => {
@@ -350,7 +351,7 @@ export default function FormularioSemanal({ onVolver }) {
 
       wsSem.getCell("E13").value = proyecto;
       wsSem.getCell("E14").value = noContrato;
-      wsSem.getCell("L15").value = mes;
+      wsSem.getCell("L15").value = (desdeSemana && hastaSemana) ? `${aFechaDDMMYYYY(desdeSemana)} - ${aFechaDDMMYYYY(hastaSemana)}` : "";
       wsSem.getCell("L16").value = aFechaDDMMYYYY(fechaLocalHoy());
       wsSem.getCell("E16").value = elaboradoPor;
 
@@ -459,7 +460,10 @@ export default function FormularioSemanal({ onVolver }) {
           <Campo label="No. de Contrato"><Input value={noContrato} onChange={(e) => setNoContrato(e.target.value)} /></Campo>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Campo label="Mes"><BuscadorTexto value={mes} onChange={setMes} catalogo={CATALOGO_MESES} placeholder="Ej: Septiembre 2026" /></Campo>
+          <div className="grid grid-cols-2 gap-3">
+            <Campo label="Desde"><Input type="date" value={desdeSemana} onChange={(e) => setDesdeSemana(e.target.value)} /></Campo>
+            <Campo label="Hasta"><Input type="date" value={hastaSemana} onChange={(e) => setHastaSemana(e.target.value)} /></Campo>
+          </div>
           <Campo label="Elaborado por"><CampoNombre value={elaboradoPor} onChange={setElaboradoPor} /></Campo>
         </div>
 
@@ -531,6 +535,29 @@ export default function FormularioSemanal({ onVolver }) {
             style={{ background: NAVY }}
           >
             ⚡ Cargar % Real desde el Informe Diario guardado en este dispositivo
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const datos = JSON.parse(localStorage.getItem("ryr_cronograma_fechas") || "null");
+                if (!datos) { alert("No hay un Cronograma guardado todavía. Genera uno primero."); return; }
+                if (!hastaSemana) { alert('Primero llena la fecha "Hasta" del período (arriba).'); return; }
+                const dc = Number(datos.duracionTotalDias) || 0;
+                const da = Math.max(0, Math.round((new Date(hastaSemana) - new Date(datos.fechaInicio)) / 86400000) + 1);
+                const pct = dc > 0 ? Math.min(1, da / dc) : 0;
+                const nuevos = {};
+                CAPITULOS.forEach((cap, ci) => { nuevos[ci] = { ...(avances[ci] || {}), prog: pct.toFixed(3) }; });
+                setAvances(nuevos);
+                alert(`% Programado aplicado a todos los capítulos: ${(pct * 100).toFixed(1)}% (según tiempo transcurrido del Cronograma). Es una aproximación por tiempo, no por avance físico real de cada capítulo — ajústalo si lo necesitas.`);
+              } catch (err) {
+                alert("No se pudo calcular desde el Cronograma.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            ⚡ Calcular % Programado desde Cronograma (por tiempo transcurrido)
           </button>
           <div className="text-[11px] text-gray-500 mb-2 px-1">Escribe el % de avance programado y el % real ejecutado de cada capítulo, como decimal entre 0 y 1 en pantalla, o directo el número entero (ej: escribe 25 para 25%).</div>
           {CAPITULOS.map((cap, ci) => (
