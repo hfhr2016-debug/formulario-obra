@@ -373,15 +373,15 @@ export default function FormularioAPU({ onVolver }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.getWorksheet("Apu's");
 
-      ws.getCell("A10").value = actividad.actividad;
+      ws.getCell("A10").value = (actividad.actividad || "").toUpperCase();
       ws.getCell("S4").value = cuadrilla;
       ws.getCell("U4").value = Number(jornada) || 0;
       ws.getCell("V4").value = Number(rendimiento) || 0;
 
       ws.getCell("C13").value = proyecto;
       ws.getCell("C14").value = noContrato;
-      ws.getCell("I14").value = fechaDDMMYYYY();
-      ws.getCell("I15").value = ubicacion;
+      ws.getCell("J14").value = fechaDDMMYYYY();
+      ws.getCell("J15").value = ubicacion;
 
       const escribirFilas = (filas, filaInicio) => {
         filas.forEach((f, i) => {
