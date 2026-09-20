@@ -438,6 +438,8 @@ export default function FormularioMensual({ onVolver }) {
       wsMen.getCell("F124").value = revFirma; wsMen.getCell("F126").value = revNombre; wsMen.getCell("F128").value = revCargo;
       wsMen.getCell("K124").value = aprFirma; wsMen.getCell("K126").value = aprNombre; wsMen.getCell("K128").value = aprCargo;
 
+      const idxMen = workbook.worksheets.indexOf(wsMen);
+      workbook.views = [{ activeTab: idxMen, firstSheet: idxMen }];
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const nombreArchivo = `Informe_Mensual_${(proyecto || "proyecto").slice(0, 25).replace(/[^a-zA-Z0-9]/g, "_")}_${fechaLocalHoy()}.xlsx`;

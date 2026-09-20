@@ -373,6 +373,8 @@ export default function FormularioPresupuesto({ onVolver }) {
         console.warn("No se pudieron guardar las cantidades en memoria local:", e);
       }
 
+      const idxPres = workbook.worksheets.indexOf(wsPres);
+      workbook.views = [{ activeTab: idxPres, firstSheet: idxPres }];
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

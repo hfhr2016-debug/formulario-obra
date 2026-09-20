@@ -398,6 +398,8 @@ export default function FormularioSemanal({ onVolver }) {
         wsSem.addImage(imageId, { tl: pos.tl, br: pos.br });
       }
 
+      const idxSem = workbook.worksheets.indexOf(wsSem);
+      workbook.views = [{ activeTab: idxSem, firstSheet: idxSem }];
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const nombreArchivo = `Informe_Semanal_${(proyecto || "proyecto").slice(0, 25).replace(/[^a-zA-Z0-9]/g, "_")}_${fechaLocalHoy()}.xlsx`;
@@ -458,7 +460,7 @@ export default function FormularioSemanal({ onVolver }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Campo label="Mes"><BuscadorTexto value={mes} onChange={setMes} catalogo={CATALOGO_MESES} placeholder="Ej: Septiembre 2026" /></Campo>
-          <Campo label="Elaborado por"><Input value={elaboradoPor} onChange={(e) => setElaboradoPor(e.target.value)} /></Campo>
+          <Campo label="Elaborado por"><CampoNombre value={elaboradoPor} onChange={setElaboradoPor} /></Campo>
         </div>
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2" style={{ background: NAVY }}>DATOS GENERALES (FICHA TÉCNICA)</div>
@@ -546,7 +548,7 @@ export default function FormularioSemanal({ onVolver }) {
             <div key={i} className="mb-3 pb-3 border-b last:border-b-0" style={{ borderColor: LINE }}>
               <div className="grid grid-cols-2 gap-1.5 mb-1.5">
                 <input placeholder="Ubicación" value={act.ubicacion} onChange={(e) => { const c = [...actividades]; c[i] = { ...c[i], ubicacion: e.target.value }; setActividades(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                <input placeholder="Responsable" value={act.responsable} onChange={(e) => { const c = [...actividades]; c[i] = { ...c[i], responsable: e.target.value }; setActividades(c); }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <CampoNombre value={act.responsable} onChange={(v) => { const c = [...actividades]; c[i] = { ...c[i], responsable: v }; setActividades(c); }} placeholder="Responsable" />
               </div>
               <BuscadorTexto
                 value={act.descripcion}
