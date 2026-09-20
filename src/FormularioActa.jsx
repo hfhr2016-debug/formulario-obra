@@ -308,21 +308,6 @@ export default function FormularioActa({ onVolver }) {
         ws.getCell(`N${r}`).value = o.estado;
       });
 
-      const posicionesFotos = [
-        { tl: { col: 0, row: 53 }, br: { col: 3, row: 66 } },
-        { tl: { col: 3, row: 53 }, br: { col: 5, row: 66 } },
-        { tl: { col: 5, row: 53 }, br: { col: 8, row: 66 } },
-        { tl: { col: 8, row: 53 }, br: { col: 11, row: 66 } },
-        { tl: { col: 11, row: 53 }, br: { col: 14, row: 66 } },
-      ];
-      for (let i = 0; i < fotos.length; i++) {
-        const foto = fotos[i];
-        if (!foto.file) continue;
-        const bufferFoto = await comprimirFoto(foto.file);
-        const imageId = workbook.addImage({ buffer: bufferFoto, extension: "jpeg" });
-        ws.addImage(imageId, posicionesFotos[i]);
-      }
-
       ws.getCell("A75").value = elabCargo ? `${elabNombre} - ${elabCargo}` : elabNombre;
       ws.getCell("E75").value = revCargo ? `${revNombre} - ${revCargo}` : revNombre;
       ws.getCell("I75").value = aprCargo ? `${aprNombre} - ${aprCargo}` : aprNombre;
@@ -636,18 +621,6 @@ export default function FormularioActa({ onVolver }) {
               + Agregar observación
             </button>
           )}
-        </div>
-
-        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>EVIDENCIA FOTOGRÁFICA</div>
-        <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
-          <div className="grid grid-cols-2 gap-2">
-            {fotos.slice(0, 4).map((foto, i) => (
-              <CasillaFoto key={i} foto={foto} numero={i + 1} onChange={(f) => actualizarFoto(i, f)} onRemove={() => quitarFoto(i)} />
-            ))}
-          </div>
-          <div className="w-1/2 mx-auto mt-2">
-            <CasillaFoto foto={fotos[4]} numero={5} onChange={(f) => actualizarFoto(4, f)} onRemove={() => quitarFoto(4)} />
-          </div>
         </div>
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>9. APROBACIONES Y FIRMAS</div>
