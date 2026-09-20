@@ -254,9 +254,9 @@ export default function FormularioMemoria({ onVolver }) {
         ws.addImage(imageId, posicionesFotos[i]);
       }
 
-      ws.getCell("B96").value = elabCargo ? `${elabNombre} - ${elabCargo}` : elabNombre;
-      ws.getCell("E96").value = revCargo ? `${revNombre} - ${revCargo}` : revNombre;
-      ws.getCell("I96").value = aprCargo ? `${aprNombre} - ${aprCargo}` : aprNombre;
+      ws.getCell("B98").value = elabCargo ? `${elabNombre} - ${elabCargo}` : elabNombre;
+      ws.getCell("E98").value = revCargo ? `${revNombre} - ${revCargo}` : revNombre;
+      ws.getCell("I98").value = aprCargo ? `${aprNombre} - ${aprCargo}` : aprNombre;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
