@@ -224,6 +224,7 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividadNomb
   const directa = esUnidadDirecta(unidad);
   const deducciones = sub.deducciones && sub.deducciones.length ? sub.deducciones : [];
   const dedTotalCalculada = deducciones.reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
+  const resultadoSitio = calcularNeta(unidad, sub);
   return (
     <div className="border rounded-lg p-2 mb-2" style={{ borderColor: LINE, background: "#FAFAF9" }}>
       <div className="flex items-center justify-between mb-1.5">
@@ -329,6 +330,10 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividadNomb
           )}
         </div>
       )}
+      <div className="mt-2 p-2 rounded-lg text-center" style={{ background: NAVY }}>
+        <div className="text-[10px]" style={{ color: GOLD }}>Resultado de este sitio (medición − deducciones, con factor aplicado)</div>
+        <div className="text-white font-bold text-[15px]">{resultadoSitio} {unidad}</div>
+      </div>
     </div>
   );
 }
