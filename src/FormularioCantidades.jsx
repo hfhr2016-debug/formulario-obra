@@ -212,7 +212,15 @@ function esUnidadDirecta(unidad) {
   return UNIDADES_SIN_DIMENSIONES.includes((unidad || "").toLowerCase());
 }
 
-function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad }) {
+const PESO_ACERO_KG_POR_METRO = {
+  '#2 (1/4")': 0.249, '#3 (3/8")': 0.56, '#4 (1/2")': 0.994, '#5 (5/8")': 1.552,
+  '#6 (3/4")': 2.235, '#7 (7/8")': 3.042, '#8 (1")': 3.973, '#9 (1 1/8")': 5.06,
+  '#10 (1 1/4")': 6.404, '#11 (1 3/8")': 7.907,
+};
+function esActividadAcero(nombre) { return /acero/i.test(nombre || ""); }
+
+function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividadNombre }) {
+  const esAcero = esActividadAcero(actividadNombre);
   const directa = esUnidadDirecta(unidad);
   const deducciones = sub.deducciones && sub.deducciones.length ? sub.deducciones : [];
   const dedTotalCalculada = deducciones.reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
@@ -232,7 +240,42 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad }) {
           </button>
         )}
       </div>
-      {directa ? (
+      {directa && esAcero ? (
+        <div className="mb-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
+            <select
+              value={sub.denominacion || ""}
+              onChange={(e) => {
+                const denom = e.target.value;
+                const metros = numES(sub.metros);
+                const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+                actualizar({ ...sub, denominacion: denom, cantidadDirecta: peso ? String(Math.round(peso * 1000) / 1000) : sub.cantidadDirecta });
+              }}
+              className="border rounded px-2 py-1.5 text-[12px]"
+              style={{ borderColor: LINE }}
+            >
+              <option value="">Denominación de varilla</option>
+              {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (
+                <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
+              ))}
+            </select>
+            <input
+              placeholder="Metros lineales"
+              type="text" inputMode="decimal"
+              value={sub.metros || ""}
+              onChange={(e) => {
+                const metros = numES(e.target.value);
+                const denom = sub.denominacion;
+                const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+                actualizar({ ...sub, metros: e.target.value, cantidadDirecta: peso ? String(Math.round(peso * 1000) / 1000) : sub.cantidadDirecta });
+              }}
+              className="border rounded px-2 py-1.5 text-[12px]"
+              style={{ borderColor: LINE }}
+            />
+          </div>
+          <div className="text-[10.5px] text-gray-500 mt-1">Peso calculado: {(numES(sub.cantidadDirecta) || 0).toFixed(3)} kg</div>
+        </div>
+      ) : directa ? (
         <div className="mb-1.5">
           <input placeholder={`Cantidad (${unidad})`} type="text" inputMode="decimal" value={sub.cantidadDirecta} onChange={(e) => actualizar({ ...sub, cantidadDirecta: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         </div>
@@ -343,6 +386,7 @@ function TarjetaActividad({ a, actualizar, quitar }) {
               quitar={() => quitarSub(i)}
               mostrarQuitar={a.subs.length > 1}
               unidad={unidad}
+              actividadNombre={a.actividad}
             />
           ))}
           <button

@@ -7,6 +7,38 @@ function numES(v) {
   return isNaN(n) ? 0 : n;
 }
 
+const PESO_ACERO_KG_POR_METRO = {
+  '#2 (1/4")': 0.249,
+  '#3 (3/8")': 0.56,
+  '#4 (1/2")': 0.994,
+  '#5 (5/8")': 1.552,
+  '#6 (3/4")': 2.235,
+  '#7 (7/8")': 3.042,
+  '#8 (1")': 3.973,
+  '#9 (1 1/8")': 5.06,
+  '#10 (1 1/4")': 6.404,
+  '#11 (1 3/8")': 7.907,
+};
+
+function esActividadAcero(nombreActividad) {
+  return /acero/i.test(nombreActividad || "");
+}
+function unidadNecesitaAlto(unidad) {
+  const u = (unidad || "").toLowerCase();
+  return u === "m³" || u === "m3";
+}
+function unidadEsArea(unidad) {
+  const u = (unidad || "").toLowerCase();
+  return u === "m²" || u === "m2";
+}
+function unidadEsLineal(unidad) {
+  const u = (unidad || "").toLowerCase();
+  return u === "ml" || u === "m";
+}
+function unidadTieneMedicion(unidad) {
+  return unidadEsArea(unidad) || unidadNecesitaAlto(unidad) || unidadEsLineal(unidad);
+}
+
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -47,7 +79,21 @@ function Input(props) {
   );
 }
 
-function CapituloAcordeon({ capitulo, valores, setValor, indexCap }) {
+function CapituloAcordeon({ capitulo, valores, setValor, indexCap, expandidos, setExpandidos }) {
+  function actualizarMedicion(key, vActual, cambios) {
+    const nuevo = { ...vActual, ...cambios };
+    const largo = numES(nuevo.largo);
+    const ancho = numES(nuevo.ancho);
+    const alto = numES(nuevo.alto);
+    const numElem = numES(nuevo.numElem) || 1;
+    const it = capitulo.items[Number(key.split("-")[1])];
+    const unidad = it ? it.unidad : "";
+    let cant = 0;
+    if (unidadNecesitaAlto(unidad)) cant = largo * (ancho || 1) * (alto || 1) * numElem;
+    else if (unidadEsArea(unidad)) cant = largo * (ancho || 1) * numElem;
+    else if (unidadEsLineal(unidad)) cant = largo * numElem;
+    setValor(key, { ...nuevo, cant: cant ? String(Math.round(cant * 1000) / 1000) : nuevo.cant });
+  }
   const [abierto, setAbierto] = useState(false);
   const totalCap = capitulo.items.reduce((acc, it, i) => {
     const v = valores[`${indexCap}-${i}`];
@@ -86,11 +132,80 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap }) {
             const key = `${indexCap}-${i}`;
             const v = valores[key] || { cant: "", precio: "" };
             const subtotal = (numES(v.cant) || 0) * (numES(v.precio) || 0);
+            const esAcero = esActividadAcero(it.actividad);
+            const tieneMedicion = unidadTieneMedicion(it.unidad);
+            const mostrarPanel = expandidos[key] || false;
             return (
               <div key={i} className="py-2 border-b last:border-b-0" style={{ borderColor: LINE }}>
-                <div className="text-[12px] mb-1" style={{ color: NAVY }}>
-                  {it.actividad} <span className="text-gray-400">({it.unidad})</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-[12px]" style={{ color: NAVY }}>
+                    {it.actividad} <span className="text-gray-400">({it.unidad})</span>
+                  </div>
+                  {(esAcero || tieneMedicion) && (
+                    <button
+                      type="button"
+                      onMouseDown={() => setExpandidos({ ...expandidos, [key]: !mostrarPanel })}
+                      className="text-[10.5px] px-2 py-0.5 rounded-full border shrink-0"
+                      style={{ borderColor: GOLD, color: NAVY }}
+                    >
+                      📐 {mostrarPanel ? "Ocultar medición" : "Calcular medición"}
+                    </button>
+                  )}
                 </div>
+
+                {mostrarPanel && esAcero && (
+                  <div className="mb-1.5 p-2 rounded-lg" style={{ background: PAPER }}>
+                    <div className="grid grid-cols-2 gap-1.5 mb-1">
+                      <select
+                        value={v.denominacion || ""}
+                        onChange={(e) => {
+                          const denom = e.target.value;
+                          const metros = numES(v.metros);
+                          const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+                          setValor(key, { ...v, denominacion: denom, cant: peso ? String(Math.round(peso * 1000) / 1000) : v.cant });
+                        }}
+                        className="border rounded px-2 py-1.5 text-[12px]"
+                        style={{ borderColor: LINE }}
+                      >
+                        <option value="">Denominación de varilla</option>
+                        {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (
+                          <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
+                        ))}
+                      </select>
+                      <input
+                        placeholder="Metros lineales"
+                        type="text" inputMode="decimal"
+                        value={v.metros || ""}
+                        onChange={(e) => {
+                          const metros = numES(e.target.value);
+                          const denom = v.denominacion;
+                          const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+                          setValor(key, { ...v, metros: e.target.value, cant: peso ? String(Math.round(peso * 1000) / 1000) : v.cant });
+                        }}
+                        className="border rounded px-2 py-1.5 text-[12px]"
+                        style={{ borderColor: LINE }}
+                      />
+                    </div>
+                    <div className="text-[10.5px] text-gray-500">Peso calculado: {numES(v.cant).toFixed(3)} kg</div>
+                  </div>
+                )}
+
+                {mostrarPanel && !esAcero && tieneMedicion && (
+                  <div className="mb-1.5 p-2 rounded-lg" style={{ background: PAPER }}>
+                    <div className="grid grid-cols-3 gap-1.5 mb-1">
+                      <input placeholder="Largo" type="text" inputMode="decimal" value={v.largo || ""} onChange={(e) => actualizarMedicion(key, v, { largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                      {!unidadEsLineal(it.unidad) && (
+                        <input placeholder="Ancho" type="text" inputMode="decimal" value={v.ancho || ""} onChange={(e) => actualizarMedicion(key, v, { ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                      )}
+                      {unidadNecesitaAlto(it.unidad) && (
+                        <input placeholder="Alto" type="text" inputMode="decimal" value={v.alto || ""} onChange={(e) => actualizarMedicion(key, v, { alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                      )}
+                      <input placeholder="N° elem." type="text" inputMode="decimal" value={v.numElem || ""} onChange={(e) => actualizarMedicion(key, v, { numElem: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                    </div>
+                    <div className="text-[10.5px] text-gray-500">Cantidad calculada: {numES(v.cant).toFixed(2)} {it.unidad}</div>
+                  </div>
+                )}
+
                 <div className="flex gap-1.5 items-center">
                   <input
                     placeholder="Cant."
@@ -144,6 +259,7 @@ export default function FormularioPresupuesto({ onVolver }) {
   const [ivaUtilidad, setIvaUtilidad] = useState(19);
 
   const [valores, setValores] = useState({});
+  const [expandidos, setExpandidos] = useState({});
   const setValor = (key, v) => setValores((prev) => ({ ...prev, [key]: v }));
 
   const [generando, setGenerando] = useState(false);
@@ -552,7 +668,7 @@ export default function FormularioPresupuesto({ onVolver }) {
             Toca cada capítulo para desplegar sus ítems. Solo llena los que necesites — los demás quedan en $0.
           </div>
           {CAPITULOS.map((cap, ci) => (
-            <CapituloAcordeon key={ci} capitulo={cap} indexCap={ci} valores={valores} setValor={setValor} />
+            <CapituloAcordeon key={ci} capitulo={cap} indexCap={ci} valores={valores} setValor={setValor} expandidos={expandidos} setExpandidos={setExpandidos} />
           ))}
         </div>
 
