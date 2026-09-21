@@ -1283,7 +1283,7 @@ function Inicio({ onSeleccionar }) {
           <button
             key={m.id}
             onClick={() => m.activo && onSeleccionar(m.id)}
-            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-2 relative"
+            className="flex flex-col items-center justify-center rounded-2xl p-2 gap-1 relative"
             style={{
               background: "white",
               border: `1px solid ${LINE}`,
