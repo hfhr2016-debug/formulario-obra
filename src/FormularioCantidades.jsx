@@ -512,11 +512,11 @@ export default function FormularioCantidades({ onVolver }) {
           wsCant.getCell(`F${filaCant}`).value = s0.ubicacion;
           wsCant.getCell(`G${filaCant}`).value = s0.plano;
           if (esUnidadDirecta(unidad)) {
-            wsCant.getCell(`K${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
+            wsCant.getCell(`K${filaCant}`).value = esActividadAcero(a.actividad) ? (numES(s0.metros) || 0) : (numES(s0.cantidadDirecta) || 0);
             wsCant.getCell(`L${filaCant}`).value = 1;
             wsCant.getCell(`M${filaCant}`).value = 1;
             if (esActividadAcero(a.actividad)) {
-              wsCant.getCell(`J${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
+              wsCant.getCell(`J${filaCant}`).value = Math.round(calcularNeta(unidad, s0) * 1000) / 1000;
             }
           } else {
             wsCant.getCell(`K${filaCant}`).value = numES(s0.largo) || 0;
@@ -532,7 +532,7 @@ export default function FormularioCantidades({ onVolver }) {
           wsCant.getCell(`F${filaCant}`).value = "";
           wsCant.getCell(`W${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
           if (esActividadAcero(a.actividad)) {
-            const pesoTotal = a.subs.reduce((acc, s) => acc + (numES(s.cantidadDirecta) || 0), 0);
+            const pesoTotal = a.subs.reduce((acc, s) => acc + calcularNeta(unidad, s), 0);
             wsCant.getCell(`J${filaCant}`).value = Math.round(pesoTotal * 1000) / 1000;
           }
         }
@@ -546,7 +546,7 @@ export default function FormularioCantidades({ onVolver }) {
           wsCalc.getCell(`F${filaCalc}`).value = s.plano;
           wsCalc.getCell(`H${filaCalc}`).value = unidad;
           if (esUnidadDirecta(unidad)) {
-            wsCalc.getCell(`J${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
+            wsCalc.getCell(`J${filaCalc}`).value = esActividadAcero(a.actividad) ? (numES(s.metros) || 0) : (numES(s.cantidadDirecta) || 0);
             wsCalc.getCell(`K${filaCalc}`).value = 1;
             wsCalc.getCell(`L${filaCalc}`).value = 1;
             if (esActividadAcero(a.actividad)) {
