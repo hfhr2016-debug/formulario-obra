@@ -7,6 +7,8 @@ function numES(v) {
   return isNaN(n) ? 0 : n;
 }
 
+const DESPERDICIO_REFERENCIA = {"Concreto de limpieza / solado": 0.03, "Concreto para zapatas": 0.03, "Concreto para vigas de cimentación": 0.03, "Concreto para losas de cimentación": 0.03, "Concreto para pedestales": 0.03, "Concreto para columnas": 0.03, "Concreto para vigas": 0.03, "Concreto para losas": 0.03, "Concreto para escaleras": 0.05, "Concreto para muros estructurales": 0.03, "Acero de refuerzo en cimentación": 0.05, "Acero de refuerzo de columnas": 0.05, "Acero de refuerzo de vigas": 0.05, "Acero de refuerzo de losas": 0.05, "Mampostería en bloque de concreto": 0.05, "Mampostería en ladrillo": 0.05, "Mampostería estructural": 0.05, "Muros en sistema liviano / drywall": 0.08, "Suministro e instalación de teja": 0.08, "Pañete / revoque interior": 0.1, "Pañete / revoque exterior": 0.1, "Pañete impermeabilizado": 0.1, "Estuco plástico o tradicional": 0.1, "Piso cerámico": 0.08, "Piso en porcelanato": 0.1, "Piso vinílico": 0.05, "Piso laminado": 0.05, "Enchape cerámico en muros": 0.1, "Pintura vinílica interior": 0.08, "Pintura exterior": 0.1, "Pintura esmalte en superficies metálicas/madera": 0.08, "Pintura anticorrosiva": 0.08, "Ventanas de aluminio": 0.02, "Divisiones de aluminio": 0.02, "Vidrio templado": 0.05, "Vidrio laminado": 0.05, "Tubería de agua fría": 0.05, "Tubería de agua caliente": 0.05, "Tubería sanitaria": 0.05, "Tubería de aguas lluvias": 0.05, "Tubería/conduit eléctrica": 0.05, "Cableado de fuerza": 0.05, "Cableado de iluminación": 0.05, "Impermeabilización de cubierta": 0.05, "Impermeabilización de losas y terrazas": 0.05, "Impermeabilización de muros": 0.05, "Impermeabilización de zonas húmedas": 0.05, "Formaleta de columnas": 0.05, "Formaleta de vigas": 0.05, "Formaleta de losas": 0.05, "Formaleta de escaleras": 0.05, "Formaleta para elementos de cimentación": 0.05, "Construcción de andenes": 0.05, "Sardineles y bordillos": 0.05};
+
 const PESO_ACERO_KG_POR_METRO = {
   '#2 (1/4")': 0.249,
   '#3 (3/8")': 0.56,
@@ -86,12 +88,15 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap, expandidos, s
     const ancho = numES(nuevo.ancho);
     const alto = numES(nuevo.alto);
     const numElem = numES(nuevo.numElem) || 1;
+    const factor = numES(nuevo.factor) || 1;
     const it = capitulo.items[Number(key.split("-")[1])];
     const unidad = it ? it.unidad : "";
-    let cant = 0;
-    if (unidadNecesitaAlto(unidad)) cant = largo * (ancho || 1) * (alto || 1) * numElem;
-    else if (unidadEsArea(unidad)) cant = largo * (ancho || 1) * numElem;
-    else if (unidadEsLineal(unidad)) cant = largo * numElem;
+    let bruta = 0;
+    if (unidadNecesitaAlto(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem;
+    else if (unidadEsArea(unidad)) bruta = largo * (ancho || 1) * numElem;
+    else if (unidadEsLineal(unidad)) bruta = largo * numElem;
+    const dedTotal = (nuevo.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
+    const cant = (bruta - dedTotal) * factor;
     setValor(key, { ...nuevo, cant: cant ? String(Math.round(cant * 1000) / 1000) : nuevo.cant });
   }
   const [abierto, setAbierto] = useState(false);
@@ -202,6 +207,57 @@ function CapituloAcordeon({ capitulo, valores, setValor, indexCap, expandidos, s
                       )}
                       <input placeholder="N° elem." type="text" inputMode="decimal" value={v.numElem || ""} onChange={(e) => actualizarMedicion(key, v, { numElem: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                     </div>
+
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <input
+                        placeholder="Factor (desperdicio)"
+                        type="text" inputMode="decimal"
+                        value={v.factor !== undefined ? v.factor : ""}
+                        onChange={(e) => actualizarMedicion(key, v, { factor: e.target.value })}
+                        className="flex-1 border rounded px-2 py-1.5 text-[12px]"
+                        style={{ borderColor: LINE }}
+                      />
+                      {DESPERDICIO_REFERENCIA[it.actividad] !== undefined && (
+                        <button
+                          type="button"
+                          onMouseDown={() => actualizarMedicion(key, v, { factor: String(Math.round((1 + DESPERDICIO_REFERENCIA[it.actividad]) * 1000) / 1000) })}
+                          className="text-[10px] px-2 py-1.5 rounded border shrink-0"
+                          style={{ borderColor: GOLD, color: NAVY }}
+                        >
+                          ⚡ {(DESPERDICIO_REFERENCIA[it.actividad] * 100).toFixed(0)}%
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional):</div>
+                    {(v.deducciones || []).map((d, di) => (
+                      <div key={di} className="flex gap-1.5 mb-1 items-center">
+                        <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
+                          const nuevas = [...(v.deducciones || [])]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
+                          actualizarMedicion(key, v, { deducciones: nuevas });
+                        }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                        <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
+                          const nuevas = [...(v.deducciones || [])]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
+                          actualizarMedicion(key, v, { deducciones: nuevas });
+                        }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                        <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
+                          const nuevas = [...(v.deducciones || [])]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
+                          actualizarMedicion(key, v, { deducciones: nuevas });
+                        }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                        <button type="button" onMouseDown={() => {
+                          actualizarMedicion(key, v, { deducciones: (v.deducciones || []).filter((_, k) => k !== di) });
+                        }} className="text-[11px] text-red-500 px-1">✕</button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onMouseDown={() => actualizarMedicion(key, v, { deducciones: [...(v.deducciones || []), { largo: "", ancho: "", alto: "" }] })}
+                      className="w-full py-1.5 rounded-lg text-[11px] font-semibold border mb-1"
+                      style={{ borderColor: GOLD, color: NAVY }}
+                    >
+                      + Agregar deducción
+                    </button>
+
                     <div className="text-[10.5px] text-gray-500">Cantidad calculada: {numES(v.cant).toFixed(2)} {it.unidad}</div>
                   </div>
                 )}
