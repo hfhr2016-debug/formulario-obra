@@ -342,7 +342,7 @@ function TarjetaActividad({ a, actualizar, quitar }) {
     () => a.subs.reduce((acc, s) => acc + calcularNeta(unidad, s), 0),
     [a.subs, unidad]
   );
-  const totalFinal = Math.round(totalNeta * (1 + (numES(a.desperdicio) || 0)) * 1000) / 1000;
+  const totalFinal = totalNeta;
 
   const actualizarSub = (i, nuevo) => {
     const subs = [...a.subs];
@@ -451,6 +451,7 @@ function TarjetaActividad({ a, actualizar, quitar }) {
 export default function FormularioCantidades({ onVolver }) {
   const [actividades, setActividades] = useState([]);
   const [generando, setGenerando] = useState(false);
+  const [ocultarSinUsar, setOcultarSinUsar] = useState(false);
 
   const agregar = (nombre) => {
     if (actividades.some((a) => a.actividad === nombre)) {
@@ -491,7 +492,7 @@ export default function FormularioCantidades({ onVolver }) {
 
         const totalNeta = a.subs.reduce((acc, s) => acc + calcularNeta(unidad, s), 0);
         const desperdicio = numES(a.desperdicio) || 0;
-        const totalFinal = Math.round(totalNeta * (1 + desperdicio) * 1000) / 1000;
+        const totalFinal = totalNeta;
 
         wsCant.getCell(`R${filaCant}`).value = desperdicio;
         wsCant.getCell(`S${filaCant}`).value = Math.round(totalNeta * 1000) / 1000;
@@ -508,6 +509,9 @@ export default function FormularioCantidades({ onVolver }) {
             wsCant.getCell(`J${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
             wsCant.getCell(`K${filaCant}`).value = 1;
             wsCant.getCell(`L${filaCant}`).value = 1;
+            if (esActividadAcero(a.actividad)) {
+              wsCant.getCell(`Z${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
+            }
           } else {
             wsCant.getCell(`J${filaCant}`).value = numES(s0.largo) || 0;
             wsCant.getCell(`K${filaCant}`).value = numES(s0.ancho) || 0;
@@ -524,7 +528,7 @@ export default function FormularioCantidades({ onVolver }) {
 
         a.subs.forEach((s) => {
           const neta = calcularNeta(unidad, s);
-          const final = Math.round(neta * (1 + desperdicio) * 1000) / 1000;
+          const final = neta;
           wsCalc.getCell(`A${filaCalc}`).value = `CAL-${String(idCalc).padStart(3, "0")}`;
           wsCalc.getCell(`D${filaCalc}`).value = a.actividad;
           wsCalc.getCell(`E${filaCalc}`).value = s.ubicacion;
@@ -534,6 +538,9 @@ export default function FormularioCantidades({ onVolver }) {
             wsCalc.getCell(`I${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
             wsCalc.getCell(`J${filaCalc}`).value = 1;
             wsCalc.getCell(`K${filaCalc}`).value = 1;
+            if (esActividadAcero(a.actividad)) {
+              wsCalc.getCell(`V${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
+            }
           } else {
             wsCalc.getCell(`I${filaCalc}`).value = numES(s.largo) || 0;
             wsCalc.getCell(`J${filaCalc}`).value = numES(s.ancho) || 0;
@@ -552,6 +559,15 @@ export default function FormularioCantidades({ onVolver }) {
           idCalc++;
         });
       });
+
+      if (ocultarSinUsar) {
+        const filasUsadas = new Set(actividades.map((a) => MAPA_ACTIVIDADES[a.actividad]?.fila).filter(Boolean));
+        Object.values(MAPA_ACTIVIDADES).forEach((info) => {
+          if (!filasUsadas.has(info.fila)) {
+            wsCant.getRow(info.fila).hidden = true;
+          }
+        });
+      }
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -630,6 +646,11 @@ export default function FormularioCantidades({ onVolver }) {
         <div className="text-[11.5px] text-center py-2.5 mb-2 rounded-lg" style={{ background: PAPER, color: NAVY }}>
           ¿Terminaste con esta actividad? ⬆️ Vuelve a buscar arriba para agregar la siguiente.
         </div>
+
+        <label className="flex items-center gap-2 mb-3 text-[12px] cursor-pointer" style={{ color: NAVY }}>
+          <input type="checkbox" checked={ocultarSinUsar} onChange={(e) => setOcultarSinUsar(e.target.checked)} />
+          Ocultar en el Excel las actividades que no se usaron (quedan ocultas, no se borran)
+        </label>
 
         <button
           onClick={generarExcel}
