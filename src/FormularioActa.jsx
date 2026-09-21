@@ -408,23 +408,27 @@ export default function FormularioActa({ onVolver }) {
             type="button"
             onClick={() => {
               try {
-                const datos = JSON.parse(localStorage.getItem("ryr_cronograma_fechas") || "null");
-                if (!datos) { alert("No hay un Cronograma guardado todavía. Genera uno primero."); return; }
+                const lista = JSON.parse(localStorage.getItem("ryr_avance_diario_actividades") || "[]");
+                if (!lista.length) { alert("No hay Informes Diarios guardados todavía. Genera al menos uno primero."); return; }
                 if (!hasta) { alert('Primero llena la fecha "Hasta" del acta (arriba).'); return; }
-                const dc = numES(datos.duracionTotalDias) || 0;
-                const da = Math.max(0, Math.round((new Date(hasta) - new Date(datos.fechaInicio)) / 86400000) + 1);
+                const fechasUnicas = new Set(
+                  lista
+                    .filter((r) => r.fecha && new Date(r.fecha) <= new Date(hasta))
+                    .map((r) => r.fecha)
+                );
+                const da = fechasUnicas.size;
+                const dc = numES(diasContractuales) || 0;
                 const pt = dc > 0 ? Math.min(100, (da / dc) * 100) : 0;
-                setDiasContractuales(String(dc));
                 setDiasAvance(String(da));
-                setPorcentajeTiempo(pt.toFixed(1));
+                if (dc > 0) setPorcentajeTiempo(pt.toFixed(1));
               } catch (err) {
-                alert("No se pudo leer el Cronograma guardado.");
+                alert("No se pudieron leer los Informes Diarios guardados.");
               }
             }}
             className="w-full text-center py-2.5 rounded-lg text-[12px] font-semibold text-white mb-3"
             style={{ background: NAVY }}
           >
-            ⚡ Calcular desde Cronograma
+            ⚡ Calcular desde Informe Diario
           </button>
           <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Contratante</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
