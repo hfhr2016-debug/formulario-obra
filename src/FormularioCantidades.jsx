@@ -184,23 +184,27 @@ function BuscadorActividadCantidad({ onSeleccionar }) {
   );
 }
 
-const subMedicionVacia = () => ({
+const subMedicionVacia = (factorSugerido) => ({
   ubicacion: "", plano: "", largo: "", ancho: "", alto: "",
-  numElementos: "", repeticiones: "", factor: "", deduccion: "",
+  numElementos: "", repeticiones: "", factor: factorSugerido !== undefined ? String(factorSugerido) : "", deduccion: "",
   cantidadDirecta: "",
   deducciones: [],
 });
 const deduccionVacia = () => ({ largo: "", ancho: "", alto: "" });
 
-const actividadVacia = (nombre) => ({
-  actividad: nombre,
-  desperdicio: DESPERDICIO_REFERENCIA[nombre] !== undefined ? String(DESPERDICIO_REFERENCIA[nombre]) : "",
-  criterio: "",
-  responsable: "",
-  cargo: "",
-  estado: "Pendiente",
-  subs: [subMedicionVacia()],
-});
+const actividadVacia = (nombre) => {
+  const desp = DESPERDICIO_REFERENCIA[nombre];
+  const factorSugerido = desp !== undefined ? Math.round((1 + desp) * 1000) / 1000 : undefined;
+  return {
+    actividad: nombre,
+    desperdicio: desp !== undefined ? String(desp) : "",
+    criterio: "",
+    responsable: "",
+    cargo: "",
+    estado: "Pendiente",
+    subs: [subMedicionVacia(factorSugerido)],
+  };
+};
 
 const UNIDADES_SIN_DIMENSIONES = ["kg", "gl", "gb", "und", "un", "ton", "kit", "glb"];
 
@@ -244,6 +248,9 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad }) {
         <input placeholder="Repeticiones" type="text" inputMode="decimal" value={sub.repeticiones} onChange={(e) => actualizar({ ...sub, repeticiones: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         <input placeholder="Factor" type="text" inputMode="decimal" value={sub.factor} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
       </div>
+      {sub.factor && (
+        <div className="text-[10px] text-gray-500 mb-1.5 -mt-1">⚡ Factor sugerido según desperdicio típico de esta actividad — ajústalo si tu caso es distinto.</div>
+      )}
       {!directa && (
         <div>
           <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional) — largo × ancho × alto de cada elemento a descontar:</div>
@@ -299,7 +306,11 @@ function TarjetaActividad({ a, actualizar, quitar }) {
     subs[i] = nuevo;
     actualizar({ ...a, subs });
   };
-  const agregarSub = () => actualizar({ ...a, subs: [...a.subs, subMedicionVacia()] });
+  const agregarSub = () => {
+    const desp = DESPERDICIO_REFERENCIA[a.actividad];
+    const factorSugerido = desp !== undefined ? Math.round((1 + desp) * 1000) / 1000 : undefined;
+    actualizar({ ...a, subs: [...a.subs, subMedicionVacia(factorSugerido)] });
+  };
   const quitarSub = (i) => actualizar({ ...a, subs: a.subs.filter((_, idx) => idx !== i) });
 
   return (
