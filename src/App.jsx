@@ -33,7 +33,7 @@ function numES(v) {
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
-const PAPER = "#F7F7F5";
+const PAPER = "#EEF1F6";
 const LINE = "#D9DCE1";
 
 // Fecha de HOY según la hora local del dispositivo (no UTC), en formato YYYY-MM-DD.

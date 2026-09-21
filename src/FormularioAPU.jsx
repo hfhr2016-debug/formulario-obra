@@ -276,7 +276,29 @@ function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder }) {
   );
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo }) {
+function factorDesperdicioSugerido(nombreMaterial) {
+  if (!nombreMaterial) return null;
+  const n = nombreMaterial.toLowerCase();
+  const reglas = [
+    [/cerámic|porcelanat|enchape/, 0.10],
+    [/pintura|esmalte|vinílic/, 0.10],
+    [/estuco|yeso/, 0.10],
+    [/madera|formaleta/, 0.10],
+    [/teja/, 0.08],
+    [/cable|cableado/, 0.08],
+    [/adoquín|ladrillo|bloque/, 0.05],
+    [/vidrio/, 0.05],
+    [/tubería|tuberia|conduit/, 0.05],
+    [/acero/, 0.05],
+    [/cemento|concreto|agregado|arena|grava|recebo/, 0.03],
+  ];
+  for (const [patron, factor] of reglas) {
+    if (patron.test(n)) return factor;
+  }
+  return null;
+}
+
+function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarDesperdicio }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val };
@@ -301,8 +323,11 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
         {titulo}
       </div>
       <div className="border border-t-0 rounded-b-lg overflow-visible" style={{ borderColor: LINE }}>
-        {filas.map((f, i) => (
-          <div key={i} className="flex gap-1.5 p-2 border-b last:border-b-0" style={{ borderColor: LINE }}>
+        {filas.map((f, i) => {
+          const factorSugerido = mostrarDesperdicio ? factorDesperdicioSugerido(f.desc) : null;
+          return (
+          <div key={i} className="border-b last:border-b-0" style={{ borderColor: LINE }}>
+          <div className="flex gap-1.5 p-2" style={{ borderColor: LINE }}>
             <BuscadorCelda
               valor={f.desc}
               catalogo={catalogo}
@@ -333,7 +358,14 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
               style={{ borderColor: LINE }}
             />
           </div>
-        ))}
+          {factorSugerido !== null && (
+            <div className="text-[10.5px] px-2 pb-1.5" style={{ color: GOLD }}>
+              ⚡ Desperdicio típico para este material: ~{(factorSugerido * 100).toFixed(0)}% — considera aumentar la cantidad en ese porcentaje.
+            </div>
+          )}
+          </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -572,7 +604,7 @@ export default function FormularioAPU({ onVolver }) {
           </Campo>
         </div>
 
-        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} />
+        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarDesperdicio />
         <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} />
         <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} />
 
