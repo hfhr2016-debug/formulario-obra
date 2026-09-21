@@ -503,9 +503,10 @@ export default function FormularioCantidades({ onVolver }) {
         wsCant.getCell(`T${filaCant}`).value = Math.round(totalNeta * 1000) / 1000;
         wsCant.getCell(`U${filaCant}`).value = totalFinal;
         wsCant.getCell(`V${filaCant}`).value = a.criterio;
-        wsCant.getCell(`X${filaCant}`).value = a.cargo ? `${a.responsable} - ${a.cargo}` : a.responsable;
-        wsCant.getCell(`Y${filaCant}`).value = aFechaDDMMYYYY(fechaLocalHoy());
-        wsCant.getCell(`Z${filaCant}`).value = a.estado;
+        wsCant.getCell(`X${filaCant}`).value = a.responsable;
+        wsCant.getCell(`Y${filaCant}`).value = a.cargo;
+        wsCant.getCell(`Z${filaCant}`).value = aFechaDDMMYYYY(fechaLocalHoy());
+        wsCant.getCell(`AA${filaCant}`).value = a.estado;
         if (a.subs.length === 1) {
           const s0 = a.subs[0];
           wsCant.getCell(`F${filaCant}`).value = s0.ubicacion;
@@ -528,7 +529,8 @@ export default function FormularioCantidades({ onVolver }) {
           const dedTotal = (s0.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
           wsCant.getCell(`R${filaCant}`).value = dedTotal;
         } else {
-          wsCant.getCell(`F${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
+          wsCant.getCell(`F${filaCant}`).value = "";
+          wsCant.getCell(`W${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
           if (esActividadAcero(a.actividad)) {
             const pesoTotal = a.subs.reduce((acc, s) => acc + (numES(s.cantidadDirecta) || 0), 0);
             wsCant.getCell(`J${filaCant}`).value = Math.round(pesoTotal * 1000) / 1000;
