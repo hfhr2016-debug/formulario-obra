@@ -290,7 +290,7 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividadNomb
       <div className="grid grid-cols-3 gap-1.5 mb-1.5">
         <input placeholder="N° elem." type="text" inputMode="decimal" value={sub.numElementos} onChange={(e) => actualizar({ ...sub, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         <input placeholder="Repeticiones" type="text" inputMode="decimal" value={sub.repeticiones} onChange={(e) => actualizar({ ...sub, repeticiones: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Factor" type="text" inputMode="decimal" value={sub.factor} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={sub.factor} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
       </div>
       {sub.factor && (
         <div className="text-[10px] text-gray-500 mb-1.5 -mt-1">⚡ Factor sugerido según desperdicio típico de esta actividad — ajústalo si tu caso es distinto.</div>
