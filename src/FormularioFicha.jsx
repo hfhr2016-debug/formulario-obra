@@ -288,6 +288,8 @@ export default function FormularioFicha({ onVolver }) {
           <Input value={contratista} onChange={(e) => setContratista(e.target.value)} />
         </Campo>
 
+        {modulos.edificacion && (
+        <>
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
           style={{ background: NAVY }}
@@ -339,6 +341,8 @@ export default function FormularioFicha({ onVolver }) {
             <Input type="text" inputMode="decimal" value={alturaTotal} onChange={(e) => setAlturaTotal(e.target.value)} />
           </Campo>
         </div>
+        </>
+        )}
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-4"
