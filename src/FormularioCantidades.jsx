@@ -494,34 +494,34 @@ export default function FormularioCantidades({ onVolver }) {
         const desperdicio = numES(a.desperdicio) || 0;
         const totalFinal = totalNeta;
 
-        wsCant.getCell(`R${filaCant}`).value = desperdicio;
-        wsCant.getCell(`S${filaCant}`).value = Math.round(totalNeta * 1000) / 1000;
-        wsCant.getCell(`T${filaCant}`).value = totalFinal;
-        wsCant.getCell(`U${filaCant}`).value = a.criterio;
-        wsCant.getCell(`W${filaCant}`).value = a.cargo ? `${a.responsable} - ${a.cargo}` : a.responsable;
-        wsCant.getCell(`X${filaCant}`).value = aFechaDDMMYYYY(fechaLocalHoy());
-        wsCant.getCell(`Y${filaCant}`).value = a.estado;
+        wsCant.getCell(`S${filaCant}`).value = desperdicio;
+        wsCant.getCell(`T${filaCant}`).value = Math.round(totalNeta * 1000) / 1000;
+        wsCant.getCell(`U${filaCant}`).value = totalFinal;
+        wsCant.getCell(`V${filaCant}`).value = a.criterio;
+        wsCant.getCell(`X${filaCant}`).value = a.cargo ? `${a.responsable} - ${a.cargo}` : a.responsable;
+        wsCant.getCell(`Y${filaCant}`).value = aFechaDDMMYYYY(fechaLocalHoy());
+        wsCant.getCell(`Z${filaCant}`).value = a.estado;
         if (a.subs.length === 1) {
           const s0 = a.subs[0];
           wsCant.getCell(`F${filaCant}`).value = s0.ubicacion;
           wsCant.getCell(`G${filaCant}`).value = s0.plano;
           if (esUnidadDirecta(unidad)) {
-            wsCant.getCell(`J${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
-            wsCant.getCell(`K${filaCant}`).value = 1;
+            wsCant.getCell(`K${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
             wsCant.getCell(`L${filaCant}`).value = 1;
+            wsCant.getCell(`M${filaCant}`).value = 1;
             if (esActividadAcero(a.actividad)) {
-              wsCant.getCell(`Z${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
+              wsCant.getCell(`J${filaCant}`).value = numES(s0.cantidadDirecta) || 0;
             }
           } else {
-            wsCant.getCell(`J${filaCant}`).value = numES(s0.largo) || 0;
-            wsCant.getCell(`K${filaCant}`).value = numES(s0.ancho) || 0;
-            wsCant.getCell(`L${filaCant}`).value = numES(s0.alto) || 0;
+            wsCant.getCell(`K${filaCant}`).value = numES(s0.largo) || 0;
+            wsCant.getCell(`L${filaCant}`).value = numES(s0.ancho) || 0;
+            wsCant.getCell(`M${filaCant}`).value = numES(s0.alto) || 0;
           }
-          wsCant.getCell(`N${filaCant}`).value = numES(s0.numElementos) || 0;
-          wsCant.getCell(`O${filaCant}`).value = numES(s0.repeticiones) || 0;
-          wsCant.getCell(`P${filaCant}`).value = numES(s0.factor) || 0;
+          wsCant.getCell(`O${filaCant}`).value = numES(s0.numElementos) || 0;
+          wsCant.getCell(`P${filaCant}`).value = numES(s0.repeticiones) || 0;
+          wsCant.getCell(`Q${filaCant}`).value = numES(s0.factor) || 0;
           const dedTotal = (s0.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-          wsCant.getCell(`Q${filaCant}`).value = dedTotal;
+          wsCant.getCell(`R${filaCant}`).value = dedTotal;
         } else {
           wsCant.getCell(`F${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
         }
@@ -535,26 +535,26 @@ export default function FormularioCantidades({ onVolver }) {
           wsCalc.getCell(`F${filaCalc}`).value = s.plano;
           wsCalc.getCell(`H${filaCalc}`).value = unidad;
           if (esUnidadDirecta(unidad)) {
-            wsCalc.getCell(`I${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
-            wsCalc.getCell(`J${filaCalc}`).value = 1;
+            wsCalc.getCell(`J${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
             wsCalc.getCell(`K${filaCalc}`).value = 1;
+            wsCalc.getCell(`L${filaCalc}`).value = 1;
             if (esActividadAcero(a.actividad)) {
-              wsCalc.getCell(`V${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
+              wsCalc.getCell(`I${filaCalc}`).value = numES(s.cantidadDirecta) || 0;
             }
           } else {
-            wsCalc.getCell(`I${filaCalc}`).value = numES(s.largo) || 0;
-            wsCalc.getCell(`J${filaCalc}`).value = numES(s.ancho) || 0;
-            wsCalc.getCell(`K${filaCalc}`).value = numES(s.alto) || 0;
+            wsCalc.getCell(`J${filaCalc}`).value = numES(s.largo) || 0;
+            wsCalc.getCell(`K${filaCalc}`).value = numES(s.ancho) || 0;
+            wsCalc.getCell(`L${filaCalc}`).value = numES(s.alto) || 0;
           }
-          wsCalc.getCell(`L${filaCalc}`).value = numES(s.numElementos) || 0;
-          wsCalc.getCell(`M${filaCalc}`).value = numES(s.repeticiones) || 0;
-          wsCalc.getCell(`N${filaCalc}`).value = numES(s.factor) || 0;
-          wsCalc.getCell(`O${filaCalc}`).value = (s.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-          wsCalc.getCell(`P${filaCalc}`).value = desperdicio;
-          wsCalc.getCell(`Q${filaCalc}`).value = neta;
-          wsCalc.getCell(`R${filaCalc}`).value = final;
-          wsCalc.getCell(`S${filaCalc}`).value = a.criterio;
-          wsCalc.getCell(`U${filaCalc}`).value = `Parte de ${a.subs.length} sitio(s) que suman el total de esta actividad`;
+          wsCalc.getCell(`M${filaCalc}`).value = numES(s.numElementos) || 0;
+          wsCalc.getCell(`N${filaCalc}`).value = numES(s.repeticiones) || 0;
+          wsCalc.getCell(`O${filaCalc}`).value = numES(s.factor) || 0;
+          wsCalc.getCell(`P${filaCalc}`).value = (s.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
+          wsCalc.getCell(`Q${filaCalc}`).value = desperdicio;
+          wsCalc.getCell(`R${filaCalc}`).value = neta;
+          wsCalc.getCell(`S${filaCalc}`).value = final;
+          wsCalc.getCell(`T${filaCalc}`).value = a.criterio;
+          wsCalc.getCell(`V${filaCalc}`).value = `Parte de ${a.subs.length} sitio(s) que suman el total de esta actividad`;
           filaCalc++;
           idCalc++;
         });
