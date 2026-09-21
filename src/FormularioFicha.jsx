@@ -88,6 +88,12 @@ function Input(props) {
 }
 
 export default function FormularioFicha({ onVolver }) {
+  const [modulos, setModulos] = useState({ edificacion: true, vias: false, hidrocarburos: false });
+  const [hcBloques, setHcBloques] = useState({ civil: false, mecanico: false, electrico: false });
+  const [viaTipo, setViaTipo] = useState("");
+  const [viaLongitud, setViaLongitud] = useState("");
+  const [viaCarriles, setViaCarriles] = useState("");
+  const [viaZona, setViaZona] = useState("");
   const [proyecto, setProyecto] = useState("");
   const [noContrato, setNoContrato] = useState("");
   const [contratista, setContratista] = useState("");
@@ -115,6 +121,14 @@ export default function FormularioFicha({ onVolver }) {
   async function generarExcel() {
     setGenerando(true);
     try {
+      try {
+        localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
+          modulos, hcBloques,
+          via: { tipo: viaTipo, longitud: viaLongitud, carriles: viaCarriles, zona: viaZona },
+        }));
+      } catch (e) {
+        console.warn("No se pudo guardar el tipo de proyecto en memoria local:", e);
+      }
       const resp = await fetch("/plantilla-ficha.xlsx?v=" + Date.now(), { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
@@ -194,6 +208,71 @@ export default function FormularioFicha({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>
+          ¿QUÉ FRENTES DE TRABAJO TIENE ESTE PROYECTO?
+        </div>
+        <div className="border border-t-0 rounded-b-lg p-3 mb-3" style={{ borderColor: LINE }}>
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {[
+              { id: "edificacion", nombre: "Edificación / Reformas" },
+              { id: "vias", nombre: "Vías y Carreteras" },
+              { id: "hidrocarburos", nombre: "Hidrocarburos" },
+            ].map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setModulos({ ...modulos, [m.id]: !modulos[m.id] })}
+                className="rounded-lg p-2 text-center border"
+                style={{
+                  borderColor: modulos[m.id] ? GOLD : LINE,
+                  background: modulos[m.id] ? "#FFF8E8" : "white",
+                }}
+              >
+                <div className="text-[11px] font-semibold" style={{ color: NAVY }}>{m.nombre}</div>
+              </button>
+            ))}
+          </div>
+          <div className="text-[10.5px] text-gray-500">Puedes elegir más de uno si el proyecto combina varios frentes.</div>
+
+          {modulos.vias && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: LINE }}>
+              <div className="text-[11.5px] font-semibold mb-2" style={{ color: NAVY }}>Vías y Carreteras</div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <select value={viaTipo} onChange={(e) => setViaTipo(e.target.value)} className="border rounded-lg px-2 py-2 text-[13px]" style={{ borderColor: LINE }}>
+                  <option value="">Tipo de vía (Red Nacional)</option>
+                  <option value="Primaria">Primaria</option>
+                  <option value="Secundaria">Secundaria</option>
+                  <option value="Terciaria">Terciaria</option>
+                </select>
+                <select value={viaZona} onChange={(e) => setViaZona(e.target.value)} className="border rounded-lg px-2 py-2 text-[13px]" style={{ borderColor: LINE }}>
+                  <option value="">Zona</option>
+                  <option value="Urbana">Urbana</option>
+                  <option value="Rural">Rural</option>
+                </select>
+                <Input value={viaLongitud} onChange={(e) => setViaLongitud(e.target.value)} placeholder="Longitud (km)" />
+                <Input value={viaCarriles} onChange={(e) => setViaCarriles(e.target.value)} placeholder="Número de carriles" />
+              </div>
+            </div>
+          )}
+
+          {modulos.hidrocarburos && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: LINE }}>
+              <div className="text-[11.5px] font-semibold mb-2" style={{ color: NAVY }}>Hidrocarburos — bloques de trabajo</div>
+              {[
+                { id: "civil", nombre: "Obras civiles" },
+                { id: "mecanico", nombre: "Trabajos mecánicos" },
+                { id: "electrico", nombre: "Eléctrico e instrumentación" },
+              ].map((b) => (
+                <label key={b.id} className="flex items-center gap-2 mb-1.5 text-[12.5px]" style={{ color: NAVY }}>
+                  <input type="checkbox" checked={hcBloques[b.id]} onChange={(e) => setHcBloques({ ...hcBloques, [b.id]: e.target.checked })} />
+                  {b.nombre}
+                </label>
+              ))}
+              <div className="text-[10.5px] text-gray-500 mt-1">Elige los bloques que aplican — el catálogo de actividades de Hidrocarburos se ajustará según lo que marques.</div>
+            </div>
+          )}
+        </div>
+
         <Campo label="Proyecto">
           <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} placeholder="Nombre del proyecto" />
         </Campo>
