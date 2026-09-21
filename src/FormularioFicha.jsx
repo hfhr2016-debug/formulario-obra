@@ -28,6 +28,29 @@ function aFechaDDMMYYYY(iso) {
 
 const CATALOGO_CIUDADES = [{"ciudad": "Leticia", "departamento": "Amazonas"}, {"ciudad": "Puerto Nariño", "departamento": "Amazonas"}, {"ciudad": "Medellín", "departamento": "Antioquia"}, {"ciudad": "Bello", "departamento": "Antioquia"}, {"ciudad": "Itagüí", "departamento": "Antioquia"}, {"ciudad": "Envigado", "departamento": "Antioquia"}, {"ciudad": "Rionegro", "departamento": "Antioquia"}, {"ciudad": "Arauca", "departamento": "Arauca"}, {"ciudad": "Saravena", "departamento": "Arauca"}, {"ciudad": "Tame", "departamento": "Arauca"}, {"ciudad": "Barranquilla", "departamento": "Atlántico"}, {"ciudad": "Soledad", "departamento": "Atlántico"}, {"ciudad": "Malambo", "departamento": "Atlántico"}, {"ciudad": "Sabanalarga", "departamento": "Atlántico"}, {"ciudad": "Puerto Colombia", "departamento": "Atlántico"}, {"ciudad": "Bogotá D.C.", "departamento": "Bogotá D.C."}, {"ciudad": "Cartagena", "departamento": "Bolívar"}, {"ciudad": "Magangué", "departamento": "Bolívar"}, {"ciudad": "Turbaco", "departamento": "Bolívar"}, {"ciudad": "Arjona", "departamento": "Bolívar"}, {"ciudad": "El Carmen de Bolívar", "departamento": "Bolívar"}, {"ciudad": "Tunja", "departamento": "Boyacá"}, {"ciudad": "Duitama", "departamento": "Boyacá"}, {"ciudad": "Sogamoso", "departamento": "Boyacá"}, {"ciudad": "Chiquinquirá", "departamento": "Boyacá"}, {"ciudad": "Paipa", "departamento": "Boyacá"}, {"ciudad": "Manizales", "departamento": "Caldas"}, {"ciudad": "La Dorada", "departamento": "Caldas"}, {"ciudad": "Chinchiná", "departamento": "Caldas"}, {"ciudad": "Villamaría", "departamento": "Caldas"}, {"ciudad": "Riosucio", "departamento": "Caldas"}, {"ciudad": "Florencia", "departamento": "Caquetá"}, {"ciudad": "San Vicente del Caguán", "departamento": "Caquetá"}, {"ciudad": "Puerto Rico", "departamento": "Caquetá"}, {"ciudad": "Yopal", "departamento": "Casanare"}, {"ciudad": "Aguazul", "departamento": "Casanare"}, {"ciudad": "Villanueva", "departamento": "Casanare"}, {"ciudad": "Tauramena", "departamento": "Casanare"}, {"ciudad": "Popayán", "departamento": "Cauca"}, {"ciudad": "Santander de Quilichao", "departamento": "Cauca"}, {"ciudad": "Puerto Tejada", "departamento": "Cauca"}, {"ciudad": "Patía", "departamento": "Cauca"}, {"ciudad": "Valledupar", "departamento": "Cesar"}, {"ciudad": "Aguachica", "departamento": "Cesar"}, {"ciudad": "Codazzi", "departamento": "Cesar"}, {"ciudad": "La Jagua de Ibirico", "departamento": "Cesar"}, {"ciudad": "Quibdó", "departamento": "Chocó"}, {"ciudad": "Istmina", "departamento": "Chocó"}, {"ciudad": "Condoto", "departamento": "Chocó"}, {"ciudad": "Tadó", "departamento": "Chocó"}, {"ciudad": "Montería", "departamento": "Córdoba"}, {"ciudad": "Cereté", "departamento": "Córdoba"}, {"ciudad": "Lorica", "departamento": "Córdoba"}, {"ciudad": "Sahagún", "departamento": "Córdoba"}, {"ciudad": "Planeta Rica", "departamento": "Córdoba"}, {"ciudad": "Soacha", "departamento": "Cundinamarca"}, {"ciudad": "Girardot", "departamento": "Cundinamarca"}, {"ciudad": "Zipaquirá", "departamento": "Cundinamarca"}, {"ciudad": "Facatativá", "departamento": "Cundinamarca"}, {"ciudad": "Chía", "departamento": "Cundinamarca"}, {"ciudad": "Inírida", "departamento": "Guainía"}, {"ciudad": "San José del Guaviare", "departamento": "Guaviare"}, {"ciudad": "Neiva", "departamento": "Huila"}, {"ciudad": "Pitalito", "departamento": "Huila"}, {"ciudad": "Garzón", "departamento": "Huila"}, {"ciudad": "La Plata", "departamento": "Huila"}, {"ciudad": "Riohacha", "departamento": "La Guajira"}, {"ciudad": "Maicao", "departamento": "La Guajira"}, {"ciudad": "Uribia", "departamento": "La Guajira"}, {"ciudad": "Fonseca", "departamento": "La Guajira"}, {"ciudad": "Santa Marta", "departamento": "Magdalena"}, {"ciudad": "Ciénaga", "departamento": "Magdalena"}, {"ciudad": "Fundación", "departamento": "Magdalena"}, {"ciudad": "El Banco", "departamento": "Magdalena"}, {"ciudad": "Villavicencio", "departamento": "Meta"}, {"ciudad": "Acacías", "departamento": "Meta"}, {"ciudad": "Granada", "departamento": "Meta"}, {"ciudad": "Puerto López", "departamento": "Meta"}, {"ciudad": "Pasto", "departamento": "Nariño"}, {"ciudad": "Tumaco", "departamento": "Nariño"}, {"ciudad": "Ipiales", "departamento": "Nariño"}, {"ciudad": "Túquerres", "departamento": "Nariño"}, {"ciudad": "Cúcuta", "departamento": "Norte de Santander"}, {"ciudad": "Ocaña", "departamento": "Norte de Santander"}, {"ciudad": "Pamplona", "departamento": "Norte de Santander"}, {"ciudad": "Villa del Rosario", "departamento": "Norte de Santander"}, {"ciudad": "Mocoa", "departamento": "Putumayo"}, {"ciudad": "Puerto Asís", "departamento": "Putumayo"}, {"ciudad": "Orito", "departamento": "Putumayo"}, {"ciudad": "Armenia", "departamento": "Quindío"}, {"ciudad": "Calarcá", "departamento": "Quindío"}, {"ciudad": "La Tebaida", "departamento": "Quindío"}, {"ciudad": "Montenegro", "departamento": "Quindío"}, {"ciudad": "Pereira", "departamento": "Risaralda"}, {"ciudad": "Dosquebradas", "departamento": "Risaralda"}, {"ciudad": "Santa Rosa de Cabal", "departamento": "Risaralda"}, {"ciudad": "San Andrés", "departamento": "San Andrés y Providencia"}, {"ciudad": "Providencia", "departamento": "San Andrés y Providencia"}, {"ciudad": "Bucaramanga", "departamento": "Santander"}, {"ciudad": "Floridablanca", "departamento": "Santander"}, {"ciudad": "Girón", "departamento": "Santander"}, {"ciudad": "Piedecuesta", "departamento": "Santander"}, {"ciudad": "Barrancabermeja", "departamento": "Santander"}, {"ciudad": "Sincelejo", "departamento": "Sucre"}, {"ciudad": "Corozal", "departamento": "Sucre"}, {"ciudad": "San Marcos", "departamento": "Sucre"}, {"ciudad": "Ibagué", "departamento": "Tolima"}, {"ciudad": "Espinal", "departamento": "Tolima"}, {"ciudad": "Melgar", "departamento": "Tolima"}, {"ciudad": "Honda", "departamento": "Tolima"}, {"ciudad": "Cali", "departamento": "Valle del Cauca"}, {"ciudad": "Palmira", "departamento": "Valle del Cauca"}, {"ciudad": "Buenaventura", "departamento": "Valle del Cauca"}, {"ciudad": "Tuluá", "departamento": "Valle del Cauca"}, {"ciudad": "Cartago", "departamento": "Valle del Cauca"}, {"ciudad": "Mitú", "departamento": "Vaupés"}, {"ciudad": "Puerto Carreño", "departamento": "Vichada"}];
 
+const ELEMENTOS_HIDROCARBUROS = {
+  civil: [
+    "Adecuación de terrenos (Pad/Cluster)",
+    "Vías de acceso industrial",
+    "Cimentaciones especiales (pilotes, zapatas, losas)",
+    "Sistemas de contención secundaria (diques)",
+    "Manejo de aguas - drenaje aceitoso",
+    "Manejo de aguas - drenaje pluvial",
+  ],
+  mecanico: [
+    "Sistemas de separación (bifásicos/trifásicos)",
+    "Almacenamiento de fluidos - tanques API 650",
+    "Sistemas de bombeo y transferencia",
+    "Líneas de flujo y colectores (Manifolds)",
+    "Tratamiento de gas (Scrubbers, Tea/Flare)",
+  ],
+  electrico: [
+    "Generación y distribución (subestaciones, redes)",
+    "Automatización (DCS / SCADA)",
+    "Seguridad activa (SIS, SDV/BDV, F&G)",
+  ],
+};
+
 function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
   const [abierto, setAbierto] = React.useState(false);
   const resultados = React.useMemo(() => {
@@ -90,10 +113,22 @@ function Input(props) {
 export default function FormularioFicha({ onVolver }) {
   const [modulos, setModulos] = useState({ edificacion: true, vias: false, hidrocarburos: false });
   const [hcBloques, setHcBloques] = useState({ civil: false, mecanico: false, electrico: false });
+  const [hcElementos, setHcElementos] = useState({});
   const [viaTipo, setViaTipo] = useState("");
   const [viaLongitud, setViaLongitud] = useState("");
   const [viaCarriles, setViaCarriles] = useState("");
   const [viaZona, setViaZona] = useState("");
+  const [viaTipoIntervencion, setViaTipoIntervencion] = useState("");
+  const [viaVelocidadDiseno, setViaVelocidadDiseno] = useState("");
+  const [viaAnchoCalzada, setViaAnchoCalzada] = useState("");
+  const [viaAnchoCarril, setViaAnchoCarril] = useState("");
+  const [viaAnchoBerma, setViaAnchoBerma] = useState("");
+  const [viaPendienteMax, setViaPendienteMax] = useState("");
+  const [viaEstructuraPavimento, setViaEstructuraPavimento] = useState("");
+  const [viaCbrDiseno, setViaCbrDiseno] = useState("");
+  const [viaSubbase, setViaSubbase] = useState("");
+  const [viaBase, setViaBase] = useState("");
+  const [viaCapaRodadura, setViaCapaRodadura] = useState("");
   const [proyecto, setProyecto] = useState("");
   const [noContrato, setNoContrato] = useState("");
   const [contratista, setContratista] = useState("");
@@ -123,8 +158,14 @@ export default function FormularioFicha({ onVolver }) {
     try {
       try {
         localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
-          modulos, hcBloques,
-          via: { tipo: viaTipo, longitud: viaLongitud, carriles: viaCarriles, zona: viaZona },
+          modulos, hcBloques, hcElementos,
+          via: {
+            tipo: viaTipo, longitud: viaLongitud, carriles: viaCarriles, zona: viaZona,
+            tipoIntervencion: viaTipoIntervencion, velocidadDiseno: viaVelocidadDiseno,
+            anchoCalzada: viaAnchoCalzada, anchoCarril: viaAnchoCarril, anchoBerma: viaAnchoBerma,
+            pendienteMax: viaPendienteMax, estructuraPavimento: viaEstructuraPavimento,
+            cbrDiseno: viaCbrDiseno, subbase: viaSubbase, base: viaBase, capaRodadura: viaCapaRodadura,
+          },
         }));
       } catch (e) {
         console.warn("No se pudo guardar el tipo de proyecto en memoria local:", e);
@@ -221,7 +262,7 @@ export default function FormularioFicha({ onVolver }) {
               <button
                 key={m.id}
                 type="button"
-                onClick={() => setModulos({ ...modulos, [m.id]: !modulos[m.id] })}
+                onClick={() => setModulos({ edificacion: false, vias: false, hidrocarburos: false, [m.id]: true })}
                 className="rounded-lg p-2 text-center border"
                 style={{
                   borderColor: modulos[m.id] ? GOLD : LINE,
@@ -239,36 +280,79 @@ export default function FormularioFicha({ onVolver }) {
               <div className="text-[11.5px] font-semibold mb-2" style={{ color: NAVY }}>Vías y Carreteras</div>
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <select value={viaTipo} onChange={(e) => setViaTipo(e.target.value)} className="border rounded-lg px-2 py-2 text-[13px]" style={{ borderColor: LINE }}>
-                  <option value="">Tipo de vía (Red Nacional)</option>
-                  <option value="Primaria">Primaria</option>
+                  <option value="">Clasificación de la vía</option>
+                  <option value="Primaria">Primaria / Troncal</option>
                   <option value="Secundaria">Secundaria</option>
-                  <option value="Terciaria">Terciaria</option>
+                  <option value="Terciaria">Terciaria / Rural</option>
                 </select>
                 <select value={viaZona} onChange={(e) => setViaZona(e.target.value)} className="border rounded-lg px-2 py-2 text-[13px]" style={{ borderColor: LINE }}>
                   <option value="">Zona</option>
                   <option value="Urbana">Urbana</option>
                   <option value="Rural">Rural</option>
                 </select>
-                <Input value={viaLongitud} onChange={(e) => setViaLongitud(e.target.value)} placeholder="Longitud (km)" />
+                <select value={viaTipoIntervencion} onChange={(e) => setViaTipoIntervencion(e.target.value)} className="border rounded-lg px-2 py-2 text-[13px] col-span-2" style={{ borderColor: LINE }}>
+                  <option value="">Tipo de intervención</option>
+                  <option value="Construcción de vía nueva">Construcción de vía nueva</option>
+                  <option value="Mejoramiento">Mejoramiento</option>
+                  <option value="Rehabilitación">Rehabilitación</option>
+                  <option value="Mantenimiento rutinario/periódico">Mantenimiento rutinario/periódico</option>
+                </select>
+                <Input value={viaLongitud} onChange={(e) => setViaLongitud(e.target.value)} placeholder="Longitud total (km)" />
                 <Input value={viaCarriles} onChange={(e) => setViaCarriles(e.target.value)} placeholder="Número de carriles" />
+              </div>
+
+              <div className="text-[11px] font-semibold mb-1.5 mt-2" style={{ color: NAVY }}>Especificaciones de diseño de ingeniería</div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <Input value={viaVelocidadDiseno} onChange={(e) => setViaVelocidadDiseno(e.target.value)} placeholder="Velocidad de diseño (km/h)" />
+                <Input value={viaAnchoCalzada} onChange={(e) => setViaAnchoCalzada(e.target.value)} placeholder="Ancho de calzada (m)" />
+                <Input value={viaAnchoCarril} onChange={(e) => setViaAnchoCarril(e.target.value)} placeholder="Ancho de carril (m)" />
+                <Input value={viaAnchoBerma} onChange={(e) => setViaAnchoBerma(e.target.value)} placeholder="Ancho de bermas (m)" />
+                <Input value={viaPendienteMax} onChange={(e) => setViaPendienteMax(e.target.value)} placeholder="Pendiente máxima (%)" />
+                <select value={viaEstructuraPavimento} onChange={(e) => setViaEstructuraPavimento(e.target.value)} className="border rounded-lg px-2 py-2 text-[13px]" style={{ borderColor: LINE }}>
+                  <option value="">Estructura de pavimento</option>
+                  <option value="Flexible / Asfáltico">Flexible / Asfáltico</option>
+                  <option value="Rígido / Hidráulico">Rígido / Hidráulico</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input value={viaCbrDiseno} onChange={(e) => setViaCbrDiseno(e.target.value)} placeholder="CBR de diseño (%)" />
+                <Input value={viaSubbase} onChange={(e) => setViaSubbase(e.target.value)} placeholder="Subbase granular (cm)" />
+                <Input value={viaBase} onChange={(e) => setViaBase(e.target.value)} placeholder="Base granular (cm)" />
+                <Input value={viaCapaRodadura} onChange={(e) => setViaCapaRodadura(e.target.value)} placeholder="Capa de rodadura (cm)" />
               </div>
             </div>
           )}
 
           {modulos.hidrocarburos && (
             <div className="mt-3 pt-3 border-t" style={{ borderColor: LINE }}>
-              <div className="text-[11.5px] font-semibold mb-2" style={{ color: NAVY }}>Hidrocarburos — bloques de trabajo</div>
+              <div className="text-[11.5px] font-semibold mb-2" style={{ color: NAVY }}>Hidrocarburos — componentes técnicos</div>
               {[
-                { id: "civil", nombre: "Obras civiles" },
-                { id: "mecanico", nombre: "Trabajos mecánicos" },
-                { id: "electrico", nombre: "Eléctrico e instrumentación" },
+                { id: "civil", nombre: "🏗️ Componente de Obra Civil" },
+                { id: "mecanico", nombre: "⚙️ Componente de Construcción y Facilidades Mecánicas" },
+                { id: "electrico", nombre: "⚡ Componente Eléctrico, Instrumentación y Control" },
               ].map((b) => (
-                <label key={b.id} className="flex items-center gap-2 mb-1.5 text-[12.5px]" style={{ color: NAVY }}>
-                  <input type="checkbox" checked={hcBloques[b.id]} onChange={(e) => setHcBloques({ ...hcBloques, [b.id]: e.target.checked })} />
-                  {b.nombre}
-                </label>
+                <div key={b.id} className="mb-2">
+                  <label className="flex items-center gap-2 mb-1.5 text-[12.5px] font-medium" style={{ color: NAVY }}>
+                    <input type="checkbox" checked={hcBloques[b.id]} onChange={(e) => setHcBloques({ ...hcBloques, [b.id]: e.target.checked })} />
+                    {b.nombre}
+                  </label>
+                  {hcBloques[b.id] && (
+                    <div className="ml-5 pl-2 border-l-2" style={{ borderColor: GOLD }}>
+                      {ELEMENTOS_HIDROCARBUROS[b.id].map((el) => (
+                        <label key={el} className="flex items-center gap-2 mb-1 text-[11.5px]" style={{ color: NAVY }}>
+                          <input
+                            type="checkbox"
+                            checked={!!hcElementos[el]}
+                            onChange={(e) => setHcElementos({ ...hcElementos, [el]: e.target.checked })}
+                          />
+                          {el}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
-              <div className="text-[10.5px] text-gray-500 mt-1">Elige los bloques que aplican — el catálogo de actividades de Hidrocarburos se ajustará según lo que marques.</div>
+              <div className="text-[10.5px] text-gray-500 mt-1">Marca los elementos que aplican — el catálogo de actividades de Hidrocarburos se ajustará según lo que elijas.</div>
             </div>
           )}
         </div>
