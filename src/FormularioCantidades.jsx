@@ -524,6 +524,10 @@ export default function FormularioCantidades({ onVolver }) {
           wsCant.getCell(`R${filaCant}`).value = dedTotal;
         } else {
           wsCant.getCell(`F${filaCant}`).value = `${a.subs.length} sitios (ver Cálculo Detallado)`;
+          if (esActividadAcero(a.actividad)) {
+            const pesoTotal = a.subs.reduce((acc, s) => acc + (numES(s.cantidadDirecta) || 0), 0);
+            wsCant.getCell(`J${filaCant}`).value = Math.round(pesoTotal * 1000) / 1000;
+          }
         }
 
         a.subs.forEach((s) => {
