@@ -3,8 +3,10 @@ import ExcelJS from "exceljs";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuesto from "./FormularioPresupuesto";
+import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
 import FormularioCronograma from "./FormularioCronograma";
 import FormularioCantidades from "./FormularioCantidades";
+import FormularioCantidadesNuevo from "./FormularioCantidadesNuevo";
 import FormularioSemanal from "./FormularioSemanal";
 import FormularioActa from "./FormularioActa";
 import FormularioMensual from "./FormularioMensual";
@@ -1325,13 +1327,13 @@ export default function App() {
     return <FormularioFicha onVolver={() => setVista("inicio")} />;
   }
   if (vista === "presupuesto") {
-    return <FormularioPresupuesto onVolver={() => setVista("inicio")} />;
+    return <FormularioPresupuestoNuevo onVolver={() => setVista("inicio")} />;
   }
   if (vista === "cronograma") {
     return <FormularioCronograma onVolver={() => setVista("inicio")} />;
   }
   if (vista === "cantidades") {
-    return <FormularioCantidades onVolver={() => setVista("inicio")} />;
+    return <FormularioCantidadesNuevo onVolver={() => setVista("inicio")} />;
   }
   if (vista === "semanal") {
     return <FormularioSemanal onVolver={() => setVista("inicio")} />;
