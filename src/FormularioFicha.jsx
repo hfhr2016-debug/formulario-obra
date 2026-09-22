@@ -346,6 +346,17 @@ export default function FormularioFicha({ onVolver }) {
                   setViaBase(""); setViaCapaRodadura("");
                   setHcBloques({ civil: false, mecanico: false, electrico: false });
                   setHcElementos({});
+                  // Guardar de inmediato el tipo elegido, para que Presupuesto/Cantidades lo detecten sin tener que generar el Excel primero
+                  try {
+                    localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
+                      modulos: { edificacion: false, vias: false, hidrocarburos: false, [m.id]: true },
+                      hcBloques: { civil: false, mecanico: false, electrico: false },
+                      hcElementos: {},
+                      via: { tipo: "", longitud: "", carriles: "", zona: "", tipoIntervencion: "", velocidadDiseno: "", anchoCalzada: "", anchoCarril: "", anchoBerma: "", pendienteMax: "", estructuraPavimento: "", cbrDiseno: "", subbase: "", base: "", capaRodadura: "" },
+                    }));
+                  } catch (e) {
+                    console.warn("No se pudo guardar el tipo de proyecto en memoria local:", e);
+                  }
                 }}
                 className="rounded-lg p-2 text-center border"
                 style={{
