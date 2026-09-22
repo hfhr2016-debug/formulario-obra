@@ -51,6 +51,23 @@ const ELEMENTOS_HIDROCARBUROS = {
   ],
 };
 
+const DESCRIPCIONES_HC = {
+  "Adecuación de terrenos (Pad/Cluster)": "Descapote, excavación, nivelación y compactación de plataformas de perforación y producción.",
+  "Vías de acceso industrial": "Construcción y mejoramiento de vías industriales con afirmado o carpeta asfáltica para tráfico pesado (módulos de perforación y carrotanques).",
+  "Cimentaciones especiales (pilotes, zapatas, losas)": "Diseños de cimentaciones profundas (pilotes) y superficiales (zapatas/losas) en concreto reforzado para soportar equipos dinámicos y estáticos de gran tonelaje (múltiples, separadores, bombas).",
+  "Sistemas de contención secundaria (diques)": "Construcción de diques de contención de concreto impermeabilizado para tanques de almacenamiento, con capacidad del 110% del volumen del tanque mayor.",
+  "Manejo de aguas - drenaje aceitoso": "Canalizaciones hacia API (Separador de agua y aceite).",
+  "Manejo de aguas - drenaje pluvial": "Canales perimetrales, desarenadores y alcantarillas (Box Culvert).",
+  "Sistemas de separación (bifásicos/trifásicos)": "Instalación de separadores de producción y prueba (Bifásicos o Trifásicos) para gas, petróleo y agua.",
+  "Almacenamiento de fluidos - tanques API 650": "Montaje de tanques bajo norma API 650 (Tanques de crudo, tanques de agua de producción y tanques de surgencia).",
+  "Sistemas de bombeo y transferencia": "Estaciones de bombas de transferencia de crudo y bombas de inyección de agua de formación (Sistemas HPS o reciprocantes).",
+  "Líneas de flujo y colectores (Manifolds)": "Construcción de Manifolds (múltiples de producción) y tendido de líneas de flujo (Flowlines) bajo norma ASME B31.4 (líquidos) y ASME B31.8 (gas).",
+  "Tratamiento de gas (Scrubbers, Tea/Flare)": "Facilidades de depuración (Scrubbers), sistemas de tea (Flare) para alivios y quemados seguros.",
+  "Generación y distribución (subestaciones, redes)": "Montaje de subestaciones eléctricas modulares, tendido de redes de media y baja tensión, bancos de ductos e instalación de transformadores.",
+  "Automatización (DCS / SCADA)": "Sistema de Control Distribuido (DCS) o SCADA para el monitoreo remoto de variables de proceso (presión, temperatura, flujo, nivel).",
+  "Seguridad activa (SIS, SDV/BDV, F&G)": "Sistema de Instrumentación de Seguridad (SIS) con válvulas de corte de emergencia (SDV/BDV) y sistemas de detección de fuego y gas (F&G).",
+};
+
 function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
   const [abierto, setAbierto] = React.useState(false);
   const resultados = React.useMemo(() => {
@@ -339,14 +356,21 @@ export default function FormularioFicha({ onVolver }) {
                   {hcBloques[b.id] && (
                     <div className="ml-5 pl-2 border-l-2" style={{ borderColor: GOLD }}>
                       {ELEMENTOS_HIDROCARBUROS[b.id].map((el) => (
-                        <label key={el} className="flex items-center gap-2 mb-1 text-[11.5px]" style={{ color: NAVY }}>
-                          <input
-                            type="checkbox"
-                            checked={!!hcElementos[el]}
-                            onChange={(e) => setHcElementos({ ...hcElementos, [el]: e.target.checked })}
-                          />
-                          {el}
-                        </label>
+                        <div key={el} className="mb-1.5">
+                          <label className="flex items-center gap-2 text-[11.5px]" style={{ color: NAVY }}>
+                            <input
+                              type="checkbox"
+                              checked={!!hcElementos[el]}
+                              onChange={(e) => setHcElementos({ ...hcElementos, [el]: e.target.checked })}
+                            />
+                            {el}
+                          </label>
+                          {hcElementos[el] && (
+                            <div className="text-[10.5px] text-gray-500 ml-5 mt-0.5 italic">
+                              {DESCRIPCIONES_HC[el]}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
