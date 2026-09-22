@@ -187,7 +187,10 @@ export default function FormularioFicha({ onVolver }) {
       } catch (e) {
         console.warn("No se pudo guardar el tipo de proyecto en memoria local:", e);
       }
-      const resp = await fetch("/plantilla-ficha.xlsx?v=" + Date.now(), { cache: "no-store" });
+      let archivoPlantilla = "/plantilla-ficha.xlsx";
+      if (modulos.vias) archivoPlantilla = "/plantilla-ficha-vias.xlsx";
+      else if (modulos.hidrocarburos) archivoPlantilla = "/plantilla-ficha-hidrocarburos.xlsx";
+      const resp = await fetch(archivoPlantilla + "?v=" + Date.now(), { cache: "no-store" });
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
@@ -200,22 +203,72 @@ export default function FormularioFicha({ onVolver }) {
       ws.getCell("B11").value = contratista;
       ws.getCell("B12").value = ubicacion;
 
-      ws.getCell("B14").value = numES(pisos) || 0;
-      ws.getCell("B15").value = numES(sotanos) || 0;
-      ws.getCell("B16").value = numES(areaLote) || 0;
-      ws.getCell("B17").value = numES(areaTipicaPiso) || 0;
-      ws.getCell("B19").value = numES(areaSotanos) || 0;
-      ws.getCell("B20").value = numES(areaCubierta) || 0;
-      ws.getCell("B22").value = numES(numApartamentos) || 0;
-      ws.getCell("B23").value = numES(areaPromedioApto) || 0;
-      ws.getCell("B24").value = numES(numParqueaderos) || 0;
-      ws.getCell("B25").value = numES(numAscensores) || 0;
-      ws.getCell("B26").value = numES(alturaTotal) || 0;
+      if (modulos.edificacion) {
+        ws.getCell("B14").value = numES(pisos) || 0;
+        ws.getCell("B15").value = numES(sotanos) || 0;
+        ws.getCell("B16").value = numES(areaLote) || 0;
+        ws.getCell("B17").value = numES(areaTipicaPiso) || 0;
+        ws.getCell("B19").value = numES(areaSotanos) || 0;
+        ws.getCell("B20").value = numES(areaCubierta) || 0;
+        ws.getCell("B22").value = numES(numApartamentos) || 0;
+        ws.getCell("B23").value = numES(areaPromedioApto) || 0;
+        ws.getCell("B24").value = numES(numParqueaderos) || 0;
+        ws.getCell("B25").value = numES(numAscensores) || 0;
+        ws.getCell("B26").value = numES(alturaTotal) || 0;
+      }
 
-      ws.getCell("B29").value = numES(administracion) / 100;
-      ws.getCell("B30").value = numES(imprevistos) / 100;
-      ws.getCell("B31").value = numES(utilidad) / 100;
-      ws.getCell("B32").value = numES(ivaUtilidad) / 100;
+      if (modulos.vias) {
+        ws.getCell("B14").value = viaTipo;
+        ws.getCell("B15").value = viaZona;
+        ws.getCell("B16").value = viaTipoIntervencion;
+        ws.getCell("B17").value = numES(viaLongitud) || 0;
+        ws.getCell("B18").value = numES(viaCarriles) || 0;
+        ws.getCell("B19").value = numES(viaVelocidadDiseno) || 0;
+        ws.getCell("B20").value = numES(viaAnchoCalzada) || 0;
+        ws.getCell("B21").value = numES(viaAnchoCarril) || 0;
+        ws.getCell("B22").value = numES(viaAnchoBerma) || 0;
+        ws.getCell("B23").value = numES(viaPendienteMax) || 0;
+        ws.getCell("B24").value = viaEstructuraPavimento;
+        ws.getCell("B25").value = numES(viaCbrDiseno) || 0;
+        ws.getCell("B26").value = numES(viaSubbase) || 0;
+        ws.getCell("B27").value = numES(viaBase) || 0;
+        ws.getCell("B28").value = numES(viaCapaRodadura) || 0;
+      }
+
+      if (modulos.hidrocarburos) {
+        const ELEMENTOS_HC_ORDEN = {
+          civil: ["Adecuación de terrenos (Pad/Cluster)","Vías de acceso industrial","Cimentaciones especiales (pilotes, zapatas, losas)","Sistemas de contención secundaria (diques)","Manejo de aguas - drenaje aceitoso","Manejo de aguas - drenaje pluvial"],
+          mecanico: ["Sistemas de separación (bifásicos/trifásicos)","Almacenamiento de fluidos - tanques API 650","Sistemas de bombeo y transferencia","Líneas de flujo y colectores (Manifolds)","Tratamiento de gas (Scrubbers, Tea/Flare)"],
+          electrico: ["Generación y distribución (subestaciones, redes)","Automatización (DCS / SCADA)","Seguridad activa (SIS, SDV/BDV, F&G)"],
+        };
+        let fila = 14;
+        ws.getCell(`E${fila}`).value = hcBloques.civil ? "Sí" : "No";
+        fila += 1;
+        ELEMENTOS_HC_ORDEN.civil.forEach((el) => {
+          ws.getCell(`B${fila}`).value = "   • " + el + (hcElementos[el] ? "  —  Sí" : "");
+          fila += 1;
+        });
+        ws.getCell(`E${fila}`).value = hcBloques.mecanico ? "Sí" : "No";
+        fila += 1;
+        ELEMENTOS_HC_ORDEN.mecanico.forEach((el) => {
+          ws.getCell(`B${fila}`).value = "   • " + el + (hcElementos[el] ? "  —  Sí" : "");
+          fila += 1;
+        });
+        ws.getCell(`E${fila}`).value = hcBloques.electrico ? "Sí" : "No";
+        fila += 1;
+        ELEMENTOS_HC_ORDEN.electrico.forEach((el) => {
+          ws.getCell(`B${fila}`).value = "   • " + el + (hcElementos[el] ? "  —  Sí" : "");
+          fila += 1;
+        });
+      }
+
+      let filaAIU = 29;
+      if (modulos.vias) filaAIU = 31;
+      else if (modulos.hidrocarburos) filaAIU = 33;
+      ws.getCell(`B${filaAIU}`).value = numES(administracion) / 100;
+      ws.getCell(`B${filaAIU+1}`).value = numES(imprevistos) / 100;
+      ws.getCell(`B${filaAIU+2}`).value = numES(utilidad) / 100;
+      ws.getCell(`B${filaAIU+3}`).value = numES(ivaUtilidad) / 100;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -279,7 +332,21 @@ export default function FormularioFicha({ onVolver }) {
               <button
                 key={m.id}
                 type="button"
-                onClick={() => setModulos({ edificacion: false, vias: false, hidrocarburos: false, [m.id]: true })}
+                onClick={() => {
+                  setModulos({ edificacion: false, vias: false, hidrocarburos: false, [m.id]: true });
+                  // Limpiar todos los campos al cambiar de tipo de proyecto
+                  setProyecto(""); setNoContrato(""); setContratista(""); setUbicacion("");
+                  setPisos(""); setSotanos(""); setAreaLote(""); setAreaTipicaPiso("");
+                  setAreaSotanos(""); setAreaCubierta(""); setNumApartamentos(""); setAreaPromedioApto("");
+                  setNumParqueaderos(""); setNumAscensores(""); setAlturaTotal("");
+                  setViaTipo(""); setViaLongitud(""); setViaCarriles(""); setViaZona("");
+                  setViaTipoIntervencion(""); setViaVelocidadDiseno(""); setViaAnchoCalzada("");
+                  setViaAnchoCarril(""); setViaAnchoBerma(""); setViaPendienteMax("");
+                  setViaEstructuraPavimento(""); setViaCbrDiseno(""); setViaSubbase("");
+                  setViaBase(""); setViaCapaRodadura("");
+                  setHcBloques({ civil: false, mecanico: false, electrico: false });
+                  setHcElementos({});
+                }}
                 className="rounded-lg p-2 text-center border"
                 style={{
                   borderColor: modulos[m.id] ? GOLD : LINE,
