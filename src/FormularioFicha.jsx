@@ -337,6 +337,21 @@ export default function FormularioFicha({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <Campo label="Proyecto">
+          <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} placeholder="Nombre del proyecto" />
+        </Campo>
+        <div className="grid grid-cols-2 gap-3">
+          <Campo label="No de Contrato">
+            <Input value={noContrato} onChange={(e) => setNoContrato(e.target.value)} />
+          </Campo>
+          <Campo label="Ubicación">
+            <BuscadorTexto value={ubicacion} onChange={setUbicacion} catalogo={CATALOGO_CIUDADES} campo="ciudad" placeholder="Ciudad..." />
+          </Campo>
+        </div>
+        <Campo label="Contratista">
+          <Input value={contratista} onChange={(e) => setContratista(e.target.value)} />
+        </Campo>
+
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>
           ¿QUÉ FRENTES DE TRABAJO TIENE ESTE PROYECTO?
         </div>
@@ -476,21 +491,6 @@ export default function FormularioFicha({ onVolver }) {
             </div>
           )}
         </div>
-
-        <Campo label="Proyecto">
-          <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} placeholder="Nombre del proyecto" />
-        </Campo>
-        <div className="grid grid-cols-2 gap-3">
-          <Campo label="No de Contrato">
-            <Input value={noContrato} onChange={(e) => setNoContrato(e.target.value)} />
-          </Campo>
-          <Campo label="Ubicación">
-            <BuscadorTexto value={ubicacion} onChange={setUbicacion} catalogo={CATALOGO_CIUDADES} campo="ciudad" placeholder="Ciudad..." />
-          </Campo>
-        </div>
-        <Campo label="Contratista">
-          <Input value={contratista} onChange={(e) => setContratista(e.target.value)} />
-        </Campo>
 
         {modulos.edificacion && (
         <>
