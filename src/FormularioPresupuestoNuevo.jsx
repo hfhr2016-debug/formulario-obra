@@ -18,6 +18,16 @@ function fechaLocalHoy() {
   return new Date();
 }
 
+const PESO_ACERO_KG_POR_METRO = {
+  '#2 (1/4")': 0.249, '#3 (3/8")': 0.56, '#4 (1/2")': 0.994, '#5 (5/8")': 1.552,
+  '#6 (3/4")': 2.235, '#7 (7/8")': 3.042, '#8 (1")': 3.973, '#9 (1 1/8")': 5.06,
+  '#10 (1 1/4")': 6.404, '#11 (1 3/8")': 7.907,
+};
+function esActividadAcero(nombre) { return /acero/i.test(nombre || ""); }
+function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
+function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
+function unidadEsLineal(unidad) { const u=(unidad||"").toLowerCase(); return u==='ml'||u==='m'; }
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -118,12 +128,15 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
 }
 
 function filaVacia() {
-  return { actividad: "", capitulo: "", unidad: "", cantidad: "", precio: "" };
+  return { actividad: "", capitulo: "", unidad: "", cantidad: "", precio: "",
+    largo: "", ancho: "", alto: "", numElem: "", factor: "", deducciones: [],
+    denominacion: "", metros: "" };
 }
 
 export default function FormularioPresupuestoNuevo({ onVolver }) {
   const [proyecto, setProyecto] = useState("");
   const [filas, setFilas] = useState([filaVacia()]);
+  const [expandidos, setExpandidos] = useState({});
   const [generando, setGenerando] = useState(false);
   const [ocultarSinUsar, setOcultarSinUsar] = useState(false);
 
@@ -135,6 +148,26 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], ...cambios };
     setFilas(nuevas);
+  };
+  const actualizarMedicion = (i, cambios) => {
+    const fila = { ...filas[i], ...cambios };
+    const unidad = fila.unidad;
+    const largo = numES(fila.largo);
+    const ancho = numES(fila.ancho);
+    const alto = numES(fila.alto);
+    const numElem = numES(fila.numElem) || 1;
+    const factor = numES(fila.factor) || 1;
+    let bruta = 0;
+    if (esActividadAcero(fila.actividad)) {
+      const denom = fila.denominacion;
+      const metros = numES(fila.metros);
+      bruta = (denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0) * numElem * factor;
+    } else if (unidadNecesitaAlto(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem * factor;
+    else if (unidadEsArea(unidad)) bruta = largo * (ancho || 1) * numElem * factor;
+    else if (unidadEsLineal(unidad)) bruta = largo * numElem * factor;
+    const dedTotal = (fila.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
+    const cant = Math.max(0, bruta - dedTotal);
+    actualizarFila(i, { ...cambios, cantidad: cant ? String(Math.round(cant * 1000) / 1000) : fila.cantidad });
   };
   const agregarFila = () => setFilas([...filas, filaVacia()]);
   const quitarFila = (i) => setFilas(filas.filter((_, k) => k !== i));
@@ -227,7 +260,90 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
             </div>
             {f.actividad && (
               <>
-                <div className="text-[10.5px] text-gray-500 mb-1.5">{f.capitulo} · Unidad: {f.unidad}</div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="text-[10.5px] text-gray-500">{f.capitulo} · Unidad: {f.unidad}</div>
+                  <button
+                    type="button"
+                    onMouseDown={() => setExpandidos({ ...expandidos, [i]: !expandidos[i] })}
+                    className="text-[10.5px] px-2 py-0.5 rounded-full border shrink-0"
+                    style={{ borderColor: GOLD, color: NAVY }}
+                  >
+                    📐 {expandidos[i] ? "Ocultar medición" : "Calcular medición"}
+                  </button>
+                </div>
+
+                {expandidos[i] && esActividadAcero(f.actividad) && (
+                  <div className="mb-1.5 p-2 rounded-lg" style={{ background: PAPER }}>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <select
+                        value={f.denominacion || ""}
+                        onChange={(e) => actualizarMedicion(i, { denominacion: e.target.value })}
+                        className="border rounded px-2 py-1.5 text-[12px]"
+                        style={{ borderColor: LINE }}
+                      >
+                        <option value="">Denominación de varilla</option>
+                        {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (
+                          <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
+                        ))}
+                      </select>
+                      <input placeholder="Metros lineales" type="text" inputMode="decimal" value={f.metros || ""} onChange={(e) => actualizarMedicion(i, { metros: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                    </div>
+                  </div>
+                )}
+
+                {expandidos[i] && !esActividadAcero(f.actividad) && (unidadNecesitaAlto(f.unidad) || unidadEsArea(f.unidad) || unidadEsLineal(f.unidad)) && (
+                  <div className="mb-1.5 p-2 rounded-lg" style={{ background: PAPER }}>
+                    <div className="grid grid-cols-3 gap-1.5 mb-1">
+                      <input placeholder="Largo" type="text" inputMode="decimal" value={f.largo || ""} onChange={(e) => actualizarMedicion(i, { largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                      {!unidadEsLineal(f.unidad) && (
+                        <input placeholder="Ancho" type="text" inputMode="decimal" value={f.ancho || ""} onChange={(e) => actualizarMedicion(i, { ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                      )}
+                      {unidadNecesitaAlto(f.unidad) && (
+                        <input placeholder="Alto" type="text" inputMode="decimal" value={f.alto || ""} onChange={(e) => actualizarMedicion(i, { alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                      )}
+                      <input placeholder="N° elem." type="text" inputMode="decimal" value={f.numElem || ""} onChange={(e) => actualizarMedicion(i, { numElem: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                    </div>
+                  </div>
+                )}
+
+                {expandidos[i] && (
+                  <div className="mb-1.5">
+                    <div className="flex gap-1.5 mb-1.5">
+                      <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={f.factor || ""} onChange={(e) => actualizarMedicion(i, { factor: e.target.value })} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                    </div>
+                    {!esActividadAcero(f.actividad) && (
+                      <>
+                        <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional):</div>
+                        {(f.deducciones || []).map((d, di) => (
+                          <div key={di} className="flex gap-1.5 mb-1 items-center">
+                            <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
+                              const nuevas = [...(f.deducciones || [])]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
+                              actualizarMedicion(i, { deducciones: nuevas });
+                            }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
+                              const nuevas = [...(f.deducciones || [])]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
+                              actualizarMedicion(i, { deducciones: nuevas });
+                            }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
+                              const nuevas = [...(f.deducciones || [])]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
+                              actualizarMedicion(i, { deducciones: nuevas });
+                            }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            <button type="button" onMouseDown={() => actualizarMedicion(i, { deducciones: (f.deducciones || []).filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onMouseDown={() => actualizarMedicion(i, { deducciones: [...(f.deducciones || []), { largo: "", ancho: "", alto: "" }] })}
+                          className="w-full py-1.5 rounded-lg text-[11px] font-semibold border mb-1"
+                          style={{ borderColor: GOLD, color: NAVY }}
+                        >
+                          + Agregar deducción
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-1.5">
                   <input
                     placeholder="Cantidad"
