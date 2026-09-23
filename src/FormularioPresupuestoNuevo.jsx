@@ -186,7 +186,7 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.getWorksheet("Presupuesto");
 
-      ws.getCell("F6").value = aFechaDDMMYYYY(fechaLocalHoy());
+      ws.getCell("G6").value = aFechaDDMMYYYY(fechaLocalHoy());
 
       let fila = 14;
       filas.forEach((f) => {

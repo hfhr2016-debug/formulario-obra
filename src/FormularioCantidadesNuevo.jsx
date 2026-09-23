@@ -81,7 +81,7 @@ function calcularNeta(unidad, sub) {
   return Math.round(Math.max(0, bruta - D) * 1000) / 1000;
 }
 
-function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
+function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder, limpiarTrasSeleccionar }) {
   const [texto, setTexto] = useState(valor || "");
   const [abierto, setAbierto] = useState(false);
   const resultados = useMemo(() => {
@@ -109,7 +109,7 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
         <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-56 overflow-y-auto" style={{ borderColor: LINE }}>
           {resultados.map((it, i) => (
             <button key={i} type="button"
-              onMouseDown={() => { setTexto(it.actividad); setAbierto(false); onSeleccionar(it); }}
+              onMouseDown={() => { setTexto(limpiarTrasSeleccionar ? "" : it.actividad); setAbierto(false); onSeleccionar(it); }}
               className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50" style={{ borderColor: LINE }}>
               <div className="text-[12px] font-medium" style={{ color: NAVY }}>{it.actividad}</div>
               <div className="text-[10.5px] text-gray-500">{it.capitulo} · {it.unidad}</div>
@@ -121,60 +121,65 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
   );
 }
 
-function TarjetaActividad({ a, actualizar, quitar }) {
-  const unidad = a.unidad;
-  const esAcero = esActividadAcero(a.actividad);
+function subVacio() {
+  return { ubicacion: "", largo: "", ancho: "", alto: "", numElementos: "", factor: "",
+    cantidadDirecta: "", denominacion: "", metros: "", deducciones: [] };
+}
+function calcularSub(unidad, actividad, sub) {
   const directa = esUnidadDirecta(unidad);
-  const resultado = calcularNeta(unidad, a);
-  const deducciones = a.deducciones || [];
+  const esAcero = esActividadAcero(actividad);
+  if (esAcero) {
+    const denom = sub.denominacion; const metros = numES(sub.metros);
+    const numElem = numES(sub.numElementos) || 1;
+    const factor = numES(sub.factor) || 1;
+    const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+    return Math.round(peso * numElem * factor * 1000) / 1000;
+  }
+  return calcularNeta(unidad, sub);
+}
+
+function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) {
+  const esAcero = esActividadAcero(actividad);
+  const directa = esUnidadDirecta(unidad);
+  const deducciones = sub.deducciones || [];
+  const resultado = calcularSub(unidad, actividad, sub);
 
   return (
-    <div className="border rounded-lg p-2.5 mb-2.5" style={{ borderColor: LINE, background: "white" }}>
-      <div className="flex justify-between items-start mb-1">
-        <div>
-          <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{a.actividad}</div>
-          <div className="text-[10.5px] text-gray-500">{a.capitulo} · {unidad}</div>
-        </div>
-        <button type="button" onClick={quitar} className="text-[13px] text-red-500 px-1">✕</button>
+    <div className="border rounded-lg p-2 mb-2" style={{ borderColor: LINE, background: "#FAFAF9" }}>
+      <div className="flex items-center justify-between mb-1.5">
+        <input placeholder="Ubicación / Frente" value={sub.ubicacion || ""} onChange={(e) => actualizar({ ...sub, ubicacion: e.target.value })} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        {mostrarQuitar && (
+          <button type="button" onClick={quitar} className="text-[13px] text-red-500 px-2">✕</button>
+        )}
       </div>
-
-      <input placeholder="Ubicación / Frente" value={a.ubicacion || ""} onChange={(e) => actualizar({ ...a, ubicacion: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} />
 
       {directa && esAcero ? (
         <div className="mb-1.5">
           <div className="grid grid-cols-2 gap-1.5">
-            <select value={a.denominacion || ""} onChange={(e) => {
-              const denom = e.target.value; const metros = numES(a.metros);
-              const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
-              actualizar({ ...a, denominacion: denom, cantidadDirecta: peso ? String(Math.round(peso*1000)/1000) : a.cantidadDirecta });
-            }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }}>
+            <select value={sub.denominacion || ""} onChange={(e) => actualizar({ ...sub, denominacion: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }}>
               <option value="">Denominación de varilla</option>
               {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (<option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>))}
             </select>
-            <input placeholder="Metros lineales" type="text" inputMode="decimal" value={a.metros || ""} onChange={(e) => {
-              const metros = numES(e.target.value); const denom = a.denominacion;
-              const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
-              actualizar({ ...a, metros: e.target.value, cantidadDirecta: peso ? String(Math.round(peso*1000)/1000) : a.cantidadDirecta });
-            }} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Metros lineales" type="text" inputMode="decimal" value={sub.metros || ""} onChange={(e) => actualizar({ ...sub, metros: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           </div>
         </div>
       ) : directa ? (
-        <input placeholder={`Cantidad (${unidad})`} type="text" inputMode="decimal" value={a.cantidadDirecta || ""} onChange={(e) => actualizar({ ...a, cantidadDirecta: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} />
+        <input placeholder={`Cantidad (${unidad})`} type="text" inputMode="decimal" value={sub.cantidadDirecta || ""} onChange={(e) => actualizar({ ...sub, cantidadDirecta: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} />
       ) : (
         <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-          <input placeholder="Largo" type="text" inputMode="decimal" value={a.largo || ""} onChange={(e) => actualizar({ ...a, largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          <input placeholder="Largo" type="text" inputMode="decimal" value={sub.largo || ""} onChange={(e) => actualizar({ ...sub, largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           {!unidadEsLineal(unidad) && (
-            <input placeholder="Ancho" type="text" inputMode="decimal" value={a.ancho || ""} onChange={(e) => actualizar({ ...a, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho || ""} onChange={(e) => actualizar({ ...sub, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           )}
           {unidadNecesitaAlto(unidad) && (
-            <input placeholder="Alto" type="text" inputMode="decimal" value={a.alto || ""} onChange={(e) => actualizar({ ...a, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+            <input placeholder="Alto" type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           )}
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-1.5 mb-1.5">
-        <input placeholder="N° elementos" type="text" inputMode="decimal" value={a.numElementos || ""} onChange={(e) => actualizar({ ...a, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-        <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={a.factor || ""} onChange={(e) => actualizar({ ...a, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="N° elementos" type="text" inputMode="decimal" value={sub.numElementos || ""} onChange={(e) => actualizar({ ...sub, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+        <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={sub.factor || ""} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
       </div>
 
       {!directa && (
@@ -184,20 +189,20 @@ function TarjetaActividad({ a, actualizar, quitar }) {
             <div key={di} className="flex gap-1.5 mb-1 items-center">
               <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
                 const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
-                actualizar({ ...a, deducciones: nuevas });
+                actualizar({ ...sub, deducciones: nuevas });
               }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
                 const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
-                actualizar({ ...a, deducciones: nuevas });
+                actualizar({ ...sub, deducciones: nuevas });
               }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
               <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
                 const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
-                actualizar({ ...a, deducciones: nuevas });
+                actualizar({ ...sub, deducciones: nuevas });
               }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-              <button type="button" onMouseDown={() => actualizar({ ...a, deducciones: deducciones.filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
+              <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: deducciones.filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
             </div>
           ))}
-          <button type="button" onMouseDown={() => actualizar({ ...a, deducciones: [...deducciones, { largo: "", ancho: "", alto: "" }] })}
+          <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: [...deducciones, { largo: "", ancho: "", alto: "" }] })}
             className="w-full py-1.5 rounded-lg text-[11px] font-semibold border" style={{ borderColor: GOLD, color: NAVY }}>
             + Agregar deducción
           </button>
@@ -205,19 +210,68 @@ function TarjetaActividad({ a, actualizar, quitar }) {
       )}
 
       <div className="mt-2 p-2 rounded-lg text-center" style={{ background: NAVY }}>
-        <div className="text-[10px]" style={{ color: GOLD }}>Resultado calculado</div>
+        <div className="text-[10px]" style={{ color: GOLD }}>Resultado de este sitio</div>
         <div className="text-white font-bold text-[15px]">{resultado} {unidad}</div>
       </div>
     </div>
   );
 }
 
-function actividadVacia(it) {
-  return {
-    actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad,
-    ubicacion: "", largo: "", ancho: "", alto: "", numElementos: "", factor: "",
-    cantidadDirecta: "", denominacion: "", metros: "", deducciones: [],
+function TarjetaActividad({ a, actualizar, quitar }) {
+  const unidad = a.unidad;
+  const subs = a.subs || [subVacio()];
+  const totalActividad = useMemo(
+    () => subs.reduce((acc, s) => acc + calcularSub(unidad, a.actividad, s), 0),
+    [subs, unidad, a.actividad]
+  );
+
+  const actualizarSub = (i, nuevo) => {
+    const nuevos = [...subs]; nuevos[i] = nuevo;
+    actualizar({ ...a, subs: nuevos });
   };
+  const agregarSub = () => actualizar({ ...a, subs: [...subs, subVacio()] });
+  const quitarSub = (i) => actualizar({ ...a, subs: subs.filter((_, k) => k !== i) });
+
+  return (
+    <div className="border rounded-lg p-2.5 mb-2.5" style={{ borderColor: LINE, background: "white" }}>
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{a.actividad}</div>
+          <div className="text-[10.5px] text-gray-500">{a.capitulo} · {unidad}</div>
+        </div>
+        <button type="button" onClick={quitar} className="text-[13px] text-red-500 px-1">✕</button>
+      </div>
+
+      {subs.map((s, i) => (
+        <FilaSub
+          key={i}
+          sub={s}
+          actualizar={(n) => actualizarSub(i, n)}
+          quitar={() => quitarSub(i)}
+          mostrarQuitar={subs.length > 1}
+          unidad={unidad}
+          actividad={a.actividad}
+        />
+      ))}
+
+      <button
+        type="button" onClick={agregarSub}
+        className="w-full py-2 rounded-lg text-[12px] font-semibold border-2 mb-2"
+        style={{ borderColor: GOLD, color: NAVY }}
+      >
+        + Agregar sitio de medición
+      </button>
+
+      <div className="p-2 rounded-lg text-center" style={{ background: NAVY }}>
+        <div className="text-[10px]" style={{ color: GOLD }}>Total de esta actividad ({subs.length} sitio{subs.length > 1 ? "s" : ""})</div>
+        <div className="text-white font-bold text-[16px]">{Math.round(totalActividad * 1000) / 1000} {unidad}</div>
+      </div>
+    </div>
+  );
+}
+
+function actividadVacia(it) {
+  return { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subVacio()] };
 }
 
 export default function FormularioCantidadesNuevo({ onVolver }) {
@@ -248,29 +302,34 @@ export default function FormularioCantidadesNuevo({ onVolver }) {
       const ws = workbook.getWorksheet("Cantidades de Obra");
 
       let fila = 9;
-      actividades.forEach((a, idx) => {
-        const resultado = calcularNeta(a.unidad, a);
-        ws.getCell(`A${fila}`).value = `MQ-${String(idx + 1).padStart(3, "0")}`;
-        ws.getCell(`B${fila}`).value = nombresTipo[tipoActivo];
-        ws.getCell(`C${fila}`).value = a.capitulo;
-        ws.getCell(`F${fila}`).value = a.actividad;
-        ws.getCell(`G${fila}`).value = a.ubicacion;
-        ws.getCell(`J${fila}`).value = a.unidad;
-        if (esActividadAcero(a.actividad)) {
-          ws.getCell(`K${fila}`).value = resultado;
-        } else {
-          ws.getCell(`L${fila}`).value = numES(a.largo) || 0;
-          ws.getCell(`M${fila}`).value = numES(a.ancho) || 0;
-          ws.getCell(`N${fila}`).value = numES(a.alto) || 0;
-        }
-        ws.getCell(`P${fila}`).value = numES(a.numElementos) || 1;
-        ws.getCell(`Q${fila}`).value = 1;
-        ws.getCell(`R${fila}`).value = numES(a.factor) || 1;
-        const dedTotal = (a.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-        ws.getCell(`S${fila}`).value = dedTotal;
-        ws.getCell(`V${fila}`).value = resultado;
-        ws.getCell(`AA${fila}`).value = aFechaDDMMYYYY(fechaLocalHoy());
-        fila++;
+      let contador = 1;
+      actividades.forEach((a) => {
+        const subs = a.subs || [];
+        subs.forEach((s) => {
+          const resultado = calcularSub(a.unidad, a.actividad, s);
+          ws.getCell(`A${fila}`).value = `MQ-${String(contador).padStart(3, "0")}`;
+          ws.getCell(`B${fila}`).value = nombresTipo[tipoActivo];
+          ws.getCell(`C${fila}`).value = a.capitulo;
+          ws.getCell(`F${fila}`).value = a.actividad;
+          ws.getCell(`G${fila}`).value = s.ubicacion;
+          ws.getCell(`J${fila}`).value = a.unidad;
+          if (esActividadAcero(a.actividad)) {
+            ws.getCell(`K${fila}`).value = resultado;
+          } else {
+            ws.getCell(`L${fila}`).value = numES(s.largo) || 0;
+            ws.getCell(`M${fila}`).value = numES(s.ancho) || 0;
+            ws.getCell(`N${fila}`).value = numES(s.alto) || 0;
+          }
+          ws.getCell(`P${fila}`).value = numES(s.numElementos) || 1;
+          ws.getCell(`Q${fila}`).value = 1;
+          ws.getCell(`R${fila}`).value = numES(s.factor) || 1;
+          const dedTotal = (s.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
+          ws.getCell(`S${fila}`).value = dedTotal;
+          ws.getCell(`V${fila}`).value = resultado;
+          ws.getCell(`AA${fila}`).value = aFechaDDMMYYYY(fechaLocalHoy());
+          fila++;
+          contador++;
+        });
       });
 
       if (ocultarSinUsar) {
@@ -307,7 +366,7 @@ export default function FormularioCantidadesNuevo({ onVolver }) {
           </div>
           <input placeholder="Nombre del proyecto" value={proyecto} onChange={(e) => setProyecto(e.target.value)}
             className="w-full border rounded px-2 py-1.5 text-[13px] mb-2" style={{ borderColor: LINE }} />
-          <BuscadorActividad valor="" catalogo={catalogo} placeholder="Buscar y agregar actividad..." onSeleccionar={agregarActividad} />
+          <BuscadorActividad valor="" catalogo={catalogo} placeholder="Buscar y agregar actividad..." onSeleccionar={agregarActividad} limpiarTrasSeleccionar />
         </div>
 
         {actividades.map((a, i) => (
