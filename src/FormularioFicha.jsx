@@ -263,19 +263,19 @@ export default function FormularioFicha({ onVolver }) {
         ws.getCell(`E${fila}`).value = hcBloques.civil ? "Sí" : "No";
         fila += 1;
         ELEMENTOS_HC_ORDEN.civil.forEach((el) => {
-          ws.getCell(`B${fila}`).value = hcElementos[el] ? "Sí" : "";
+          ws.getCell(`B${fila}`).value = "   • " + el + (hcElementos[el] ? "  —  Sí" : "");
           fila += 1;
         });
         ws.getCell(`E${fila}`).value = hcBloques.mecanico ? "Sí" : "No";
         fila += 1;
         ELEMENTOS_HC_ORDEN.mecanico.forEach((el) => {
-          ws.getCell(`B${fila}`).value = hcElementos[el] ? "Sí" : "";
+          ws.getCell(`B${fila}`).value = "   • " + el + (hcElementos[el] ? "  —  Sí" : "");
           fila += 1;
         });
         ws.getCell(`E${fila}`).value = hcBloques.electrico ? "Sí" : "No";
         fila += 1;
         ELEMENTOS_HC_ORDEN.electrico.forEach((el) => {
-          ws.getCell(`B${fila}`).value = hcElementos[el] ? "Sí" : "";
+          ws.getCell(`B${fila}`).value = "   • " + el + (hcElementos[el] ? "  —  Sí" : "");
           fila += 1;
         });
       }
