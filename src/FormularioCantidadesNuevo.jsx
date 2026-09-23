@@ -24,6 +24,30 @@ const PESO_ACERO_KG_POR_METRO = {
   '#10 (1 1/4")': 6.404, '#11 (1 3/8")': 7.907,
 };
 function esActividadAcero(nombre) { return /acero/i.test(nombre || ""); }
+
+function factorDesperdicioSugerido(nombreActividad) {
+  if (!nombreActividad) return null;
+  const n = nombreActividad.toLowerCase();
+  const reglas = [
+    [/cerámic|porcelanat|enchape/, 0.10],
+    [/pintura|esmalte|vinílic/, 0.10],
+    [/estuco|yeso/, 0.10],
+    [/madera|formaleta/, 0.10],
+    [/teja/, 0.08],
+    [/cable|cableado/, 0.08],
+    [/adoquín|ladrillo|bloque|mamposter/, 0.05],
+    [/vidrio/, 0.05],
+    [/tubería|tuberia|conduit/, 0.05],
+    [/acero/, 0.05],
+    [/mezcla asfáltica|pavimento|capa de rodadura|base asfáltica/, 0.05],
+    [/subbase|base granular|afirmado/, 0.10],
+    [/concreto|cemento|agregado|arena|grava|recebo/, 0.03],
+  ];
+  for (const [patron, factor] of reglas) {
+    if (patron.test(n)) return factor;
+  }
+  return null;
+}
 function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
 function unidadEsLineal(unidad) { const u=(unidad||"").toLowerCase(); return u==='ml'||u==='m'; }
@@ -121,8 +145,9 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder, limpia
   );
 }
 
-function subVacio() {
-  return { ubicacion: "", largo: "", ancho: "", alto: "", numElementos: "", factor: "",
+function subVacio(factorSugerido) {
+  return { ubicacion: "", largo: "", ancho: "", alto: "", numElementos: "",
+    factor: factorSugerido !== undefined ? String(factorSugerido) : "",
     cantidadDirecta: "", denominacion: "", metros: "", deducciones: [] };
 }
 function calcularSub(unidad, actividad, sub) {
@@ -177,10 +202,13 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) 
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+      <div className="grid grid-cols-2 gap-1.5 mb-1">
         <input placeholder="N° elementos" type="text" inputMode="decimal" value={sub.numElementos || ""} onChange={(e) => actualizar({ ...sub, numElementos: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
         <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={sub.factor || ""} onChange={(e) => actualizar({ ...sub, factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
       </div>
+      {sub.factor && (
+        <div className="text-[10px] text-gray-500 mb-1.5 -mt-1">⚡ Factor sugerido según desperdicio típico de esta actividad — ajústalo si tu caso es distinto.</div>
+      )}
 
       {!directa && (
         <div className="mb-1.5">
@@ -229,7 +257,11 @@ function TarjetaActividad({ a, actualizar, quitar }) {
     const nuevos = [...subs]; nuevos[i] = nuevo;
     actualizar({ ...a, subs: nuevos });
   };
-  const agregarSub = () => actualizar({ ...a, subs: [...subs, subVacio()] });
+  const agregarSub = () => {
+    const desp = factorDesperdicioSugerido(a.actividad);
+    const factorSugerido = desp !== null ? Math.round((1 + desp) * 1000) / 1000 : undefined;
+    actualizar({ ...a, subs: [...subs, subVacio(factorSugerido)] });
+  };
   const quitarSub = (i) => actualizar({ ...a, subs: subs.filter((_, k) => k !== i) });
 
   return (
@@ -271,7 +303,9 @@ function TarjetaActividad({ a, actualizar, quitar }) {
 }
 
 function actividadVacia(it) {
-  return { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subVacio()] };
+  const desp = factorDesperdicioSugerido(it.actividad);
+  const factorSugerido = desp !== null ? Math.round((1 + desp) * 1000) / 1000 : undefined;
+  return { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subVacio(factorSugerido)] };
 }
 
 export default function FormularioCantidadesNuevo({ onVolver }) {

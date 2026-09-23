@@ -72,6 +72,30 @@ function catalogoFiltrado() {
   return { tipoActivo, catalogo: filtrado };
 }
 
+function factorDesperdicioSugerido(nombreActividad) {
+  if (!nombreActividad) return null;
+  const n = nombreActividad.toLowerCase();
+  const reglas = [
+    [/cerámic|porcelanat|enchape/, 0.10],
+    [/pintura|esmalte|vinílic/, 0.10],
+    [/estuco|yeso/, 0.10],
+    [/madera|formaleta/, 0.10],
+    [/teja/, 0.08],
+    [/cable|cableado/, 0.08],
+    [/adoquín|ladrillo|bloque|mamposter/, 0.05],
+    [/vidrio/, 0.05],
+    [/tubería|tuberia|conduit/, 0.05],
+    [/acero/, 0.05],
+    [/mezcla asfáltica|pavimento|capa de rodadura|base asfáltica/, 0.05],
+    [/subbase|base granular|afirmado/, 0.10],
+    [/concreto|cemento|agregado|arena|grava|recebo/, 0.03],
+  ];
+  for (const [patron, factor] of reglas) {
+    if (patron.test(n)) return factor;
+  }
+  return null;
+}
+
 function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
   const [texto, setTexto] = useState(valor || "");
   const [abierto, setAbierto] = useState(false);
@@ -127,10 +151,13 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
   );
 }
 
+function subMedicionVacia(factorSugerido) {
+  return { ubicacion: "", largo: "", ancho: "", alto: "", numElem: "",
+    factor: factorSugerido !== undefined ? String(factorSugerido) : "",
+    deducciones: [], denominacion: "", metros: "" };
+}
 function filaVacia() {
-  return { actividad: "", capitulo: "", unidad: "", cantidad: "", precio: "",
-    largo: "", ancho: "", alto: "", numElem: "", factor: "", deducciones: [],
-    denominacion: "", metros: "" };
+  return { actividad: "", capitulo: "", unidad: "", cantidad: "", precio: "", subs: [] };
 }
 
 export default function FormularioPresupuestoNuevo({ onVolver }) {
@@ -149,26 +176,45 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
     nuevas[i] = { ...nuevas[i], ...cambios };
     setFilas(nuevas);
   };
-  const actualizarMedicion = (i, cambios) => {
-    const fila = { ...filas[i], ...cambios };
-    const unidad = fila.unidad;
-    const largo = numES(fila.largo);
-    const ancho = numES(fila.ancho);
-    const alto = numES(fila.alto);
-    const numElem = numES(fila.numElem) || 1;
-    const factor = numES(fila.factor) || 1;
+
+  function calcularSub(unidad, actividad, sub) {
+    const largo = numES(sub.largo);
+    const ancho = numES(sub.ancho);
+    const alto = numES(sub.alto);
+    const numElem = numES(sub.numElem) || 1;
+    const factor = numES(sub.factor) || 1;
     let bruta = 0;
-    if (esActividadAcero(fila.actividad)) {
-      const denom = fila.denominacion;
-      const metros = numES(fila.metros);
+    if (esActividadAcero(actividad)) {
+      const denom = sub.denominacion;
+      const metros = numES(sub.metros);
       bruta = (denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0) * numElem * factor;
     } else if (unidadNecesitaAlto(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem * factor;
     else if (unidadEsArea(unidad)) bruta = largo * (ancho || 1) * numElem * factor;
     else if (unidadEsLineal(unidad)) bruta = largo * numElem * factor;
-    const dedTotal = (fila.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-    const cant = Math.max(0, bruta - dedTotal);
-    actualizarFila(i, { ...cambios, cantidad: cant ? String(Math.round(cant * 1000) / 1000) : fila.cantidad });
+    const dedTotal = (sub.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
+    return Math.round(Math.max(0, bruta - dedTotal) * 1000) / 1000;
+  }
+
+  const actualizarSub = (i, si, cambios) => {
+    const fila = filas[i];
+    const subs = [...(fila.subs || [])];
+    subs[si] = { ...subs[si], ...cambios };
+    const cantTotal = subs.reduce((acc, s) => acc + calcularSub(fila.unidad, fila.actividad, s), 0);
+    actualizarFila(i, { subs, cantidad: cantTotal ? String(Math.round(cantTotal * 1000) / 1000) : fila.cantidad });
   };
+  const agregarSub = (i) => {
+    const fila = filas[i];
+    const desp = factorDesperdicioSugerido(fila.actividad);
+    const factorSugerido = desp !== null ? Math.round((1 + desp) * 1000) / 1000 : undefined;
+    actualizarFila(i, { subs: [...(fila.subs || []), subMedicionVacia(factorSugerido)] });
+  };
+  const quitarSub = (i, si) => {
+    const fila = filas[i];
+    const subs = (fila.subs || []).filter((_, k) => k !== si);
+    const cantTotal = subs.reduce((acc, s) => acc + calcularSub(fila.unidad, fila.actividad, s), 0);
+    actualizarFila(i, { subs, cantidad: cantTotal ? String(Math.round(cantTotal * 1000) / 1000) : "" });
+  };
+
   const agregarFila = () => setFilas([...filas, filaVacia()]);
   const quitarFila = (i) => setFilas(filas.filter((_, k) => k !== i));
 
@@ -252,7 +298,11 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
                 valor={f.actividad}
                 catalogo={catalogo}
                 placeholder="Buscar actividad..."
-                onSeleccionar={(it) => actualizarFila(i, { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad })}
+                onSeleccionar={(it) => {
+                  const desp = factorDesperdicioSugerido(it.actividad);
+                  const factorSugerido = desp !== null ? Math.round((1 + desp) * 1000) / 1000 : undefined;
+                  actualizarFila(i, { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subMedicionVacia(factorSugerido)] });
+                }}
               />
               {filas.length > 1 && (
                 <button type="button" onClick={() => quitarFila(i)} className="text-[13px] text-red-500 px-1 shrink-0">✕</button>
@@ -272,75 +322,91 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
                   </button>
                 </div>
 
-                {expandidos[i] && esActividadAcero(f.actividad) && (
-                  <div className="mb-1.5 p-2 rounded-lg" style={{ background: PAPER }}>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <select
-                        value={f.denominacion || ""}
-                        onChange={(e) => actualizarMedicion(i, { denominacion: e.target.value })}
-                        className="border rounded px-2 py-1.5 text-[12px]"
-                        style={{ borderColor: LINE }}
-                      >
-                        <option value="">Denominación de varilla</option>
-                        {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (
-                          <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
-                        ))}
-                      </select>
-                      <input placeholder="Metros lineales" type="text" inputMode="decimal" value={f.metros || ""} onChange={(e) => actualizarMedicion(i, { metros: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                    </div>
-                  </div>
-                )}
-
-                {expandidos[i] && !esActividadAcero(f.actividad) && (unidadNecesitaAlto(f.unidad) || unidadEsArea(f.unidad) || unidadEsLineal(f.unidad)) && (
-                  <div className="mb-1.5 p-2 rounded-lg" style={{ background: PAPER }}>
-                    <div className="grid grid-cols-3 gap-1.5 mb-1">
-                      <input placeholder="Largo" type="text" inputMode="decimal" value={f.largo || ""} onChange={(e) => actualizarMedicion(i, { largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                      {!unidadEsLineal(f.unidad) && (
-                        <input placeholder="Ancho" type="text" inputMode="decimal" value={f.ancho || ""} onChange={(e) => actualizarMedicion(i, { ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                      )}
-                      {unidadNecesitaAlto(f.unidad) && (
-                        <input placeholder="Alto" type="text" inputMode="decimal" value={f.alto || ""} onChange={(e) => actualizarMedicion(i, { alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                      )}
-                      <input placeholder="N° elem." type="text" inputMode="decimal" value={f.numElem || ""} onChange={(e) => actualizarMedicion(i, { numElem: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                    </div>
-                  </div>
-                )}
-
                 {expandidos[i] && (
                   <div className="mb-1.5">
-                    <div className="flex gap-1.5 mb-1.5">
-                      <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={f.factor || ""} onChange={(e) => actualizarMedicion(i, { factor: e.target.value })} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                    </div>
-                    {!esActividadAcero(f.actividad) && (
-                      <>
-                        <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional):</div>
-                        {(f.deducciones || []).map((d, di) => (
-                          <div key={di} className="flex gap-1.5 mb-1 items-center">
-                            <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
-                              const nuevas = [...(f.deducciones || [])]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
-                              actualizarMedicion(i, { deducciones: nuevas });
-                            }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                            <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
-                              const nuevas = [...(f.deducciones || [])]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
-                              actualizarMedicion(i, { deducciones: nuevas });
-                            }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                            <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
-                              const nuevas = [...(f.deducciones || [])]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
-                              actualizarMedicion(i, { deducciones: nuevas });
-                            }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                            <button type="button" onMouseDown={() => actualizarMedicion(i, { deducciones: (f.deducciones || []).filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
+                    {(f.subs && f.subs.length ? f.subs : [subMedicionVacia()]).map((sub, si) => (
+                      <div key={si} className="border rounded-lg p-2 mb-2" style={{ borderColor: LINE, background: PAPER }}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <input placeholder="Ubicación / Frente" value={sub.ubicacion || ""} onChange={(e) => actualizarSub(i, si, { ubicacion: e.target.value })} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                          {f.subs && f.subs.length > 1 && (
+                            <button type="button" onClick={() => quitarSub(i, si)} className="text-[13px] text-red-500 px-2">✕</button>
+                          )}
+                        </div>
+
+                        {esActividadAcero(f.actividad) ? (
+                          <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+                            <select
+                              value={sub.denominacion || ""}
+                              onChange={(e) => actualizarSub(i, si, { denominacion: e.target.value })}
+                              className="border rounded px-2 py-1.5 text-[12px]"
+                              style={{ borderColor: LINE }}
+                            >
+                              <option value="">Denominación de varilla</option>
+                              {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (
+                                <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
+                              ))}
+                            </select>
+                            <input placeholder="Metros lineales" type="text" inputMode="decimal" value={sub.metros || ""} onChange={(e) => actualizarSub(i, si, { metros: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                           </div>
-                        ))}
-                        <button
-                          type="button"
-                          onMouseDown={() => actualizarMedicion(i, { deducciones: [...(f.deducciones || []), { largo: "", ancho: "", alto: "" }] })}
-                          className="w-full py-1.5 rounded-lg text-[11px] font-semibold border mb-1"
-                          style={{ borderColor: GOLD, color: NAVY }}
-                        >
-                          + Agregar deducción
-                        </button>
-                      </>
-                    )}
+                        ) : (unidadNecesitaAlto(f.unidad) || unidadEsArea(f.unidad) || unidadEsLineal(f.unidad)) && (
+                          <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+                            <input placeholder="Largo" type="text" inputMode="decimal" value={sub.largo || ""} onChange={(e) => actualizarSub(i, si, { largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            {!unidadEsLineal(f.unidad) && (
+                              <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho || ""} onChange={(e) => actualizarSub(i, si, { ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            )}
+                            {unidadNecesitaAlto(f.unidad) && (
+                              <input placeholder="Alto" type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizarSub(i, si, { alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            )}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-1.5 mb-1">
+                          <input placeholder="N° elem." type="text" inputMode="decimal" value={sub.numElem || ""} onChange={(e) => actualizarSub(i, si, { numElem: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                          <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={sub.factor || ""} onChange={(e) => actualizarSub(i, si, { factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                        </div>
+                        {sub.factor && (
+                          <div className="text-[10px] text-gray-500 mb-1">⚡ Factor sugerido según desperdicio típico — ajústalo si tu caso es distinto.</div>
+                        )}
+
+                        {!esActividadAcero(f.actividad) && (
+                          <>
+                            <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional):</div>
+                            {(sub.deducciones || []).map((d, di) => (
+                              <div key={di} className="flex gap-1.5 mb-1 items-center">
+                                <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
+                                  const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
+                                  actualizarSub(i, si, { deducciones: nuevas });
+                                }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                                <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
+                                  const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
+                                  actualizarSub(i, si, { deducciones: nuevas });
+                                }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                                <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
+                                  const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
+                                  actualizarSub(i, si, { deducciones: nuevas });
+                                }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                                <button type="button" onMouseDown={() => actualizarSub(i, si, { deducciones: (sub.deducciones || []).filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onMouseDown={() => actualizarSub(i, si, { deducciones: [...(sub.deducciones || []), { largo: "", ancho: "", alto: "" }] })}
+                              className="w-full py-1.5 rounded-lg text-[11px] font-semibold border"
+                              style={{ borderColor: GOLD, color: NAVY }}
+                            >
+                              + Agregar deducción
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button" onClick={() => agregarSub(i)}
+                      className="w-full py-2 rounded-lg text-[12px] font-semibold border-2 mb-1.5"
+                      style={{ borderColor: GOLD, color: NAVY }}
+                    >
+                      + Agregar sitio de medición
+                    </button>
                   </div>
                 )}
 
