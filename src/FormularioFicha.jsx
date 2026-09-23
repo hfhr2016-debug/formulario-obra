@@ -128,9 +128,27 @@ function Input(props) {
 }
 
 export default function FormularioFicha({ onVolver }) {
-  const [modulos, setModulos] = useState({ edificacion: true, vias: false, hidrocarburos: false });
-  const [hcBloques, setHcBloques] = useState({ civil: false, mecanico: false, electrico: false });
-  const [hcElementos, setHcElementos] = useState({});
+  const [modulos, setModulos] = useState(() => {
+    try {
+      const datos = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+      if (datos && datos.modulos) return datos.modulos;
+    } catch (e) {}
+    return { edificacion: true, vias: false, hidrocarburos: false };
+  });
+  const [hcBloques, setHcBloques] = useState(() => {
+    try {
+      const datos = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+      if (datos && datos.hcBloques) return datos.hcBloques;
+    } catch (e) {}
+    return { civil: false, mecanico: false, electrico: false };
+  });
+  const [hcElementos, setHcElementos] = useState(() => {
+    try {
+      const datos = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+      if (datos && datos.hcElementos) return datos.hcElementos;
+    } catch (e) {}
+    return {};
+  });
   const [viaTipo, setViaTipo] = useState("");
   const [viaLongitud, setViaLongitud] = useState("");
   const [viaCarriles, setViaCarriles] = useState("");
