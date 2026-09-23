@@ -310,8 +310,11 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
             </div>
             {f.actividad && (
               <>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="text-[10.5px] text-gray-500">{f.capitulo} · Unidad: {f.unidad}</div>
+                <div className="rounded-lg px-2.5 py-1.5 mb-1.5" style={{ background: NAVY }}>
+                  <div className="text-white text-[12.5px] font-semibold">{f.actividad}</div>
+                  <div className="text-[10px]" style={{ color: GOLD }}>{f.capitulo} · Unidad: {f.unidad}</div>
+                </div>
+                <div className="flex items-center justify-end mb-1.5">
                   <button
                     type="button"
                     onMouseDown={() => setExpandidos({ ...expandidos, [i]: !expandidos[i] })}
