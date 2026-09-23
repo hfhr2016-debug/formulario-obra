@@ -248,27 +248,28 @@ export default function FormularioCantidadesNuevo({ onVolver }) {
       const ws = workbook.getWorksheet("Cantidades de Obra");
 
       let fila = 9;
-      actividades.forEach((a) => {
+      actividades.forEach((a, idx) => {
         const resultado = calcularNeta(a.unidad, a);
+        ws.getCell(`A${fila}`).value = `MQ-${String(idx + 1).padStart(3, "0")}`;
         ws.getCell(`B${fila}`).value = nombresTipo[tipoActivo];
         ws.getCell(`C${fila}`).value = a.capitulo;
-        ws.getCell(`D${fila}`).value = a.actividad;
-        ws.getCell(`E${fila}`).value = a.ubicacion;
-        ws.getCell(`F${fila}`).value = a.unidad;
+        ws.getCell(`F${fila}`).value = a.actividad;
+        ws.getCell(`G${fila}`).value = a.ubicacion;
+        ws.getCell(`J${fila}`).value = a.unidad;
         if (esActividadAcero(a.actividad)) {
-          ws.getCell(`G${fila}`).value = resultado;
+          ws.getCell(`K${fila}`).value = resultado;
         } else {
-          ws.getCell(`H${fila}`).value = numES(a.largo) || 0;
-          ws.getCell(`I${fila}`).value = numES(a.ancho) || 0;
-          ws.getCell(`J${fila}`).value = numES(a.alto) || 0;
+          ws.getCell(`L${fila}`).value = numES(a.largo) || 0;
+          ws.getCell(`M${fila}`).value = numES(a.ancho) || 0;
+          ws.getCell(`N${fila}`).value = numES(a.alto) || 0;
         }
-        ws.getCell(`K${fila}`).value = numES(a.numElementos) || 1;
-        ws.getCell(`L${fila}`).value = 1;
-        ws.getCell(`M${fila}`).value = numES(a.factor) || 1;
+        ws.getCell(`P${fila}`).value = numES(a.numElementos) || 1;
+        ws.getCell(`Q${fila}`).value = 1;
+        ws.getCell(`R${fila}`).value = numES(a.factor) || 1;
         const dedTotal = (a.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-        ws.getCell(`N${fila}`).value = dedTotal;
-        ws.getCell(`O${fila}`).value = resultado;
-        ws.getCell(`Q${fila}`).value = "Elaborado con SAIEA OBRAS";
+        ws.getCell(`S${fila}`).value = dedTotal;
+        ws.getCell(`V${fila}`).value = resultado;
+        ws.getCell(`AA${fila}`).value = aFechaDDMMYYYY(fechaLocalHoy());
         fila++;
       });
 
