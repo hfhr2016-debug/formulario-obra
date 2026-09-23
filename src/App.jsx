@@ -1256,7 +1256,56 @@ const MODULOS = [
   { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: true },
 ];
 
-function Inicio({ onSeleccionar }) {
+function SelectorApps({ onSeleccionar }) {
+  const apps = [
+    { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
+    { id: "sst", nombre: "Gestión SST", icono: "/icons/icon-gestion-sst.png", activo: true },
+    { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
+  ];
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-8 pb-6 text-center" style={{ background: NAVY }}>
+        <div className="text-white font-bold text-[19px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          REFORMAS Y REMODELACIONES
+        </div>
+        <div className="text-[11.5px] mt-1" style={{ color: GOLD }}>
+          Elige el sistema de gestión que quieres usar
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col justify-center gap-4 p-6">
+        {apps.map((a) => (
+          <button
+            key={a.id}
+            onClick={() => onSeleccionar(a.id)}
+            className="flex items-center gap-4 rounded-2xl p-4"
+            style={{ background: "white", border: `1px solid ${LINE}` }}
+          >
+            <img src={a.icono} alt={a.nombre} className="w-[64px] h-[64px] object-contain shrink-0" />
+            <div className="text-[15px] font-bold text-left" style={{ color: NAVY }}>{a.nombre}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Proximamente({ nombre, onVolver }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+      <div className="text-[18px] font-bold mb-2" style={{ color: NAVY }}>{nombre}</div>
+      <div className="text-[13px] text-gray-500 mb-6">Este módulo está en construcción — muy pronto estará disponible.</div>
+      <button onClick={onVolver} className="px-5 py-2.5 rounded-lg text-white font-semibold text-[13px]" style={{ background: NAVY }}>
+        ← Volver
+      </button>
+    </div>
+  );
+}
+
+function Inicio({ onSeleccionar, onVolverSelector }) {
     return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1264,6 +1313,11 @@ function Inicio({ onSeleccionar }) {
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
       <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (SST / Ambiental)
+          </button>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div>
             <div
@@ -1312,10 +1366,26 @@ function Inicio({ onSeleccionar }) {
 }
 
 export default function App() {
-  const [vista, setVista] = useState("inicio");
+  const [vista, setVista] = useState("selector-apps");
 
   if (vista === "inicio") {
-    return <Inicio onSeleccionar={setVista} />;
+    return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "selector-apps") {
+    return (
+      <SelectorApps
+        onSeleccionar={(id) => {
+          if (id === "tecnica") setVista("inicio");
+          else setVista(`proximamente-${id}`);
+        }}
+      />
+    );
+  }
+  if (vista === "proximamente-sst") {
+    return <Proximamente nombre="Gestión SST" onVolver={() => setVista("selector-apps")} />;
+  }
+  if (vista === "proximamente-ambiental") {
+    return <Proximamente nombre="Gestión Ambiental" onVolver={() => setVista("selector-apps")} />;
   }
   if (vista === "diario") {
     return <CapturaAvanceObra onVolver={() => setVista("inicio")} />;
@@ -1347,5 +1417,5 @@ export default function App() {
   if (vista === "memorias") {
     return <FormularioMemoria onVolver={() => setVista("inicio")} />;
   }
-  return <Inicio onSeleccionar={setVista} />;
+  return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
 }
