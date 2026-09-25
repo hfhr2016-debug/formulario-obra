@@ -1284,7 +1284,9 @@ function SelectorApps({ onSeleccionar }) {
             className="flex items-center gap-4 rounded-2xl p-4"
             style={{ background: "white", border: `1px solid ${LINE}` }}
           >
-            <img src={a.icono} alt={a.nombre} className="w-[96px] h-[96px] object-contain shrink-0" />
+            <div className="shrink-0 rounded-xl p-2 flex items-center justify-center" style={{ background: "#1E3A8A" }}>
+              <img src={a.icono} alt={a.nombre} className="w-[96px] h-[96px] object-contain" />
+            </div>
             <div className="text-[15px] font-bold text-left" style={{ color: NAVY }}>{a.nombre}</div>
           </button>
         ))}
