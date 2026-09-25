@@ -165,6 +165,41 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
   const [filas, setFilas] = useState([filaVacia()]);
   const [expandidos, setExpandidos] = useState({});
   const [generando, setGenerando] = useState(false);
+  const [modo, setModo] = useState("nuevo");
+  const [archivoBase, setArchivoBase] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  async function cargarArchivoExistente(file) {
+    setCargando(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.getWorksheet("Presupuesto");
+      if (!ws) throw new Error("No se encontró la hoja Presupuesto");
+
+      const nuevasFilas = [];
+      for (let r = 14; r <= 513; r++) {
+        const act = ws.getCell(`C${r}`).value;
+        if (!act) continue;
+        nuevasFilas.push({
+          actividad: String(act),
+          capitulo: ws.getCell(`B${r}`).value || "",
+          unidad: ws.getCell(`D${r}`).value || "",
+          cantidad: String(ws.getCell(`E${r}`).value || ""),
+          precio: String(ws.getCell(`F${r}`).value || ""),
+          subs: [],
+        });
+      }
+      setFilas(nuevasFilas.length ? nuevasFilas : [filaVacia()]);
+      setArchivoBase(file);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo leer el archivo. Verifica que sea un Presupuesto generado por este sistema.");
+    } finally {
+      setCargando(false);
+    }
+  }
   const [ocultarSinUsar, setOcultarSinUsar] = useState(false);
 
   const { tipoActivo, catalogo } = useMemo(() => catalogoFiltrado(), []);
@@ -274,6 +309,25 @@ export default function FormularioPresupuestoNuevo({ onVolver }) {
     <div style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }} className="min-h-screen">
       <div className="p-4 max-w-xl mx-auto">
         <button onClick={onVolver} className="text-[12px] mb-3" style={{ color: NAVY }}>← Volver al portal</button>
+
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "nuevo" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Presupuesto nuevo
+          </button>
+          <button onClick={() => setModo("actualizar")} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "actualizar" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Actualizar existente
+          </button>
+        </div>
+        {modo === "actualizar" && (
+          <div className="mb-4 p-3 border rounded-lg" style={{ borderColor: LINE }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: NAVY }}>Sube el Presupuesto que quieres actualizar</label>
+            <input type="file" accept=".xlsx" onChange={(e) => e.target.files[0] && cargarArchivoExistente(e.target.files[0])} className="text-[12.5px]" />
+            {cargando && <div className="text-[12px] text-gray-500 mt-1">Leyendo archivo...</div>}
+            {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
+          </div>
+        )}
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>
           PRESUPUESTO DE OBRA
