@@ -553,6 +553,59 @@ export default function FormularioMensual({ onVolver }) {
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>AVANCE POR CAPÍTULO (% Programado y % Real)</div>
         <div className="p-2 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const guardados = JSON.parse(localStorage.getItem("ryr_avance_diario_capitulos") || "{}");
+                const nombres = Object.keys(guardados);
+                if (nombres.length === 0) {
+                  alert("Todavía no hay avances por capítulo guardados desde el Informe Diario en este dispositivo.");
+                  return;
+                }
+                const nuevos = { ...avances };
+                let coincidencias = 0;
+                CAPITULOS.forEach((cap, ci) => {
+                  if (guardados[cap.nombre] !== undefined) {
+                    nuevos[ci] = { ...(nuevos[ci] || { prog: "" }), real: String(guardados[cap.nombre].porcentaje) };
+                    coincidencias++;
+                  }
+                });
+                setAvances(nuevos);
+                alert(`% Real cargado desde el Informe Diario: ${coincidencias} capítulo(s) actualizados.`);
+              } catch (err) {
+                console.error(err);
+                alert("No se pudo leer la memoria del Informe Diario.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            ⚡ Cargar % Real desde el Informe Diario guardado en este dispositivo
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const datos = JSON.parse(localStorage.getItem("ryr_cronograma_fechas") || "null");
+                if (!datos) { alert("No hay un Cronograma guardado todavía. Genera uno primero."); return; }
+                const dc = numES(datos.duracionTotalDias) || 0;
+                const da = Math.max(0, Math.round((new Date(fechaLocalHoy()) - new Date(datos.fechaInicio)) / 86400000) + 1);
+                const pct = dc > 0 ? Math.min(1, da / dc) : 0;
+                const nuevos = {};
+                CAPITULOS.forEach((cap, ci) => { nuevos[ci] = { ...(avances[ci] || {}), prog: pct.toFixed(3) }; });
+                setAvances(nuevos);
+                alert(`% Programado aplicado a todos los capítulos: ${(pct * 100).toFixed(1)}% (según tiempo transcurrido del Cronograma, calculado hasta hoy). Es una aproximación por tiempo, no por avance físico real de cada capítulo — ajústalo si lo necesitas.`);
+              } catch (err) {
+                alert("No se pudo calcular desde el Cronograma.");
+              }
+            }}
+            className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            ⚡ Calcular % Programado desde Cronograma (por tiempo transcurrido hasta hoy)
+          </button>
+          <div className="text-[11px] text-gray-500 mb-2 px-1">Escribe el % de avance programado y el % real ejecutado de cada capítulo, como decimal entre 0 y 1 en pantalla, o directo el número entero (ej: escribe 25 para 25%).</div>
           {CAPITULOS.map((cap, ci) => (
             <CapituloAvance
               key={ci} capitulo={cap}
