@@ -342,14 +342,32 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
               className="flex-[0.7] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
               style={{ borderColor: LINE }}
             />
-            <input
-              placeholder="Cant."
-              type="text" inputMode="decimal"
-              value={f.cant}
-              onChange={(e) => actualizar(i, "cant", e.target.value)}
-              className="flex-[0.8] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
-              style={{ borderColor: LINE }}
-            />
+            <div className="flex-[0.8] flex items-stretch border rounded overflow-hidden min-w-0" style={{ borderColor: LINE }}>
+              <button
+                type="button"
+                onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
+                className="px-1.5 text-[13px] font-bold shrink-0"
+                style={{ background: PAPER, color: NAVY }}
+              >
+                −
+              </button>
+              <input
+                placeholder="Cant."
+                type="text" inputMode="decimal"
+                value={f.cant}
+                onChange={(e) => actualizar(i, "cant", e.target.value)}
+                className="flex-1 px-1 py-1.5 text-[12.5px] min-w-0 text-center"
+                style={{ border: "none" }}
+              />
+              <button
+                type="button"
+                onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
+                className="px-1.5 text-[13px] font-bold shrink-0"
+                style={{ background: PAPER, color: NAVY }}
+              >
+                +
+              </button>
+            </div>
             <input
               placeholder="Vr Unit."
               type="text" inputMode="decimal"
@@ -359,6 +377,11 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
               style={{ borderColor: LINE }}
             />
           </div>
+          {(f.cant || f.vrUnit) && (
+            <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
+              Subtotal: $ {((numES(f.cant) || 0) * (numES(f.vrUnit) || 0)).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )}
           </div>
           );
         })}
@@ -392,6 +415,11 @@ export default function FormularioAPU({ onVolver }) {
   const [interventoriaCargo, setInterventoriaCargo] = useState("");
 
   const [generando, setGenerando] = useState(false);
+
+  const totalDirectoUnitarioVista = useMemo(() => {
+    const sumar = (filas) => filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (numES(f.vrUnit) || 0), 0);
+    return sumar(materiales) + sumar(manoObra) + sumar(equipos);
+  }, [materiales, manoObra, equipos]);
 
   const unidadRendimiento = actividad ? `${actividad.unidad}/jornada` : "";
 
@@ -631,6 +659,13 @@ export default function FormularioAPU({ onVolver }) {
             <CampoNombre value={interventoriaNombre} onChange={setInterventoriaNombre} />
             <div className="h-2" />
             <BuscadorTexto value={interventoriaCargo} onChange={setInterventoriaCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
+          </div>
+        </div>
+
+        <div className="p-3 rounded-lg mb-3 text-center" style={{ background: NAVY }}>
+          <div className="text-[11px]" style={{ color: GOLD }}>TOTAL DIRECTO UNITARIO DEL APU</div>
+          <div className="text-white font-bold text-[19px]">
+            $ {totalDirectoUnitarioVista.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
 
