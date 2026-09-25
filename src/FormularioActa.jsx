@@ -235,6 +235,65 @@ export default function FormularioActa({ onVolver }) {
   const [aprNombre, setAprNombre] = useState(""); const [aprCargo, setAprCargo] = useState("");
 
   const [generando, setGenerando] = useState(false);
+  const [modo, setModo] = useState("nuevo");
+  const [archivoBase, setArchivoBase] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  async function cargarArchivoExistente(file) {
+    setCargando(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.worksheets[0];
+
+      const val = (celda) => ws.getCell(celda).value;
+      setActaNo(val("C11") || ""); setContratoNo(val("J12") || "");
+      setProyecto(val("C12") || ""); setContratante(val("C13") || "");
+      setContratista(val("J13") || ""); setInterventoria(val("C14") || "");
+      setUbicacion(val("J14") || ""); setObjeto(val("D16") || "");
+      setDiasContractuales(String(val("F20") || "")); setDiasAvance(String(val("J20") || ""));
+      setPorcentajeTiempo(String((numES(val("N20")) || 0) * 100));
+      setContratanteNombre(val("C21") || ""); setContratanteCargo(val("C22") || "");
+      setContratistaNombre(val("H21") || ""); setContratistaCargo(val("H22") || "");
+      setInterventorNombre(val("L21") || ""); setInterventorCargo(val("L22") || "");
+
+      const nuevosItems = [];
+      for (let r = 26; r <= 33; r++) {
+        const act = val(`B${r}`);
+        if (act) nuevosItems.push({
+          actividad: String(act), unidad: val(`E${r}`) || "",
+          cantContractual: String(val(`F${r}`) || ""), cantAnterior: String(val(`G${r}`) || ""),
+          cantActa: String(val(`H${r}`) || ""), precioUnitario: String(val(`I${r}`) || ""),
+          observacion: val(`N${r}`) || "",
+        });
+      }
+      setItems(nuevosItems.length ? nuevosItems : [itemVacio()]);
+
+      setValorContractual(String(val("E36") || "")); setValorActasAnteriores(String(val("H36") || ""));
+      setAnticipo(String(val("H37") || "")); setAmortizacion(String(val("K37") || "")); setRetenciones(String(val("N37") || ""));
+      setCalidadEstado(val("C41") || "CUMPLE"); setCalidadRef(val("A42") || "");
+      setSstEstado(val("G41") || "CUMPLE"); setSstRef(val("F42") || "");
+      setAmbientalEstado(val("L41") || "CUMPLE"); setAmbientalRef(val("K42") || "");
+
+      const nuevasObs = [];
+      for (let r = 46; r <= 51; r++) {
+        const desc = val(`B${r}`);
+        if (desc) nuevasObs.push({
+          descripcion: String(desc), clasificacion: val(`E${r}`) || "", accion: val(`H${r}`) || "",
+          responsable: val(`K${r}`) || "", fecha: "", estado: val(`N${r}`) || "",
+        });
+      }
+      setObservaciones(nuevasObs.length ? nuevasObs : [{ descripcion: "", clasificacion: "", accion: "", responsable: "", fecha: "", estado: "" }]);
+
+      setArchivoBase(file);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo leer el archivo. Verifica que sea un Acta generada por este sistema.");
+    } finally {
+      setCargando(false);
+    }
+  }
 
   const saldoContractual = (numES(valorContractual) || 0) - (numES(valorActasAnteriores) || 0) - (numES(valorPresenteActa) || 0);
   const porcentajeEjecutado = valorContractual ? (((numES(valorActasAnteriores) || 0) + (numES(valorPresenteActa) || 0)) / numES(valorContractual)) * 100 : 0;
@@ -374,6 +433,24 @@ export default function FormularioActa({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "nuevo" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Acta nueva
+          </button>
+          <button onClick={() => setModo("actualizar")} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "actualizar" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Actualizar existente
+          </button>
+        </div>
+        {modo === "actualizar" && (
+          <div className="mb-4 p-3 border rounded-lg" style={{ borderColor: LINE }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: NAVY }}>Sube el Acta que quieres actualizar</label>
+            <input type="file" accept=".xlsx" onChange={(e) => e.target.files[0] && cargarArchivoExistente(e.target.files[0])} className="text-[12.5px]" />
+            {cargando && <div className="text-[12px] text-gray-500 mt-1">Leyendo archivo...</div>}
+            {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
+          </div>
+        )}
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>1. IDENTIFICACIÓN</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">

@@ -405,6 +405,10 @@ export default function FormularioAPU({ onVolver }) {
   const [rendimientoBase, setRendimientoBase] = useState(null);
   const [cuadrillaBase, setCuadrillaBase] = useState(null);
 
+  const [modo, setModo] = useState("nuevo");
+  const [archivoBase, setArchivoBase] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
   const [materiales, setMateriales] = useState(seisFilasVacias());
   const [manoObra, setManoObra] = useState(seisFilasVacias());
   const [equipos, setEquipos] = useState(seisFilasVacias());
@@ -422,6 +426,58 @@ export default function FormularioAPU({ onVolver }) {
   }, [materiales, manoObra, equipos]);
 
   const unidadRendimiento = actividad ? `${actividad.unidad}/jornada` : "";
+
+  async function cargarArchivoExistente(file) {
+    setCargando(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.worksheets[0];
+
+      const nombreActividad = ws.getCell("A10").value;
+      if (nombreActividad) setActividad({ actividad: String(nombreActividad), unidad: "" });
+      setCuadrilla(ws.getCell("S4").value || "");
+      setJornada(ws.getCell("U4").value || 8);
+      setRendimiento(ws.getCell("V4").value || "");
+      setProyecto(ws.getCell("C13").value || "");
+      setNoContrato(ws.getCell("C14").value || "");
+      setUbicacion(ws.getCell("J15").value || "");
+
+      const leerFilas = (filaInicio) => {
+        const filas = [];
+        for (let i = 0; i < 9; i++) {
+          const r = filaInicio + i;
+          const desc = ws.getCell(`A${r}`).value;
+          if (desc) {
+            filas.push({
+              desc: String(desc),
+              und: ws.getCell(`E${r}`).value || "",
+              cant: String(ws.getCell(`F${r}`).value || ""),
+              vrUnit: String(ws.getCell(`H${r}`).value || ""),
+            });
+          }
+        }
+        while (filas.length < 6) filas.push(filaVacia());
+        return filas;
+      };
+      setMateriales(leerFilas(22));
+      setManoObra(leerFilas(31));
+      setEquipos(leerFilas(40));
+
+      setElaboradoNombre(ws.getCell("C54").value || "");
+      setElaboradoCargo(ws.getCell("C55").value || "");
+      setInterventoriaNombre(ws.getCell("H54").value || "");
+      setInterventoriaCargo(ws.getCell("H55").value || "");
+
+      setArchivoBase(file);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo leer el archivo. Verifica que sea un APU generado por este sistema.");
+    } finally {
+      setCargando(false);
+    }
+  }
 
   async function generarExcel() {
     if (!actividad) {
@@ -538,6 +594,24 @@ export default function FormularioAPU({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "nuevo" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            APU nuevo
+          </button>
+          <button onClick={() => setModo("actualizar")} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "actualizar" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Actualizar existente
+          </button>
+        </div>
+        {modo === "actualizar" && (
+          <div className="mb-4 p-3 border rounded-lg" style={{ borderColor: LINE }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: NAVY }}>Sube el APU que quieres actualizar</label>
+            <input type="file" accept=".xlsx" onChange={(e) => e.target.files[0] && cargarArchivoExistente(e.target.files[0])} className="text-[12.5px]" />
+            {cargando && <div className="text-[12px] text-gray-500 mt-1">Leyendo archivo...</div>}
+            {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
+          </div>
+        )}
         <Campo label="Actividad">
           <BuscadorActividad
             value={actividad?.actividad}

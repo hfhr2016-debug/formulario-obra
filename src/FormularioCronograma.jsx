@@ -176,6 +176,63 @@ export default function FormularioCronograma({ onVolver }) {
 
   const [tareas, setTareas] = useState([tareaVacia()]);
   const [generando, setGenerando] = useState(false);
+  const [modo, setModo] = useState("nuevo");
+  const [archivoBase, setArchivoBase] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  function ddmmyyyyAIso(txt) {
+    if (!txt) return "";
+    const partes = String(txt).split("/");
+    if (partes.length !== 3) return "";
+    const [d, m, a] = partes;
+    return `${a}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+
+  async function cargarArchivoExistente(file) {
+    setCargando(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.worksheets[0];
+      const val = (celda) => ws.getCell(celda).value;
+
+      setProyecto(val("B11") || "");
+      setNoContrato(val("B12") || "");
+      setUbicacion(val("I12") || "");
+      setEspecialidad(val("I13") || "");
+
+      const nuevasTareas = [];
+      for (let r = 15; r <= 60; r++) {
+        const nombre = val(`B${r}`);
+        if (!nombre) break;
+        const duracionTxt = String(val(`C${r}`) || "");
+        const duracion = duracionTxt.replace(/[^0-9.]/g, "");
+        const textoH = String(val(`H${r}`) || "");
+        const matchRecursos = textoH.match(/Recursos:\s*([^|]+)/);
+        const matchPred = textoH.match(/tarea #(\d+)/);
+        if (r === 15) {
+          const fechaD = val(`D${r}`);
+          const iso = ddmmyyyyAIso(fechaD);
+          if (iso) setFechaInicio(iso);
+        }
+        nuevasTareas.push({
+          nombre: String(nombre),
+          duracion: duracion,
+          predecesora: matchPred ? matchPred[1] : "",
+          recursos: matchRecursos ? matchRecursos[1].trim() : "",
+        });
+      }
+      setTareas(nuevasTareas.length ? nuevasTareas : [tareaVacia()]);
+
+      setArchivoBase(file);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo leer el archivo. Verifica que sea un Cronograma generado por este sistema.");
+    } finally {
+      setCargando(false);
+    }
+  }
 
   const actualizarTarea = (i, campo, val) => {
     const nuevas = [...tareas];
@@ -324,6 +381,24 @@ export default function FormularioCronograma({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "nuevo" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Cronograma nuevo
+          </button>
+          <button onClick={() => setModo("actualizar")} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "actualizar" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Actualizar existente
+          </button>
+        </div>
+        {modo === "actualizar" && (
+          <div className="mb-4 p-3 border rounded-lg" style={{ borderColor: LINE }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: NAVY }}>Sube el Cronograma que quieres actualizar</label>
+            <input type="file" accept=".xlsx" onChange={(e) => e.target.files[0] && cargarArchivoExistente(e.target.files[0])} className="text-[12.5px]" />
+            {cargando && <div className="text-[12px] text-gray-500 mt-1">Leyendo archivo...</div>}
+            {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Campo label="Proyecto">
             <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} />
