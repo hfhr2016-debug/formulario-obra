@@ -209,6 +209,57 @@ export default function FormularioMemoria({ onVolver }) {
   const [aprNombre, setAprNombre] = useState(""); const [aprCargo, setAprCargo] = useState("");
 
   const [generando, setGenerando] = useState(false);
+  const [modo, setModo] = useState("nuevo");
+  const [archivoBase, setArchivoBase] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  function separarNombreCargo(txt) {
+    if (!txt) return { nombre: "", cargo: "" };
+    const partes = String(txt).split(" - ");
+    return { nombre: partes[0] || "", cargo: partes.slice(1).join(" - ") || "" };
+  }
+
+  async function cargarArchivoExistente(file) {
+    setCargando(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const ws = workbook.worksheets[0];
+      const val = (celda) => ws.getCell(celda).value;
+
+      setProyecto(val("C10") || ""); setAreaFrente(val("J10") || "");
+      setContratante(val("C11") || ""); setUbicacion(val("J11") || ""); setMemoriaNo(val("M11") || "");
+      setActividad(val("C12") || ""); setDescripcionActividad(val("J12") || "");
+
+      const nuevasMediciones = [];
+      for (let r = 16; r <= 25; r++) {
+        const desc = val(`B${r}`);
+        const cant = val(`C${r}`);
+        if (!desc && !cant) continue;
+        nuevasMediciones.push({
+          descripcion: desc || "", cant: String(cant || ""), largo: String(val(`D${r}`) || ""),
+          ancho: String(val(`E${r}`) || ""), altoPeso: String(val(`F${r}`) || ""),
+          factor: String(val(`G${r}`) || ""), observacion: val(`J${r}`) || "",
+        });
+      }
+      setMediciones(nuevasMediciones.length ? nuevasMediciones : [medicionVacia()]);
+
+      setCantidadContractual(String(val("D30") || ""));
+
+      const elab = separarNombreCargo(val("B98"));
+      setElabNombre(elab.nombre); setElabCargo(elab.cargo);
+      const rev = separarNombreCargo(val("E98"));
+      setRevNombre(rev.nombre); setRevCargo(rev.cargo);
+
+      setArchivoBase(file);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo leer el archivo. Verifica que sea una Memoria de Cálculo generada por este sistema.");
+    } finally {
+      setCargando(false);
+    }
+  }
 
   const unidad = MAPA_ACTIVIDADES[actividad]?.unidad || "";
 
@@ -299,6 +350,24 @@ export default function FormularioMemoria({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "nuevo" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Memoria nueva
+          </button>
+          <button onClick={() => setModo("actualizar")} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "actualizar" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            Actualizar existente
+          </button>
+        </div>
+        {modo === "actualizar" && (
+          <div className="mb-4 p-3 border rounded-lg" style={{ borderColor: LINE }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: NAVY }}>Sube la Memoria que quieres actualizar</label>
+            <input type="file" accept=".xlsx" onChange={(e) => e.target.files[0] && cargarArchivoExistente(e.target.files[0])} className="text-[12.5px]" />
+            {cargando && <div className="text-[12px] text-gray-500 mt-1">Leyendo archivo...</div>}
+            {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
+          </div>
+        )}
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>01 | IDENTIFICACIÓN</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">
