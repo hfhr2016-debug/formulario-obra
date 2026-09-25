@@ -187,6 +187,7 @@ export default function FormularioFicha({ onVolver }) {
   const [ivaUtilidad, setIvaUtilidad] = useState(19);
 
   const [generando, setGenerando] = useState(false);
+  const [pantalla, setPantalla] = useState("selector");
 
   async function generarExcel() {
     setGenerando(true);
@@ -301,12 +302,104 @@ export default function FormularioFicha({ onVolver }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      guardarProyectoEnMemoria();
     } catch (err) {
       console.error(err);
       alert("Hubo un error generando el Excel. Revisa la consola.");
     } finally {
       setGenerando(false);
     }
+  }
+
+  function objetoProyectoActual() {
+    return {
+      modulos, hcBloques, hcElementos,
+      viaTipo, viaLongitud, viaCarriles, viaZona, viaTipoIntervencion, viaVelocidadDiseno,
+      viaAnchoCalzada, viaAnchoCarril, viaAnchoBerma, viaPendienteMax, viaEstructuraPavimento,
+      viaCbrDiseno, viaSubbase, viaBase, viaCapaRodadura,
+      proyecto, noContrato, contratista, ubicacion,
+      pisos, sotanos, areaLote, areaTipicaPiso, areaSotanos, areaCubierta,
+      numApartamentos, areaPromedioApto, numParqueaderos, numAscensores, alturaTotal,
+      administracion, imprevistos, utilidad, ivaUtilidad,
+    };
+  }
+
+  function guardarProyectoEnMemoria() {
+    try {
+      const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+      const nombreId = proyecto || "Proyecto sin nombre";
+      const sinDuplicado = lista.filter((p) => p.nombreId !== nombreId);
+      sinDuplicado.unshift({
+        nombreId,
+        fechaGuardado: fechaLocalHoy().toISOString(),
+        datos: objetoProyectoActual(),
+      });
+      localStorage.setItem("ryr_proyectos_guardados", JSON.stringify(sinDuplicado.slice(0, 50)));
+    } catch (e) {
+      console.warn("No se pudo guardar el proyecto en memoria local:", e);
+    }
+  }
+
+  function cargarProyectoDesdeDatos(datos) {
+    setModulos(datos.modulos || { edificacion: true, vias: false, hidrocarburos: false });
+    setHcBloques(datos.hcBloques || { civil: false, mecanico: false, electrico: false });
+    setHcElementos(datos.hcElementos || {});
+    setViaTipo(datos.viaTipo || ""); setViaLongitud(datos.viaLongitud || ""); setViaCarriles(datos.viaCarriles || "");
+    setViaZona(datos.viaZona || ""); setViaTipoIntervencion(datos.viaTipoIntervencion || "");
+    setViaVelocidadDiseno(datos.viaVelocidadDiseno || ""); setViaAnchoCalzada(datos.viaAnchoCalzada || "");
+    setViaAnchoCarril(datos.viaAnchoCarril || ""); setViaAnchoBerma(datos.viaAnchoBerma || "");
+    setViaPendienteMax(datos.viaPendienteMax || ""); setViaEstructuraPavimento(datos.viaEstructuraPavimento || "");
+    setViaCbrDiseno(datos.viaCbrDiseno || ""); setViaSubbase(datos.viaSubbase || ""); setViaBase(datos.viaBase || "");
+    setViaCapaRodadura(datos.viaCapaRodadura || "");
+    setProyecto(datos.proyecto || ""); setNoContrato(datos.noContrato || ""); setContratista(datos.contratista || "");
+    setUbicacion(datos.ubicacion || "");
+    setPisos(datos.pisos || ""); setSotanos(datos.sotanos || ""); setAreaLote(datos.areaLote || "");
+    setAreaTipicaPiso(datos.areaTipicaPiso || ""); setAreaSotanos(datos.areaSotanos || ""); setAreaCubierta(datos.areaCubierta || "");
+    setNumApartamentos(datos.numApartamentos || ""); setAreaPromedioApto(datos.areaPromedioApto || "");
+    setNumParqueaderos(datos.numParqueaderos || ""); setNumAscensores(datos.numAscensores || ""); setAlturaTotal(datos.alturaTotal || "");
+    setAdministracion(datos.administracion !== undefined ? datos.administracion : 10);
+    setImprevistos(datos.imprevistos !== undefined ? datos.imprevistos : 4);
+    setUtilidad(datos.utilidad !== undefined ? datos.utilidad : 12);
+    setIvaUtilidad(datos.ivaUtilidad !== undefined ? datos.ivaUtilidad : 19);
+  }
+
+  if (pantalla === "selector") {
+    let proyectosGuardados = [];
+    try {
+      proyectosGuardados = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+    } catch (e) {}
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+        <div className="text-[16px] font-bold mb-6" style={{ color: NAVY }}>Ficha Técnica del Proyecto</div>
+        <button
+          onClick={() => { cargarProyectoDesdeDatos({}); setPantalla("formulario"); }}
+          className="w-full max-w-xs py-3.5 rounded-xl text-white font-bold text-[14px] mb-3"
+          style={{ background: GOLD }}
+        >
+          📄 Proyecto Nuevo
+        </button>
+        <div className="w-full max-w-xs text-[12px] font-semibold mb-2 mt-2" style={{ color: NAVY }}>
+          🔄 Actualizar Proyecto Existente
+        </div>
+        {proyectosGuardados.length === 0 ? (
+          <div className="text-[11.5px] text-gray-400 text-center">No hay proyectos guardados todavía en este dispositivo.</div>
+        ) : (
+          <div className="w-full max-w-xs max-h-[300px] overflow-y-auto">
+            {proyectosGuardados.map((p, i) => (
+              <button
+                key={i}
+                onClick={() => { cargarProyectoDesdeDatos(p.datos); setPantalla("formulario"); }}
+                className="w-full text-left px-3 py-2.5 mb-1.5 rounded-lg border bg-white"
+                style={{ borderColor: LINE }}
+              >
+                <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{p.nombreId}</div>
+                <div className="text-[10px] text-gray-400">Guardado: {new Date(p.fechaGuardado).toLocaleDateString("es-CO")}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -324,6 +417,9 @@ export default function FormularioFicha({ onVolver }) {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
               Menú SAIEA OBRAS
+            </button>
+            <button onClick={() => setPantalla("selector")} className="text-[11px] mb-2" style={{ color: GOLD }}>
+              🔄 Nuevo / Actualizar proyecto
             </button>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               FICHA TÉCNICA DEL PROYECTO
