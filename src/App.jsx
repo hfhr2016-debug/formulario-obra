@@ -1284,7 +1284,13 @@ function SelectorApps({ onSeleccionar }) {
             className="flex items-center gap-4 rounded-2xl p-4"
             style={{ background: "white", border: `1px solid ${LINE}` }}
           >
-            <div className="shrink-0 rounded-xl p-2 flex items-center justify-center" style={{ background: "#1E3A8A" }}>
+            <div
+              className="shrink-0 rounded-xl p-2 flex items-center justify-center"
+              style={{
+                background: "linear-gradient(145deg, #4A7FE8, #2D5FC7)",
+                boxShadow: "inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -3px 6px rgba(0,0,0,0.25), 0 3px 6px rgba(0,0,0,0.2)",
+              }}
+            >
               <img src={a.icono} alt={a.nombre} className="w-[96px] h-[96px] object-contain" />
             </div>
             <div className="text-[15px] font-bold text-left" style={{ color: NAVY }}>{a.nombre}</div>
