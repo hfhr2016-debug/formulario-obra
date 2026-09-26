@@ -718,6 +718,26 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           )}
         </Campo>
 
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+              if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
+              const d = lista[0].datos;
+              setProyecto(d.proyecto || "");
+              setNoContrato(d.noContrato || "");
+              setUbicacion(d.ubicacion || "");
+              alert(`Datos traídos de: "${lista[0].nombreId}"`);
+            } catch (e) {
+              alert("No se pudo leer la memoria de Ficha Técnica.");
+            }
+          }}
+          className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-3"
+          style={{ background: NAVY }}
+        >
+          📋 Traer datos desde la última Ficha Técnica guardada
+        </button>
         <div className="grid grid-cols-2 gap-3">
           <Campo label="Proyecto">
             <Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} />

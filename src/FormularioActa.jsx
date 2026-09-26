@@ -457,6 +457,27 @@ export default function FormularioActa({ onVolver, onNavegar }) {
             {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+              if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
+              const d = lista[0].datos;
+              setProyecto(d.proyecto || "");
+              setContratoNo(d.noContrato || "");
+              setContratista(d.contratista || "Reformas y Remodelaciones");
+              setUbicacion(d.ubicacion || "");
+              alert(`Datos traídos de: "${lista[0].nombreId}"`);
+            } catch (e) {
+              alert("No se pudo leer la memoria de Ficha Técnica.");
+            }
+          }}
+          className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-3"
+          style={{ background: NAVY }}
+        >
+          📋 Traer datos desde la última Ficha Técnica guardada
+        </button>
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>1. IDENTIFICACIÓN</div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-4" style={{ borderColor: LINE }}>
           <div className="grid grid-cols-2 gap-3">

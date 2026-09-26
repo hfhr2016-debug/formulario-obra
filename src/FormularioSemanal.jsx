@@ -470,6 +470,25 @@ export default function FormularioSemanal({ onVolver, onNavegar }) {
           </div>
         )}
 
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+              if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
+              const d = lista[0].datos;
+              setProyecto(d.proyecto || "");
+              setNoContrato(d.noContrato || "");
+              alert(`Datos traídos de: "${lista[0].nombreId}"`);
+            } catch (e) {
+              alert("No se pudo leer la memoria de Ficha Técnica.");
+            }
+          }}
+          className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-3"
+          style={{ background: NAVY }}
+        >
+          📋 Traer datos desde la última Ficha Técnica guardada
+        </button>
         <div className="grid grid-cols-2 gap-3">
           <Campo label="Proyecto"><Input value={proyecto} onChange={(e) => setProyecto(e.target.value)} /></Campo>
           <Campo label="No. de Contrato"><Input value={noContrato} onChange={(e) => setNoContrato(e.target.value)} /></Campo>

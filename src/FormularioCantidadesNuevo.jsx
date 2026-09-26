@@ -470,6 +470,23 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
           <div className="text-[11px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FFF8E8", color: NAVY }}>
             ⚡ Tipo de proyecto activo: <b>{nombresTipo[tipoActivo]}</b> — {catalogo.length} actividades disponibles.
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+                if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
+                setProyecto(lista[0].datos.proyecto || "");
+                alert(`Nombre traído de: "${lista[0].nombreId}"`);
+              } catch (e) {
+                alert("No se pudo leer la memoria de Ficha Técnica.");
+              }
+            }}
+            className="w-full text-center py-2 rounded-lg text-[12px] font-semibold text-white mb-2"
+            style={{ background: NAVY }}
+          >
+            📋 Traer nombre desde la última Ficha Técnica guardada
+          </button>
           <input placeholder="Nombre del proyecto" value={proyecto} onChange={(e) => setProyecto(e.target.value)}
             className="w-full border rounded px-2 py-1.5 text-[13px] mb-2" style={{ borderColor: LINE }} />
           <BuscadorActividad valor="" catalogo={catalogo} placeholder="Buscar y agregar actividad..." onSeleccionar={agregarActividad} limpiarTrasSeleccionar />
