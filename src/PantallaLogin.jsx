@@ -29,6 +29,7 @@ export default function PantallaLogin() {
       />
       <div className="w-full max-w-xs">
         <div className="text-center mb-8">
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto mx-auto mb-3" />
           <div className="text-[19px] font-bold tracking-wide" style={{ color: NAVY, fontFamily: "'Space Grotesk', sans-serif" }}>
             SAIEA OBRAS
           </div>
