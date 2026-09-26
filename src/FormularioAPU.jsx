@@ -357,7 +357,31 @@ function factorDesperdicioSugerido(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostrarFactor, rendimientoActual }) {
+// Consumo típico de materiales por unidad de actividad (referencia general — ajustar según el caso real)
+function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
+  if (!nombreMaterial) return null;
+  const n = nombreMaterial.toLowerCase();
+  const reglas = [
+    [/cemento gris/, 0.35],
+    [/arena/, 0.045],
+    [/grava|triturado|agregado grueso/, 0.065],
+    [/ladrillo/, 40],
+    [/bloque/, 12.5],
+    [/cerámic|porcelanat/, 1.05],
+    [/pintura|esmalte|vinílic/, 0.30],
+    [/estuco|yeso/, 1.2],
+    [/teja/, 3.5],
+    [/alambre/, 0.4],
+    [/puntilla|clavo/, 0.15],
+    [/varilla|pdr|figurado|acero/, 1.0],
+  ];
+  for (const [patron, valor] of reglas) {
+    if (patron.test(n)) return valor;
+  }
+  return null;
+}
+
+function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostrarFactor, rendimientoActual, esMateriales }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val };
@@ -365,12 +389,27 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
   };
   const actualizarDesdeSeleccion = (i, seleccion) => {
     const nuevas = [...filas];
+    let cantSugerida = nuevas[i].cant;
+    let factorSugerido = nuevas[i].factor;
+    if (esMateriales) {
+      if (!cantSugerida) {
+        const c = consumoMaterialSugeridoPorKeyword(seleccion.desc);
+        if (c !== null) cantSugerida = String(c);
+      }
+      if (!factorSugerido) {
+        const fct = factorDesperdicioSugerido(seleccion.desc);
+        if (fct !== null) factorSugerido = String(Math.round((1 + fct) * 1000) / 1000);
+      }
+    } else if (!cantSugerida && consumoSugerido) {
+      cantSugerida = String(consumoSugerido);
+    }
     nuevas[i] = {
       ...nuevas[i],
       desc: seleccion.desc,
       und: seleccion.und !== undefined ? seleccion.und : nuevas[i].und,
       vrUnit: seleccion.vrUnit !== undefined ? seleccion.vrUnit : nuevas[i].vrUnit,
-      cant: (!nuevas[i].cant && consumoSugerido) ? String(consumoSugerido) : nuevas[i].cant,
+      cant: cantSugerida,
+      factor: factorSugerido,
     };
     setFilas(nuevas);
   };
@@ -387,9 +426,9 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
           ⚡ Al elegir una descripción, el Consumo se sugiere automáticamente (1÷Rendimiento = {consumoSugerido} jornadas/unidad). Agrega el Factor de desperdicio si aplica — Subtotal = Consumo × Factor × Precio.
         </div>
       )}
-      {!mostrarFactor && (
+      {esMateriales && (
         <div className="text-[10.5px] px-3 py-1.5 border border-t-0" style={{ background: "#FFF8E8", borderColor: LINE, color: NAVY }}>
-          ⚡ La Cantidad aquí es cuánto material se necesita por cada unidad de la actividad (ej: 1.05 kg de cemento por cada m² de pañete, incluyendo desperdicio).
+          ⚡ Al elegir un material, la Cantidad (consumo por unidad de la actividad) y el Factor de desperdicio se sugieren automáticamente según el tipo de material — son valores de referencia general, ajústalos si tu caso es distinto.
         </div>
       )}
       <div className="border border-t-0 rounded-b-lg overflow-visible" style={{ borderColor: LINE }}>
@@ -416,7 +455,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
                 />
               </div>
               <div>
-                <label className="text-[10px] text-gray-500 block mb-0.5">{mostrarFactor ? "Consumo" : "Cantidad"}</label>
+                <label className="text-[10px] text-gray-500 block mb-0.5">{esMateriales ? "Cantidad (consumo por unidad)" : "Consumo"}</label>
                 <div className="flex items-stretch border rounded overflow-hidden" style={{ borderColor: LINE }}>
                   <button
                     type="button"
@@ -521,7 +560,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
 
   const totalDirectoUnitarioVista = useMemo(() => {
     const sumar = (filas, conFactor) => filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
-    return sumar(materiales, false) + sumar(manoObra, true) + sumar(equipos, true);
+    return sumar(materiales, true) + sumar(manoObra, true) + sumar(equipos, true);
   }, [materiales, manoObra, equipos]);
 
   const unidadRendimiento = actividad ? `${actividad.unidad}/jornada` : "";
@@ -561,7 +600,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         while (filas.length < 6) filas.push(filaVacia());
         return filas;
       };
-      setMateriales(leerFilas(22, false));
+      setMateriales(leerFilas(22, true));
       setManoObra(leerFilas(31, true));
       setEquipos(leerFilas(40, true));
 
@@ -614,13 +653,13 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           ws.getCell(`H${r}`).value = numES(f.vrUnit) || 0;
         });
       };
-      escribirFilas(materiales, 22, false);
+      escribirFilas(materiales, 22, true);
       escribirFilas(manoObra, 31, true);
       escribirFilas(equipos, 40, true);
 
       const sumar = (filas, conFactor) =>
         filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
-      const totalDirectoUnitario = sumar(materiales, false) + sumar(manoObra, true) + sumar(equipos, true);
+      const totalDirectoUnitario = sumar(materiales, true) + sumar(manoObra, true) + sumar(equipos, true);
 
       try {
         const clave = "ryr_apus_guardados";
@@ -838,7 +877,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           </Campo>
         </div>
 
-        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} />
+        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarFactor esMateriales />
         <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
         <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
 
