@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
 import MenuLateral, { BotonMenu } from "./MenuLateral";
+import { AuthProvider, useAuth } from "./AuthContext";
+import PantallaLogin from "./PantallaLogin";
+import PanelAdmin from "./PanelAdmin";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuesto from "./FormularioPresupuesto";
@@ -1262,12 +1265,13 @@ const MODULOS = [
   { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: true },
 ];
 
-function SelectorApps({ onSeleccionar }) {
+function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SST", icono: "/icons/icon-gestion-sst.png", activo: true },
     { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
   ];
+  const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
   return (
     <div className="min-h-screen flex flex-col" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1281,19 +1285,44 @@ function SelectorApps({ onSeleccionar }) {
         <div className="text-[11.5px] mt-1" style={{ color: GOLD }}>
           Elige el sistema de gestión que quieres usar
         </div>
+        {perfil && (
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <span className="text-[10.5px] text-white/70">{perfil.nombre || perfil.correo}</span>
+            {perfil.esAdmin && (
+              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>
+                Administrar usuarios
+              </button>
+            )}
+            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">
+              Cerrar sesión
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex-1 flex flex-col justify-center gap-4 p-6">
-        {apps.map((a) => (
-          <button
-            key={a.id}
-            onClick={() => onSeleccionar(a.id)}
-            className="flex items-center gap-4 rounded-2xl p-4"
-            style={{ background: "white", border: `1px solid ${LINE}` }}
-          >
-            <img src={a.icono} alt={a.nombre} className="w-[82px] h-[82px] object-contain shrink-0" />
-            <div className="text-[15px] font-bold text-left" style={{ color: NAVY }}>{a.nombre}</div>
-          </button>
-        ))}
+        {apps.map((a) => {
+          const habilitado = tieneAcceso(a.id);
+          return (
+            <button
+              key={a.id}
+              onClick={() => onSeleccionar(a.id)}
+              className="flex items-center gap-4 rounded-2xl p-4"
+              style={{
+                background: habilitado ? "white" : "#F0F0EE",
+                border: `1px solid ${LINE}`,
+                opacity: habilitado ? 1 : 0.5,
+              }}
+            >
+              <img src={a.icono} alt={a.nombre} className="w-[82px] h-[82px] object-contain shrink-0" style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
+              <div className="text-left">
+                <div className="text-[15px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
+                {!habilitado && (
+                  <div className="text-[10.5px] mt-0.5" style={{ color: "#9AA0A8" }}>🔒 Sin acceso</div>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -1371,7 +1400,7 @@ function Inicio({ onSeleccionar, onVolverSelector }) {
   );
 }
 
-export default function App() {
+function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const [vista, setVista] = useState("selector-apps");
 
   if (vista === "inicio") {
@@ -1380,7 +1409,15 @@ export default function App() {
   if (vista === "selector-apps") {
     return (
       <SelectorApps
+        perfil={perfil}
+        onCerrarSesion={onCerrarSesion}
+        onIrAdmin={onIrAdmin}
         onSeleccionar={(id) => {
+          const tieneAcceso = perfil?.esAdmin || (perfil?.roles || []).includes(id);
+          if (!tieneAcceso) {
+            alert("No tienes acceso a este módulo. Si crees que deberías tenerlo, contacta al administrador.");
+            return;
+          }
           if (id === "tecnica") setVista("inicio");
           else setVista(`proximamente-${id}`);
         }}
@@ -1424,4 +1461,39 @@ export default function App() {
     return <FormularioMemoria onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppConSesion />
+    </AuthProvider>
+  );
+}
+
+function AppConSesion() {
+  const { usuario, perfil, cargando, cerrarSesion } = useAuth();
+  const [vistaExterna, setVistaExterna] = useState("apps");
+
+  if (cargando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: PAPER }}>
+        <div className="text-[13px]" style={{ color: NAVY }}>Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!usuario || !perfil) {
+    return <PantallaLogin />;
+  }
+
+  if (vistaExterna === "admin") {
+    return <PanelAdmin onVolver={() => setVistaExterna("apps")} />;
+  }
+
+  return (
+    <div>
+      <AppInterno perfil={perfil} onCerrarSesion={cerrarSesion} onIrAdmin={() => setVistaExterna("admin")} />
+    </div>
+  );
 }
