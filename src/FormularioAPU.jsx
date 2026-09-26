@@ -358,6 +358,61 @@ function factorDesperdicioSugerido(nombreMaterial) {
 }
 
 // Consumo típico de materiales por unidad de actividad (referencia general — ajustar según el caso real)
+
+// Consumo real de materiales por ACTIVIDAD específica (tabla de referencia construida y validada)
+const RENDIMIENTOS_MATERIALES_POR_ACTIVIDAD = {"Concreto f'c=175 kg/cm² (2500 PSI)": [{"material": "Cemento gris", "consumo": 280, "unidad": "kg", "factor": 0.03, "nota": "Dosificación típica 1:2.8:3.5 aprox — mezcladora, agregados en buen estado"}, {"material": "Arena de río / peña", "consumo": 0.52, "unidad": "m³", "factor": 0.05, "nota": "Volumen suelto aprox."}, {"material": "Grava / triturado 3/4\"", "consumo": 0.75, "unidad": "m³", "factor": 0.05, "nota": "Volumen suelto aprox."}, {"material": "Agua", "consumo": 180, "unidad": "Lt", "factor": 0.02, "nota": "Relación agua/cemento aprox. 0.64"}], "Concreto f'c=210 kg/cm² (3000 PSI)": [{"material": "Cemento gris", "consumo": 320, "unidad": "kg", "factor": 0.03, "nota": "Dosificación estándar de referencia CAMACOL/ICPC"}, {"material": "Arena de río / peña", "consumo": 0.5, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Grava / triturado 3/4\"", "consumo": 0.75, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Agua", "consumo": 175, "unidad": "Lt", "factor": 0.02, "nota": "Relación agua/cemento aprox. 0.55"}], "Concreto f'c=280 kg/cm² (4000 PSI)": [{"material": "Cemento gris", "consumo": 360, "unidad": "kg", "factor": 0.03, "nota": ""}, {"material": "Arena de río / peña", "consumo": 0.48, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Grava / triturado 3/4\"", "consumo": 0.75, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Agua", "consumo": 170, "unidad": "Lt", "factor": 0.02, "nota": "Relación agua/cemento aprox. 0.47"}], "Concreto f'c=350 kg/cm² (5000 PSI)": [{"material": "Cemento gris", "consumo": 400, "unidad": "kg", "factor": 0.03, "nota": ""}, {"material": "Arena de río / peña", "consumo": 0.46, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Grava / triturado 3/4\"", "consumo": 0.75, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Agua", "consumo": 160, "unidad": "Lt", "factor": 0.02, "nota": "Relación agua/cemento aprox. 0.40"}], "Concreto f'c=420 kg/cm² (6000 PSI)": [{"material": "Cemento gris", "consumo": 440, "unidad": "kg", "factor": 0.03, "nota": "Alta resistencia — normalmente con aditivo"}, {"material": "Arena de río / peña", "consumo": 0.44, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Grava / triturado 3/4\"", "consumo": 0.75, "unidad": "m³", "factor": 0.05, "nota": ""}, {"material": "Agua", "consumo": 150, "unidad": "Lt", "factor": 0.02, "nota": ""}, {"material": "Aditivo plastificante/superplastificante", "consumo": 4, "unidad": "Lt", "factor": 0.05, "nota": "Necesario para reducir relación a/c manteniendo trabajabilidad"}], "Concreto ciclópeo": [{"material": "Concreto simple (base, f'c=175)", "consumo": 0.7, "unidad": "m³", "factor": 0.03, "nota": "El 30% restante es piedra rajón/bola grande"}, {"material": "Piedra rajón / bola grande", "consumo": 0.35, "unidad": "m³", "factor": 0.05, "nota": "Aprox. 30-35% del volumen, tamaño 15-25cm"}], "Suministro, figurado y amarre de acero de refuerzo 60.000 PSI": [{"material": "Acero PDR-60 / Refuerzo", "consumo": 1, "unidad": "kg", "factor": 0.05, "nota": "1 kg de material por 1 kg instalado, más desperdicio por cortes/traslapos"}, {"material": "Alambre negro No.18 (amarre)", "consumo": 0.02, "unidad": "kg", "factor": 0.05, "nota": "Aprox. 2% del peso de acero, para amarres"}], "Suministro, figurado y amarre de acero de refuerzo 37.000 PSI": [{"material": "Acero PDR-37 / Refuerzo liso", "consumo": 1, "unidad": "kg", "factor": 0.05, "nota": ""}, {"material": "Alambre negro No.18 (amarre)", "consumo": 0.02, "unidad": "kg", "factor": 0.05, "nota": ""}], "Mampostería en bloque de concreto": [{"material": "Bloque de concreto (según formato)", "consumo": 12.5, "unidad": "und", "factor": 0.05, "nota": "Formato estándar 40x20x20 cm aprox."}, {"material": "Cemento gris (mortero de pega)", "consumo": 5, "unidad": "kg", "factor": 0.1, "nota": "Mortero 1:4 aprox."}, {"material": "Arena de peña (mortero de pega)", "consumo": 0.018, "unidad": "m³", "factor": 0.1, "nota": ""}], "Mampostería en ladrillo": [{"material": "Ladrillo tolete / bloque #5", "consumo": 60, "unidad": "und", "factor": 0.05, "nota": "Ladrillo tolete común, aparejo estándar"}, {"material": "Cemento gris (mortero de pega)", "consumo": 6, "unidad": "kg", "factor": 0.1, "nota": ""}, {"material": "Arena de peña (mortero de pega)", "consumo": 0.02, "unidad": "m³", "factor": 0.1, "nota": ""}], "Mampostería estructural": [{"material": "Bloque estructural (según formato)", "consumo": 12.5, "unidad": "und", "factor": 0.05, "nota": "Formato 40x20x20 cm, celdas para refuerzo"}, {"material": "Cemento gris (mortero de pega)", "consumo": 5.5, "unidad": "kg", "factor": 0.1, "nota": ""}, {"material": "Arena de peña (mortero de pega)", "consumo": 0.019, "unidad": "m³", "factor": 0.1, "nota": ""}, {"material": "Grout / concreto de relleno de celdas", "consumo": 0.012, "unidad": "m³", "factor": 0.05, "nota": "Según diseño estructural, celdas reforzadas"}], "Pañete / revoque interior": [{"material": "Cemento gris", "consumo": 6.5, "unidad": "kg", "factor": 0.1, "nota": "Espesor aprox. 1.5 cm, mortero 1:4"}, {"material": "Arena de peña", "consumo": 0.023, "unidad": "m³", "factor": 0.1, "nota": ""}], "Pañete / revoque exterior": [{"material": "Cemento gris", "consumo": 8, "unidad": "kg", "factor": 0.1, "nota": "Espesor aprox. 2 cm, mortero 1:3, mayor resistencia"}, {"material": "Arena de peña", "consumo": 0.024, "unidad": "m³", "factor": 0.1, "nota": ""}], "Estuco plástico": [{"material": "Estuco plástico (material listo)", "consumo": 0.8, "unidad": "kg", "factor": 0.1, "nota": "Aplicación en 2 manos, superficie normal"}], "Piso cerámico": [{"material": "Cerámica (según formato elegido)", "consumo": 1.05, "unidad": "m²", "factor": 0.1, "nota": "Incluye desperdicio por cortes"}, {"material": "Pegacor / adhesivo cerámico", "consumo": 4.5, "unidad": "kg", "factor": 0.1, "nota": "Espesor de capa estándar con llana dentada"}, {"material": "Boquilla / fragüe", "consumo": 0.4, "unidad": "kg", "factor": 0.05, "nota": "Junta de 2-3mm aprox."}], "Piso en porcelanato": [{"material": "Porcelanato (según formato elegido)", "consumo": 1.08, "unidad": "m²", "factor": 0.1, "nota": "Mayor desperdicio por formatos grandes y rectificado"}, {"material": "Pegacor / adhesivo para porcelanato", "consumo": 5.5, "unidad": "kg", "factor": 0.1, "nota": "Adhesivo de mayor rendimiento, piezas grandes/pesadas"}, {"material": "Boquilla / fragüe", "consumo": 0.3, "unidad": "kg", "factor": 0.05, "nota": ""}], "Pintura vinílica interior": [{"material": "Pintura vinílica tipo 1", "consumo": 0.1, "unidad": "gl", "factor": 0.1, "nota": "2 manos, sobre superficie ya estucada/imprimada"}, {"material": "Sellador / imprimante", "consumo": 0.05, "unidad": "gl", "factor": 0.05, "nota": "1 mano previa"}], "Pintura exterior": [{"material": "Pintura tipo exterior (acrílica/caucho)", "consumo": 0.12, "unidad": "gl", "factor": 0.1, "nota": "2 manos, mayor cubrimiento por textura"}, {"material": "Sellador / imprimante exterior", "consumo": 0.05, "unidad": "gl", "factor": 0.05, "nota": ""}]};
+
+function buscarConsumosPorActividad(nombreActividad) {
+  if (!nombreActividad) return null;
+  const n = nombreActividad.toLowerCase();
+  let clave = null;
+  if (/concreto/.test(n) && !/ciclópeo/.test(n) && !/mamposter/.test(n)) {
+    if (/175|2500\s*psi/.test(n)) clave = "Concreto f'c=175 kg/cm² (2500 PSI)";
+    else if (/210|3000\s*psi/.test(n)) clave = "Concreto f'c=210 kg/cm² (3000 PSI)";
+    else if (/280|4000\s*psi/.test(n)) clave = "Concreto f'c=280 kg/cm² (4000 PSI)";
+    else if (/350|5000\s*psi/.test(n)) clave = "Concreto f'c=350 kg/cm² (5000 PSI)";
+    else if (/420|6000\s*psi/.test(n)) clave = "Concreto f'c=420 kg/cm² (6000 PSI)";
+  } else if (/ciclópeo/.test(n)) {
+    clave = 'Concreto ciclópeo';
+  } else if (/acero/.test(n)) {
+    if (/60\.?000/.test(n)) clave = 'Suministro, figurado y amarre de acero de refuerzo 60.000 PSI';
+    else if (/37\.?000/.test(n)) clave = 'Suministro, figurado y amarre de acero de refuerzo 37.000 PSI';
+  } else if (/mamposter.*bloque|bloque.*mamposter/.test(n)) {
+    clave = 'Mampostería en bloque de concreto';
+  } else if (/mamposter.*ladrillo|ladrillo.*mamposter/.test(n)) {
+    clave = 'Mampostería en ladrillo';
+  } else if (/mamposter.*estructural/.test(n)) {
+    clave = 'Mampostería estructural';
+  } else if (/pañete|revoque/.test(n) && /interior/.test(n)) {
+    clave = 'Pañete / revoque interior';
+  } else if (/pañete|revoque/.test(n) && /exterior/.test(n)) {
+    clave = 'Pañete / revoque exterior';
+  } else if (/estuco/.test(n)) {
+    clave = 'Estuco plástico';
+  } else if (/piso.*cerámic|cerámic.*piso/.test(n)) {
+    clave = 'Piso cerámico';
+  } else if (/porcelanat/.test(n)) {
+    clave = 'Piso en porcelanato';
+  } else if (/pintura.*interior|vinílic.*interior/.test(n)) {
+    clave = 'Pintura vinílica interior';
+  } else if (/pintura.*exterior/.test(n)) {
+    clave = 'Pintura exterior';
+  }
+  if (clave && RENDIMIENTOS_MATERIALES_POR_ACTIVIDAD[clave]) {
+    return { clave, materiales: RENDIMIENTOS_MATERIALES_POR_ACTIVIDAD[clave] };
+  }
+  return null;
+}
+
+function buscarMaterialEnLista(materiales, nombreMaterialBuscado) {
+  const n = (nombreMaterialBuscado || '').toLowerCase();
+  for (const m of materiales) {
+    const palabrasClave = m.material.toLowerCase().split(' ').filter(w => w.length > 3);
+    if (palabrasClave.some(w => n.includes(w))) return m;
+  }
+  return null;
+}
+
 function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   if (!nombreMaterial) return null;
   const n = nombreMaterial.toLowerCase();
@@ -381,7 +436,7 @@ function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostrarFactor, rendimientoActual, esMateriales }) {
+function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostrarFactor, rendimientoActual, esMateriales, actividadPrincipal }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val };
@@ -391,14 +446,23 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
     const nuevas = [...filas];
     let cantSugerida = nuevas[i].cant;
     let factorSugerido = nuevas[i].factor;
+    let fuenteConsumo = "";
     if (esMateriales) {
-      if (!cantSugerida) {
-        const c = consumoMaterialSugeridoPorKeyword(seleccion.desc);
-        if (c !== null) cantSugerida = String(c);
-      }
-      if (!factorSugerido) {
-        const fct = factorDesperdicioSugerido(seleccion.desc);
-        if (fct !== null) factorSugerido = String(Math.round((1 + fct) * 1000) / 1000);
+      const refActividad = buscarConsumosPorActividad(actividadPrincipal);
+      const matPorActividad = refActividad ? buscarMaterialEnLista(refActividad.materiales, seleccion.desc) : null;
+      if (matPorActividad) {
+        if (!cantSugerida) cantSugerida = String(matPorActividad.consumo);
+        if (!factorSugerido) factorSugerido = String(Math.round((1 + (matPorActividad.factor || 0)) * 1000) / 1000);
+        fuenteConsumo = matPorActividad.nota || `Tabla de referencia: ${refActividad.clave}`;
+      } else {
+        if (!cantSugerida) {
+          const c = consumoMaterialSugeridoPorKeyword(seleccion.desc);
+          if (c !== null) { cantSugerida = String(c); fuenteConsumo = "Estimación general por tipo de material (no específica a esta actividad) — verifica el valor real."; }
+        }
+        if (!factorSugerido) {
+          const fct = factorDesperdicioSugerido(seleccion.desc);
+          if (fct !== null) factorSugerido = String(Math.round((1 + fct) * 1000) / 1000);
+        }
       }
     } else if (!cantSugerida && consumoSugerido) {
       cantSugerida = String(consumoSugerido);
@@ -406,6 +470,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
     nuevas[i] = {
       ...nuevas[i],
       desc: seleccion.desc,
+      fuenteConsumo: fuenteConsumo || nuevas[i].fuenteConsumo,
       und: seleccion.und !== undefined ? seleccion.und : nuevas[i].und,
       vrUnit: seleccion.vrUnit !== undefined ? seleccion.vrUnit : nuevas[i].vrUnit,
       cant: cantSugerida,
@@ -514,6 +579,11 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
               1 ÷ {rendimientoActual} (Rendimiento) = {f.cant}
             </div>
           )}
+          {esMateriales && f.fuenteConsumo && (
+            <div className="text-[10px] text-gray-500 px-2 pb-1 italic">
+              📎 {f.fuenteConsumo}
+            </div>
+          )}
           {(f.cant || f.vrUnit) && (
             <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
               Subtotal: $ {((numES(f.cant) || 0) * (mostrarFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0)).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -523,11 +593,19 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
           );
         })}
       </div>
+      <button
+        type="button"
+        onClick={() => setFilas([...filas, filaVacia()])}
+        className="w-full py-2 rounded-b-lg text-[12px] font-semibold border-2 border-t-0"
+        style={{ borderColor: LINE, color: NAVY, background: "white" }}
+      >
+        + Agregar fila
+      </button>
     </div>
   );
 }
 
-const filaVacia = () => ({ desc: "", und: "", cant: "", vrUnit: "", factor: "" });
+const filaVacia = () => ({ desc: "", und: "", cant: "", vrUnit: "", factor: "", fuenteConsumo: "" });
 const seisFilasVacias = () => Array.from({ length: 6 }, filaVacia);
 
 export default function FormularioAPU({ onVolver, onNavegar }) {
@@ -584,7 +662,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
 
       const leerFilas = (filaInicio, conFactor) => {
         const filas = [];
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 15; i++) {
           const r = filaInicio + i;
           const desc = ws.getCell(`A${r}`).value;
           if (desc) {
@@ -601,8 +679,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         return filas;
       };
       setMateriales(leerFilas(22, true));
-      setManoObra(leerFilas(31, true));
-      setEquipos(leerFilas(40, true));
+      setManoObra(leerFilas(40, true));
+      setEquipos(leerFilas(58, true));
 
       setElaboradoNombre(ws.getCell("C54").value || "");
       setElaboradoCargo(ws.getCell("C55").value || "");
@@ -654,8 +732,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         });
       };
       escribirFilas(materiales, 22, true);
-      escribirFilas(manoObra, 31, true);
-      escribirFilas(equipos, 40, true);
+      escribirFilas(manoObra, 40, true);
+      escribirFilas(equipos, 58, true);
 
       const sumar = (filas, conFactor) =>
         filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
@@ -877,7 +955,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           </Campo>
         </div>
 
-        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarFactor esMateriales />
+        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} />
         <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
         <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
 
