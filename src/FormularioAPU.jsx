@@ -438,7 +438,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       const ws = workbook.worksheets[0];
 
       const nombreActividad = ws.getCell("A10").value;
-      if (nombreActividad) setActividad({ actividad: String(nombreActividad), unidad: "" });
+      if (nombreActividad) setActividad({ actividad: String(nombreActividad), unidad: ws.getCell("P4").value || "" });
       setCuadrilla(ws.getCell("S4").value || "");
       setJornada(ws.getCell("U4").value || 8);
       setRendimiento(ws.getCell("V4").value || "");
@@ -495,6 +495,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       const ws = workbook.getWorksheet("Apu's");
 
       ws.getCell("A10").value = (actividad.actividad || "").toUpperCase();
+      ws.getCell("P4").value = actividad.unidad;
       ws.getCell("S4").value = cuadrilla;
       ws.getCell("U4").value = numES(jornada) || 0;
       ws.getCell("V4").value = numES(rendimiento) || 0;
