@@ -387,69 +387,89 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
           ⚡ Al elegir una descripción, el Consumo se sugiere automáticamente (1÷Rendimiento = {consumoSugerido} jornadas/unidad). Agrega el Factor de desperdicio si aplica — Subtotal = Consumo × Factor × Precio.
         </div>
       )}
+      {!mostrarFactor && (
+        <div className="text-[10.5px] px-3 py-1.5 border border-t-0" style={{ background: "#FFF8E8", borderColor: LINE, color: NAVY }}>
+          ⚡ La Cantidad aquí es cuánto material se necesita por cada unidad de la actividad (ej: 1.05 kg de cemento por cada m² de pañete, incluyendo desperdicio).
+        </div>
+      )}
       <div className="border border-t-0 rounded-b-lg overflow-visible" style={{ borderColor: LINE }}>
         {filas.map((f, i) => {
           return (
-          <div key={i} className="border-b last:border-b-0" style={{ borderColor: LINE }}>
-          <div className="flex gap-1.5 p-2" style={{ borderColor: LINE }}>
-            <BuscadorCelda
-              valor={f.desc}
-              catalogo={catalogo}
-              placeholder="Descripción (busca o escribe)"
-              onSeleccionar={(sel) => actualizarDesdeSeleccion(i, sel)}
-            />
-            <input
-              placeholder="Und"
-              value={f.und}
-              onChange={(e) => actualizar(i, "und", e.target.value)}
-              className="flex-[0.7] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
-              style={{ borderColor: LINE }}
-            />
-            <div className="flex-[0.8] flex items-stretch border rounded overflow-hidden min-w-0" style={{ borderColor: LINE }}>
-              <button
-                type="button"
-                onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
-                className="px-1.5 text-[13px] font-bold shrink-0"
-                style={{ background: PAPER, color: NAVY }}
-              >
-                −
-              </button>
-              <input
-                placeholder={mostrarFactor ? "Consumo" : "Cant."}
-                type="text" inputMode="decimal"
-                value={f.cant}
-                onChange={(e) => actualizar(i, "cant", e.target.value)}
-                className="flex-1 px-1 py-1.5 text-[12.5px] min-w-0 text-center"
-                style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
+          <div key={i} className="border-b last:border-b-0 p-2.5" style={{ borderColor: LINE }}>
+            <div className="mb-2">
+              <BuscadorCelda
+                valor={f.desc}
+                catalogo={catalogo}
+                placeholder="Descripción (busca o escribe)"
+                onSeleccionar={(sel) => actualizarDesdeSeleccion(i, sel)}
               />
-              <button
-                type="button"
-                onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
-                className="px-1.5 text-[13px] font-bold shrink-0"
-                style={{ background: PAPER, color: NAVY }}
-              >
-                +
-              </button>
             </div>
-            {mostrarFactor && (
-              <input
-                placeholder="Factor"
-                type="text" inputMode="decimal"
-                value={f.factor}
-                onChange={(e) => actualizar(i, "factor", e.target.value)}
-                className="flex-[0.6] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
-                style={{ borderColor: LINE }}
-              />
-            )}
-            <input
-              placeholder="Vr Unit."
-              type="text" inputMode="decimal"
-              value={f.vrUnit}
-              onChange={(e) => actualizar(i, "vrUnit", e.target.value)}
-              className="flex-[1] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
-              style={{ borderColor: LINE }}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div>
+                <label className="text-[10px] text-gray-500 block mb-0.5">Unidad</label>
+                <input
+                  placeholder="Und"
+                  value={f.und}
+                  onChange={(e) => actualizar(i, "und", e.target.value)}
+                  className="w-full border rounded px-2.5 py-2 text-[13.5px]"
+                  style={{ borderColor: LINE }}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 block mb-0.5">{mostrarFactor ? "Consumo" : "Cantidad"}</label>
+                <div className="flex items-stretch border rounded overflow-hidden" style={{ borderColor: LINE }}>
+                  <button
+                    type="button"
+                    onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
+                    className="px-2.5 text-[15px] font-bold shrink-0"
+                    style={{ background: PAPER, color: NAVY }}
+                  >
+                    −
+                  </button>
+                  <input
+                    type="text" inputMode="decimal"
+                    value={f.cant}
+                    onChange={(e) => actualizar(i, "cant", e.target.value)}
+                    className="flex-1 px-1 py-2 text-[13.5px] min-w-0 text-center"
+                    style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
+                  />
+                  <button
+                    type="button"
+                    onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
+                    className="px-2.5 text-[15px] font-bold shrink-0"
+                    style={{ background: PAPER, color: NAVY }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className={mostrarFactor ? "grid grid-cols-2 gap-2" : ""}>
+              {mostrarFactor && (
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">Factor de desperdicio</label>
+                  <input
+                    placeholder="Ej: 1.05"
+                    type="text" inputMode="decimal"
+                    value={f.factor}
+                    onChange={(e) => actualizar(i, "factor", e.target.value)}
+                    className="w-full border rounded px-2.5 py-2 text-[13.5px]"
+                    style={{ borderColor: LINE }}
+                  />
+                </div>
+              )}
+              <div>
+                <label className="text-[10px] text-gray-500 block mb-0.5">Precio Unitario</label>
+                <input
+                  placeholder="Vr Unit."
+                  type="text" inputMode="decimal"
+                  value={f.vrUnit}
+                  onChange={(e) => actualizar(i, "vrUnit", e.target.value)}
+                  className="w-full border rounded px-2.5 py-2 text-[13.5px]"
+                  style={{ borderColor: LINE }}
+                />
+              </div>
+            </div>
           {mostrarFactor && rendimientoActual && f.cant && (
             <div className="text-[10px] text-gray-500 px-2 pb-1">
               1 ÷ {rendimientoActual} (Rendimiento) = {f.cant}
