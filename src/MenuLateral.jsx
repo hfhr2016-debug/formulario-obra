@@ -17,9 +17,9 @@ const MODULOS_MENU = [
   { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png" },
 ];
 
-export function BotonMenu({ onClick }) {
+export function BotonMenu({ onClick, color }) {
   return (
-    <button onClick={onClick} className="text-white/90 p-1" aria-label="Abrir menú de módulos">
+    <button onClick={onClick} className="p-1" style={{ color: color || "rgba(255,255,255,0.9)" }} aria-label="Abrir menú de módulos">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
         <line x1="3" y1="6" x2="21" y2="6" />
         <line x1="3" y1="12" x2="21" y2="12" />

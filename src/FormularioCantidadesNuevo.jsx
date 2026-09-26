@@ -440,7 +440,7 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
       <MenuLateral abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} onNavegar={onNavegar} vistaActual="cantidades" />
       <div className="p-4 max-w-xl mx-auto">
         <div className="flex items-center gap-2 mb-3">
-          {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} />}
+          {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} color={NAVY} />}
           <button onClick={onVolver} className="text-[12px]" style={{ color: NAVY }}>← Volver al portal</button>
         </div>
 
