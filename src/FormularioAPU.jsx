@@ -338,7 +338,7 @@ const PESO_ACERO_KG_POR_METRO = {
   '#6 (3/4")': 2.235, '#7 (7/8")': 3.042, '#8 (1")': 3.973, '#9 (1 1/8")': 5.06,
   '#10 (1 1/4")': 6.404, '#11 (1 3/8")': 7.907,
 };
-function esMaterialVarilla(desc) { return /varilla|pdr|figurado/i.test(desc || ""); }
+function esMaterialVarilla(desc) { return /varilla|pdr|figurado|(acero|refuerzo).*(psi|\d\/\d)/i.test(desc || ""); }
 
 function TablaFilas({ titulo, filas, setFilas, catalogo }) {
   const actualizar = (i, campo, val) => {
