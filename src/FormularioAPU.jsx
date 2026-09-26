@@ -901,7 +901,15 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           <BuscadorActividad
             value={actividad?.actividad}
             onSelect={(a) => {
+              const hayDatosLlenados = materiales.some((f) => f.desc) || manoObra.some((f) => f.desc) || equipos.some((f) => f.desc);
+              if (hayDatosLlenados) {
+                const confirmar = window.confirm("Ya tienes Materiales/Mano de Obra/Equipos llenados para la actividad anterior. Al cambiar de actividad, esos datos se borrarán. ¿Continuar?");
+                if (!confirmar) return;
+              }
               setActividad(a);
+              setMateriales(seisFilasVacias());
+              setManoObra(seisFilasVacias());
+              setEquipos(seisFilasVacias());
               const rendSugerido = RENDIMIENTOS_REFERENCIA[a.actividad] !== undefined
                 ? RENDIMIENTOS_REFERENCIA[a.actividad]
                 : rendimientoSugeridoPorKeyword(a.actividad);
