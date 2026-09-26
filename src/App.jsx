@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
+import MenuLateral, { BotonMenu } from "./MenuLateral";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuesto from "./FormularioPresupuesto";
@@ -445,7 +446,8 @@ function AddButton({ onClick, label }) {
   );
 }
 
-function CapturaAvanceObra({ onVolver }) {
+function CapturaAvanceObra({ onVolver, onNavegar }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [active, setActive] = useState("general");
   const toggle = (id) => setActive((cur) => (cur === id ? "" : id));
 
@@ -871,6 +873,7 @@ function CapturaAvanceObra({ onVolver }) {
       className="min-h-screen"
       style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}
     >
+      <MenuLateral abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} onNavegar={onNavegar} vistaActual="diario" />
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
@@ -878,17 +881,20 @@ function CapturaAvanceObra({ onVolver }) {
 
       {/* Header */}
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
-        {onVolver && (
-          <button
-            onClick={onVolver}
-            className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            Menú SAIEA OBRAS
-          </button>
-        )}
+        <div className="flex items-center gap-2 mb-3">
+          {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} />}
+          {onVolver && (
+            <button
+              onClick={onVolver}
+              className="flex items-center gap-1 text-white/80 text-[12.5px]"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Menú SAIEA OBRAS
+            </button>
+          )}
+        </div>
         <div className="flex items-center justify-between gap-2.5">
           <div className="flex items-center gap-2.5">
           <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
@@ -1388,34 +1394,34 @@ export default function App() {
     return <Proximamente nombre="Gestión Ambiental" onVolver={() => setVista("selector-apps")} />;
   }
   if (vista === "diario") {
-    return <CapturaAvanceObra onVolver={() => setVista("inicio")} />;
+    return <CapturaAvanceObra onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "apus") {
-    return <FormularioAPU onVolver={() => setVista("inicio")} />;
+    return <FormularioAPU onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "ficha") {
-    return <FormularioFicha onVolver={() => setVista("inicio")} />;
+    return <FormularioFicha onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "presupuesto") {
-    return <FormularioPresupuestoNuevo onVolver={() => setVista("inicio")} />;
+    return <FormularioPresupuestoNuevo onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "cronograma") {
-    return <FormularioCronograma onVolver={() => setVista("inicio")} />;
+    return <FormularioCronograma onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "cantidades") {
-    return <FormularioCantidadesNuevo onVolver={() => setVista("inicio")} />;
+    return <FormularioCantidadesNuevo onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "semanal") {
-    return <FormularioSemanal onVolver={() => setVista("inicio")} />;
+    return <FormularioSemanal onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "acta") {
-    return <FormularioActa onVolver={() => setVista("inicio")} />;
+    return <FormularioActa onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "mensual") {
-    return <FormularioMensual onVolver={() => setVista("inicio")} />;
+    return <FormularioMensual onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   if (vista === "memorias") {
-    return <FormularioMemoria onVolver={() => setVista("inicio")} />;
+    return <FormularioMemoria onVolver={() => setVista("inicio")} onNavegar={setVista} />;
   }
   return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
 }

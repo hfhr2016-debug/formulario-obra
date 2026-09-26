@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
+import MenuLateral, { BotonMenu } from "./MenuLateral";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -167,7 +168,8 @@ function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
 
 const tareaVacia = () => ({ nombre: "", duracion: "", predecesora: "", recursos: "" });
 
-export default function FormularioCronograma({ onVolver }) {
+export default function FormularioCronograma({ onVolver, onNavegar }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [proyecto, setProyecto] = useState("");
   const [noContrato, setNoContrato] = useState("");
   const [ubicacion, setUbicacion] = useState("");
@@ -356,6 +358,7 @@ export default function FormularioCronograma({ onVolver }) {
 
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <MenuLateral abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} onNavegar={onNavegar} vistaActual="cronograma" />
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
@@ -363,12 +366,15 @@ export default function FormularioCronograma({ onVolver }) {
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <button onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              Menú SAIEA OBRAS
-            </button>
+            <div className="flex items-center gap-2 mb-3">
+              {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} />}
+              <button onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+                Menú SAIEA OBRAS
+              </button>
+            </div>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               CRONOGRAMA DE OBRA
             </div>

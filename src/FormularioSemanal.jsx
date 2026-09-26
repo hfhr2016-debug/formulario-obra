@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
+import MenuLateral, { BotonMenu } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 
 function numES(v) {
@@ -211,7 +212,8 @@ function CapituloAvance({ capitulo, prog, real, setProgReal }) {  const dif = (n
   );
 }
 
-export default function FormularioSemanal({ onVolver }) {
+export default function FormularioSemanal({ onVolver, onNavegar }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [modo, setModo] = useState("nuevo");
   const [archivoBase, setArchivoBase] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -428,14 +430,18 @@ export default function FormularioSemanal({ onVolver }) {
 
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <MenuLateral abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} onNavegar={onNavegar} vistaActual="semanal" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <button onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3">
+            <div className="flex items-center gap-2 mb-3">
+              {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} />}
+              <button onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px]">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
               Menú SAIEA OBRAS
             </button>
+            </div>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>INFORME SEMANAL</div>
             <div className="text-[11px]" style={{ color: GOLD }}>Incluye Ficha Técnica y Presupuesto conectados</div>
           </div>

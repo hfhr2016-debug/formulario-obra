@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
+import MenuLateral, { BotonMenu } from "./MenuLateral";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -308,7 +309,8 @@ function actividadVacia(it) {
   return { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subVacio(factorSugerido)] };
 }
 
-export default function FormularioCantidadesNuevo({ onVolver }) {
+export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [proyecto, setProyecto] = useState("");
   const [actividades, setActividades] = useState([]);
   const [generando, setGenerando] = useState(false);
@@ -435,8 +437,12 @@ export default function FormularioCantidadesNuevo({ onVolver }) {
 
   return (
     <div style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }} className="min-h-screen">
+      <MenuLateral abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} onNavegar={onNavegar} vistaActual="cantidades" />
       <div className="p-4 max-w-xl mx-auto">
-        <button onClick={onVolver} className="text-[12px] mb-3" style={{ color: NAVY }}>← Volver al portal</button>
+        <div className="flex items-center gap-2 mb-3">
+          {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} />}
+          <button onClick={onVolver} className="text-[12px]" style={{ color: NAVY }}>← Volver al portal</button>
+        </div>
 
         <div className="flex gap-2 mb-4">
           <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
