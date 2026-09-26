@@ -357,7 +357,7 @@ function factorDesperdicioSugerido(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo }) {
+function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostrarFactor, rendimientoActual }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val };
@@ -370,6 +370,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
       desc: seleccion.desc,
       und: seleccion.und !== undefined ? seleccion.und : nuevas[i].und,
       vrUnit: seleccion.vrUnit !== undefined ? seleccion.vrUnit : nuevas[i].vrUnit,
+      cant: (!nuevas[i].cant && consumoSugerido) ? String(consumoSugerido) : nuevas[i].cant,
     };
     setFilas(nuevas);
   };
@@ -381,6 +382,11 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
       >
         {titulo}
       </div>
+      {consumoSugerido !== undefined && consumoSugerido !== null && (
+        <div className="text-[10.5px] px-3 py-1.5 border border-t-0" style={{ background: "#FFF8E8", borderColor: LINE, color: NAVY }}>
+          ⚡ Al elegir una descripción, el Consumo se sugiere automáticamente (1÷Rendimiento = {consumoSugerido} jornadas/unidad). Agrega el Factor de desperdicio si aplica — Subtotal = Consumo × Factor × Precio.
+        </div>
+      )}
       <div className="border border-t-0 rounded-b-lg overflow-visible" style={{ borderColor: LINE }}>
         {filas.map((f, i) => {
           return (
@@ -409,12 +415,12 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
                 −
               </button>
               <input
-                placeholder="Cant."
+                placeholder={mostrarFactor ? "Consumo" : "Cant."}
                 type="text" inputMode="decimal"
                 value={f.cant}
                 onChange={(e) => actualizar(i, "cant", e.target.value)}
                 className="flex-1 px-1 py-1.5 text-[12.5px] min-w-0 text-center"
-                style={{ border: "none" }}
+                style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
               />
               <button
                 type="button"
@@ -425,6 +431,16 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
                 +
               </button>
             </div>
+            {mostrarFactor && (
+              <input
+                placeholder="Factor"
+                type="text" inputMode="decimal"
+                value={f.factor}
+                onChange={(e) => actualizar(i, "factor", e.target.value)}
+                className="flex-[0.6] border rounded px-2 py-1.5 text-[12.5px] min-w-0"
+                style={{ borderColor: LINE }}
+              />
+            )}
             <input
               placeholder="Vr Unit."
               type="text" inputMode="decimal"
@@ -434,9 +450,14 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
               style={{ borderColor: LINE }}
             />
           </div>
+          {mostrarFactor && rendimientoActual && f.cant && (
+            <div className="text-[10px] text-gray-500 px-2 pb-1">
+              1 ÷ {rendimientoActual} (Rendimiento) = {f.cant}
+            </div>
+          )}
           {(f.cant || f.vrUnit) && (
             <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
-              Subtotal: $ {((numES(f.cant) || 0) * (numES(f.vrUnit) || 0)).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Subtotal: $ {((numES(f.cant) || 0) * (mostrarFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0)).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           )}
           </div>
@@ -447,7 +468,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
   );
 }
 
-const filaVacia = () => ({ desc: "", und: "", cant: "", vrUnit: "" });
+const filaVacia = () => ({ desc: "", und: "", cant: "", vrUnit: "", factor: "" });
 const seisFilasVacias = () => Array.from({ length: 6 }, filaVacia);
 
 export default function FormularioAPU({ onVolver, onNavegar }) {
@@ -479,8 +500,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
   const [generando, setGenerando] = useState(false);
 
   const totalDirectoUnitarioVista = useMemo(() => {
-    const sumar = (filas) => filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (numES(f.vrUnit) || 0), 0);
-    return sumar(materiales) + sumar(manoObra) + sumar(equipos);
+    const sumar = (filas, conFactor) => filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
+    return sumar(materiales, false) + sumar(manoObra, true) + sumar(equipos, true);
   }, [materiales, manoObra, equipos]);
 
   const unidadRendimiento = actividad ? `${actividad.unidad}/jornada` : "";
@@ -502,7 +523,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       setNoContrato(ws.getCell("C14").value || "");
       setUbicacion(ws.getCell("J15").value || "");
 
-      const leerFilas = (filaInicio) => {
+      const leerFilas = (filaInicio, conFactor) => {
         const filas = [];
         for (let i = 0; i < 9; i++) {
           const r = filaInicio + i;
@@ -512,6 +533,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
               desc: String(desc),
               und: ws.getCell(`E${r}`).value || "",
               cant: String(ws.getCell(`F${r}`).value || ""),
+              factor: conFactor ? String(ws.getCell(`G${r}`).value || "") : "",
               vrUnit: String(ws.getCell(`H${r}`).value || ""),
             });
           }
@@ -519,9 +541,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         while (filas.length < 6) filas.push(filaVacia());
         return filas;
       };
-      setMateriales(leerFilas(22));
-      setManoObra(leerFilas(31));
-      setEquipos(leerFilas(40));
+      setMateriales(leerFilas(22, false));
+      setManoObra(leerFilas(31, true));
+      setEquipos(leerFilas(40, true));
 
       setElaboradoNombre(ws.getCell("C54").value || "");
       setElaboradoCargo(ws.getCell("C55").value || "");
@@ -561,23 +583,24 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       ws.getCell("J14").value = fechaDDMMYYYY();
       ws.getCell("J15").value = ubicacion;
 
-      const escribirFilas = (filas, filaInicio) => {
+      const escribirFilas = (filas, filaInicio, conFactor) => {
         filas.forEach((f, i) => {
           const r = filaInicio + i;
           if (!f.desc) return;
           ws.getCell(`A${r}`).value = f.desc;
           ws.getCell(`E${r}`).value = f.und;
           ws.getCell(`F${r}`).value = numES(f.cant) || 0;
+          if (conFactor) ws.getCell(`G${r}`).value = numES(f.factor) || 1;
           ws.getCell(`H${r}`).value = numES(f.vrUnit) || 0;
         });
       };
-      escribirFilas(materiales, 22);
-      escribirFilas(manoObra, 31);
-      escribirFilas(equipos, 40);
+      escribirFilas(materiales, 22, false);
+      escribirFilas(manoObra, 31, true);
+      escribirFilas(equipos, 40, true);
 
-      const sumar = (filas) =>
-        filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (numES(f.vrUnit) || 0), 0);
-      const totalDirectoUnitario = sumar(materiales) + sumar(manoObra) + sumar(equipos);
+      const sumar = (filas, conFactor) =>
+        filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
+      const totalDirectoUnitario = sumar(materiales, false) + sumar(manoObra, true) + sumar(equipos, true);
 
       try {
         const clave = "ryr_apus_guardados";
@@ -796,8 +819,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         </div>
 
         <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} />
-        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} />
-        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} />
+        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
+        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
