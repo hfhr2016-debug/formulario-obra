@@ -270,7 +270,7 @@ function Input(props) {
   );
 }
 
-function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder }) {
+function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder, palabrasClaveActividad }) {
   const [texto, setTexto] = useState(valor || "");
   const [abierto, setAbierto] = useState(false);
 
@@ -282,10 +282,18 @@ function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder }) {
       const aEmpieza = a.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
       const bEmpieza = b.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
       if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
+      if (palabrasClaveActividad && palabrasClaveActividad.length) {
+        const contarCoincidencias = (desc) => {
+          const d = desc.toLowerCase();
+          return palabrasClaveActividad.filter((p) => d.includes(p)).length;
+        };
+        const diff = contarCoincidencias(b.descripcion) - contarCoincidencias(a.descripcion);
+        if (diff !== 0) return diff;
+      }
       return a.descripcion.length - b.descripcion.length;
     });
     return coincide.slice(0, 10);
-  }, [texto, catalogo]);
+  }, [texto, catalogo, palabrasClaveActividad]);
 
   return (
     <div className="relative flex-[2.2] min-w-0">
@@ -568,6 +576,14 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
                 catalogo={catalogo}
                 placeholder="Descripción (busca o escribe)"
                 onSeleccionar={(sel) => actualizarDesdeSeleccion(i, sel)}
+                palabrasClaveActividad={
+                  actividadPrincipal
+                    ? actividadPrincipal
+                        .toLowerCase()
+                        .split(/[\s,()]+/)
+                        .filter((w) => w.length > 3 && !["para", "incluye", "suministro", "instalación", "montaje", "vaciado", "vibrado", "figurado", "amarre"].includes(w))
+                    : []
+                }
               />
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1026,8 +1042,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         </div>
 
         <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} />
-        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
-        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} />
+        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} actividadPrincipal={actividad?.actividad} />
+        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} actividadPrincipal={actividad?.actividad} />
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
