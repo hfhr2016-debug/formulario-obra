@@ -333,6 +333,13 @@ function factorDesperdicioSugerido(nombreMaterial) {
   return null;
 }
 
+const PESO_ACERO_KG_POR_METRO = {
+  '#2 (1/4")': 0.249, '#3 (3/8")': 0.56, '#4 (1/2")': 0.994, '#5 (5/8")': 1.552,
+  '#6 (3/4")': 2.235, '#7 (7/8")': 3.042, '#8 (1")': 3.973, '#9 (1 1/8")': 5.06,
+  '#10 (1 1/4")': 6.404, '#11 (1 3/8")': 7.907,
+};
+function esMaterialVarilla(desc) { return /varilla|pdr|figurado/i.test(desc || ""); }
+
 function TablaFilas({ titulo, filas, setFilas, catalogo }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
@@ -410,6 +417,41 @@ function TablaFilas({ titulo, filas, setFilas, catalogo }) {
               style={{ borderColor: LINE }}
             />
           </div>
+          {esMaterialVarilla(f.desc) && (
+            <div className="px-2 pb-2 flex gap-1.5">
+              <select
+                value={f.denominacion || ""}
+                onChange={(e) => {
+                  const denom = e.target.value;
+                  const metros = numES(f.metros);
+                  const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+                  actualizar(i, "denominacion", denom);
+                  if (peso) actualizar(i, "cant", String(Math.round(peso * 1000) / 1000));
+                }}
+                className="flex-1 border rounded px-2 py-1.5 text-[11.5px]"
+                style={{ borderColor: LINE }}
+              >
+                <option value="">Denominación de varilla</option>
+                {Object.keys(PESO_ACERO_KG_POR_METRO).map((d) => (
+                  <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
+                ))}
+              </select>
+              <input
+                placeholder="Metros lineales"
+                type="text" inputMode="decimal"
+                value={f.metros || ""}
+                onChange={(e) => {
+                  const metros = numES(e.target.value);
+                  const denom = f.denominacion;
+                  const peso = denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0;
+                  actualizar(i, "metros", e.target.value);
+                  if (peso) actualizar(i, "cant", String(Math.round(peso * 1000) / 1000));
+                }}
+                className="flex-1 border rounded px-2 py-1.5 text-[11.5px]"
+                style={{ borderColor: LINE }}
+              />
+            </div>
+          )}
           {(f.cant || f.vrUnit) && (
             <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
               Subtotal: $ {((numES(f.cant) || 0) * (numES(f.vrUnit) || 0)).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
