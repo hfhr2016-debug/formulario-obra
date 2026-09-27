@@ -22,22 +22,22 @@ export default function PantallaLogin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen flex flex-col items-center" style={{ background: NAVY, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      <div className="w-full max-w-xs">
-        <div className="text-center mb-8">
-          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto mx-auto mb-3" />
-          <div className="text-[19px] font-bold tracking-wide" style={{ color: NAVY, fontFamily: "'Space Grotesk', sans-serif" }}>
-            SAIEA OBRAS
-          </div>
-          <div className="text-[11.5px] mt-1" style={{ color: "#8A8F98" }}>
-            Reformas y Remodelaciones
-          </div>
+      <div className="w-full text-center py-8 px-6 mb-8" style={{ background: "white" }}>
+        <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-[77px] w-auto mx-auto mb-3" />
+        <div className="text-[19px] font-bold tracking-wide" style={{ color: NAVY, fontFamily: "'Space Grotesk', sans-serif" }}>
+          SAIEA OBRAS
         </div>
+        <div className="text-[11.5px] mt-1" style={{ color: "#8A8F98" }}>
+          Reformas y Remodelaciones
+        </div>
+      </div>
 
+      <div className="w-full max-w-xs px-6">
         <form onSubmit={manejarSubmit} className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${LINE}` }}>
           <div className="text-[14px] font-bold mb-4" style={{ color: NAVY }}>
             Iniciar sesión
@@ -91,7 +91,7 @@ export default function PantallaLogin() {
           </button>
         </form>
 
-        <div className="text-[10.5px] text-center mt-4" style={{ color: "#8A8F98" }}>
+        <div className="text-[10.5px] text-center mt-4 mb-8" style={{ color: "white", opacity: 0.7 }}>
           ¿No tienes cuenta o la olvidaste? Contacta al administrador del sistema.
         </div>
       </div>
