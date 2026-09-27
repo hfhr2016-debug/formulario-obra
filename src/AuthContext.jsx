@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
@@ -62,6 +62,18 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function restablecerContrasena(correo) {
+    try {
+      await sendPasswordResetEmail(auth, correo.trim());
+      return { ok: true };
+    } catch (e) {
+      let mensaje = "No se pudo enviar el correo de restablecimiento.";
+      if (e.code === "auth/user-not-found") mensaje = "No existe ninguna cuenta con ese correo.";
+      else if (e.code === "auth/invalid-email") mensaje = "El correo no tiene un formato válido.";
+      return { ok: false, error: mensaje };
+    }
+  }
+
   async function cerrarSesion() {
     await signOut(auth);
   }
@@ -73,7 +85,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, perfil, cargando, errorLogin, iniciarSesion, cerrarSesion, tieneRol }}>
+    <AuthContext.Provider value={{ usuario, perfil, cargando, errorLogin, iniciarSesion, cerrarSesion, tieneRol, restablecerContrasena }}>
       {children}
     </AuthContext.Provider>
   );

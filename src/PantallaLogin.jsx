@@ -7,11 +7,15 @@ const PAPER = "#F7F7F5";
 const LINE = "#D9DCE1";
 
 export default function PantallaLogin() {
-  const { iniciarSesion, errorLogin } = useAuth();
+  const { iniciarSesion, errorLogin, restablecerContrasena } = useAuth();
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [cargando, setCargando] = useState(false);
   const [verContrasena, setVerContrasena] = useState(false);
+  const [modo, setModo] = useState("login");
+  const [correoRecuperar, setCorreoRecuperar] = useState("");
+  const [mensajeRecuperar, setMensajeRecuperar] = useState("");
+  const [enviandoRecuperar, setEnviandoRecuperar] = useState(false);
 
   async function manejarSubmit(e) {
     e.preventDefault();
@@ -19,6 +23,20 @@ export default function PantallaLogin() {
     setCargando(true);
     await iniciarSesion(correo.trim(), contrasena);
     setCargando(false);
+  }
+
+  async function manejarRecuperar(e) {
+    e.preventDefault();
+    if (!correoRecuperar) return;
+    setEnviandoRecuperar(true);
+    setMensajeRecuperar("");
+    const resultado = await restablecerContrasena(correoRecuperar);
+    if (resultado.ok) {
+      setMensajeRecuperar("✓ Listo. Revisa tu correo (y la carpeta de spam) — te enviamos un enlace para crear una nueva contraseña.");
+    } else {
+      setMensajeRecuperar(resultado.error);
+    }
+    setEnviandoRecuperar(false);
   }
 
   return (
@@ -44,6 +62,7 @@ export default function PantallaLogin() {
       </div>
 
       <div className="w-full max-w-xs px-6">
+        {modo === "login" ? (
         <form onSubmit={manejarSubmit} className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${LINE}` }}>
           <div className="text-[14px] font-bold mb-4" style={{ color: NAVY }}>
             Iniciar sesión
@@ -81,6 +100,15 @@ export default function PantallaLogin() {
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={() => { setModo("recuperar"); setCorreoRecuperar(correo); setMensajeRecuperar(""); }}
+            className="text-[11px] mb-1"
+            style={{ color: NAVY }}
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+
           {errorLogin && (
             <div className="text-[11.5px] mt-2 mb-1 px-2.5 py-2 rounded-lg" style={{ background: "#FDECEC", color: "#B42318" }}>
               {errorLogin}
@@ -96,9 +124,56 @@ export default function PantallaLogin() {
             {cargando ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
+        ) : (
+        <form onSubmit={manejarRecuperar} className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${LINE}` }}>
+          <div className="text-[14px] font-bold mb-1.5" style={{ color: NAVY }}>
+            Restablecer contraseña
+          </div>
+          <div className="text-[11.5px] text-gray-500 mb-4">
+            Escribe tu correo y te enviaremos un enlace para crear una nueva contraseña.
+          </div>
+
+          <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Correo</label>
+          <input
+            type="email"
+            value={correoRecuperar}
+            onChange={(e) => setCorreoRecuperar(e.target.value)}
+            placeholder="tucorreo@ejemplo.com"
+            className="w-full border rounded-lg px-3 py-2.5 text-[13.5px] mb-3"
+            style={{ borderColor: LINE }}
+          />
+
+          {mensajeRecuperar && (
+            <div
+              className="text-[11.5px] mt-1 mb-2 px-2.5 py-2 rounded-lg"
+              style={mensajeRecuperar.startsWith("✓") ? { background: "#E7F5EC", color: "#1B7A43" } : { background: "#FDECEC", color: "#B42318" }}
+            >
+              {mensajeRecuperar}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={enviandoRecuperar}
+            className="w-full mt-2 py-3 rounded-xl text-white font-bold text-[13.5px]"
+            style={{ background: enviandoRecuperar ? "#9AA0A8" : GOLD }}
+          >
+            {enviandoRecuperar ? "Enviando..." : "Enviar enlace de recuperación"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setModo("login"); setMensajeRecuperar(""); }}
+            className="w-full text-center mt-3 text-[11.5px]"
+            style={{ color: NAVY }}
+          >
+            ← Volver a iniciar sesión
+          </button>
+        </form>
+        )}
 
         <div className="text-[10.5px] text-center mt-4 mb-8" style={{ color: "white", opacity: 0.7 }}>
-          ¿No tienes cuenta o la olvidaste? Contacta al administrador del sistema.
+          ¿No tienes cuenta? Contacta al administrador del sistema.
         </div>
       </div>
     </div>
