@@ -33,12 +33,12 @@ export default function PantallaLogin() {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      <div className="w-full text-center py-8 px-6 mb-8" style={{ background: "white" }}>
+      <div className="w-full text-center py-8 px-6 mb-8" style={{ background: NAVY }}>
         <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-[77px] w-auto mx-auto mb-3" />
-        <div className="text-[19px] font-bold tracking-wide" style={{ color: NAVY, fontFamily: "'Space Grotesk', sans-serif" }}>
+        <div className="text-[19px] font-bold tracking-wide" style={{ color: GOLD, fontFamily: "'Space Grotesk', sans-serif" }}>
           SAIEA OBRAS
         </div>
-        <div className="text-[11.5px] mt-1" style={{ color: "#8A8F98" }}>
+        <div className="text-[11.5px] mt-1" style={{ color: "white" }}>
           Reformas y Remodelaciones
         </div>
       </div>
