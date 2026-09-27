@@ -1273,7 +1273,13 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div
+      className="min-h-screen flex flex-col bg-cover bg-center"
+      style={{
+        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.75), rgba(247,247,245,0.88)), url('/fondo-selector.jpg')`,
+        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      }}
+    >
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
