@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
-import MenuLateral, { BotonMenu } from "./MenuLateral";
+import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -463,8 +463,9 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
           </div>
         )}
 
-        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>
+        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg flex items-center justify-between" style={{ background: NAVY }}>
           CANTIDADES DE OBRA
+          <IndicadorTipoProyecto />
         </div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-3" style={{ borderColor: LINE }}>
           <div className="text-[11px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FFF8E8", color: NAVY }}>

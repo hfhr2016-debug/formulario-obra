@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
-import MenuLateral, { BotonMenu } from "./MenuLateral";
+import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -886,9 +886,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               ANÁLISIS DE PRECIOS UNITARIOS
             </div>
-            <div className="text-[11px]" style={{ color: GOLD }}>
+            <div className="text-[11px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones
             </div>
+            <IndicadorTipoProyecto />
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>

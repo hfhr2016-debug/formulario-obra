@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
-import MenuLateral, { BotonMenu } from "./MenuLateral";
+import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 
 function numES(v) {
@@ -455,6 +455,7 @@ export default function FormularioSemanal({ onVolver, onNavegar }) {
             </button>
             </div>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>INFORME SEMANAL</div>
+            <IndicadorTipoProyecto />
             <div className="text-[11px]" style={{ color: GOLD }}>Incluye Ficha Técnica y Presupuesto conectados</div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />

@@ -73,3 +73,22 @@ export default function MenuLateral({ abierto, onCerrar, onNavegar, vistaActual 
     </div>
   );
 }
+
+export function IndicadorTipoProyecto() {
+  let tipo = "edificacion";
+  try {
+    const datos = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+    const modulos = datos?.modulos || {};
+    if (modulos.vias) tipo = "vias";
+    else if (modulos.hidrocarburos) tipo = "hidrocarburos";
+  } catch (e) {}
+  const nombres = { edificacion: "Edificación / Reformas", vias: "Vías y Carreteras", hidrocarburos: "Hidrocarburos" };
+  return (
+    <span
+      className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block"
+      style={{ background: "rgba(217,162,51,0.18)", color: "#D9A233" }}
+    >
+      {nombres[tipo]}
+    </span>
+  );
+}
