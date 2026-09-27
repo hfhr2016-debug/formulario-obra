@@ -171,6 +171,30 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
   const [archivoBase, setArchivoBase] = useState(null);
   const [cargando, setCargando] = useState(false);
 
+  const [borradorDisponible, setBorradorDisponible] = useState(() => {
+    try { return !!localStorage.getItem("ryr_borrador_presupuesto"); } catch (e) { return false; }
+  });
+  const [borradorAplicado, setBorradorAplicado] = useState(() => {
+    try { return !localStorage.getItem("ryr_borrador_presupuesto"); } catch (e) { return true; }
+  });
+  function restaurarBorrador() {
+    try {
+      const d = JSON.parse(localStorage.getItem("ryr_borrador_presupuesto") || "null");
+      if (d) { setProyecto(d.proyecto || ""); setFilas(d.filas || [filaVacia()]); }
+    } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  function descartarBorrador() {
+    try { localStorage.removeItem("ryr_borrador_presupuesto"); } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  React.useEffect(() => {
+    if (!borradorAplicado) return;
+    try { localStorage.setItem("ryr_borrador_presupuesto", JSON.stringify({ proyecto, filas })); } catch (e) {}
+  }, [borradorAplicado, proyecto, filas]);
+
   async function cargarArchivoExistente(file) {
     setCargando(true);
     try {
@@ -299,12 +323,28 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      try { localStorage.removeItem("ryr_borrador_presupuesto"); } catch (e) {}
     } catch (e) {
       console.error(e);
       alert("Hubo un error generando el Excel. Revisa la consola.");
     } finally {
       setGenerando(false);
     }
+  }
+
+  if (borradorDisponible) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+        <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes un Presupuesto sin terminar</div>
+        <div className="text-[12.5px] text-gray-500 mb-5">Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel. ¿Quieres continuar donde quedaste?</div>
+        <button onClick={restaurarBorrador} className="w-full max-w-xs py-3 rounded-xl text-white font-bold text-[13.5px] mb-2.5" style={{ background: GOLD }}>
+          ▶ Continuar donde quedé
+        </button>
+        <button onClick={descartarBorrador} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border" style={{ borderColor: LINE, color: NAVY }}>
+          Empezar en blanco
+        </button>
+      </div>
+    );
   }
 
   return (

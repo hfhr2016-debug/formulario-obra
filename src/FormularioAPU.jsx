@@ -714,6 +714,44 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
 
   const [generando, setGenerando] = useState(false);
 
+  const [borradorDisponible, setBorradorDisponible] = useState(() => {
+    try { return !!localStorage.getItem("ryr_borrador_apu"); } catch (e) { return false; }
+  });
+  const [borradorAplicado, setBorradorAplicado] = useState(() => {
+    try { return !localStorage.getItem("ryr_borrador_apu"); } catch (e) { return true; }
+  });
+
+  function restaurarBorrador() {
+    try {
+      const d = JSON.parse(localStorage.getItem("ryr_borrador_apu") || "null");
+      if (d) {
+        setActividad(d.actividad || null); setProyecto(d.proyecto || ""); setNoContrato(d.noContrato || "");
+        setUbicacion(d.ubicacion || ""); setCuadrilla(d.cuadrilla || ""); setJornada(d.jornada ?? 8);
+        setRendimiento(d.rendimiento || ""); setNumCuadrillas(d.numCuadrillas ?? 1);
+        setMateriales(d.materiales || seisFilasVacias()); setManoObra(d.manoObra || seisFilasVacias()); setEquipos(d.equipos || seisFilasVacias());
+        setElaboradoNombre(d.elaboradoNombre || ""); setElaboradoCargo(d.elaboradoCargo || "");
+        setInterventoriaNombre(d.interventoriaNombre || ""); setInterventoriaCargo(d.interventoriaCargo || "");
+      }
+    } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  function descartarBorrador() {
+    try { localStorage.removeItem("ryr_borrador_apu"); } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+
+  React.useEffect(() => {
+    if (!borradorAplicado) return;
+    try {
+      localStorage.setItem("ryr_borrador_apu", JSON.stringify({
+        actividad, proyecto, noContrato, ubicacion, cuadrilla, jornada, rendimiento, numCuadrillas,
+        materiales, manoObra, equipos, elaboradoNombre, elaboradoCargo, interventoriaNombre, interventoriaCargo,
+      }));
+    } catch (e) {}
+  }, [borradorAplicado, actividad, proyecto, noContrato, ubicacion, cuadrilla, jornada, rendimiento, numCuadrillas, materiales, manoObra, equipos, elaboradoNombre, elaboradoCargo, interventoriaNombre, interventoriaCargo]);
+
   const totalDirectoUnitarioVista = useMemo(() => {
     const sumar = (filas, conFactor) => filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
     return sumar(materiales, true) + sumar(manoObra, true) + sumar(equipos, true);
@@ -855,12 +893,28 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      try { localStorage.removeItem("ryr_borrador_apu"); } catch (e) {}
     } catch (err) {
       console.error(err);
       alert("Hubo un error generando el Excel. Revisa la consola.");
     } finally {
       setGenerando(false);
     }
+  }
+
+  if (borradorDisponible) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+        <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes un APU sin terminar</div>
+        <div className="text-[12.5px] text-gray-500 mb-5">Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel. ¿Quieres continuar donde quedaste?</div>
+        <button onClick={restaurarBorrador} className="w-full max-w-xs py-3 rounded-xl text-white font-bold text-[13.5px] mb-2.5" style={{ background: GOLD }}>
+          ▶ Continuar donde quedé
+        </button>
+        <button onClick={descartarBorrador} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border" style={{ borderColor: LINE, color: NAVY }}>
+          Empezar en blanco
+        </button>
+      </div>
+    );
   }
 
   return (
