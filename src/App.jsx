@@ -1276,7 +1276,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
     <div
       className="min-h-screen flex flex-col bg-cover bg-center"
       style={{
-        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.75), rgba(247,247,245,0.88)), url('/fondo-selector.jpg')`,
+        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.35), rgba(247,247,245,0.50)), url('/fondo-selector.jpg')`,
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       }}
     >
