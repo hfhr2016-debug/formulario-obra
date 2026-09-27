@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ExcelJS from "exceljs";
-import MenuLateral, { BotonMenu } from "./MenuLateral";
+import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -196,7 +196,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
     try {
       try {
         localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
-          modulos, hcBloques, hcElementos,
+          modulos, hcBloques, hcElementos, proyecto,
           via: {
             tipo: viaTipo, longitud: viaLongitud, carriles: viaCarriles, zona: viaZona,
             tipoIntervencion: viaTipoIntervencion, velocidadDiseno: viaVelocidadDiseno,
@@ -370,11 +370,46 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
     try {
       proyectosGuardados = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
     } catch (e) {}
+    let hayProyectoEnCurso = false;
+    let nombreProyectoEnCurso = "";
+    let tipoEnCurso = "";
+    try {
+      const datosTipo = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+      if (datosTipo && datosTipo.modulos) {
+        hayProyectoEnCurso = true;
+        nombreProyectoEnCurso = datosTipo.proyecto || "(sin nombre todavía)";
+        if (datosTipo.modulos.vias) tipoEnCurso = "Vías y Carreteras";
+        else if (datosTipo.modulos.hidrocarburos) tipoEnCurso = "Hidrocarburos";
+        else tipoEnCurso = "Edificación / Reformas";
+      }
+    } catch (e) {}
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
         <div className="text-[16px] font-bold mb-6" style={{ color: NAVY }}>Ficha Técnica del Proyecto</div>
+
+        {hayProyectoEnCurso && (
+          <button
+            onClick={() => setPantalla("formulario")}
+            className="w-full max-w-xs py-3.5 rounded-xl text-white font-bold text-[14px] mb-3"
+            style={{ background: NAVY }}
+          >
+            ▶ Continuar con el proyecto actual
+            <div className="text-[11px] font-normal mt-0.5" style={{ color: GOLD }}>{nombreProyectoEnCurso} — {tipoEnCurso}</div>
+          </button>
+        )}
+
         <button
-          onClick={() => { cargarProyectoDesdeDatos({}); setPantalla("formulario"); }}
+          onClick={() => {
+            cargarProyectoDesdeDatos({});
+            try {
+              localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
+                modulos: { edificacion: true, vias: false, hidrocarburos: false },
+                hcBloques: { civil: false, mecanico: false, electrico: false },
+                hcElementos: {}, proyecto: "",
+              }));
+            } catch (e) {}
+            setPantalla("formulario");
+          }}
           className="w-full max-w-xs py-3.5 rounded-xl text-white font-bold text-[14px] mb-3"
           style={{ background: GOLD }}
         >
@@ -384,7 +419,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
           🔄 Actualizar Proyecto Existente
         </div>
         {proyectosGuardados.length === 0 ? (
-          <div className="text-[11.5px] text-gray-400 text-center">No hay proyectos guardados todavía en este dispositivo.</div>
+          <div className="text-[11.5px] text-gray-400 text-center">Todavía no has generado ningún Excel de Ficha Técnica — esta lista se llena automáticamente la primera vez que descargues uno.</div>
         ) : (
           <div className="w-full max-w-xs max-h-[300px] overflow-y-auto">
             {proyectosGuardados.map((p, i) => (
@@ -431,9 +466,10 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               FICHA TÉCNICA DEL PROYECTO
             </div>
-            <div className="text-[11px]" style={{ color: GOLD }}>
+            <div className="text-[11px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones
             </div>
+            <IndicadorTipoProyecto />
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>
@@ -472,7 +508,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
                     localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
                       modulos: { edificacion: false, vias: false, hidrocarburos: false, [m.id]: true },
                       hcBloques: { civil: false, mecanico: false, electrico: false },
-                      hcElementos: {},
+                      hcElementos: {}, proyecto,
                       via: { tipo: "", longitud: "", carriles: "", zona: "", tipoIntervencion: "", velocidadDiseno: "", anchoCalzada: "", anchoCarril: "", anchoBerma: "", pendienteMax: "", estructuraPavimento: "", cbrDiseno: "", subbase: "", base: "", capaRodadura: "" },
                     }));
                   } catch (e) {
