@@ -22,7 +22,13 @@ export default function PantallaLogin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center" style={{ background: NAVY, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+    <div
+      className="min-h-screen flex flex-col items-center bg-cover bg-center"
+      style={{
+        backgroundImage: `linear-gradient(180deg, rgba(27,42,69,0.55), rgba(27,42,69,0.80)), url('/fondo-login.jpg')`,
+        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      }}
+    >
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
