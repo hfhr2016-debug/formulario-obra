@@ -1,4 +1,5 @@
 import React from "react";
+import { useAuth } from "./AuthContext";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -30,13 +31,19 @@ export function BotonMenu({ onClick, color }) {
 }
 
 export default function MenuLateral({ abierto, onCerrar, onNavegar, vistaActual }) {
+  const sesion = useAuth();
   if (!abierto) return null;
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/40" onClick={onCerrar} />
       <div className="relative w-[78%] max-w-[300px] h-full bg-white shadow-xl overflow-y-auto">
         <div className="px-4 py-4 flex items-center justify-between" style={{ background: NAVY }}>
-          <div className="text-white font-bold text-[14px]">Módulos SAIEA OBRAS</div>
+          <div>
+            <div className="text-white font-bold text-[14px]">Módulos SAIEA OBRAS</div>
+            {sesion?.perfil && (
+              <div className="text-[10.5px] mt-0.5" style={{ color: GOLD }}>{sesion.perfil.nombre || sesion.perfil.correo}</div>
+            )}
+          </div>
           <button onClick={onCerrar} className="text-white/80 text-[20px] leading-none">✕</button>
         </div>
         <div className="p-2">
@@ -68,6 +75,17 @@ export default function MenuLateral({ abierto, onCerrar, onNavegar, vistaActual 
               🔄 Cambiar de sistema (SST / Ambiental)
             </button>
           </div>
+          {sesion?.cerrarSesion && (
+            <div className="border-t mt-2 pt-2" style={{ borderColor: LINE }}>
+              <button
+                onClick={() => { onCerrar(); sesion.cerrarSesion(); }}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-[12.5px] font-semibold"
+                style={{ color: "#B42318" }}
+              >
+                🚪 Cerrar sesión
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
