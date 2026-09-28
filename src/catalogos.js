@@ -7,11 +7,13 @@ import { useState, useEffect } from "react";
 // Funcionamiento:
 //  1. Si el catálogo ya se descargó antes, se usa de inmediato (memoria o copia guardada en el celular).
 //  2. En segundo plano se consulta el archivo del servidor. Si no cambió, casi no se descarga nada;
-//     si cambió, se actualiza la copia guardada.
+//     si cambió, se actualiza la copia guardada. Esa consulta se hace una sola vez por sesión.
 //  3. Sin internet, se sigue usando la copia guardada. Solo la primera vez hace falta conexión.
 
 const PREFIJO_COPIA = "ryr_catalogo_";
-const enMemoria = {};
+const enMemoria = {};   // catálogos ya cargados
+const enVuelo = {};     // descargas en curso (para no repetirlas)
+const consultado = {};  // tipos ya consultados al servidor en esta sesión
 
 function leerCopiaLocal(tipo) {
   try {
@@ -40,8 +42,7 @@ export function catalogoDisponible(tipo) {
   return local;
 }
 
-// Descarga (o revalida) el catálogo del servidor
-export async function cargarCatalogo(tipo) {
+async function descargar(tipo) {
   const respuesta = await fetch(`/catalogos/${tipo}.json`, { cache: "no-cache" });
   if (!respuesta.ok) throw new Error(`No se encontró el catálogo de ${tipo} (código ${respuesta.status}).`);
   const texto = await respuesta.text();
@@ -55,8 +56,19 @@ export async function cargarCatalogo(tipo) {
     throw new Error(`El catálogo de ${tipo} tiene un formato inesperado.`);
   }
   enMemoria[tipo] = datos;
+  consultado[tipo] = true;
   guardarCopiaLocal(tipo, datos);
   return datos;
+}
+
+// Descarga (o revalida) el catálogo del servidor. Si ya hay una descarga en curso, la reutiliza.
+export function cargarCatalogo(tipo) {
+  if (enVuelo[tipo]) return enVuelo[tipo];
+  const promesa = descargar(tipo);
+  enVuelo[tipo] = promesa;
+  const liberar = () => { delete enVuelo[tipo]; };
+  promesa.then(liberar, liberar);
+  return promesa;
 }
 
 // Para los formularios: devuelve { actividades, cargando, error }
@@ -71,18 +83,21 @@ export function useCatalogo(tipo) {
     setDatos(previo);
     setCargando(!previo);
     setError(null);
-    cargarCatalogo(tipo)
-      .then((nuevo) => {
-        if (!vigente) return;
-        setDatos(nuevo);
-        setCargando(false);
-      })
-      .catch((e) => {
-        if (!vigente) return;
-        setCargando(false);
-        // Solo se muestra el error si no hay ninguna copia con qué trabajar
-        if (!catalogoDisponible(tipo)) setError((e && e.message) || "No se pudo cargar el catálogo.");
-      });
+    // Si ya hay catálogo y ya se consultó al servidor en esta sesión, no se vuelve a pedir
+    if (!(previo && consultado[tipo])) {
+      cargarCatalogo(tipo)
+        .then((nuevo) => {
+          if (!vigente) return;
+          setDatos(nuevo);
+          setCargando(false);
+        })
+        .catch((e) => {
+          if (!vigente) return;
+          setCargando(false);
+          // Solo se muestra el error si no hay ninguna copia con qué trabajar
+          if (!catalogoDisponible(tipo)) setError((e && e.message) || "No se pudo cargar el catálogo.");
+        });
+    }
     return () => {
       vigente = false;
     };
