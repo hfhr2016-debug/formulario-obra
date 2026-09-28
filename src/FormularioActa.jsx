@@ -195,7 +195,7 @@ export default function FormularioActa({ onVolver, onNavegar }) {
   const [actaNo, setActaNo] = useState("");
   const [proyecto, setProyecto] = useState("");
   const [contratante, setContratante] = useState("");
-  const [contratista, setContratista] = useState("Reformas y Remodelaciones");
+  const [contratista, setContratista] = useState("");
   const [interventoria, setInterventoria] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [contratoNo, setContratoNo] = useState("");
@@ -253,7 +253,7 @@ export default function FormularioActa({ onVolver, onNavegar }) {
       const d = JSON.parse(localStorage.getItem("ryr_borrador_acta") || "null");
       if (d) {
         setProyecto(d.proyecto || ""); setContratante(d.contratante || "");
-        setContratista(d.contratista || "Reformas y Remodelaciones"); setInterventoria(d.interventoria || "");
+        setContratista(d.contratista || ""); setInterventoria(d.interventoria || "");
         setUbicacion(d.ubicacion || ""); setContratoNo(d.contratoNo || "");
         setFechaActa(d.fechaActa || fechaLocalHoy()); setDesde(d.desde || ""); setHasta(d.hasta || ""); setObjeto(d.objeto || "");
         setDiasContractuales(d.diasContractuales || ""); setDiasAvance(d.diasAvance || ""); setPorcentajeTiempo(d.porcentajeTiempo || "");
@@ -536,7 +536,7 @@ export default function FormularioActa({ onVolver, onNavegar }) {
               const d = lista[0].datos;
               setProyecto(d.proyecto || "");
               setContratoNo(d.noContrato || "");
-              setContratista(d.contratista || "Reformas y Remodelaciones");
+              setContratista(d.contratista || "");
               setUbicacion(d.ubicacion || "");
               alert(`Datos traídos de: "${lista[0].nombreId}"`);
             } catch (e) {
@@ -604,19 +604,21 @@ export default function FormularioActa({ onVolver, onNavegar }) {
           >
             ⚡ Calcular desde Informe Diario
           </button>
-          <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Contratante</div>
+          <div className="text-[11.5px] font-bold mt-1 mb-0.5" style={{ color: NAVY }}>Firmantes del acta</div>
+          <div className="text-[10.5px] text-gray-500 mb-2.5">Persona que firma el acta por cada parte (nombre y cargo). Estos datos aparecen en el bloque de firmas del Excel.</div>
+          <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Firma por el Contratante</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <CampoNombre value={contratanteNombre} onChange={setContratanteNombre} />
+            <CampoNombre value={contratanteNombre} onChange={setContratanteNombre} placeholder="Nombre del firmante" />
             <BuscadorTexto value={contratanteCargo} onChange={setContratanteCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           </div>
-          <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Contratista</div>
+          <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Firma por el Contratista</div>
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <CampoNombre value={contratistaNombre} onChange={setContratistaNombre} />
+            <CampoNombre value={contratistaNombre} onChange={setContratistaNombre} placeholder="Nombre del firmante" />
             <BuscadorTexto value={contratistaCargo} onChange={setContratistaCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           </div>
-          <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Interventor</div>
+          <div className="text-[11.5px] font-semibold mb-1" style={{ color: NAVY }}>Firma por la Interventoría</div>
           <div className="grid grid-cols-2 gap-2">
-            <CampoNombre value={interventorNombre} onChange={setInterventorNombre} />
+            <CampoNombre value={interventorNombre} onChange={setInterventorNombre} placeholder="Nombre del firmante" />
             <BuscadorTexto value={interventorCargo} onChange={setInterventorCargo} catalogo={CATALOGO_CARGOS} placeholder="Cargo" />
           </div>
         </div>
