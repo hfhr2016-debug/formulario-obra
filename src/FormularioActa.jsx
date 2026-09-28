@@ -241,6 +241,58 @@ export default function FormularioActa({ onVolver, onNavegar }) {
   const [archivoBase, setArchivoBase] = useState(null);
   const [cargando, setCargando] = useState(false);
 
+  const [borradorDisponible, setBorradorDisponible] = useState(() => {
+    try { return !!localStorage.getItem("ryr_borrador_acta"); } catch (e) { return false; }
+  });
+  const [borradorAplicado, setBorradorAplicado] = useState(() => {
+    try { return !localStorage.getItem("ryr_borrador_acta"); } catch (e) { return true; }
+  });
+  function restaurarBorrador() {
+    try {
+      const d = JSON.parse(localStorage.getItem("ryr_borrador_acta") || "null");
+      if (d) {
+        setProyecto(d.proyecto || ""); setContratante(d.contratante || "");
+        setContratista(d.contratista || "Reformas y Remodelaciones"); setInterventoria(d.interventoria || "");
+        setUbicacion(d.ubicacion || ""); setContratoNo(d.contratoNo || "");
+        setFechaActa(d.fechaActa || fechaLocalHoy()); setDesde(d.desde || ""); setHasta(d.hasta || ""); setObjeto(d.objeto || "");
+        setDiasContractuales(d.diasContractuales || ""); setDiasAvance(d.diasAvance || ""); setPorcentajeTiempo(d.porcentajeTiempo || "");
+        setContratanteNombre(d.contratanteNombre || ""); setContratanteCargo(d.contratanteCargo || "");
+        setContratistaNombre(d.contratistaNombre || ""); setContratistaCargo(d.contratistaCargo || "");
+        setInterventorNombre(d.interventorNombre || ""); setInterventorCargo(d.interventorCargo || "");
+        setItems(d.items || [itemVacio()]);
+        setValorContractual(d.valorContractual || ""); setValorActasAnteriores(d.valorActasAnteriores || "");
+        setAnticipo(d.anticipo || ""); setAmortizacion(d.amortizacion || ""); setRetenciones(d.retenciones || "");
+        setCalidadEstado(d.calidadEstado || "CUMPLE"); setCalidadRef(d.calidadRef || "");
+        setSstEstado(d.sstEstado || "CUMPLE"); setSstRef(d.sstRef || "");
+        setAmbientalEstado(d.ambientalEstado || "CUMPLE"); setAmbientalRef(d.ambientalRef || "");
+        if (d.observaciones) setObservaciones(d.observaciones);
+        setElabNombre(d.elabNombre || ""); setElabCargo(d.elabCargo || "");
+        setRevNombre(d.revNombre || ""); setRevCargo(d.revCargo || "");
+        setAprNombre(d.aprNombre || ""); setAprCargo(d.aprCargo || "");
+      }
+    } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  function descartarBorrador() {
+    try { localStorage.removeItem("ryr_borrador_acta"); } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  React.useEffect(() => {
+    if (!borradorAplicado) return;
+    try {
+      localStorage.setItem("ryr_borrador_acta", JSON.stringify({
+        proyecto, contratante, contratista, interventoria, ubicacion, contratoNo, fechaActa, desde, hasta, objeto,
+        diasContractuales, diasAvance, porcentajeTiempo,
+        contratanteNombre, contratanteCargo, contratistaNombre, contratistaCargo, interventorNombre, interventorCargo,
+        items, valorContractual, valorActasAnteriores, anticipo, amortizacion, retenciones,
+        calidadEstado, calidadRef, sstEstado, sstRef, ambientalEstado, ambientalRef,
+        observaciones, elabNombre, elabCargo, revNombre, revCargo, aprNombre, aprCargo,
+      }));
+    } catch (e) {}
+  }, [borradorAplicado, proyecto, contratante, contratista, interventoria, ubicacion, contratoNo, fechaActa, desde, hasta, objeto, diasContractuales, diasAvance, porcentajeTiempo, contratanteNombre, contratanteCargo, contratistaNombre, contratistaCargo, interventorNombre, interventorCargo, items, valorContractual, valorActasAnteriores, anticipo, amortizacion, retenciones, calidadEstado, calidadRef, sstEstado, sstRef, ambientalEstado, ambientalRef, observaciones, elabNombre, elabCargo, revNombre, revCargo, aprNombre, aprCargo]);
+
   async function cargarArchivoExistente(file) {
     setCargando(true);
     try {
@@ -409,12 +461,28 @@ export default function FormularioActa({ onVolver, onNavegar }) {
       a2.href = url; a2.download = nombreArchivo;
       document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
       URL.revokeObjectURL(url);
+      try { localStorage.removeItem("ryr_borrador_acta"); } catch (e) {}
     } catch (err) {
       console.error(err);
       alert("Hubo un error generando el Excel. Revisa la consola.");
     } finally {
       setGenerando(false);
     }
+  }
+
+  if (borradorDisponible) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+        <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes un Acta de Obra sin terminar</div>
+        <div className="text-[12.5px] text-gray-500 mb-5">Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel (las fotos no se guardan, hay que volver a subirlas). ¿Quieres continuar donde quedaste?</div>
+        <button onClick={restaurarBorrador} className="w-full max-w-xs py-3 rounded-xl text-white font-bold text-[13.5px] mb-2.5" style={{ background: GOLD }}>
+          ▶ Continuar donde quedé
+        </button>
+        <button onClick={descartarBorrador} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border" style={{ borderColor: LINE, color: NAVY }}>
+          Empezar en blanco
+        </button>
+      </div>
+    );
   }
 
   return (

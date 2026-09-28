@@ -215,6 +215,43 @@ export default function FormularioMemoria({ onVolver, onNavegar }) {
   const [archivoBase, setArchivoBase] = useState(null);
   const [cargando, setCargando] = useState(false);
 
+  const [borradorDisponible, setBorradorDisponible] = useState(() => {
+    try { return !!localStorage.getItem("ryr_borrador_memoria"); } catch (e) { return false; }
+  });
+  const [borradorAplicado, setBorradorAplicado] = useState(() => {
+    try { return !localStorage.getItem("ryr_borrador_memoria"); } catch (e) { return true; }
+  });
+  function restaurarBorrador() {
+    try {
+      const d = JSON.parse(localStorage.getItem("ryr_borrador_memoria") || "null");
+      if (d) {
+        setProyecto(d.proyecto || ""); setAreaFrente(d.areaFrente || ""); setContratante(d.contratante || "");
+        setUbicacion(d.ubicacion || ""); setMemoriaNo(d.memoriaNo || ""); setActividad(d.actividad || "");
+        setDescripcionActividad(d.descripcionActividad || "");
+        setMediciones(d.mediciones || [medicionVacia()]); setCantidadContractual(d.cantidadContractual || "");
+        setElabNombre(d.elabNombre || ""); setElabCargo(d.elabCargo || "");
+        setRevNombre(d.revNombre || ""); setRevCargo(d.revCargo || "");
+        setAprNombre(d.aprNombre || ""); setAprCargo(d.aprCargo || "");
+      }
+    } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  function descartarBorrador() {
+    try { localStorage.removeItem("ryr_borrador_memoria"); } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  React.useEffect(() => {
+    if (!borradorAplicado) return;
+    try {
+      localStorage.setItem("ryr_borrador_memoria", JSON.stringify({
+        proyecto, areaFrente, contratante, ubicacion, memoriaNo, actividad, descripcionActividad,
+        mediciones, cantidadContractual, elabNombre, elabCargo, revNombre, revCargo, aprNombre, aprCargo,
+      }));
+    } catch (e) {}
+  }, [borradorAplicado, proyecto, areaFrente, contratante, ubicacion, memoriaNo, actividad, descripcionActividad, mediciones, cantidadContractual, elabNombre, elabCargo, revNombre, revCargo, aprNombre, aprCargo]);
+
   function separarNombreCargo(txt) {
     if (!txt) return { nombre: "", cargo: "" };
     const partes = String(txt).split(" - ");
@@ -326,12 +363,28 @@ export default function FormularioMemoria({ onVolver, onNavegar }) {
       a2.href = url; a2.download = nombreArchivo;
       document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
       URL.revokeObjectURL(url);
+      try { localStorage.removeItem("ryr_borrador_memoria"); } catch (e) {}
     } catch (err) {
       console.error(err);
       alert("Hubo un error generando el Excel. Revisa la consola.");
     } finally {
       setGenerando(false);
     }
+  }
+
+  if (borradorDisponible) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+        <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes una Memoria de Cálculo sin terminar</div>
+        <div className="text-[12.5px] text-gray-500 mb-5">Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel (las fotos no se guardan, hay que volver a subirlas). ¿Quieres continuar donde quedaste?</div>
+        <button onClick={restaurarBorrador} className="w-full max-w-xs py-3 rounded-xl text-white font-bold text-[13.5px] mb-2.5" style={{ background: GOLD }}>
+          ▶ Continuar donde quedé
+        </button>
+        <button onClick={descartarBorrador} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border" style={{ borderColor: LINE, color: NAVY }}>
+          Empezar en blanco
+        </button>
+      </div>
+    );
   }
 
   return (
