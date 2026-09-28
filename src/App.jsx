@@ -706,13 +706,17 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
           setCelda(ws, `J${r}`, item.unidad);
           setCelda(ws, `K${r}`, item.acumAnterior);
           setCelda(ws, `L${r}`, item.avanceDiario);
-          // M{r} conserva su fórmula original (=K+L)
+
+          // Nuevo acumulado = acumulado anterior + avance diario
+          const anteriorCant = parseFloat(item.acumAnterior) || 0;
+          const diarioCant = parseFloat(item.avanceDiario) || 0;
+          if (item.acumAnterior !== "" || item.avanceDiario !== "") {
+            setCelda(ws, `M${r}`, anteriorCant + diarioCant);
+          }
 
           // Guarda el nuevo acumulado para que el próximo día se autocomplete solo.
           if (item.item) {
-            const anterior = parseFloat(item.acumAnterior) || 0;
-            const diario = parseFloat(item.avanceDiario) || 0;
-            guardarAcumulado(item.item, anterior + diario);
+            guardarAcumulado(item.item, anteriorCant + diarioCant);
           }
         });
 
@@ -729,12 +733,16 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
           setCelda(ws, `H${r}`, item.acumAnterior);
           setCelda(ws, `I${r}`, item.avanceDiario);
           setCelda(ws, `K${r}`, item.observaciones);
-          // J{r} conserva su fórmula original (=H+I)
+
+          // Acumulado = acumulado anterior + avance diario
+          const anteriorOtras = parseFloat(item.acumAnterior) || 0;
+          const diarioOtras = parseFloat(item.avanceDiario) || 0;
+          if (item.acumAnterior !== "" || item.avanceDiario !== "") {
+            setCelda(ws, `J${r}`, anteriorOtras + diarioOtras);
+          }
 
           if (item.item) {
-            const anterior = parseFloat(item.acumAnterior) || 0;
-            const diario = parseFloat(item.avanceDiario) || 0;
-            guardarAcumulado(`otras_${item.item}`, anterior + diario);
+            guardarAcumulado(`otras_${item.item}`, anteriorOtras + diarioOtras);
           }
         });
 
