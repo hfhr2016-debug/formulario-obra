@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
-import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
+import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -60,7 +60,8 @@ function BuscadorActividadTarea({ value, onSeleccionar }) {
   const resultados = React.useMemo(() => {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
-    return CATALOGO_COMBINADO.filter((it) => it.actividad.toLowerCase().includes(q)).slice(0, 6);
+    const tipoActivo = tipoProyectoActivo();
+    return CATALOGO_COMBINADO.filter((it) => it.tipo === tipoActivo && it.actividad.toLowerCase().includes(q)).slice(0, 6);
   }, [texto]);
   return (
     <div className="relative">

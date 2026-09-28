@@ -74,6 +74,16 @@ export default function MenuLateral({ abierto, onCerrar, onNavegar, vistaActual 
   );
 }
 
+export function tipoProyectoActivo() {
+  try {
+    const datos = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+    const modulos = datos?.modulos || {};
+    if (modulos.vias) return "vias";
+    if (modulos.hidrocarburos) return "hidrocarburos";
+  } catch (e) {}
+  return "edificacion";
+}
+
 export function IndicadorTipoProyecto() {
   let tipo = "edificacion";
   try {
