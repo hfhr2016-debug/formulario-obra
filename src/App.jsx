@@ -866,8 +866,9 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
+      console.error(err);
       setErrorExcel(
-        "No se pudo generar el Excel. Verifica tu conexión e intenta de nuevo."
+        "No se pudo generar el Excel: " + (err && err.message ? err.message : "error desconocido") + ". Si el problema sigue, avísale a soporte con este mensaje."
       );
     } finally {
       setGenerandoExcel(false);
