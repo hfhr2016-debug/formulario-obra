@@ -679,8 +679,8 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
-      const ws = workbook.getWorksheet("RYR-FT-01");
-      if (!ws) throw new Error("No se encontró la hoja RYR-FT-01 en la plantilla");
+      const ws = workbook.getWorksheet("Informe Diario");
+      if (!ws) throw new Error("No se encontró la hoja \"Informe Diario\" en la plantilla");
 
       // --- Datos generales ---
       setCelda(ws, "E2", general.objetoContrato);
