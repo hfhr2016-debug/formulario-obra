@@ -384,7 +384,17 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
       }
     } catch (e) {}
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 relative" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+        <MenuLateral abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} onNavegar={onNavegar} vistaActual="ficha" />
+        <div className="absolute top-0 left-0 right-0 flex items-center gap-2 px-4 py-3" style={{ background: NAVY }}>
+          {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} />}
+          <button onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Menú SAIEA OBRAS
+          </button>
+        </div>
         <div className="text-[16px] font-bold mb-6" style={{ color: NAVY }}>Ficha Técnica del Proyecto</div>
 
         {hayProyectoEnCurso && (
