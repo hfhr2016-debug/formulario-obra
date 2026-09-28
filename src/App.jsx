@@ -683,22 +683,22 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       if (!ws) throw new Error("No se encontró la hoja \"Informe Diario\" en la plantilla");
 
       // --- Datos generales ---
-      setCelda(ws, "E2", general.objetoContrato);
-      setCelda(ws, "E3", general.noContrato);
-      setCelda(ws, "J3", general.fecha);
-      setCelda(ws, "J4", general.ubicacion);
-      setCelda(ws, "C5", general.horaEntrada);
-      setCelda(ws, "F5", general.horaApertura);
-      setCelda(ws, "H5", general.horaSalida);
-      setCelda(ws, "J5", general.especialidad);
-      setCelda(ws, "M5", general.informeNo);
+      setCelda(ws, "E13", general.objetoContrato);
+      setCelda(ws, "E14", general.noContrato);
+      setCelda(ws, "J14", general.fecha);
+      setCelda(ws, "J15", general.ubicacion);
+      setCelda(ws, "C16", general.horaEntrada);
+      setCelda(ws, "F16", general.horaApertura);
+      setCelda(ws, "H16", general.horaSalida);
+      setCelda(ws, "J16", general.especialidad);
+      setCelda(ws, "M16", general.informeNo);
 
-      // --- Cantidades de obra (filas 9 a 20) ---
+      // --- Cantidades de obra (filas 20 a 31) ---
       cantidades
         .filter((r) => r.descripcion || r.item || r.ubicacion)
         .slice(0, 12)
         .forEach((item, i) => {
-          const r = 9 + i;
+          const r = 20 + i;
           setCelda(ws, `A${r}`, item.ubicacion);
           setCelda(ws, `B${r}`, item.item);
           setCelda(ws, `C${r}`, item.descripcion);
@@ -716,12 +716,12 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
           }
         });
 
-      // --- Otras actividades (filas 24 a 29) ---
+      // --- Otras actividades (filas 35 a 40) ---
       otras
         .filter((r) => r.descripcion || r.item || r.ubicacion)
         .slice(0, 6)
         .forEach((item, i) => {
-          const r = 24 + i;
+          const r = 35 + i;
           setCelda(ws, `A${r}`, item.ubicacion);
           setCelda(ws, `B${r}`, item.item);
           setCelda(ws, `C${r}`, item.descripcion);
@@ -738,41 +738,41 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
           }
         });
 
-      // --- Mano de obra (filas 33 a 42) ---
+      // --- Mano de obra (filas 44 a 53) ---
       manoObra
         .filter((r) => r.cargo)
         .slice(0, 10)
         .forEach((item, i) => {
-          const r = 33 + i;
+          const r = 44 + i;
           setCelda(ws, `A${r}`, item.cargo);
           setCelda(ws, `F${r}`, item.cant);
           setCelda(ws, `G${r}`, item.tiempo);
         });
 
-      // --- Equipos (filas 33 a 42) ---
+      // --- Equipos (filas 44 a 53) ---
       equipos
         .filter((r) => r.descripcion)
         .slice(0, 10)
         .forEach((item, i) => {
-          const r = 33 + i;
+          const r = 44 + i;
           setCelda(ws, `I${r}`, item.descripcion);
           setCelda(ws, `L${r}`, item.cant);
           setCelda(ws, `M${r}`, item.tiempo);
         });
 
       // --- Descripción de actividades (4 líneas) ---
-      repartirEnLineas(ws, ["A44", "A45", "A46", "A47"], descActividades);
+      repartirEnLineas(ws, ["A55", "A56", "A57", "A58"], descActividades);
 
       // --- Aspectos problemáticos / Plan de acción (3 líneas cada uno) ---
-      repartirEnLineas(ws, ["A49", "A50", "A51"], aspectosProblematicos);
-      repartirEnLineas(ws, ["H49", "H50", "H51"], planAccion);
+      repartirEnLineas(ws, ["A60", "A61", "A62"], aspectosProblematicos);
+      repartirEnLineas(ws, ["H60", "H61", "H62"], planAccion);
 
-      // --- Horas perdidas (filas 54 a 57) ---
+      // --- Horas perdidas (filas 65 a 68) ---
       horasPerdidas
         .filter((r) => r.motivo)
         .slice(0, 4)
         .forEach((item, i) => {
-          const r = 54 + i;
+          const r = 65 + i;
           setCelda(ws, `A${r}`, item.motivo);
           setCelda(ws, `E${r}`, item.inicio);
           setCelda(ws, `F${r}`, item.fin);
@@ -780,19 +780,19 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
         });
 
       // --- HSE ---
-      setCelda(ws, "H54", charlaDia);
-      repartirEnLineas(ws, ["H56", "H57"], observacionesHSE);
+      setCelda(ws, "H65", charlaDia);
+      repartirEnLineas(ws, ["H67", "H68"], observacionesHSE);
 
       // --- Elaborado por ---
-      setCelda(ws, "B60", elaboradoNombre);
-      setCelda(ws, "B61", elaboradoCargo);
+      setCelda(ws, "B86", elaboradoNombre);
+      setCelda(ws, "B87", elaboradoCargo);
 
       // --- Registro fotográfico (4 casillas del mismo ancho, en una sola fila) ---
       const posicionesFotos = [
-        { tl: { col: 0, row: 58 }, br: { col: 3, row: 68 }, captionCell: "A69" }, // Foto 1
-        { tl: { col: 3, row: 58 }, br: { col: 6, row: 68 }, captionCell: "D69" }, // Foto 2
-        { tl: { col: 6, row: 58 }, br: { col: 9, row: 68 }, captionCell: "G69" }, // Foto 3
-        { tl: { col: 9, row: 58 }, br: { col: 13, row: 68 }, captionCell: "J69" }, // Foto 4
+        { tl: { col: 0, row: 69 }, br: { col: 3, row: 82 }, captionCell: "A83" }, // Foto 1
+        { tl: { col: 3, row: 69 }, br: { col: 6, row: 82 }, captionCell: "D83" }, // Foto 2
+        { tl: { col: 6, row: 69 }, br: { col: 9, row: 82 }, captionCell: "G83" }, // Foto 3
+        { tl: { col: 9, row: 69 }, br: { col: 13, row: 82 }, captionCell: "J83" }, // Foto 4
       ];
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
