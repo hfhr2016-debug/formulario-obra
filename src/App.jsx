@@ -393,7 +393,7 @@ function CasillaFoto({ foto, onChange, onRemove, numero }) {
   );
 }
 
-function BuscadorItem({ value, onSelect, catalogo }) {
+function BuscadorItem({ value, onSelect, onClear, catalogo }) {
   const [texto, setTexto] = useState(value || "");
   const [abierto, setAbierto] = useState(false);
   const wrapRef = useRef(null);
@@ -437,10 +437,17 @@ function BuscadorItem({ value, onSelect, catalogo }) {
           type="text"
           value={texto}
           onChange={(e) => {
-            setTexto(e.target.value);
+            const nuevoTexto = e.target.value;
+            setTexto(nuevoTexto);
             setAbierto(true);
+            // Si lo que queda ya no coincide con la actividad que estaba seleccionada,
+            // se avisa al formulario para que limpie Unidad/Acum. anterior de esa fila.
+            if (onClear && nuevoTexto !== (value || "")) onClear();
           }}
-          onFocus={() => setAbierto(true)}
+          onFocus={(e) => {
+            setAbierto(true);
+            e.target.select();
+          }}
           placeholder="Ej. excavación, losa, muro..."
           className="w-full text-[13.5px] pl-7 pr-2.5 py-2 rounded-md border outline-none"
           style={{ borderColor: LINE, background: "white" }}
@@ -1114,6 +1121,11 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                 <BuscadorItem
                   value={r.descripcion}
                   catalogo={itemsCatalogo}
+                  onClear={() =>
+                    setCantidades((rows) =>
+                      rows.map((row, idx) => (idx === i ? { ...row, unidad: "", acumAnterior: "" } : row))
+                    )
+                  }
                   onSelect={(it) => {
                     const acumuladosGuardados = leerAcumuladosGuardados(tipoDiario);
                     const acumPrevio = acumuladosGuardados[it.item];
@@ -1166,6 +1178,11 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
               <BuscadorItem
                 value={r.descripcion}
                 catalogo={itemsCatalogo}
+                onClear={() =>
+                  setOtras((rows) =>
+                    rows.map((row, idx) => (idx === i ? { ...row, unidad: "", acumAnterior: "" } : row))
+                  )
+                }
                 onSelect={(it) => {
                   const acumuladosGuardados = leerAcumuladosGuardados(tipoDiario);
                   const acumPrevio = acumuladosGuardados[`otras_${it.item}`];
