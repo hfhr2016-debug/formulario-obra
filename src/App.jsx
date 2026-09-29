@@ -204,6 +204,49 @@ function Field({ label, value, onChange, placeholder, type = "text", half }) {
   );
 }
 
+function SelectorHora({ label, value, onChange, half }) {
+  const [h, m] = (value || "").split(":");
+  const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+  const cambiarHora = (nuevaH) => onChange(`${nuevaH}:${m || "00"}`);
+  const cambiarMinuto = (nuevoM) => onChange(`${h || "00"}:${nuevoM}`);
+  return (
+    <div className={half ? "flex-1 min-w-0" : "w-full"}>
+      <label
+        className="block text-[10px] uppercase tracking-wide mb-1 font-medium"
+        style={{ color: "#8A8F99" }}
+      >
+        {label}
+      </label>
+      <div className="flex items-center gap-1">
+        <select
+          value={h || ""}
+          onChange={(e) => cambiarHora(e.target.value)}
+          className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white"
+          style={{ borderColor: LINE }}
+        >
+          <option value="" disabled>Hora</option>
+          {horas.map((v) => (
+            <option key={v} value={v}>{v}</option>
+          ))}
+        </select>
+        <span className="text-[13.5px] font-semibold" style={{ color: "#8A8F99" }}>:</span>
+        <select
+          value={m || ""}
+          onChange={(e) => cambiarMinuto(e.target.value)}
+          className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white"
+          style={{ borderColor: LINE }}
+        >
+          <option value="" disabled>Min</option>
+          {minutos.map((v) => (
+            <option key={v} value={v}>{v}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
   return (
     <div className="w-full">
@@ -1050,9 +1093,9 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                 <BuscadorTexto value={general.ubicacion} onChange={(v) => setG("ubicacion", v)} catalogo={CATALOGO_CIUDADES_NOMBRES} placeholder="Ciudad..." />
               </div>
             <div className="flex gap-2">
-              <Field label="Hora entrada" type="time" value={general.horaEntrada} onChange={(v) => setG("horaEntrada", v)} half />
-              <Field label="Apertura permiso" type="time" value={general.horaApertura} onChange={(v) => setG("horaApertura", v)} half />
-              <Field label="Hora salida" type="time" value={general.horaSalida} onChange={(v) => setG("horaSalida", v)} half />
+              <SelectorHora label="Hora entrada" value={general.horaEntrada} onChange={(v) => setG("horaEntrada", v)} half />
+              <SelectorHora label="Apertura permiso" value={general.horaApertura} onChange={(v) => setG("horaApertura", v)} half />
+              <SelectorHora label="Hora salida" value={general.horaSalida} onChange={(v) => setG("horaSalida", v)} half />
             </div>
           </div>
         </Section>
@@ -1273,9 +1316,8 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
               <div className="col-span-2">
                 <Field label="Motivo" value={r.motivo} onChange={(v) => updateRow(setHorasPerdidas, i, "motivo", v)} />
               </div>
-              <Field
+              <SelectorHora
                 label="Inicio"
-                type="time"
                 value={r.inicio}
                 onChange={(v) =>
                   setHorasPerdidas((rows) =>
@@ -1283,9 +1325,8 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                   )
                 }
               />
-              <Field
+              <SelectorHora
                 label="Fin"
-                type="time"
                 value={r.fin}
                 onChange={(v) =>
                   setHorasPerdidas((rows) =>
