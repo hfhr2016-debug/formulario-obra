@@ -8,7 +8,7 @@ const AuthContext = createContext(null);
 // ===== Cierre de sesión por inactividad o ausencia =====
 // Para cambiar los tiempos, modifica solo estos dos números (en minutos).
 const MINUTOS_INACTIVIDAD = 10; // con la app abierta y sin tocarla
-const MINUTOS_AUSENCIA = 5;     // fuera de la app (cerrada, en segundo plano o pantalla bloqueada)
+const MINUTOS_AUSENCIA = 10;    // fuera de la app (cerrada, en segundo plano o pantalla bloqueada)
 const TIEMPO_INACTIVIDAD_MS = MINUTOS_INACTIVIDAD * 60 * 1000;
 const TIEMPO_AUSENCIA_MS = MINUTOS_AUSENCIA * 60 * 1000;
 const CLAVE_ACTIVIDAD = "ryr_ultima_actividad"; // última vez que tocaste la app
