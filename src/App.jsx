@@ -412,12 +412,18 @@ function BuscadorItem({ value, onSelect, onClear, catalogo }) {
     return () => document.removeEventListener("mousedown", handleClickFuera);
   }, []);
 
-  const filtrados =
-    texto.trim().length > 0
-      ? catalogo.filter((it) =>
-          it.descripcion.toLowerCase().includes(texto.toLowerCase())
-        ).slice(0, 8)
-      : catalogo.slice(0, 8);
+  const filtrados = (() => {
+    if (texto.trim().length === 0) return catalogo.slice(0, 15);
+    const q = texto.toLowerCase();
+    const coincide = catalogo.filter((it) => it.descripcion.toLowerCase().includes(q));
+    coincide.sort((a, b) => {
+      const aEmpieza = a.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
+      const bEmpieza = b.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
+      return a.descripcion.length - b.descripcion.length;
+    });
+    return coincide.slice(0, 15);
+  })();
 
   return (
     <div className="col-span-2 relative" ref={wrapRef}>
