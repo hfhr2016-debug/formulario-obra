@@ -417,6 +417,11 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
                 hcBloques: { civil: false, mecanico: false, electrico: false },
                 hcElementos: {}, proyecto: "",
               }));
+              // Limpia los acumulados de Informe Diario de los 3 tipos, para que un proyecto nuevo
+              // no arrastre el "acumulado anterior" de un proyecto distinto ya terminado.
+              ["edificacion", "vias", "hidrocarburos"].forEach((t) => {
+                localStorage.removeItem("ryr_acumulados_items_" + t);
+              });
             } catch (e) {}
             setPantalla("formulario");
           }}

@@ -86,7 +86,7 @@ const emptyCantidad = () => ({
 const CATALOGO_ESPECIALIDADES = ["Obra Civil", "Estructuras", "Obras Hidrosanitarias", "Obras Eléctricas", "Gas", "Climatización y Ventilación (HVAC)", "Comunicaciones y Seguridad", "Ascensores", "Acabados y Arquitectura", "Mampostería", "Cubiertas e Impermeabilización", "Carpintería y Vidrios", "Pintura", "Urbanismo y Exteriores", "Diseño Arquitectónico", "Diseño Estructural", "Interventoría", "Topografía", "Geotecnia y Suelos", "Gerencia de Proyecto"];
 const CATALOGO_CIUDADES_NOMBRES = ["Leticia", "Puerto Nariño", "Medellín", "Bello", "Itagüí", "Envigado", "Rionegro", "Arauca", "Saravena", "Tame", "Barranquilla", "Soledad", "Malambo", "Sabanalarga", "Puerto Colombia", "Bogotá D.C.", "Cartagena", "Magangué", "Turbaco", "Arjona", "El Carmen de Bolívar", "Tunja", "Duitama", "Sogamoso", "Chiquinquirá", "Paipa", "Manizales", "La Dorada", "Chinchiná", "Villamaría", "Riosucio", "Florencia", "San Vicente del Caguán", "Puerto Rico", "Yopal", "Aguazul", "Villanueva", "Tauramena", "Popayán", "Santander de Quilichao", "Puerto Tejada", "Patía", "Valledupar", "Aguachica", "Codazzi", "La Jagua de Ibirico", "Quibdó", "Istmina", "Condoto", "Tadó", "Montería", "Cereté", "Lorica", "Sahagún", "Planeta Rica", "Soacha", "Girardot", "Zipaquirá", "Facatativá", "Chía", "Inírida", "San José del Guaviare", "Neiva", "Pitalito", "Garzón", "La Plata", "Riohacha", "Maicao", "Uribia", "Fonseca", "Santa Marta", "Ciénaga", "Fundación", "El Banco", "Villavicencio", "Acacías", "Granada", "Puerto López", "Pasto", "Tumaco", "Ipiales", "Túquerres", "Cúcuta", "Ocaña", "Pamplona", "Villa del Rosario", "Mocoa", "Puerto Asís", "Orito", "Armenia", "Calarcá", "La Tebaida", "Montenegro", "Pereira", "Dosquebradas", "Santa Rosa de Cabal", "San Andrés", "Providencia", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta", "Barrancabermeja", "Sincelejo", "Corozal", "San Marcos", "Ibagué", "Espinal", "Melgar", "Honda", "Cali", "Palmira", "Buenaventura", "Tuluá", "Cartago", "Mitú", "Puerto Carreño"];
 const CATALOGO_MANO_OBRA_NOMBRES = ["Armador", "Ayudante", "Calculista", "Cortador", "Cuadrilla de desmontaje (10 personas)", "Cuadrilla de fabricación", "Cuadrilla de Un Oficial y (2) Obreros.", "Cuadrilla de un oficial y (4) Obreros.", "Dibujante", "Dibujante 2", "Estudios, análisis e informes", "Ingeniero de montaje y prueba", "Ingeniero de Montaje y Prueba Pilote (1)", "Ingeniero Especialista prueba de  integridad", "Ingeniero Geotecnista", "Ingeniero supervisor", "Ingeniero supervisor y director de prueba", "Ingeniero Supervisor y Director de Prueba Pilote", "Inspector", "Inspector de fabricación y montaje", "1 Oficial y 1 Obrero.", "Maestro", "Obrero (10)", "Obrero (2)", "Obrero (3)", "Obrero (4)", "Obrero (5)", "Obrero (6)", "Obrero (7)", "Obrero (8)", "Obrero (9)", "Obrero (prueba de carga)", "Obreros de incado (2)", "Obreros de izado (2)", "Oficial", "Oficial  Obrero (3) Cuadrilla de un oficial y 3 Obreros.", "Oficial (2)", "Oficial (3)", "Oficial + 3 Ayudantes (armado e inyección de anclajes)", "Oficial experto en desmontaje", "Oficial experto en explosivos", "Operador prueba de integridad", "Paletero", "Paletero (2)", "Perforador", "Perforador + Ayudante1 + Ayudante2", "Personal requerido para el diseño y fabricación de estructura metálica. (incluye un calista, un dibujante y la cuadrilla de Fabricación) De esta ultima no hay detalle de que personal la compone.", "Rastrillero", "Rastrilleros (2)", "Soldador", "Soldador (2)", "Soldador 1A", "Soldador experto en montaje y pruebas", "Soldador experto en montaje y pruebas", "Topógrafo", "Obrero", "Viáticos ingeniero y director", "Viáticos soldadores", "Celador", "Operador de retroexcavadora", "Operador de miniexcavadora", "Operador de bulldozer", "Operador de motoniveladora", "Operador de vibrocompactador", "Operador de grúa", "Conductor de volqueta", "Operador de mezcladora de concreto", "Operador de bomba de concreto", "Operador de montacargas", "Oficial electricista", "Ayudante electricista", "Oficial hidrosanitario / plomero", "Ayudante hidrosanitario", "Oficial pintor", "Ayudante de pintura", "Oficial enchapador / embaldosador", "Oficial estucador", "Oficial carpintero", "Ayudante carpintero", "Oficial vidriero / aluminero", "Oficial mampostero / albañil", "Oficial de estructuras metálicas", "Técnico en climatización / HVAC", "Técnico en gas", "Técnico en cableado estructurado / redes", "Técnico en sistemas de seguridad / CCTV", "Técnico instalador de ascensores", "Jardinero", "Aseador de obra", "Almacenista de obra", "Vigilante / celador de obra", "Residente de obra", "Maestro de obra general", "Coordinador SISO / HSEQ", "Operador de excavadora", "Operador de pluma grúa", "Operador de camión grúa", "Conductor de camabaja", "Operador de minicargador", "Operador de planta móvil de concreto", "Operador de cargador", "Operador de pavimentadora", "Operador de extendedora de asfalto", "Operador de trituradora de asfalto", "Cadenero 1o", "Cadenero 2o"];
-const CATALOGO_EQUIPOS_NOMBRES = ["Andamiaje para Aplicar la Carga (Equipos Sustituto de la Tara)", "Aspersor manual", "Barredora mecánica de cepillo de 3658 mm ; 6 m3", "Bomba de concreto, Producción: 30 m3/h, POTENCIA: 67 HP, MAX PRESION DE CONCRETO: 1150 PSI", "Bomba de inyección de lechada", "Bomba eléctrica para accionar la celda", "Bomba para gato de tensionamiento", "Buldozer Potencia al volante de 305 HP, motor de 2100 RPM, longitud de hoja 6,39m.", "Buldozer, Potencia al volante de 140 HP, motor de 2200 RPM, longitud de hoja 4,80m.", "Buldozer, Potencia al volante de 80 HP, motor de 2400 RPM, longitud de hoja 3,99m,", "Caldera para pintura termoplástica", "Calentador a gas", "Camabaja", "Camión 350", "Camión de Slurry", "Camioneta D-300", "Camisa", "Camisa para Pilote D=1.20m", "Cargador : Potencia en el volante 110 hp, Clasificación de RPM del motor 2300.", "Cargador : Potencia en el volante 125 hp, Clasificación de RPM del motor 2300.", "Carrotanque de agua(1000 Galones)", "Carrotanque Irrigador de asfalto, 1000 GALONES DE CAPACIDAD", "Cizalla manual de 90 cm.", "Compactador de Rodillo POTENCIA: 99HP, PESO: 8 ton", "Compactador manual (SALTARIN) Peso de operación (Kg.) 52, Fuerza de impacto por golpe (KN) 12.", "Compactador manual de rodillo", "Compactador manual vibratorio (CANGURO) (Apisonadores)", "COMPACTADOR MANUAL VIBRATORIO (RANA) con motor de 6 HP", "Compactador neumático de Potencia 70 HP, peso de 13 ton", "Compactador neumático peso 3,5 ton", "Compactador tipo  POTENCIA: 105 HP, PESO: 6 ton", "Compactador vibratorio tipo DD-20", "Compresor (barrido y soplado)", "Compresor 120 HP, con martillo.", "Compresor 80 HP, con martillo.", "Compresor para penetrar roca", "Cortadora de pavimento", "Cortadora de pavimento, Máxima profundidad de corte: 160 mm. Capacidad de disco: desde 12´´ hasta 18´´ de diámetro. Peso operacional: 135 kg, 13.5 hp de potencia", "Derretidora de asfalto (crafco o similar)", "Diferencial", "Diferencial de 2 ton.", "Diferencial de 3 ton", "Equipo autopropulsado para pintura termoplástica", "Equipo de acarreo interno", "Equipo de control (bandas sonoras reduce velocidad) (Termohigometros, Termómetros, Galgas, etc.)", "Equipo de Medición (Deformimetros Eléctricos, Mecánicos, Celdas de Carga,  Etc.)", "Equipo de oxicorte, Capacidad de corte: hasta 6´´ (152mm)", "Equipo de oxigeno y soldadura", "Equipo de perforación (TRACKDRILL), potencia 40 HP, 2100 golpes / minuto", "Equipo de pintura (Compresor), Presión máxima de trabajo 3300 psi.", "Equipo de rayos X y/o ultrasonido", "Equipo de Sand Blastin y Pintura COMPRESOR 250cfm a 100 psi. PULMON de 70 gal (250 lt.) para 160 psi", "Equipo de Soldadura", "Equipo de soldadura 250 AMP", "Equipo de soldadura 400", "Equipo de soldadura 600", "Equipo de soldadura y de acetileno (incluye soldadura)", "Equipo de topografía", "Equipo de topografía Teodolito electrónico con abertura de anteojo de 42 mm. Aumento del anteojo: 30x.Distancia mínima de enfoque: 1.0 m. Precisión: 5´´. Compensador con rango de trabajo ±3´.", "Equipo de transporte (Camiones, Grúas, Volquetas, etc.)", "Equipo manual aplicador (bandas sonoras reduce velocidad)", "Esparcidor de gravilla, Ancho de esparcimiento 3100mm, Velocidad de trabajo 10—20km2/h", "Estación Total con precisión angular de 6´´. Precisión lineal 2 mm ± 2 ppm", "Formaleta Metálica", "Formaleta metálica (concreto hidráulico)", "Formaleta metálica (tubería de concreto reforzado)", "Formaleta metálica para tubo de 900", "Formaleta para camisa de pilote", "Fresadora de pavimento, potencia 255 HP, peso 19 Ton, PROFUNDIDAD DE CORTE 305 mm", "Fresadora y recicladora de pavimento, potencia 430 HP, peso 20 Ton", "Gato para tensionamiento, fuerza Max 200 ton, área de tensión 314 cm2.", "Grúa (capacidad 15 ton)", "Grúa (Transporte en Obra)", "Grúa 10 ton", "Grúa con barreno o máquina piloteadora", "Grúa con torre", "Grúa Con Torre (2)", "Grúa con torre capacidad 1 ton en la punta.", "Grúa telescópica de 50 Ton.", "Guadañadora, Cilindraje 41.5 cm3, Longitud del mango 1450 mm, Peso 7.4 kg", "Manómetro cable de acero para bajar la celda", "Máquina hidrosembradora", "Maquina térmica pegatachas", "Mezcladora de concreto 1 bulto", "Montacargas", "Motobomba 3 PULGADAS (incluye operario)", "Motobomba 4 pulgadas", "Motobomba 6´´ diámetro de bombeo de 2 m3/seg", "Motobomba de concreto", "Motoniveladora  potencia 215 HP, ancho de cuchilla 4,27 m, peso 18 ton.", "Motoniveladora, potencia 140 HP, ancho de cuchilla 3,66 m, peso 11 ton.", "Motosierra, 93.6 cm3 - 7.1 HP, 45-90 cm - 7.9 kg", "Motosoldador, 300 amperios", "Pala auxiliar de piloteadora", "Pala grúa con martillos", "Piloteadora", "Piloteadora potencia 250KW, RPM 1800, fuerza elevadora 200KN", "Planta de asfalto en caliente", "Planta de asfalto en frio", "Planta eléctrica", "Planta trituradora", "Pluma capacidad 100 kg", "Puente grúa", "Pulidora (8500 REV)", "Pulvimixer", "Recicladora, potencia 430HP", "Regla vibratoria, de longitud de 3 a 5 m, motor de 3600 rpm, potencia 6 HP", "Retrocargador CAT 510", "Retrocargador, pala de 1,1 m3 de capacidad, profundidad de excavación de 4.400 mm y una altura de 5.680 mm", "Retroexcavadora 428 doble trasmisión", "Retroexcavadora A25C", "Retroexcavadora E-200 con martillo neumático", "Retroexcavadora E-200 sobre orugas trabajo en rio", "Retroexcavadora E-200 sobre orugas", "Retroexcavadora sobre llantas", "Retroexcavadora sobre llantas JD 410", "Retroexcavadora sobre llantas, motor 62HP, Profundidad de excavación de 5.41 metros.", "Retroexcavadora sobre oruga, potencia 138 HP, balde de 1,5 m3.", "Retroexcavadora Tipo E-200 o  Equivalente", "Retroexcavadora, Potencia en el Volante 78 HP 2200 RPM", "Ruteadora", "Sensor de Impacto para prueba de integridad tipo", "Taco metálico o puntal (escamas en concreto)", "Taladro de 1/2´´, pulidora, lijadora y circular para corte extremo superior", "Taladro de 1/2´´, pulidora, lijadora y circular", "Taladro industrial", "Tara (Recebo, Agua, Etc.)", "Tarifa de transporte", "Tarifa de transporte (agregados pétreos)", "Tarifa de transporte de concreto hidráulico en mixer", "Tarifa de transporte de estructuras metálicas", "Tarifa de transporte de estructuras metálicas en obra", "Tarifa de transporte de mezclas para bacheo", "Tarifa de transporte de mezclas", "Tarifa de Transporte de Postes", "Tarifa de transporte para agregados de mezclas asfálticas", "Tarifa de Trasporte de especies vegetales", "Terminadora de asfalto (Finisher), potencia 130 HP, peso 15 ton.", "Terminadora de asfalto (Finisher), potencia en el volante 174 HP, R=20M3/H, velocidad de desplazamiento 114 m/min", "Vehículo delineador", "Vehículo delineador R=1500 M/H", "Vibrador de concreto (incluye operario)", "Vibrador de concreto, Motor de 3 hp a 18.000 rpm Mangueras de 4 mt", "Vibrocompactador, tipo benitìn, de peso 700 kg a 1.5 toneladas", "Vibrocompatador Dynapac (10 ton)", "Vibrocompatador Dynapac C15", "Vibrocompatador, potencia 153 HP, peso 10 Ton.", "Volqueta 6 m3", "Pala cuadrada", "Pica / pico", "Carretilla buggy", "Nivel de burbuja (60 cm)", "Nivel láser rotativo", "Plomada", "Flexómetro / cinta métrica 5m", "Martillo de uña", "Combo / mazo", "Taladro percutor eléctrico", "Pulidora / esmeril angular", "Equipo de soldadura eléctrica", "Escuadra metálica", "Andamio tubular por cuerpo", "Escalera tijera 6 pasos", "Balde plástico 20L", "Llana metálica", "Llana de esponja", "Cuchara de albañil", "Cortadora de baldosa manual", "Cortadora de baldosa eléctrica (pulidora con disco diamantado)", "Mezcladora de mortero eléctrica portátil (taladro mezclador)", "Vibrador de concreto tipo aguja (pequeño, eléctrico)", "Regla vibratoria para placas", "Cortadora de varilla manual", "Dobladora de varilla manual", "Cizalla para varilla", "Compactador de placa (canguro) pequeño", "Brocha para pintura (juego)", "Rodillo para pintura (juego)", "Manguera de nivel", "Cortafrío / cincel", "Barra de acero (pata de cabra)", "Cuerda de nylon / piola de construcción", "Guantes de trabajo (par)", "Casco de seguridad", "Arnés de seguridad", "Extensión eléctrica industrial (20m)", "Generador eléctrico portátil", "Sierra circular manual", "Camabaja (tractocamión + remolque cama baja)", "Nivel de precisión", "Andamio multidireccional por cuerpo", "Andamio certificado tipo torre", "Andamio colgante", "Motobomba 8 pulgadas", "Excavadora sobre orugas", "Pala redonda"];
+const CATALOGO_EQUIPOS_NOMBRES = ["Andamiaje para Aplicar la Carga (Equipos Sustituto de la Tara)", "Aspersor manual", "Barredora mecánica de cepillo de 3658 mm ; 6 m3", "Bomba de concreto, Producción: 30 m3/h, POTENCIA: 67 HP, MAX PRESION DE CONCRETO: 1150 PSI", "Bomba de inyección de lechada", "Bomba eléctrica para accionar la celda", "Bomba para gato de tensionamiento", "Buldozer Potencia al volante de 305 HP, motor de 2100 RPM, longitud de hoja 6,39m.", "Buldozer, Potencia al volante de 140 HP, motor de 2200 RPM, longitud de hoja 4,80m.", "Buldozer, Potencia al volante de 80 HP, motor de 2400 RPM, longitud de hoja 3,99m,", "Caldera para pintura termoplástica", "Calentador a gas", "Camabaja", "Camión 350", "Camión de Slurry", "Camioneta D-300", "Camisa", "Camisa para Pilote D=1.20m", "Cargador : Potencia en el volante 110 hp, Clasificación de RPM del motor 2300.", "Cargador : Potencia en el volante 125 hp, Clasificación de RPM del motor 2300.", "Carrotanque de agua(1000 Galones)", "Carrotanque Irrigador de asfalto, 1000 GALONES DE CAPACIDAD", "Cizalla manual de 90 cm.", "Compactador de Rodillo POTENCIA: 99HP, PESO: 8 ton", "Compactador manual (SALTARIN) Peso de operación (Kg.) 52, Fuerza de impacto por golpe (KN) 12.", "Compactador manual de rodillo", "Compactador manual vibratorio (CANGURO) (Apisonadores)", "COMPACTADOR MANUAL VIBRATORIO (RANA) con motor de 6 HP", "Compactador neumático de Potencia 70 HP, peso de 13 ton", "Compactador neumático peso 3,5 ton", "Compactador tipo  POTENCIA: 105 HP, PESO: 6 ton", "Compactador vibratorio tipo DD-20", "Compresor (barrido y soplado)", "Compresor 120 HP, con martillo.", "Compresor 80 HP, con martillo.", "Compresor para penetrar roca", "Cortadora de pavimento", "Cortadora de pavimento, Máxima profundidad de corte: 160 mm. Capacidad de disco: desde 12´´ hasta 18´´ de diámetro. Peso operacional: 135 kg, 13.5 hp de potencia", "Derretidora de asfalto (crafco o similar)", "Diferencial", "Diferencial de 2 ton.", "Diferencial de 3 ton", "Equipo autopropulsado para pintura termoplástica", "Equipo de acarreo interno", "Equipo de control (bandas sonoras reduce velocidad) (Termohigometros, Termómetros, Galgas, etc.)", "Equipo de Medición (Deformimetros Eléctricos, Mecánicos, Celdas de Carga,  Etc.)", "Equipo de oxicorte, Capacidad de corte: hasta 6´´ (152mm)", "Equipo de oxigeno y soldadura", "Equipo de perforación (TRACKDRILL), potencia 40 HP, 2100 golpes / minuto", "Equipo de pintura (Compresor), Presión máxima de trabajo 3300 psi.", "Equipo de rayos X y/o ultrasonido", "Equipo de Sand Blastin y Pintura COMPRESOR 250cfm a 100 psi. PULMON de 70 gal (250 lt.) para 160 psi", "Equipo de Soldadura", "Equipo de soldadura 250 AMP", "Equipo de soldadura 400", "Equipo de soldadura 600", "Equipo de soldadura y de acetileno (incluye soldadura)", "Equipo de topografía", "Equipo de topografía Teodolito electrónico con abertura de anteojo de 42 mm. Aumento del anteojo: 30x.Distancia mínima de enfoque: 1.0 m. Precisión: 5´´. Compensador con rango de trabajo ±3´.", "Equipo de transporte (Camiones, Grúas, Volquetas, etc.)", "Equipo manual aplicador (bandas sonoras reduce velocidad)", "Esparcidor de gravilla, Ancho de esparcimiento 3100mm, Velocidad de trabajo 10—20km2/h", "Estación Total con precisión angular de 6´´. Precisión lineal 2 mm ± 2 ppm", "Formaleta Metálica", "Formaleta metálica (concreto hidráulico)", "Formaleta metálica (tubería de concreto reforzado)", "Formaleta metálica para tubo de 900", "Formaleta para camisa de pilote", "Fresadora de pavimento, potencia 255 HP, peso 19 Ton, PROFUNDIDAD DE CORTE 305 mm", "Fresadora y recicladora de pavimento, potencia 430 HP, peso 20 Ton", "Gato para tensionamiento, fuerza Max 200 ton, área de tensión 314 cm2.", "Grúa (capacidad 15 ton)", "Grúa (Transporte en Obra)", "Grúa 10 ton", "Grúa con barreno o máquina piloteadora", "Grúa con torre", "Grúa Con Torre (2)", "Grúa con torre capacidad 1 ton en la punta.", "Grúa telescópica de 50 Ton.", "Guadañadora, Cilindraje 41.5 cm3, Longitud del mango 1450 mm, Peso 7.4 kg", "Manómetro cable de acero para bajar la celda", "Máquina hidrosembradora", "Maquina térmica pegatachas", "Mezcladora de concreto 1 bulto", "Montacargas", "Motobomba 3 PULGADAS (incluye operario)", "Motobomba 4 pulgadas", "Motobomba 6´´ diámetro de bombeo de 2 m3/seg", "Motobomba de concreto", "Motoniveladora  potencia 215 HP, ancho de cuchilla 4,27 m, peso 18 ton.", "Motoniveladora, potencia 140 HP, ancho de cuchilla 3,66 m, peso 11 ton.", "Motosierra, 93.6 cm3 - 7.1 HP, 45-90 cm - 7.9 kg", "Motosoldador, 300 amperios", "Pala auxiliar de piloteadora", "Pala grúa con martillos", "Piloteadora", "Piloteadora potencia 250KW, RPM 1800, fuerza elevadora 200KN", "Planta de asfalto en caliente", "Planta de asfalto en frio", "Planta eléctrica", "Planta trituradora", "Pluma capacidad 100 kg", "Puente grúa", "Pulidora (8500 REV)", "Pulvimixer", "Recicladora, potencia 430HP", "Regla vibratoria, de longitud de 3 a 5 m, motor de 3600 rpm, potencia 6 HP", "Retrocargador CAT 510", "Retrocargador, pala de 1,1 m3 de capacidad, profundidad de excavación de 4.400 mm y una altura de 5.680 mm", "Retroexcavadora 428 doble trasmisión", "Retroexcavadora A25C", "Retroexcavadora E-200 con martillo neumático", "Retroexcavadora E-200 sobre orugas trabajo en rio", "Retroexcavadora E-200 sobre orugas", "Retroexcavadora sobre llantas", "Retroexcavadora sobre llantas JD 410", "Retroexcavadora sobre llantas, motor 62HP, Profundidad de excavación de 5.41 metros.", "Retroexcavadora sobre oruga, potencia 138 HP, balde de 1,5 m3.", "Retroexcavadora Tipo E-200 o  Equivalente", "Retroexcavadora, Potencia en el Volante 78 HP 2200 RPM", "Ruteadora", "Sensor de Impacto para prueba de integridad tipo", "Taco metálico o puntal (escamas en concreto)", "Taladro de 1/2´´, pulidora, lijadora y circular para corte extremo superior", "Taladro de 1/2´´, pulidora, lijadora y circular", "Taladro industrial", "Tara (Recebo, Agua, Etc.)", "Tarifa de transporte", "Tarifa de transporte (agregados pétreos)", "Tarifa de transporte de concreto hidráulico en mixer", "Tarifa de transporte de estructuras metálicas", "Tarifa de transporte de estructuras metálicas en obra", "Tarifa de transporte de mezclas para bacheo", "Tarifa de transporte de mezclas", "Tarifa de Transporte de Postes", "Tarifa de transporte para agregados de mezclas asfálticas", "Tarifa de Trasporte de especies vegetales", "Terminadora de asfalto (Finisher), potencia 130 HP, peso 15 ton.", "Terminadora de asfalto (Finisher), potencia en el volante 174 HP, R=20M3/H, velocidad de desplazamiento 114 m/min", "Vehículo delineador", "Vehículo delineador R=1500 M/H", "Vibrador de concreto (incluye operario)", "Vibrador de concreto, Motor de 3 hp a 18.000 rpm Mangueras de 4 mt", "Vibrocompactador, tipo benitìn, de peso 700 kg a 1.5 toneladas", "Vibrocompatador Dynapac (10 ton)", "Vibrocompatador Dynapac C15", "Vibrocompatador, potencia 153 HP, peso 10 Ton.", "Volqueta 6 m3", "Volqueta 15 m3 doble troque", "Pala cuadrada", "Pica / pico", "Carretilla buggy", "Nivel de burbuja (60 cm)", "Nivel láser rotativo", "Plomada", "Flexómetro / cinta métrica 5m", "Martillo de uña", "Combo / mazo", "Taladro percutor eléctrico", "Pulidora / esmeril angular", "Equipo de soldadura eléctrica", "Escuadra metálica", "Andamio tubular por cuerpo", "Escalera tijera 6 pasos", "Balde plástico 20L", "Llana metálica", "Llana de esponja", "Cuchara de albañil", "Cortadora de baldosa manual", "Cortadora de baldosa eléctrica (pulidora con disco diamantado)", "Mezcladora de mortero eléctrica portátil (taladro mezclador)", "Vibrador de concreto tipo aguja (pequeño, eléctrico)", "Regla vibratoria para placas", "Cortadora de varilla manual", "Dobladora de varilla manual", "Cizalla para varilla", "Compactador de placa (canguro) pequeño", "Brocha para pintura (juego)", "Rodillo para pintura (juego)", "Manguera de nivel", "Cortafrío / cincel", "Barra de acero (pata de cabra)", "Cuerda de nylon / piola de construcción", "Guantes de trabajo (par)", "Casco de seguridad", "Arnés de seguridad", "Extensión eléctrica industrial (20m)", "Generador eléctrico portátil", "Sierra circular manual", "Camabaja (tractocamión + remolque cama baja)", "Nivel de precisión", "Andamio multidireccional por cuerpo", "Andamio certificado tipo torre", "Andamio colgante", "Motobomba 8 pulgadas", "Excavadora sobre orugas", "Pala redonda"];
 
 function BuscadorTexto({ value, onChange, catalogo, placeholder }) {
   const [abierto, setAbierto] = useState(false);
@@ -228,22 +228,32 @@ function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
 }
 
 // --- Memoria de acumulados entre días (usa la memoria del navegador) ---
-const CLAVE_ACUMULADOS = "ryr_acumulados_items";
+const PREFIJO_ACUMULADOS = "ryr_acumulados_items_"; // uno por tipo de proyecto, para no mezclar Edificación/Vías/Hidrocarburos
 
-function leerAcumuladosGuardados() {
+function leerAcumuladosGuardados(tipo) {
   try {
-    const raw = localStorage.getItem(CLAVE_ACUMULADOS);
+    const raw = localStorage.getItem(PREFIJO_ACUMULADOS + tipo);
     return raw ? JSON.parse(raw) : {};
   } catch (e) {
     return {};
   }
 }
 
-function guardarAcumulado(clave, valor) {
+function calcularHorasEntre(inicio, fin) {
+  if (!inicio || !fin) return "";
+  const [h1, m1] = inicio.split(":").map(Number);
+  const [h2, m2] = fin.split(":").map(Number);
+  if ([h1, m1, h2, m2].some((n) => isNaN(n))) return "";
+  let minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+  if (minutos < 0) minutos += 24 * 60; // cruza medianoche
+  return String(Math.round((minutos / 60) * 100) / 100);
+}
+
+function guardarAcumulado(tipo, clave, valor) {
   try {
-    const actuales = leerAcumuladosGuardados();
+    const actuales = leerAcumuladosGuardados(tipo);
     actuales[clave] = valor;
-    localStorage.setItem(CLAVE_ACUMULADOS, JSON.stringify(actuales));
+    localStorage.setItem(PREFIJO_ACUMULADOS + tipo, JSON.stringify(actuales));
   } catch (e) {
     // Si el navegador bloquea localStorage, simplemente no se recuerda entre días.
   }
@@ -504,6 +514,51 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
   const [resumen, setResumen] = useState("");
   const [copied, setCopied] = useState(false);
   const [generandoExcel, setGenerandoExcel] = useState(false);
+
+  const [borradorDisponible, setBorradorDisponible] = useState(() => {
+    try { return !!localStorage.getItem("ryr_borrador_diario"); } catch (e) { return false; }
+  });
+  const [borradorAplicado, setBorradorAplicado] = useState(() => {
+    try { return !localStorage.getItem("ryr_borrador_diario"); } catch (e) { return true; }
+  });
+  function restaurarBorradorDiario() {
+    try {
+      const d = JSON.parse(localStorage.getItem("ryr_borrador_diario") || "null");
+      if (d) {
+        setGeneral(d.general || general);
+        setCantidades(d.cantidades || [emptyCantidad()]);
+        setOtras(d.otras || [emptyOtra()]);
+        setAvanceCapitulos(d.avanceCapitulos || [emptyAvanceCap()]);
+        setManoObra(d.manoObra || [emptyManoObra()]);
+        setEquipos(d.equipos || [emptyEquipo()]);
+        setHorasPerdidas(d.horasPerdidas || [emptyHoraPerdida()]);
+        setDescActividades(d.descActividades || "");
+        setAspectosProblematicos(d.aspectosProblematicos || "");
+        setPlanAccion(d.planAccion || "");
+        setCharlaDia(d.charlaDia || "");
+        setObservacionesHSE(d.observacionesHSE || "");
+        setElaboradoNombre(d.elaboradoNombre || "");
+        setElaboradoCargo(d.elaboradoCargo || "");
+      }
+    } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  function descartarBorradorDiario() {
+    try { localStorage.removeItem("ryr_borrador_diario"); } catch (e) {}
+    setBorradorAplicado(true);
+    setBorradorDisponible(false);
+  }
+  useEffect(() => {
+    if (!borradorAplicado) return;
+    try {
+      localStorage.setItem("ryr_borrador_diario", JSON.stringify({
+        general, cantidades, otras, avanceCapitulos, manoObra, equipos, horasPerdidas,
+        descActividades, aspectosProblematicos, planAccion, charlaDia, observacionesHSE,
+        elaboradoNombre, elaboradoCargo,
+      }));
+    } catch (e) {}
+  }, [borradorAplicado, general, cantidades, otras, avanceCapitulos, manoObra, equipos, horasPerdidas, descActividades, aspectosProblematicos, planAccion, charlaDia, observacionesHSE, elaboradoNombre, elaboradoCargo]);
   const [errorExcel, setErrorExcel] = useState("");
   const [fotos, setFotos] = useState([
     { file: null, previewUrl: "", caption: "" },
@@ -716,7 +771,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
 
           // Guarda el nuevo acumulado para que el próximo día se autocomplete solo.
           if (item.item) {
-            guardarAcumulado(item.item, anteriorCant + diarioCant);
+            guardarAcumulado(tipoDiario, item.item, anteriorCant + diarioCant);
           }
         });
 
@@ -742,7 +797,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
           }
 
           if (item.item) {
-            guardarAcumulado(`otras_${item.item}`, anteriorOtras + diarioOtras);
+            guardarAcumulado(tipoDiario, `otras_${item.item}`, anteriorOtras + diarioOtras);
           }
         });
 
@@ -873,6 +928,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      try { localStorage.removeItem("ryr_borrador_diario"); } catch (e) {}
     } catch (err) {
       console.error(err);
       setErrorExcel(
@@ -897,6 +953,26 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
   function enviarWhatsapp() {
     const url = `https://wa.me/?text=${encodeURIComponent(resumen)}`;
     window.open(url, "_blank");
+  }
+
+  if (borradorDisponible) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+        <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes un Informe Diario sin terminar</div>
+        <div className="text-[12.5px] text-gray-500 mb-5">Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel (las fotos no se guardan, hay que volver a subirlas). ¿Quieres continuar donde quedaste?</div>
+        <button onClick={restaurarBorradorDiario} className="w-full max-w-xs py-3 rounded-xl text-white font-bold text-[13.5px] mb-2.5" style={{ background: GOLD }}>
+          ▶ Continuar donde quedé
+        </button>
+        <button onClick={descartarBorradorDiario} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border mb-2.5" style={{ borderColor: LINE, color: NAVY }}>
+          Empezar en blanco
+        </button>
+        {onVolver && (
+          <button onClick={onVolver} className="text-[12px] underline" style={{ color: NAVY }}>
+            ← Volver al portal
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -996,7 +1072,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                   value={r.descripcion}
                   catalogo={itemsCatalogo}
                   onSelect={(it) => {
-                    const acumuladosGuardados = leerAcumuladosGuardados();
+                    const acumuladosGuardados = leerAcumuladosGuardados(tipoDiario);
                     const acumPrevio = acumuladosGuardados[it.item];
                     let contractualReal = it.contractual;
                     try {
@@ -1044,10 +1120,27 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
             <RowCard key={i} onRemove={() => removeRow(setOtras, i)}>
               <Field label="Ubicación" value={r.ubicacion} onChange={(v) => updateRow(setOtras, i, "ubicacion", v)} />
               <Field label="Item" value={r.item} onChange={(v) => updateRow(setOtras, i, "item", v)} />
-              <div className="col-span-2">
-                <label className="block text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Descripción</label>
-                <BuscadorTexto value={r.descripcion} onChange={(v) => updateRow(setOtras, i, "descripcion", v)} catalogo={nombresActividades} placeholder="Actividad..." />
-              </div>
+              <BuscadorItem
+                value={r.descripcion}
+                catalogo={itemsCatalogo}
+                onSelect={(it) => {
+                  const acumuladosGuardados = leerAcumuladosGuardados(tipoDiario);
+                  const acumPrevio = acumuladosGuardados[`otras_${it.item}`];
+                  setOtras((rows) =>
+                    rows.map((row, idx) =>
+                      idx === i
+                        ? {
+                            ...row,
+                            descripcion: it.descripcion,
+                            item: it.item,
+                            unidad: it.unidad,
+                            acumAnterior: acumPrevio !== undefined ? String(acumPrevio) : row.acumAnterior,
+                          }
+                        : row
+                    )
+                  );
+                }}
+              />
               <Field label="Unidad" value={r.unidad} onChange={(v) => updateRow(setOtras, i, "unidad", v)} />
               <Field label="Acum. anterior" type="text" inputMode="decimal" value={r.acumAnterior} onChange={(v) => updateRow(setOtras, i, "acumAnterior", v)} />
               <Field label="Avance diario" type="text" inputMode="decimal" value={r.avanceDiario} onChange={(v) => updateRow(setOtras, i, "avanceDiario", v)} />
@@ -1180,9 +1273,32 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
               <div className="col-span-2">
                 <Field label="Motivo" value={r.motivo} onChange={(v) => updateRow(setHorasPerdidas, i, "motivo", v)} />
               </div>
-              <Field label="Inicio" type="time" value={r.inicio} onChange={(v) => updateRow(setHorasPerdidas, i, "inicio", v)} />
-              <Field label="Fin" type="time" value={r.fin} onChange={(v) => updateRow(setHorasPerdidas, i, "fin", v)} />
-              <Field label="Total horas" value={r.total} onChange={(v) => updateRow(setHorasPerdidas, i, "total", v)} />
+              <Field
+                label="Inicio"
+                type="time"
+                value={r.inicio}
+                onChange={(v) =>
+                  setHorasPerdidas((rows) =>
+                    rows.map((row, idx) => (idx === i ? { ...row, inicio: v, total: calcularHorasEntre(v, row.fin) } : row))
+                  )
+                }
+              />
+              <Field
+                label="Fin"
+                type="time"
+                value={r.fin}
+                onChange={(v) =>
+                  setHorasPerdidas((rows) =>
+                    rows.map((row, idx) => (idx === i ? { ...row, fin: v, total: calcularHorasEntre(row.inicio, v) } : row))
+                  )
+                }
+              />
+              <div>
+                <label className="block text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Total horas</label>
+                <div className="w-full border rounded-lg px-2.5 py-2 text-[13px] bg-gray-50 text-gray-600" style={{ borderColor: LINE }}>
+                  {r.total || "—"}
+                </div>
+              </div>
             </RowCard>
           ))}
           <AddButton onClick={() => addRow(setHorasPerdidas, emptyHoraPerdida)} label="Agregar registro" />
