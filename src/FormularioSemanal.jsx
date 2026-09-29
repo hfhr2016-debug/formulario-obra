@@ -539,9 +539,14 @@ export default function FormularioSemanal({ onVolver, onNavegar }) {
         <button onClick={restaurarBorrador} className="w-full max-w-xs py-3 rounded-xl text-white font-bold text-[13.5px] mb-2.5" style={{ background: GOLD }}>
           ▶ Continuar donde quedé
         </button>
-        <button onClick={descartarBorrador} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border" style={{ borderColor: LINE, color: NAVY }}>
+        <button onClick={descartarBorrador} className="w-full max-w-xs py-3 rounded-xl font-semibold text-[13px] border mb-2.5" style={{ borderColor: LINE, color: NAVY }}>
           Empezar en blanco
         </button>
+        {onVolver && (
+          <button onClick={onVolver} className="text-[12px] underline" style={{ color: NAVY }}>
+            ← Volver al portal
+          </button>
+        )}
       </div>
     );
   }
