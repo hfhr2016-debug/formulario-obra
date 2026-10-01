@@ -786,14 +786,14 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.worksheets[0];
 
-      const nombreActividad = ws.getCell("A10").value;
+      const nombreActividad = ws.getCell("A9").value;
       if (nombreActividad) setActividad({ actividad: String(nombreActividad), unidad: ws.getCell("P4").value || "" });
       setCuadrilla(ws.getCell("S4").value || "");
       setJornada(ws.getCell("U4").value || 8);
       setRendimiento(ws.getCell("V4").value || "");
-      setProyecto(ws.getCell("C13").value || "");
-      setNoContrato(ws.getCell("C14").value || "");
-      setUbicacion(ws.getCell("J15").value || "");
+      setProyecto(ws.getCell("C12").value || "");
+      setNoContrato(ws.getCell("C13").value || "");
+      setUbicacion(ws.getCell("J14").value || "");
 
       const leerFilas = (filaInicio, conFactor) => {
         const filas = [];
@@ -817,10 +817,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       setManoObra(leerFilas(40, true));
       setEquipos(leerFilas(58, true));
 
-      setElaboradoNombre(ws.getCell("C54").value || "");
+      setElaboradoNombre(ws.getCell("A54").value || "");
       setElaboradoCargo(ws.getCell("C55").value || "");
-      setInterventoriaNombre(ws.getCell("H54").value || "");
-      setInterventoriaCargo(ws.getCell("H55").value || "");
+      setInterventoriaNombre(ws.getCell("E54").value || "");
+      setInterventoriaCargo(ws.getCell("E55").value || "");
 
       setArchivoBase(file);
     } catch (e) {
@@ -844,16 +844,16 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.getWorksheet("Apu's");
 
-      ws.getCell("A10").value = (actividad.actividad || "").toUpperCase();
+      ws.getCell("A9").value = (actividad.actividad || "").toUpperCase();
       ws.getCell("P4").value = actividad.unidad;
       ws.getCell("S4").value = cuadrilla;
       ws.getCell("U4").value = numES(jornada) || 0;
       ws.getCell("V4").value = numES(rendimiento) || 0;
 
-      ws.getCell("C13").value = proyecto;
-      ws.getCell("C14").value = noContrato;
-      ws.getCell("J14").value = fechaDDMMYYYY();
-      ws.getCell("J15").value = ubicacion;
+      ws.getCell("C12").value = proyecto;
+      ws.getCell("C13").value = noContrato;
+      ws.getCell("J13").value = fechaDDMMYYYY();
+      ws.getCell("J14").value = ubicacion;
 
       const escribirFilas = (filas, filaInicio, conFactor) => {
         filas.forEach((f, i) => {
@@ -892,10 +892,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         console.warn("No se pudo guardar el APU en memoria local:", e);
       }
 
-      ws.getCell("C54").value = elaboradoNombre;
+      ws.getCell("A54").value = elaboradoNombre;
       ws.getCell("C55").value = elaboradoCargo;
-      ws.getCell("H54").value = interventoriaNombre;
-      ws.getCell("H55").value = interventoriaCargo;
+      ws.getCell("E54").value = interventoriaNombre;
+      ws.getCell("E55").value = interventoriaCargo;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
@@ -913,7 +913,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       try { localStorage.removeItem("ryr_borrador_apu"); } catch (e) {}
     } catch (err) {
       console.error(err);
-      alert("Hubo un error generando el Excel. Revisa la consola.");
+      alert("Hubo un error generando el Excel: " + (err && err.message ? err.message : "error desconocido") + ". Si el problema sigue, avísale a soporte con este mensaje.");
     } finally {
       setGenerando(false);
     }
