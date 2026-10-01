@@ -520,7 +520,7 @@ function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal }) {
+function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal, rendimientoActividad }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val };
@@ -547,6 +547,15 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
           const fct = factorDesperdicioSugerido(seleccion.desc);
           if (fct !== null) factorSugerido = String(Math.round((1 + fct) * 1000) / 1000);
         }
+      }
+    } else if (modoRendimiento && !factorSugerido) {
+      // Sugiere el Rendimiento (tiempo por unidad) de esta fila: primero desde el Rendimiento
+      // global de la actividad (arriba), y si no hay, por palabra clave de la actividad.
+      let rendBase = numES(rendimientoActividad);
+      if (!rendBase) rendBase = rendimientoSugeridoPorKeyword(actividadPrincipal);
+      if (rendBase) {
+        factorSugerido = String(Math.round((1 / rendBase) * 1000000) / 1000000);
+        fuenteConsumo = "Sugerido a partir del Rendimiento de la actividad — verifica si este recurso específico rinde distinto.";
       }
     }
 
@@ -668,7 +677,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
               </div>
             </div>
 
-          {esMateriales && f.fuenteConsumo && (
+          {(esMateriales || modoRendimiento) && f.fuenteConsumo && (
             <div className="text-[10px] text-gray-500 px-2 pb-1 italic">
               📎 {f.fuenteConsumo}
             </div>
@@ -1110,8 +1119,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         </div>
 
         <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} />
-        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} />
-        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} />
+        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} />
+        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} />
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
