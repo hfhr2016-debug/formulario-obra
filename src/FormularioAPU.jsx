@@ -8,6 +8,18 @@ function numES(v) {
   return isNaN(n) ? 0 : n;
 }
 
+// Materiales: Cantidad × Factor de desperdicio × Precio. Mano de Obra/Equipos: Rendimiento × Precio (sin Cantidad).
+function sumarTabla(filas, esMateriales) {
+  return filas.reduce((acc, f) => {
+    const precio = numES(f.vrUnit) || 0;
+    const factor = numES(f.factor) || (esMateriales ? 1 : 0);
+    if (esMateriales) {
+      return acc + (numES(f.cant) || 0) * factor * precio;
+    }
+    return acc + factor * precio;
+  }, 0);
+}
+
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -508,7 +520,7 @@ function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostrarFactor, rendimientoActual, esMateriales, actividadPrincipal }) {
+function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val };
@@ -536,9 +548,8 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
           if (fct !== null) factorSugerido = String(Math.round((1 + fct) * 1000) / 1000);
         }
       }
-    } else if (!cantSugerida && consumoSugerido) {
-      cantSugerida = String(consumoSugerido);
     }
+
     nuevas[i] = {
       ...nuevas[i],
       desc: seleccion.desc,
@@ -558,9 +569,9 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
       >
         {titulo}
       </div>
-      {consumoSugerido !== undefined && consumoSugerido !== null && (
+      {modoRendimiento && (
         <div className="text-[10.5px] px-3 py-1.5 border border-t-0" style={{ background: "#FFF8E8", borderColor: LINE, color: NAVY }}>
-          ⚡ Al elegir una descripción, el Consumo se sugiere automáticamente (1÷Rendimiento = {consumoSugerido} jornadas/unidad). Agrega el Factor de desperdicio si aplica — Subtotal = Consumo × Factor × Precio.
+          ⚡ Rendimiento = cuánto tiempo (en jornadas u horas) tarda este recurso en producir 1 unidad de la actividad. Subtotal = Rendimiento × Precio.
         </div>
       )}
       {esMateriales && (
@@ -588,8 +599,8 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
                 }
               />
             </div>
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div>
+            <div className={modoRendimiento ? "" : "grid grid-cols-2 gap-2 mb-2"}>
+              <div className={modoRendimiento ? "mb-2" : ""}>
                 <label className="text-[10px] text-gray-500 block mb-0.5">Unidad</label>
                 <input
                   placeholder="Und"
@@ -599,41 +610,43 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
                   style={{ borderColor: LINE }}
                 />
               </div>
-              <div>
-                <label className="text-[10px] text-gray-500 block mb-0.5">{esMateriales ? "Cantidad (consumo por unidad)" : "Consumo"}</label>
-                <div className="flex items-stretch border rounded overflow-hidden" style={{ borderColor: LINE }}>
-                  <button
-                    type="button"
-                    onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
-                    className="px-2.5 text-[15px] font-bold shrink-0"
-                    style={{ background: PAPER, color: NAVY }}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="text" inputMode="decimal"
-                    value={f.cant}
-                    onChange={(e) => actualizar(i, "cant", e.target.value)}
-                    className="flex-1 px-1 py-2 text-[13.5px] min-w-0 text-center"
-                    style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
-                  />
-                  <button
-                    type="button"
-                    onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
-                    className="px-2.5 text-[15px] font-bold shrink-0"
-                    style={{ background: PAPER, color: NAVY }}
-                  >
-                    +
-                  </button>
+              {!modoRendimiento && (
+                <div>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">Cantidad (consumo por unidad)</label>
+                  <div className="flex items-stretch border rounded overflow-hidden" style={{ borderColor: LINE }}>
+                    <button
+                      type="button"
+                      onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
+                      className="px-2.5 text-[15px] font-bold shrink-0"
+                      style={{ background: PAPER, color: NAVY }}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="text" inputMode="decimal"
+                      value={f.cant}
+                      onChange={(e) => actualizar(i, "cant", e.target.value)}
+                      className="flex-1 px-1 py-2 text-[13.5px] min-w-0 text-center"
+                      style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
+                    />
+                    <button
+                      type="button"
+                      onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
+                      className="px-2.5 text-[15px] font-bold shrink-0"
+                      style={{ background: PAPER, color: NAVY }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className={mostrarFactor ? "grid grid-cols-2 gap-2" : ""}>
               {mostrarFactor && (
                 <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">Factor de desperdicio</label>
+                  <label className="text-[10px] text-gray-500 block mb-0.5">{modoRendimiento ? "Rendimiento (tiempo por unidad)" : "Factor de desperdicio"}</label>
                   <input
-                    placeholder="Ej: 1.05"
+                    placeholder={modoRendimiento ? "Ej: 0.1" : "Ej: 1.05"}
                     type="text" inputMode="decimal"
                     value={f.factor}
                     onChange={(e) => actualizar(i, "factor", e.target.value)}
@@ -654,19 +667,15 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, consumoSugerido, mostra
                 />
               </div>
             </div>
-          {mostrarFactor && rendimientoActual && f.cant && (
-            <div className="text-[10px] text-gray-500 px-2 pb-1">
-              1 ÷ {rendimientoActual} (Rendimiento) = {f.cant}
-            </div>
-          )}
+
           {esMateriales && f.fuenteConsumo && (
             <div className="text-[10px] text-gray-500 px-2 pb-1 italic">
               📎 {f.fuenteConsumo}
             </div>
           )}
-          {(f.cant || f.vrUnit) && (
+          {((modoRendimiento ? f.factor : f.cant) || f.vrUnit) && (
             <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
-              Subtotal: $ {((numES(f.cant) || 0) * (mostrarFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0)).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Subtotal: $ {sumarTabla([f], esMateriales).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           )}
           </div>
@@ -755,8 +764,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
   }, [borradorAplicado, actividad, proyecto, noContrato, ubicacion, cuadrilla, jornada, rendimiento, numCuadrillas, materiales, manoObra, equipos, elaboradoNombre, elaboradoCargo, interventoriaNombre, interventoriaCargo]);
 
   const totalDirectoUnitarioVista = useMemo(() => {
-    const sumar = (filas, conFactor) => filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
-    return sumar(materiales, true) + sumar(manoObra, true) + sumar(equipos, true);
+    return sumarTabla(materiales, true) + sumarTabla(manoObra, false) + sumarTabla(equipos, false);
   }, [materiales, manoObra, equipos]);
 
   const unidadRendimiento = actividad ? `${actividad.unidad}/jornada` : "";
@@ -853,9 +861,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       escribirFilas(manoObra, 39, true);
       escribirFilas(equipos, 57, true);
 
-      const sumar = (filas, conFactor) =>
-        filas.reduce((acc, f) => acc + (numES(f.cant) || 0) * (conFactor ? (numES(f.factor) || 1) : 1) * (numES(f.vrUnit) || 0), 0);
-      const totalDirectoUnitario = sumar(materiales, true) + sumar(manoObra, true) + sumar(equipos, true);
+      const totalDirectoUnitario = sumarTabla(materiales, true) + sumarTabla(manoObra, false) + sumarTabla(equipos, false);
 
       try {
         const clave = "ryr_apus_guardados";
@@ -1104,8 +1110,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         </div>
 
         <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={CATALOGO_MATERIALES} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} />
-        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} actividadPrincipal={actividad?.actividad} />
-        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} consumoSugerido={numES(rendimiento) ? Math.round((1 / numES(rendimiento)) * 1000000) / 1000000 : null} mostrarFactor rendimientoActual={rendimiento} actividadPrincipal={actividad?.actividad} />
+        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={CATALOGO_MANO_OBRA} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} />
+        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={CATALOGO_EQUIPOS} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} />
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
