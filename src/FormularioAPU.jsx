@@ -8,15 +8,13 @@ function numES(v) {
   return isNaN(n) ? 0 : n;
 }
 
-// Materiales: Cantidad × Factor de desperdicio × Precio. Mano de Obra/Equipos: Rendimiento × Precio (sin Cantidad).
-function sumarTabla(filas, esMateriales) {
+// Cantidad × Factor/Rendimiento × Precio (misma fórmula en las 3 tablas: Materiales, Mano de Obra, Equipos).
+function sumarTabla(filas) {
   return filas.reduce((acc, f) => {
+    const cant = numES(f.cant) || 0;
+    const factor = numES(f.factor) || 1;
     const precio = numES(f.vrUnit) || 0;
-    const factor = numES(f.factor) || (esMateriales ? 1 : 0);
-    if (esMateriales) {
-      return acc + (numES(f.cant) || 0) * factor * precio;
-    }
-    return acc + factor * precio;
+    return acc + cant * factor * precio;
   }, 0);
 }
 
@@ -548,14 +546,18 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
           if (fct !== null) factorSugerido = String(Math.round((1 + fct) * 1000) / 1000);
         }
       }
-    } else if (modoRendimiento && !factorSugerido) {
-      // Sugiere el Rendimiento (tiempo por unidad) de esta fila: primero desde el Rendimiento
-      // global de la actividad (arriba), y si no hay, por palabra clave de la actividad.
-      let rendBase = numES(rendimientoActividad);
-      if (!rendBase) rendBase = rendimientoSugeridoPorKeyword(actividadPrincipal);
-      if (rendBase) {
-        factorSugerido = String(Math.round((1 / rendBase) * 1000000) / 1000000);
-        fuenteConsumo = "Sugerido a partir del Rendimiento de la actividad — verifica si este recurso específico rinde distinto.";
+    } else if (modoRendimiento) {
+      // Cantidad: por defecto 1 (1 cuadrilla, 1 equipo) — ajústalo si necesitas 2 mezcladoras, 6 palas, etc.
+      if (!cantSugerida) cantSugerida = "1";
+      if (!factorSugerido) {
+        // Rendimiento (tiempo por unidad) de ESTE recurso individual: primero desde el Rendimiento
+        // global de la actividad (arriba), y si no hay, por palabra clave de la actividad.
+        let rendBase = numES(rendimientoActividad);
+        if (!rendBase) rendBase = rendimientoSugeridoPorKeyword(actividadPrincipal);
+        if (rendBase) {
+          factorSugerido = String(Math.round((1 / rendBase) * 1000000) / 1000000);
+          fuenteConsumo = "Sugerido a partir del Rendimiento de la actividad — verifica si este recurso específico rinde distinto.";
+        }
       }
     }
 
@@ -608,8 +610,8 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
                 }
               />
             </div>
-            <div className={modoRendimiento ? "" : "grid grid-cols-2 gap-2 mb-2"}>
-              <div className={modoRendimiento ? "mb-2" : ""}>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div>
                 <label className="text-[10px] text-gray-500 block mb-0.5">Unidad</label>
                 <input
                   placeholder="Und"
@@ -619,36 +621,34 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
                   style={{ borderColor: LINE }}
                 />
               </div>
-              {!modoRendimiento && (
-                <div>
-                  <label className="text-[10px] text-gray-500 block mb-0.5">Cantidad (consumo por unidad)</label>
-                  <div className="flex items-stretch border rounded overflow-hidden" style={{ borderColor: LINE }}>
-                    <button
-                      type="button"
-                      onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
-                      className="px-2.5 text-[15px] font-bold shrink-0"
-                      style={{ background: PAPER, color: NAVY }}
-                    >
-                      −
-                    </button>
-                    <input
-                      type="text" inputMode="decimal"
-                      value={f.cant}
-                      onChange={(e) => actualizar(i, "cant", e.target.value)}
-                      className="flex-1 px-1 py-2 text-[13.5px] min-w-0 text-center"
-                      style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
-                    />
-                    <button
-                      type="button"
-                      onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
-                      className="px-2.5 text-[15px] font-bold shrink-0"
-                      style={{ background: PAPER, color: NAVY }}
-                    >
-                      +
-                    </button>
-                  </div>
+              <div>
+                <label className="text-[10px] text-gray-500 block mb-0.5">{modoRendimiento ? "Cantidad (cuántos: cuadrillas, equipos...)" : "Cantidad (consumo por unidad)"}</label>
+                <div className="flex items-stretch border rounded overflow-hidden" style={{ borderColor: LINE }}>
+                  <button
+                    type="button"
+                    onMouseDown={() => actualizar(i, "cant", String(Math.max(0, (numES(f.cant) || 0) - 1)))}
+                    className="px-2.5 text-[15px] font-bold shrink-0"
+                    style={{ background: PAPER, color: NAVY }}
+                  >
+                    −
+                  </button>
+                  <input
+                    type="text" inputMode="decimal"
+                    value={f.cant}
+                    onChange={(e) => actualizar(i, "cant", e.target.value)}
+                    className="flex-1 px-1 py-2 text-[13.5px] min-w-0 text-center"
+                    style={{ border: "none", background: mostrarFactor ? "#FFF8E8" : "white" }}
+                  />
+                  <button
+                    type="button"
+                    onMouseDown={() => actualizar(i, "cant", String((numES(f.cant) || 0) + 1))}
+                    className="px-2.5 text-[15px] font-bold shrink-0"
+                    style={{ background: PAPER, color: NAVY }}
+                  >
+                    +
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
             <div className={mostrarFactor ? "grid grid-cols-2 gap-2" : ""}>
               {mostrarFactor && (
@@ -682,9 +682,9 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
               📎 {f.fuenteConsumo}
             </div>
           )}
-          {((modoRendimiento ? f.factor : f.cant) || f.vrUnit) && (
+          {(f.cant || f.vrUnit) && (
             <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
-              Subtotal: $ {sumarTabla([f], esMateriales).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Subtotal: $ {sumarTabla([f]).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           )}
           </div>
@@ -773,7 +773,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
   }, [borradorAplicado, actividad, proyecto, noContrato, ubicacion, cuadrilla, jornada, rendimiento, numCuadrillas, materiales, manoObra, equipos, elaboradoNombre, elaboradoCargo, interventoriaNombre, interventoriaCargo]);
 
   const totalDirectoUnitarioVista = useMemo(() => {
-    return sumarTabla(materiales, true) + sumarTabla(manoObra, false) + sumarTabla(equipos, false);
+    return sumarTabla(materiales) + sumarTabla(manoObra) + sumarTabla(equipos);
   }, [materiales, manoObra, equipos]);
 
   const unidadRendimiento = actividad ? `${actividad.unidad}/jornada` : "";
@@ -870,7 +870,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       escribirFilas(manoObra, 39, true);
       escribirFilas(equipos, 57, true);
 
-      const totalDirectoUnitario = sumarTabla(materiales, true) + sumarTabla(manoObra, false) + sumarTabla(equipos, false);
+      const totalDirectoUnitario = sumarTabla(materiales) + sumarTabla(manoObra) + sumarTabla(equipos);
 
       try {
         const clave = "ryr_apus_guardados";
