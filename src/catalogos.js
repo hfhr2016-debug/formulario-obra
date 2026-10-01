@@ -43,7 +43,10 @@ export function catalogoDisponible(tipo) {
 }
 
 async function descargar(tipo) {
-  const respuesta = await fetch(`/catalogos/${tipo}.json`, { cache: "no-cache" });
+  // ?v=... evita que el servidor (Vercel) sirva una copia vieja guardada en su caché.
+  // La app igual recuerda el catálogo localmente (ver catalogoDisponible), así que esto
+  // no afecta la experiencia sin internet, solo evita servir una versión desactualizada.
+  const respuesta = await fetch(`/catalogos/${tipo}.json?v=${Date.now()}`, { cache: "no-store" });
   if (!respuesta.ok) throw new Error(`No se encontró el catálogo de ${tipo} (código ${respuesta.status}).`);
   const texto = await respuesta.text();
   let datos;
