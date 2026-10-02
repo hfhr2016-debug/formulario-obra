@@ -819,8 +819,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
 
       setElaboradoNombre(ws.getCell("B80").value || "");
       setElaboradoCargo(ws.getCell("B81").value || "");
-      setInterventoriaNombre(ws.getCell("H80").value || "");
-      setInterventoriaCargo(ws.getCell("H81").value || "");
+      setInterventoriaNombre(ws.getCell("G80").value || "");
+      setInterventoriaCargo(ws.getCell("G81").value || "");
 
       setArchivoBase(file);
     } catch (e) {
@@ -894,8 +894,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
 
       ws.getCell("B80").value = elaboradoNombre;
       ws.getCell("B81").value = elaboradoCargo;
-      ws.getCell("H80").value = interventoriaNombre;
-      ws.getCell("H81").value = interventoriaCargo;
+      ws.getCell("G80").value = interventoriaNombre;
+      ws.getCell("G81").value = interventoriaCargo;
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
