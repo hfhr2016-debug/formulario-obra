@@ -102,21 +102,67 @@ export function tipoProyectoActivo() {
   return "edificacion";
 }
 
-export function IndicadorTipoProyecto() {
-  let tipo = "edificacion";
-  try {
-    const datos = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
-    const modulos = datos?.modulos || {};
-    if (modulos.vias) tipo = "vias";
-    else if (modulos.hidrocarburos) tipo = "hidrocarburos";
-  } catch (e) {}
+export function IndicadorTipoProyecto({ claveBorrador, clavesExtra }) {
+  const [tipo, setTipo] = React.useState(() => tipoProyectoActivo());
+  const [abierto, setAbierto] = React.useState(false);
   const nombres = { edificacion: "Edificación / Reformas", vias: "Vías y Carreteras", hidrocarburos: "Hidrocarburos" };
+
+  function elegir(nuevoTipo) {
+    setAbierto(false);
+    if (nuevoTipo === tipo) return;
+    const ok = window.confirm(
+      `¿Cambiar a "${nombres[nuevoTipo]}"? Se perderán los datos de "${nombres[tipo]}" que hayas escrito en este formulario (no se puede deshacer).`
+    );
+    if (!ok) return;
+    try {
+      localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
+        modulos: { edificacion: nuevoTipo === "edificacion", vias: nuevoTipo === "vias", hidrocarburos: nuevoTipo === "hidrocarburos" },
+        hcBloques: { civil: false, mecanico: false, electrico: false },
+        hcElementos: {}, proyecto: "",
+      }));
+      if (claveBorrador) localStorage.removeItem(claveBorrador);
+      (clavesExtra || []).forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+    window.location.reload();
+  }
+
   return (
-    <span
-      className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block"
-      style={{ background: "rgba(217,162,51,0.18)", color: "#D9A233" }}
-    >
-      {nombres[tipo]}
+    <span className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setAbierto((a) => !a)}
+        className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+        style={{ background: "rgba(217,162,51,0.18)", color: "#D9A233", border: "none" }}
+      >
+        {nombres[tipo]}
+        <span style={{ fontSize: 8 }}>▾</span>
+      </button>
+      {abierto && (
+        <>
+          <span className="fixed inset-0 z-30" onClick={() => setAbierto(false)} style={{ display: "block" }} />
+          <span
+            className="absolute z-40 mt-1 left-0 rounded-lg shadow-lg border overflow-hidden"
+            style={{ background: "white", borderColor: LINE, minWidth: 190, display: "block" }}
+          >
+            {Object.entries(nombres).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => elegir(key)}
+                className="w-full text-left px-3 py-2 text-[12px] block"
+                style={{
+                  color: key === tipo ? GOLD : NAVY,
+                  fontWeight: key === tipo ? 700 : 400,
+                  background: key === tipo ? "rgba(217,162,51,0.08)" : "white",
+                  border: "none",
+                }}
+              >
+                {key === tipo ? "● " : ""}{label}
+              </button>
+            ))}
+          </span>
+        </>
+      )}
     </span>
   );
 }

@@ -408,7 +408,7 @@ export default function FormularioMemoria({ onVolver, onNavegar }) {
             </button>
             </div>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>MEMORIA DE CÁLCULO</div>
-            <IndicadorTipoProyecto />
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_memoria" />
             <div className="text-[11px]" style={{ color: GOLD }}>Reformas y Remodelaciones</div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />

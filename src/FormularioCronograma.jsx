@@ -429,7 +429,7 @@ export default function FormularioCronograma({ onVolver, onNavegar }) {
             <div className="text-[11px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones
             </div>
-            <IndicadorTipoProyecto />
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_cronograma" />
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>

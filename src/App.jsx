@@ -1074,7 +1074,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
             <div className="text-[10.5px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones · RYR-FT-01
             </div>
-            <IndicadorTipoProyecto />
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_diario" />
           </div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />

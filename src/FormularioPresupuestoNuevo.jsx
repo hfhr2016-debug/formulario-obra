@@ -397,7 +397,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
 
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg flex items-center justify-between" style={{ background: NAVY }}>
           PRESUPUESTO DE OBRA
-          <IndicadorTipoProyecto />
+          <IndicadorTipoProyecto claveBorrador="ryr_borrador_presupuesto" />
         </div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-3" style={{ borderColor: LINE }}>
           <div className="text-[11px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FFF8E8", color: NAVY }}>
