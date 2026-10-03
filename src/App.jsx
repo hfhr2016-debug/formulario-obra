@@ -1074,7 +1074,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
             <div className="text-[10.5px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones · RYR-FT-01
             </div>
-            <IndicadorTipoProyecto claveBorrador="ryr_borrador_diario" />
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_diario" onVolver={onVolver} />
           </div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
@@ -1480,6 +1480,26 @@ const MODULOS = [
   { id: "acta", nombre: "Acta de Obra", icono: "/icons/icon-acta.png", activo: true },
 ];
 
+const MODULOS_SST = [
+  { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", activo: false },
+  { id: "sst-personal", nombre: "Registro de Personal", emoji: "👷", activo: false },
+  { id: "sst-capacitaciones", nombre: "Capacitaciones", emoji: "🎓", activo: false },
+  { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", activo: false },
+  { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", activo: false },
+  { id: "sst-inspecciones", nombre: "Inspecciones", emoji: "🔍", activo: false },
+  { id: "sst-permisos", nombre: "Permisos de Trabajo", emoji: "📝", activo: false },
+  { id: "sst-ats", nombre: "Análisis de Trabajo Seguro", emoji: "⚠️", activo: false },
+  { id: "sst-matriz-peligros", nombre: "Matriz de Peligros", emoji: "🗺️", activo: false },
+  { id: "sst-accidentalidad", nombre: "Accidentalidad", emoji: "🚑", activo: false },
+  { id: "sst-investigacion", nombre: "Investigación de Accidentes", emoji: "🔎", activo: false },
+  { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", activo: false },
+  { id: "sst-emergencias", nombre: "Plan de Emergencias", emoji: "🚨", activo: false },
+  { id: "sst-acciones", nombre: "Acciones Correctivas", emoji: "✅", activo: false },
+  { id: "sst-indicadores", nombre: "Indicadores", emoji: "📊", activo: false },
+  { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", activo: false },
+  { id: "sst-mensual", nombre: "Informe Mensual SST", emoji: "🗓️", activo: false },
+];
+
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
@@ -1621,6 +1641,56 @@ function Inicio({ onSeleccionar, onVolverSelector }) {
   );
 }
 
+function InicioSST({ onSeleccionar, onVolverSelector }) {
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (Técnica / Ambiental)
+          </button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              GESTIÓN SST
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Seguridad y Salud en el Trabajo
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-4">
+        {MODULOS_SST.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => m.activo && onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
+            style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
+          >
+            <div className="text-[34px] leading-none">{m.emoji}</div>
+            <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div className="absolute top-2 right-2 text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const [vista, setVista] = useState("selector-apps");
 
@@ -1640,13 +1710,17 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
             return;
           }
           if (id === "tecnica") setVista("inicio");
+          else if (id === "sst") setVista("inicio-sst");
           else setVista(`proximamente-${id}`);
         }}
       />
     );
   }
-  if (vista === "proximamente-sst") {
-    return <Proximamente nombre="Gestión SST" onVolver={() => setVista("selector-apps")} />;
+  if (vista === "inicio-sst") {
+    return <InicioSST onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista.startsWith("sst-")) {
+    return <Proximamente nombre={(MODULOS_SST.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-sst")} />;
   }
   if (vista === "proximamente-ambiental") {
     return <Proximamente nombre="Gestión Ambiental" onVolver={() => setVista("selector-apps")} />;
