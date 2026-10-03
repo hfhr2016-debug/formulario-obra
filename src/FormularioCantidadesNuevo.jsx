@@ -490,6 +490,9 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
         <div className="flex items-center gap-2 mb-3">
           {onNavegar && <BotonMenu onClick={() => setMenuAbierto(true)} color={NAVY} />}
           <button onClick={onVolver} className="text-[12px]" style={{ color: NAVY }}>← Volver al portal</button>
+          <span className="ml-auto">
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_cantidades" onVolver={onVolver} />
+          </span>
         </div>
 
         <div className="flex gap-2 mb-4">
@@ -511,9 +514,8 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
           </div>
         )}
 
-        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg flex items-center justify-between" style={{ background: NAVY }}>
+        <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>
           CANTIDADES DE OBRA
-          <IndicadorTipoProyecto claveBorrador="ryr_borrador_cantidades" />
         </div>
         <div className="border border-t-0 rounded-b-lg p-3 mb-3" style={{ borderColor: LINE }}>
           <div className="text-[11px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FFF8E8", color: NAVY }}>
