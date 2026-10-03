@@ -63,8 +63,10 @@ function tipoActivoActual() {
 }
 
 function filtrarCatalogo(actividades, tipoActivo) {
+  // El archivo externo (public/catalogos/<tipo>.json) ya viene filtrado a un solo tipo,
+  // así que aquí solo queda aplicar, si aplica, el sub-filtro de bloques de Hidrocarburos.
   const bloquesHC = leerBloquesHC();
-  let filtrado = actividades.filter((a) => a.tipo === tipoActivo);
+  let filtrado = actividades;
   if (tipoActivo === "hidrocarburos") {
     const algunBloque = bloquesHC.civil || bloquesHC.mecanico || bloquesHC.electrico;
     if (algunBloque) {
