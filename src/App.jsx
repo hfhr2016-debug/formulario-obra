@@ -14,6 +14,7 @@ import FormularioSemanal from "./FormularioSemanal";
 import FormularioActa from "./FormularioActa";
 import FormularioMensual from "./FormularioMensual";
 import FormularioMemoria from "./FormularioMemoria";
+import FormularioCharlaDiaria from "./FormularioCharlaDiaria";
 import {
 
   ChevronDown,
@@ -1482,7 +1483,7 @@ const MODULOS = [
 
 const MODULOS_SST = [
   // --- Uso diario ---
-  { id: "sst-charla-diaria", nombre: "Charla Diaria de Seguridad", emoji: "🗣️", activo: false },
+  { id: "sst-charla-diaria", nombre: "Charla Diaria de Seguridad", emoji: "🗣️", activo: true },
   { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", activo: false },
   { id: "sst-permisos", nombre: "Permisos de Trabajo", emoji: "📝", activo: false },
   { id: "sst-ats", nombre: "Análisis de Trabajo Seguro", emoji: "⚠️", activo: false },
@@ -1726,6 +1727,9 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "inicio-sst") {
     return <InicioSST onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "sst-charla-diaria") {
+    return <FormularioCharlaDiaria onVolver={() => setVista("inicio-sst")} />;
   }
   if (vista.startsWith("sst-")) {
     return <Proximamente nombre={(MODULOS_SST.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-sst")} />;
