@@ -4,6 +4,7 @@ import { ChevronDown, Plus, Trash2, Camera, X, Loader2, FileSpreadsheet } from "
 import {
   CODIGO_FORMATO, CELDAS, PELIGROS, EPP, TIPOS_CHARLA, CLIMAS, ORDEN_ASEO, SINTOMAS, TEMAS_SUGERIDOS,
   MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla,
+  buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
 } from "./charlaDiariaDatos";
 
 const NAVY = "#1B2A45";
@@ -15,6 +16,7 @@ const CLAVE_BORRADOR = "ryr_borrador_charla";
 const CLAVE_FIRMANTES = "ryr_sst_firmantes";
 const CLAVE_CONSECUTIVO = "ryr_sst_charla_consecutivo";
 const CLAVE_ULTIMOS = "ryr_sst_ultimos_asistentes";
+const CLAVE_PROFESIONALES = "ryr_sst_profesionales";
 
 // ---------- Memoria local (nunca debe romper la pantalla si el navegador la bloquea) ----------
 function leerJSON(clave, porDefecto) {
@@ -32,19 +34,25 @@ function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
 }
 
+// Último consecutivo usado en este dispositivo + 1
+function siguienteConsecutivo() {
+  let ultimo = 0;
+  try { ultimo = parseInt(localStorage.getItem(CLAVE_CONSECUTIVO) || "0", 10) || 0; } catch (e) {}
+  return ultimo + 1;
+}
+
 function datosIniciales() {
   const firmantes = leerJSON(CLAVE_FIRMANTES, {});
-  const ultimo = parseInt((() => { try { return localStorage.getItem(CLAVE_CONSECUTIVO); } catch (e) { return "0"; } })() || "0", 10) || 0;
   const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    fecha: fechaHoyISO(), horaInicio: "", horaFin: "", nCharla: String(ultimo + 1),
+    fecha: "", horaInicio: "", horaFin: "", nCharla: "",
     proyecto: (tipoProyecto && tipoProyecto.proyecto) || "",
-    contratista: "REFORMAS Y REMODELACIONES", ubicacion: "", frente: "",
-    tipo: TIPOS_CHARLA[0],
+    contratista: "", ubicacion: "", frente: "",
+    tipo: "",
     facilitadorNombre: firmantes.facilitadorNombre || "", facilitadorCargo: firmantes.facilitadorCargo || "",
     tema: "", contenido: "",
     actividades: "", peligros: [], otrosPeligros: "", medidas: "", epp: [], otrosEpp: "",
-    clima: CLIMAS[0], ordenAseo: ORDEN_ASEO[0], sintomas: SINTOMAS[0], novedades: "",
+    clima: "", ordenAseo: "", sintomas: "", novedades: "",
     asistentes: [], personalTotal: "",
     responsableNombre: firmantes.responsableNombre || "", responsableCargo: firmantes.responsableCargo || "",
   };
@@ -133,7 +141,7 @@ const claseInput = "w-full text-[13.5px] px-2.5 py-2 rounded-md border outline-n
 const estiloInput = { borderColor: LINE, background: "white" };
 const etiquetaCls = "block text-[10px] uppercase tracking-wide mb-1 font-medium";
 
-function Campo({ label, value, onChange, placeholder, type = "text", lista, inputMode }) {
+function Campo({ label, value, onChange, placeholder, type = "text", lista, inputMode, onBlur }) {
   return (
     <div className="w-full">
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
@@ -147,7 +155,7 @@ function Campo({ label, value, onChange, placeholder, type = "text", lista, inpu
         className={claseInput}
         style={estiloInput}
         onFocus={(e) => (e.target.style.borderColor = GOLD)}
-        onBlur={(e) => (e.target.style.borderColor = LINE)}
+        onBlur={(e) => { e.target.style.borderColor = LINE; if (onBlur) onBlur(e.target.value); }}
       />
     </div>
   );
@@ -176,8 +184,49 @@ function Lista({ label, value, onChange, opciones }) {
     <div className="w-full">
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)} className={claseInput + " bg-white"} style={estiloInput}>
+        <option value="">Seleccione…</option>
         {opciones.map((o) => (<option key={o} value={o}>{o}</option>))}
       </select>
+    </div>
+  );
+}
+
+// Cargo: lista desplegable + opción "Otro (escribir)". onGuardar se llama al elegir de la lista o al terminar de escribir.
+function CampoCargo({ label, value, onChange, onGuardar, opciones }) {
+  const [modoOtro, setModoOtro] = useState(false);
+  // Si el cargo cambia desde afuera (p. ej. al elegir un nombre guardado) y es uno de la lista, se muestra la lista.
+  useEffect(() => {
+    if (modoOtro && value && opciones.includes(value)) setModoOtro(false);
+  }, [value, opciones, modoOtro]);
+  const mostrarInput = modoOtro || (!!value && !opciones.includes(value));
+  return (
+    <div className="w-full">
+      <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
+      <select
+        value={mostrarInput ? "__otro__" : value || ""}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "__otro__") { setModoOtro(true); onChange(""); }
+          else { setModoOtro(false); onChange(v); if (onGuardar) onGuardar(v); }
+        }}
+        className={claseInput + " bg-white"}
+        style={estiloInput}
+      >
+        <option value="">Seleccione…</option>
+        {opciones.map((o) => (<option key={o} value={o}>{o}</option>))}
+        <option value="__otro__">Otro (escribir)…</option>
+      </select>
+      {mostrarInput && (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => { if (onGuardar && e.target.value.trim()) onGuardar(e.target.value); }}
+          placeholder="Escribe el cargo"
+          className={claseInput + " mt-1.5"}
+          style={estiloInput}
+        />
+      )}
     </div>
   );
 }
@@ -270,6 +319,8 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState(false);
+  const [numeroUsado, setNumeroUsado] = useState("");
+  const [, setRefresco] = useState(0);
   const [pegarAbierto, setPegarAbierto] = useState(false);
   const [textoPegado, setTextoPegado] = useState("");
   const [avisoAsistentes, setAvisoAsistentes] = useState("");
@@ -277,6 +328,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   const [borradorDisponible, setBorradorDisponible] = useState(() => {
     try { return !!localStorage.getItem(CLAVE_BORRADOR); } catch (e) { return false; }
   });
+  const omitirGuardadoRef = useRef(false);
   const [borradorAplicado, setBorradorAplicado] = useState(() => {
     try { return !localStorage.getItem(CLAVE_BORRADOR); } catch (e) { return true; }
   });
@@ -284,9 +336,29 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   const set = (campo, valor) => setD((cur) => ({ ...cur, [campo]: valor }));
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
 
+  // ---- Profesionales que usan el formato: nombres y cargos guardados en este dispositivo ----
+  const [profesionales, setProfesionales] = useState(() => leerJSON(CLAVE_PROFESIONALES, []));
+  const cargos = cargosDisponibles(profesionales);
+  function guardarProfesionales(lista) {
+    setProfesionales(lista);
+    guardarJSON(CLAVE_PROFESIONALES, lista);
+  }
+  function recordar(nombre, cargo) {
+    const nueva = recordarProfesional(profesionales, nombre, cargo);
+    if (nueva !== profesionales) guardarProfesionales(nueva);
+  }
+  // Al escribir/elegir un nombre ya guardado, se completa solo su cargo.
+  function cambiarNombre(campoNombre, campoCargo, valor) {
+    const p = buscarProfesional(profesionales, valor);
+    // Si coincide con uno guardado, se usa su escritura (mayúsculas/acentos) y su cargo.
+    setD((cur) => ({ ...cur, [campoNombre]: p ? p.nombre : valor, ...(p && p.cargo ? { [campoCargo]: p.cargo } : {}) }));
+  }
+
   // ---- Borrador (las fotos no se guardan) ----
   useEffect(() => {
     if (!borradorAplicado) return;
+    // Justo después de generar el Excel se actualiza el N° de charla en pantalla; ese cambio no debe recrear el borrador.
+    if (omitirGuardadoRef.current) { omitirGuardadoRef.current = false; return; }
     if (tieneContenido(d)) guardarJSON(CLAVE_BORRADOR, d);
     else borrar(CLAVE_BORRADOR);
   }, [d, borradorAplicado]);
@@ -392,7 +464,9 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       const ws = workbook.getWorksheet("Charla Diaria");
       if (!ws) throw new Error('No se encontró la hoja "Charla Diaria" en la plantilla');
 
-      escribirCharlaEnHoja(ws, d);
+      // N° de charla: si se dejó vacío, se asigna el siguiente consecutivo
+      const nUsar = d.nCharla && String(d.nCharla).trim() ? String(d.nCharla).trim() : String(siguienteConsecutivo());
+      escribirCharlaEnHoja(ws, { ...d, nCharla: nUsar });
       await agregarLogo(workbook, ws);
 
       const posiciones = [
@@ -412,7 +486,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Charla_Diaria_${d.fecha || "sin-fecha"}_N${d.nCharla || "0"}.xlsx`;
+      a.download = `Charla_Diaria_${d.fecha || "sin-fecha"}_N${nUsar}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -420,9 +494,19 @@ export default function FormularioCharlaDiaria({ onVolver }) {
 
       // Memoria para la próxima charla
       guardarJSON(CLAVE_ULTIMOS, asistentes.filter((x) => x.nombre && x.nombre.trim()));
-      const n = parseInt(d.nCharla, 10);
-      if (!isNaN(n)) { try { localStorage.setItem(CLAVE_CONSECUTIVO, String(n)); } catch (e) {} }
+      const n = parseInt(nUsar, 10);
+      if (!isNaN(n)) {
+        let guardado = 0;
+        try { guardado = parseInt(localStorage.getItem(CLAVE_CONSECUTIVO) || "0", 10) || 0; } catch (e) {}
+        try { localStorage.setItem(CLAVE_CONSECUTIVO, String(Math.max(n, guardado))); } catch (e) {}
+      }
+      let lista = recordarProfesional(profesionales, d.facilitadorNombre, d.facilitadorCargo);
+      lista = recordarProfesional(lista, d.responsableNombre, d.responsableCargo);
+      guardarProfesionales(lista);
       borrar(CLAVE_BORRADOR);
+      omitirGuardadoRef.current = true;
+      setD((cur) => ({ ...cur, nCharla: nUsar }));
+      setNumeroUsado(nUsar);
       setGenerado(true);
     } catch (err) {
       console.error(err);
@@ -430,6 +514,17 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     } finally {
       setGenerando(false);
     }
+  }
+
+  // Permite fijar con qué número continúa la numeración (p. ej. para empezar de nuevo en 1 después de las pruebas).
+  function cambiarNumeracion() {
+    const sig = siguienteConsecutivo();
+    const resp = window.prompt(`El siguiente número automático es el ${sig}.\n¿Con qué número quieres que continúe la numeración?`, String(sig));
+    if (resp === null) return;
+    const n = parseInt(resp, 10);
+    if (isNaN(n) || n < 1) { alert("Escribe un número entero mayor o igual a 1."); return; }
+    try { localStorage.setItem(CLAVE_CONSECUTIVO, String(n - 1)); } catch (e) {}
+    setRefresco((x) => x + 1);
   }
 
   function nuevaCharla() {
@@ -471,6 +566,9 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       <datalist id="temas-charla">
         {TEMAS_SUGERIDOS.map((t) => (<option key={t} value={t} />))}
       </datalist>
+      <datalist id="profesionales-charla">
+        {profesionales.map((p) => (<option key={p.nombre} value={p.nombre}>{p.cargo}</option>))}
+      </datalist>
 
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
         <div className="flex items-center justify-between gap-3">
@@ -501,8 +599,19 @@ export default function FormularioCharlaDiaria({ onVolver }) {
               <Campo label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} />
             </div>
             <div className="grid grid-cols-2 gap-2.5">
-              <Campo label="Fecha" type="date" value={d.fecha} onChange={(v) => set("fecha", v)} />
-              <Campo label="N° de charla" value={d.nCharla} inputMode="numeric" onChange={(v) => set("nCharla", v.replace(/[^0-9]/g, ""))} />
+              <div>
+                <Campo label="Fecha" type="date" value={d.fecha} onChange={(v) => set("fecha", v)} />
+                {!d.fecha && (
+                  <button type="button" onClick={() => set("fecha", fechaHoyISO())} className="text-[11px] underline mt-1" style={{ color: NAVY }}>
+                    Usar la fecha de hoy
+                  </button>
+                )}
+              </div>
+              <Campo label="N° de charla" value={d.nCharla} inputMode="numeric" placeholder={`Automático: ${siguienteConsecutivo()}`} onChange={(v) => set("nCharla", v.replace(/[^0-9]/g, ""))} />
+            </div>
+            <div className="text-[10.5px] -mt-1" style={{ color: "#8A8F99" }}>
+              Si dejas el N° de charla vacío, se asigna solo el siguiente número consecutivo.{" "}
+              <button type="button" onClick={cambiarNumeracion} className="underline" style={{ color: NAVY }}>Cambiar la numeración</button>
             </div>
             <div className="flex gap-2.5">
               <SelectorHora label="Hora inicio" value={d.horaInicio} onChange={(v) => set("horaInicio", v)} />
@@ -513,10 +622,21 @@ export default function FormularioCharlaDiaria({ onVolver }) {
             )}
             <Campo label="Frente / lugar de la charla" value={d.frente} onChange={(v) => set("frente", v)} placeholder="Ej. Torre A, piso 3" />
             <Lista label="Tipo de charla" value={d.tipo} onChange={(v) => set("tipo", v)} opciones={TIPOS_CHARLA} />
-            <div className="grid grid-cols-2 gap-2.5">
-              <Campo label="Facilitador (nombre)" value={d.facilitadorNombre} onChange={(v) => set("facilitadorNombre", v)} />
-              <Campo label="Cargo del facilitador" value={d.facilitadorCargo} onChange={(v) => set("facilitadorCargo", v)} />
-            </div>
+            <Campo
+              label="Facilitador (nombre)"
+              value={d.facilitadorNombre}
+              lista="profesionales-charla"
+              placeholder={profesionales.length ? "Escribe o elige un nombre guardado" : "Nombre completo"}
+              onChange={(v) => cambiarNombre("facilitadorNombre", "facilitadorCargo", v)}
+              onBlur={(v) => recordar(v, d.facilitadorCargo)}
+            />
+            <CampoCargo
+              label="Cargo del facilitador"
+              value={d.facilitadorCargo}
+              opciones={cargos}
+              onChange={(v) => set("facilitadorCargo", v)}
+              onGuardar={(v) => recordar(d.facilitadorNombre, v)}
+            />
           </div>
         </Seccion>
 
@@ -626,11 +746,38 @@ export default function FormularioCharlaDiaria({ onVolver }) {
             <div className="text-[11px] font-semibold" style={{ color: NAVY }}>Facilitador (el mismo de arriba)</div>
             <div className="text-[12.5px]" style={{ color: "#5B6270" }}>{d.facilitadorNombre || "— sin nombre —"} {d.facilitadorCargo ? `· ${d.facilitadorCargo}` : ""}</div>
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Responsable SST / Residente de obra (Vo.Bo.)</div>
-            <div className="grid grid-cols-2 gap-2.5">
-              <Campo label="Nombre" value={d.responsableNombre} onChange={(v) => set("responsableNombre", v)} />
-              <Campo label="Cargo" value={d.responsableCargo} onChange={(v) => set("responsableCargo", v)} />
-            </div>
+            <Campo
+              label="Nombre"
+              value={d.responsableNombre}
+              lista="profesionales-charla"
+              placeholder={profesionales.length ? "Escribe o elige un nombre guardado" : "Nombre completo"}
+              onChange={(v) => cambiarNombre("responsableNombre", "responsableCargo", v)}
+              onBlur={(v) => recordar(v, d.responsableCargo)}
+            />
+            <CampoCargo
+              label="Cargo"
+              value={d.responsableCargo}
+              opciones={cargos}
+              onChange={(v) => set("responsableCargo", v)}
+              onGuardar={(v) => recordar(d.responsableNombre, v)}
+            />
           </div>
+          {profesionales.length > 0 && (
+            <div className="mt-4 pt-3 border-t" style={{ borderColor: LINE }}>
+              <div className="text-[11px] font-semibold mb-1.5" style={{ color: NAVY }}>Nombres guardados ({profesionales.length})</div>
+              <div className="text-[10.5px] mb-2" style={{ color: "#8A8F99" }}>Aparecen como sugerencia al escribir un nombre. Si guardaste uno mal escrito, bórralo aquí.</div>
+              {profesionales.map((p) => (
+                <div key={p.nombre} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: LINE }}>
+                  <div className="text-[12px]" style={{ color: NAVY }}>
+                    {p.nombre} <span style={{ color: "#8A8F99" }}>· {p.cargo || "sin cargo"}</span>
+                  </div>
+                  <button type="button" aria-label={`Borrar ${p.nombre}`} onClick={() => guardarProfesionales(quitarProfesional(profesionales, p.nombre))} style={{ color: "#B3401F" }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </Seccion>
 
         <div className="pt-5">
@@ -648,7 +795,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
           )}
           {generado && !mensajeError && (
             <div className="text-[11.5px] mb-2 px-2 py-1.5 rounded" style={{ background: "#E8F5EC", color: "#1D6B3A" }}>
-              ✓ Excel descargado. Imprímelo para las firmas, o toca "Empezar una charla nueva" (al final de la pantalla).
+              ✓ Excel descargado (charla N° {numeroUsado}). Imprímelo para las firmas, o toca "Empezar una charla nueva" (al final de la pantalla).
             </div>
           )}
           <button

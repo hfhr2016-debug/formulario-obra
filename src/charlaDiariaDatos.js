@@ -136,6 +136,56 @@ export function escribirCharlaEnHoja(ws, d) {
   poner(ws, C.responsableCargo, d.responsableCargo);
 }
 
+// ---------- Profesionales que usan el formato (cargos y memoria de nombres) ----------
+export const CARGOS_PROFESIONALES = [
+  "Ingeniero Residente", "Arquitecto Residente", "Director de Obra", "Coordinador SST", "Profesional SST",
+  "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Maestro de Obra", "Supervisor de Obra",
+  "Interventor de Obra", "Gerente de Proyecto",
+];
+const MAX_PROFESIONALES = 40;
+
+export function normalizarNombre(n) {
+  return String(n || "").trim().replace(/\s+/g, " ");
+}
+
+export function buscarProfesional(lista, nombre) {
+  const k = normalizarNombre(nombre).toLowerCase();
+  if (!k) return null;
+  return (lista || []).find((p) => normalizarNombre(p.nombre).toLowerCase() === k) || null;
+}
+
+// Guarda un profesional. Si es nuevo va al principio; si ya existía se actualiza EN SU LUGAR (la lista no se
+// reordena, para que los botones no se muevan bajo el dedo). Conserva la mejor escritura del nombre (la que
+// se vea como "Nombre Apellido") y, si el cargo llega vacío, el que ya tenía. Si no cambia nada devuelve la misma lista.
+export function recordarProfesional(lista, nombre, cargo) {
+  const n = normalizarNombre(nombre);
+  if (n.length < 3) return lista;
+  const arr = lista || [];
+  const k = n.toLowerCase();
+  const i = arr.findIndex((p) => normalizarNombre(p.nombre).toLowerCase() === k);
+  if (i === -1) return [{ nombre: n, cargo: normalizarNombre(cargo) }, ...arr].slice(0, MAX_PROFESIONALES);
+  const previo = arr[i];
+  // Puntaje de "bien escrito": palabras con la primera letra en mayúscula y el resto en minúscula.
+  const puntaje = (t) => String(t).split(" ").filter((w) => /^[A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+$/.test(w)).length;
+  const nombreFinal = puntaje(n) > puntaje(previo.nombre) ? n : previo.nombre;
+  const cargoFinal = normalizarNombre(cargo) || previo.cargo;
+  if (nombreFinal === previo.nombre && cargoFinal === previo.cargo) return lista;
+  const copia = arr.slice();
+  copia[i] = { nombre: nombreFinal, cargo: cargoFinal };
+  return copia;
+}
+
+export function quitarProfesional(lista, nombre) {
+  const k = normalizarNombre(nombre).toLowerCase();
+  return (lista || []).filter((p) => normalizarNombre(p.nombre).toLowerCase() !== k);
+}
+
+// Cargos de la lista base + los cargos distintos que ya se escribieron al guardar profesionales.
+export function cargosDisponibles(lista) {
+  const extras = (lista || []).map((p) => normalizarNombre(p.cargo)).filter((c) => c && !CARGOS_PROFESIONALES.includes(c));
+  return [...CARGOS_PROFESIONALES, ...Array.from(new Set(extras))];
+}
+
 // Validaciones antes de generar. Devuelve una lista de textos (vacía = todo bien).
 export function validarCharla(d) {
   const faltan = [];
