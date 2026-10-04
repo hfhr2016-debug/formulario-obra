@@ -5,6 +5,7 @@ import {
   CODIGO_FORMATO, CELDAS, PELIGROS, EPP, TIPOS_CHARLA, CLIMAS, ORDEN_ASEO, SINTOMAS, TEMAS_SUGERIDOS,
   MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
+  CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre,
 } from "./charlaDiariaDatos";
 
 const NAVY = "#1B2A45";
@@ -17,6 +18,14 @@ const CLAVE_FIRMANTES = "ryr_sst_firmantes";
 const CLAVE_CONSECUTIVO = "ryr_sst_charla_consecutivo";
 const CLAVE_ULTIMOS = "ryr_sst_ultimos_asistentes";
 const CLAVE_PROFESIONALES = "ryr_sst_profesionales";
+const CLAVE_NOMBRES_TECNICA = "ryr_nombres_usados"; // la misma memoria de nombres de Gestión Técnica
+
+const N_FOTOS = 4;
+const fotoVacia = () => ({ file: null, previewUrl: "", caption: "" });
+
+const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento }));
+const CIUDADES_AL_ABRIR = CIUDADES_PRINCIPALES.map((n) => OPCIONES_CIUDADES.find((o) => o.texto === n)).filter(Boolean);
+const OPCIONES_TEMAS = TEMAS_SUGERIDOS.map((t) => ({ texto: t, detalle: "" }));
 
 // ---------- Memoria local (nunca debe romper la pantalla si el navegador la bloquea) ----------
 function leerJSON(clave, porDefecto) {
@@ -157,6 +166,57 @@ function Campo({ label, value, onChange, placeholder, type = "text", lista, inpu
         onFocus={(e) => (e.target.style.borderColor = GOLD)}
         onBlur={(e) => { e.target.style.borderColor = LINE; if (onBlur) onBlur(e.target.value); }}
       />
+    </div>
+  );
+}
+
+// Casilla de texto con lista desplegable: al tocarla vacía muestra "opcionesAlAbrir"; al escribir filtra
+// "opciones" (sin importar tildes ni mayúsculas). Siempre se puede escribir un valor que no esté en la lista.
+function BuscadorLista({ label, value, onChange, onElegir, opciones, opcionesAlAbrir, placeholder, onBlurValor, maxResultados = 8 }) {
+  const [abierto, setAbierto] = useState(false);
+  const eligiendo = useRef(false);
+  const cierre = useRef(null); // cierre pendiente (150 ms después de salir de la casilla)
+  const abrir = () => { clearTimeout(cierre.current); setAbierto(true); };
+  const texto = (value || "").trim();
+  const resultados = texto ? filtrarOpciones(opciones, value, maxResultados) : opcionesAlAbrir || [];
+  // Si lo escrito ya es exactamente la única sugerencia, no hace falta mostrarla
+  const visibles = resultados.length === 1 && quitarTildes(resultados[0].texto).toLowerCase() === quitarTildes(texto).toLowerCase() ? [] : resultados;
+  return (
+    <div className="w-full relative">
+      <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        autoComplete="off"
+        onChange={(e) => { onChange(e.target.value); abrir(); }}
+        onFocus={(e) => { e.target.style.borderColor = GOLD; abrir(); }}
+        onBlur={(e) => {
+          e.target.style.borderColor = LINE;
+          // Si el usuario tocó una sugerencia, no se guarda el texto a medio escribir
+          if (onBlurValor && !eligiendo.current) onBlurValor(e.target.value);
+          eligiendo.current = false;
+          clearTimeout(cierre.current);
+          cierre.current = setTimeout(() => setAbierto(false), 150);
+        }}
+        className={claseInput}
+        style={estiloInput}
+      />
+      {abierto && visibles.length > 0 && (
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-52 overflow-y-auto" style={{ borderColor: LINE }}>
+          {visibles.map((o, i) => (
+            <button
+              key={o.texto + i}
+              type="button"
+              onMouseDown={() => { eligiendo.current = true; if (onElegir) onElegir(o); else onChange(o.texto); setAbierto(false); }}
+              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 text-[12.5px]"
+              style={{ borderColor: LINE, color: NAVY }}
+            >
+              {o.texto}{o.detalle ? <span style={{ color: "#8A8F99" }}> · {o.detalle}</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -314,7 +374,7 @@ function CasillaFoto({ foto, numero, onChange, onRemove }) {
 // =====================================================================================
 export default function FormularioCharlaDiaria({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
-  const [fotos, setFotos] = useState([{ file: null, previewUrl: "", caption: "" }, { file: null, previewUrl: "", caption: "" }]);
+  const [fotos, setFotos] = useState(() => Array.from({ length: N_FOTOS }, fotoVacia));
   const [abierta, setAbierta] = useState("general");
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
@@ -346,7 +406,20 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   function recordar(nombre, cargo) {
     const nueva = recordarProfesional(profesionales, nombre, cargo);
     if (nueva !== profesionales) guardarProfesionales(nueva);
+    // También se anota en la memoria de nombres de Gestión Técnica (la misma que usan sus formularios)
+    const n = normalizarNombre(nombre);
+    if (n.length >= 3) {
+      const usados = leerJSON(CLAVE_NOMBRES_TECNICA, []);
+      if (!usados.includes(n)) guardarJSON(CLAVE_NOMBRES_TECNICA, [n, ...usados].slice(0, 200));
+    }
   }
+  // Sugerencias de nombre: los profesionales guardados aquí (con su cargo) y los nombres usados en Gestión Técnica
+  const [nombresTecnica] = useState(() => leerJSON(CLAVE_NOMBRES_TECNICA, []));
+  const opcionesNombres = [
+    ...profesionales.map((p) => ({ texto: p.nombre, detalle: p.cargo })),
+    ...nombresTecnica.filter((n) => !buscarProfesional(profesionales, n)).map((n) => ({ texto: n, detalle: "" })),
+  ];
+  const nombresAlAbrir = profesionales.slice(0, 8).map((p) => ({ texto: p.nombre, detalle: p.cargo }));
   // Al escribir/elegir un nombre ya guardado, se completa solo su cargo.
   function cambiarNombre(campoNombre, campoCargo, valor) {
     const p = buscarProfesional(profesionales, valor);
@@ -444,7 +517,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
 
   // ---- Fotos ----
   const actualizarFoto = (i, nueva) => setFotos((cur) => cur.map((f, idx) => (idx === i ? nueva : f)));
-  const quitarFoto = (i) => actualizarFoto(i, { file: null, previewUrl: "", caption: "" });
+  const quitarFoto = (i) => actualizarFoto(i, fotoVacia());
 
   // ---- Generar Excel ----
   async function generarExcel() {
@@ -469,10 +542,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       escribirCharlaEnHoja(ws, { ...d, nCharla: nUsar });
       await agregarLogo(workbook, ws);
 
-      const posiciones = [
-        { pos: CELDAS.foto1, caption: CELDAS.captionFoto1 },
-        { pos: CELDAS.foto2, caption: CELDAS.captionFoto2 },
-      ];
+      const posiciones = Array.from({ length: N_FOTOS }, (_, i) => ({ pos: CELDAS[`foto${i + 1}`], caption: CELDAS[`captionFoto${i + 1}`] }));
       for (let i = 0; i < fotos.length; i++) {
         if (!fotos[i].file) continue;
         const buf = await comprimirFoto(fotos[i].file);
@@ -531,7 +601,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     if (!window.confirm("¿Empezar una charla nueva? Se limpian los datos de esta (el facilitador y el responsable se conservan).")) return;
     borrar(CLAVE_BORRADOR);
     setD(datosIniciales());
-    setFotos([{ file: null, previewUrl: "", caption: "" }, { file: null, previewUrl: "", caption: "" }]);
+    setFotos(Array.from({ length: N_FOTOS }, fotoVacia));
     setGenerado(false);
     setMensajeError("");
     setAbierta("general");
@@ -563,12 +633,6 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <datalist id="temas-charla">
-        {TEMAS_SUGERIDOS.map((t) => (<option key={t} value={t} />))}
-      </datalist>
-      <datalist id="profesionales-charla">
-        {profesionales.map((p) => (<option key={p.nombre} value={p.nombre}>{p.cargo}</option>))}
-      </datalist>
 
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
         <div className="flex items-center justify-between gap-3">
@@ -594,10 +658,15 @@ export default function FormularioCharlaDiaria({ onVolver }) {
           </button>
           <div className="space-y-2.5">
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
-            <div className="grid grid-cols-2 gap-2.5">
-              <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
-              <Campo label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} />
-            </div>
+            <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
+            <BuscadorLista
+              label="Ubicación"
+              value={d.ubicacion}
+              onChange={(v) => set("ubicacion", v)}
+              opciones={OPCIONES_CIUDADES}
+              opcionesAlAbrir={CIUDADES_AL_ABRIR}
+              placeholder="Elige una ciudad o escribe otra"
+            />
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <Campo label="Fecha" type="date" value={d.fecha} onChange={(v) => set("fecha", v)} />
@@ -622,13 +691,15 @@ export default function FormularioCharlaDiaria({ onVolver }) {
             )}
             <Campo label="Frente / lugar de la charla" value={d.frente} onChange={(v) => set("frente", v)} placeholder="Ej. Torre A, piso 3" />
             <Lista label="Tipo de charla" value={d.tipo} onChange={(v) => set("tipo", v)} opciones={TIPOS_CHARLA} />
-            <Campo
+            <BuscadorLista
               label="Facilitador (nombre)"
               value={d.facilitadorNombre}
-              lista="profesionales-charla"
-              placeholder={profesionales.length ? "Escribe o elige un nombre guardado" : "Nombre completo"}
+              opciones={opcionesNombres}
+              opcionesAlAbrir={nombresAlAbrir}
+              placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
               onChange={(v) => cambiarNombre("facilitadorNombre", "facilitadorCargo", v)}
-              onBlur={(v) => recordar(v, d.facilitadorCargo)}
+              onElegir={(o) => { cambiarNombre("facilitadorNombre", "facilitadorCargo", o.texto); recordar(o.texto, ""); }}
+              onBlurValor={(v) => recordar(v, d.facilitadorCargo)}
             />
             <CampoCargo
               label="Cargo del facilitador"
@@ -643,7 +714,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
         {/* 2. TEMA */}
         <Seccion id="tema" titulo="2. Tema de la charla" subtitulo="Qué se explicó y qué se acordó" abierta={abierta === "tema"} onToggle={alternar} contador={d.tema ? 1 : 0}>
           <div className="space-y-2.5">
-            <Campo label="Tema principal" value={d.tema} lista="temas-charla" placeholder="Elige uno de la lista o escribe el tuyo" onChange={(v) => set("tema", v)} />
+            <BuscadorLista label="Tema principal" value={d.tema} opciones={OPCIONES_TEMAS} opcionesAlAbrir={OPCIONES_TEMAS} maxResultados={10} placeholder="Elige uno de la lista o escribe el tuyo" onChange={(v) => set("tema", v)} />
             <AreaTexto label="Contenido / puntos tratados" filas={5} value={d.contenido} onChange={(v) => set("contenido", v)} placeholder="Ideas principales que se explicaron al personal" />
           </div>
         </Seccion>
@@ -732,7 +803,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
         </Seccion>
 
         {/* 6. FOTOS */}
-        <Seccion id="fotos" titulo="6. Evidencia fotográfica" subtitulo="Opcional · hasta 2 fotos de la charla" abierta={abierta === "fotos"} onToggle={alternar} contador={fotos.filter((f) => f.file).length}>
+        <Seccion id="fotos" titulo="6. Evidencia fotográfica" subtitulo={`Opcional · hasta ${N_FOTOS} fotos de la charla`} abierta={abierta === "fotos"} onToggle={alternar} contador={fotos.filter((f) => f.file).length}>
           <div className="grid grid-cols-2 gap-2.5">
             {fotos.map((f, i) => (
               <CasillaFoto key={i} foto={f} numero={i + 1} onChange={(n) => actualizarFoto(i, n)} onRemove={() => quitarFoto(i)} />
@@ -746,13 +817,15 @@ export default function FormularioCharlaDiaria({ onVolver }) {
             <div className="text-[11px] font-semibold" style={{ color: NAVY }}>Facilitador (el mismo de arriba)</div>
             <div className="text-[12.5px]" style={{ color: "#5B6270" }}>{d.facilitadorNombre || "— sin nombre —"} {d.facilitadorCargo ? `· ${d.facilitadorCargo}` : ""}</div>
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Responsable SST / Residente de obra (Vo.Bo.)</div>
-            <Campo
+            <BuscadorLista
               label="Nombre"
               value={d.responsableNombre}
-              lista="profesionales-charla"
-              placeholder={profesionales.length ? "Escribe o elige un nombre guardado" : "Nombre completo"}
+              opciones={opcionesNombres}
+              opcionesAlAbrir={nombresAlAbrir}
+              placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
               onChange={(v) => cambiarNombre("responsableNombre", "responsableCargo", v)}
-              onBlur={(v) => recordar(v, d.responsableCargo)}
+              onElegir={(o) => { cambiarNombre("responsableNombre", "responsableCargo", o.texto); recordar(o.texto, ""); }}
+              onBlurValor={(v) => recordar(v, d.responsableCargo)}
             />
             <CampoCargo
               label="Cargo"
