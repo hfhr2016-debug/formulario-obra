@@ -1481,25 +1481,30 @@ const MODULOS = [
 ];
 
 const MODULOS_SST = [
-  { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", activo: false },
-  { id: "sst-personal", nombre: "Registro de Personal", emoji: "👷", activo: false },
-  { id: "sst-capacitaciones", nombre: "Capacitaciones", emoji: "🎓", activo: false },
-  { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", activo: false },
+  // --- Uso diario ---
   { id: "sst-charla-diaria", nombre: "Charla Diaria de Seguridad", emoji: "🗣️", activo: false },
-  { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", activo: false },
-  { id: "sst-inspecciones", nombre: "Inspecciones", emoji: "🔍", activo: false },
-  { id: "sst-actos-inseguros", nombre: "Actos y Condiciones Inseguras", emoji: "🚧", activo: false },
+  { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", activo: false },
   { id: "sst-permisos", nombre: "Permisos de Trabajo", emoji: "📝", activo: false },
   { id: "sst-ats", nombre: "Análisis de Trabajo Seguro", emoji: "⚠️", activo: false },
-  { id: "sst-matriz-peligros", nombre: "Matriz de Peligros", emoji: "🗺️", activo: false },
-  { id: "sst-accidentalidad", nombre: "Accidentalidad", emoji: "🚑", activo: false },
-  { id: "sst-investigacion", nombre: "Investigación de Accidentes", emoji: "🔎", activo: false },
-  { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", activo: false },
-  { id: "sst-emergencias", nombre: "Plan de Emergencias", emoji: "🚨", activo: false },
+  { id: "sst-personal", nombre: "Registro de Personal", emoji: "👷", activo: false },
+  // --- Varias veces por semana ---
+  { id: "sst-inspecciones", nombre: "Inspecciones", emoji: "🔍", activo: false },
+  { id: "sst-actos-inseguros", nombre: "Actos y Condiciones Inseguras", emoji: "🚧", activo: false },
+  { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", activo: false },
+  // --- Semanal / periódico ---
+  { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", activo: false },
+  { id: "sst-capacitaciones", nombre: "Capacitaciones", emoji: "🎓", activo: false },
   { id: "sst-acciones", nombre: "Acciones Correctivas", emoji: "✅", activo: false },
   { id: "sst-indicadores", nombre: "Indicadores", emoji: "📊", activo: false },
-  { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", activo: false },
+  // --- Mensual / cuando ocurre un evento ---
   { id: "sst-mensual", nombre: "Informe Mensual SST", emoji: "🗓️", activo: false },
+  { id: "sst-accidentalidad", nombre: "Accidentalidad", emoji: "🚑", activo: false },
+  { id: "sst-investigacion", nombre: "Investigación de Accidentes", emoji: "🔎", activo: false },
+  // --- Una vez por proyecto ---
+  { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", activo: false },
+  { id: "sst-matriz-peligros", nombre: "Matriz de Peligros", emoji: "🗺️", activo: false },
+  { id: "sst-emergencias", nombre: "Plan de Emergencias", emoji: "🚨", activo: false },
+  { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", activo: false },
 ];
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
