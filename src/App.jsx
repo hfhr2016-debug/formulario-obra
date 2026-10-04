@@ -1488,6 +1488,7 @@ const MODULOS_SST = [
   { id: "sst-ats", nombre: "Análisis de Trabajo Seguro", emoji: "⚠️", activo: false },
   { id: "sst-personal", nombre: "Registro de Personal", emoji: "👷", activo: false },
   // --- Varias veces por semana ---
+  { id: "sst-induccion", nombre: "Inducción SST Personal Nuevo", emoji: "🆕", activo: false },
   { id: "sst-inspecciones", nombre: "Inspecciones", emoji: "🔍", activo: false },
   { id: "sst-actos-inseguros", nombre: "Actos y Condiciones Inseguras", emoji: "🚧", activo: false },
   { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", activo: false },
