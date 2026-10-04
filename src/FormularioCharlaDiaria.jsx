@@ -536,6 +536,9 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.getWorksheet("Charla Diaria");
       if (!ws) throw new Error('No se encontró la hoja "Charla Diaria" en la plantilla');
+      // Protección: la librería de Excel reescribe <outlinePr> en un orden que Excel rechaza ("hemos encontrado
+      // un problema con el contenido"). Se descarta esa propiedad para que no pueda dañar el archivo.
+      try { if (ws.properties) ws.properties.outlineProperties = undefined; } catch (e) {}
 
       // N° de charla: si se dejó vacío, se asigna el siguiente consecutivo
       const nUsar = d.nCharla && String(d.nCharla).trim() ? String(d.nCharla).trim() : String(siguienteConsecutivo());
