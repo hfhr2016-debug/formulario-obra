@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import ExcelJS from "exceljs";
 import { ChevronDown, Plus, Trash2, Camera, X, Loader2, FileSpreadsheet } from "lucide-react";
 import {
@@ -6,6 +6,7 @@ import {
   MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre,
+  CARGOS_OBRA, unirUnicos, recordarTexto,
 } from "./charlaDiariaDatos";
 
 const NAVY = "#1B2A45";
@@ -14,10 +15,11 @@ const PAPER = "#EEF1F6";
 const LINE = "#D9DCE1";
 
 const CLAVE_BORRADOR = "ryr_borrador_charla";
-const CLAVE_FIRMANTES = "ryr_sst_firmantes";
 const CLAVE_CONSECUTIVO = "ryr_sst_charla_consecutivo";
 const CLAVE_ULTIMOS = "ryr_sst_ultimos_asistentes";
 const CLAVE_PROFESIONALES = "ryr_sst_profesionales";
+const CLAVE_CARGOS_OBRA = "ryr_sst_cargos_oficio";   // cargos/oficios nuevos que se escribieron en los asistentes
+const CLAVE_EMPRESAS = "ryr_sst_empresas";             // empresas escritas en los asistentes
 const CLAVE_NOMBRES_TECNICA = "ryr_nombres_usados"; // la misma memoria de nombres de Gestión Técnica
 
 const N_FOTOS = 4;
@@ -51,7 +53,6 @@ function siguienteConsecutivo() {
 }
 
 function datosIniciales() {
-  const firmantes = leerJSON(CLAVE_FIRMANTES, {});
   const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
     fecha: "", horaInicio: "", horaFin: "", nCharla: "",
@@ -63,7 +64,7 @@ function datosIniciales() {
     actividades: "", peligros: [], otrosPeligros: "", medidas: "", epp: [], otrosEpp: "",
     clima: "", ordenAseo: "", sintomas: "", novedades: "",
     asistentes: [], personalTotal: "",
-    responsableNombre: firmantes.responsableNombre || "", responsableCargo: firmantes.responsableCargo || "",
+    responsableNombre: "", responsableCargo: "",      // las firmas empiezan vacías (los nombres se sugieren al escribir)
   };
 }
 
@@ -488,6 +489,50 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     cargoAutomatico.current[campoCargo] = false;
     set(campoCargo, valor);
   }
+  // Cargos y oficios de la obra para el registro de asistentes (lista base + los nuevos que se hayan escrito)
+  const [cargosExtra, setCargosExtra] = useState(() => leerJSON(CLAVE_CARGOS_OBRA, []));
+  const cargosObraBase = useMemo(() => unirUnicos(CARGOS_OBRA, cargosDisponibles(profesionales)), [profesionales]);
+  const opcionesCargosObra = useMemo(() => unirUnicos(cargosObraBase, cargosExtra).map((t) => ({ texto: t, detalle: "" })), [cargosObraBase, cargosExtra]);
+  function recordarCargoObra(valor) {
+    const nueva = recordarTexto(cargosExtra, valor, { base: cargosObraBase, min: 3, max: 100 });
+    if (nueva !== cargosExtra) { setCargosExtra(nueva); guardarJSON(CLAVE_CARGOS_OBRA, nueva); }
+  }
+  // Empresas ya escritas (la más reciente primero); el contratista del proyecto se ofrece de primero si está escrito
+  const [empresas, setEmpresas] = useState(() => leerJSON(CLAVE_EMPRESAS, []));
+  const opcionesEmpresas = unirUnicos([d.contratista, ...empresas], [], false).map((t) => ({ texto: t, detalle: "" }));
+  function recordarEmpresa(valor) {
+    const nueva = recordarTexto(empresas, valor, { min: 2, max: 50 });
+    if (nueva !== empresas) { setEmpresas(nueva); guardarJSON(CLAVE_EMPRESAS, nueva); }
+  }
+
+  // Dibuja el par "nombre + cargo" de una persona (facilitador o responsable) con su lista de nombres guardados.
+  // Es una función (no un componente) a propósito: así las casillas no se reinician al escribir.
+  function bloqueProfesional(etqNombre, etqCargo, campoNombre, campoCargo) {
+    return (
+      <>
+        <BuscadorLista
+          label={etqNombre}
+          value={d[campoNombre]}
+          opciones={opcionesNombres}
+          opcionesAlAbrir={nombresAlAbrir}
+          placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
+          onChange={(v) => cambiarNombre(campoNombre, campoCargo, v)}
+          onElegir={(o) => { cambiarNombre(campoNombre, campoCargo, o.texto); recordar(o.texto, ""); }}
+          onLimpiar={() => limpiarProfesional(campoNombre, campoCargo)}
+          onBlurValor={(v) => recordar(v, d[campoCargo])}
+        />
+        <CampoCargo
+          key={reinicioCargo[campoCargo]}
+          label={etqCargo}
+          value={d[campoCargo]}
+          opciones={cargos}
+          onChange={(v) => cambiarCargo(campoCargo, v)}
+          onGuardar={(v) => recordar(d[campoNombre], v)}
+        />
+      </>
+    );
+  }
+
   function limpiarProfesional(campoNombre, campoCargo) {
     cargoAutomatico.current[campoCargo] = false;
     setD((cur) => ({ ...cur, [campoNombre]: "", [campoCargo]: "" }));
@@ -502,12 +547,6 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     if (tieneContenido(d)) guardarJSON(CLAVE_BORRADOR, d);
     else borrar(CLAVE_BORRADOR);
   }, [d, borradorAplicado]);
-
-  // ---- Recuerda al responsable / residente (suele ser el mismo todos los días). El facilitador NO se recuerda. ----
-  useEffect(() => {
-    if (!borradorAplicado) return;
-    guardarJSON(CLAVE_FIRMANTES, { responsableNombre: d.responsableNombre, responsableCargo: d.responsableCargo });
-  }, [borradorAplicado, d.responsableNombre, d.responsableCargo]);
 
   function restaurarBorrador() {
     const guardado = leerJSON(CLAVE_BORRADOR, null);
@@ -542,7 +581,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   function agregarAsistente() {
     if (!hayEspacio) { setAvisoAsistentes(`El formato tiene espacio para ${MAX_ASISTENTES} asistentes. Para más personas, genera una segunda hoja de esta charla.`); return; }
     setAvisoAsistentes("");
-    setAsistentes([...asistentes, { nombre: "", documento: "", cargo: "", empresa: d.contratista }]);
+    setAsistentes([...asistentes, { nombre: "", documento: "", cargo: "", empresa: "" }]);
   }
   function actualizarAsistente(i, campo, valor) {
     setAsistentes(asistentes.map((a, idx) => (idx === i ? { ...a, [campo]: valor } : a)));
@@ -553,7 +592,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   }
   function agregarVarios(lista) {
     const libres = MAX_ASISTENTES - asistentes.length;
-    const nuevos = lista.slice(0, Math.max(0, libres)).map((a) => ({ ...a, empresa: a.empresa || d.contratista }));
+    const nuevos = lista.slice(0, Math.max(0, libres)).map((a) => ({ ...a, empresa: a.empresa || "" }));
     setAsistentes([...asistentes, ...nuevos]);
     setAvisoAsistentes(
       lista.length > libres
@@ -642,6 +681,14 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       let lista = recordarProfesional(profesionales, d.facilitadorNombre, d.facilitadorCargo);
       lista = recordarProfesional(lista, d.responsableNombre, d.responsableCargo);
       guardarProfesionales(lista);
+      let cargosNuevos = cargosExtra;
+      let empresasNuevas = empresas;
+      for (const a of asistentes) {
+        cargosNuevos = recordarTexto(cargosNuevos, a.cargo, { base: cargosObraBase, min: 3, max: 100 });
+        empresasNuevas = recordarTexto(empresasNuevas, a.empresa, { min: 2, max: 50 });
+      }
+      if (cargosNuevos !== cargosExtra) { setCargosExtra(cargosNuevos); guardarJSON(CLAVE_CARGOS_OBRA, cargosNuevos); }
+      if (empresasNuevas !== empresas) { setEmpresas(empresasNuevas); guardarJSON(CLAVE_EMPRESAS, empresasNuevas); }
       borrar(CLAVE_BORRADOR);
       omitirGuardadoRef.current = true;
       setD((cur) => ({ ...cur, nCharla: nUsar }));
@@ -762,25 +809,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
             )}
             <Campo label="Frente / lugar de la charla" value={d.frente} onChange={(v) => set("frente", v)} placeholder="Ej. Torre A, piso 3" />
             <Lista label="Tipo de charla" value={d.tipo} onChange={(v) => set("tipo", v)} opciones={TIPOS_CHARLA} />
-            <BuscadorLista
-              label="Facilitador (nombre)"
-              value={d.facilitadorNombre}
-              opciones={opcionesNombres}
-              opcionesAlAbrir={nombresAlAbrir}
-              placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
-              onChange={(v) => cambiarNombre("facilitadorNombre", "facilitadorCargo", v)}
-              onElegir={(o) => { cambiarNombre("facilitadorNombre", "facilitadorCargo", o.texto); recordar(o.texto, ""); }}
-              onLimpiar={() => limpiarProfesional("facilitadorNombre", "facilitadorCargo")}
-              onBlurValor={(v) => recordar(v, d.facilitadorCargo)}
-            />
-            <CampoCargo
-              key={reinicioCargo.facilitadorCargo}
-              label="Cargo del facilitador"
-              value={d.facilitadorCargo}
-              opciones={cargos}
-              onChange={(v) => cambiarCargo("facilitadorCargo", v)}
-              onGuardar={(v) => recordar(d.facilitadorNombre, v)}
-            />
+            {bloqueProfesional("Facilitador (nombre)", "Cargo del facilitador", "facilitadorNombre", "facilitadorCargo")}
           </div>
         </Seccion>
 
@@ -849,11 +878,26 @@ export default function FormularioCharlaDiaria({ onVolver }) {
               <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>#{i + 1}</div>
               <div className="space-y-2">
                 <Campo label="Nombre completo" value={a.nombre} onChange={(v) => actualizarAsistente(i, "nombre", v)} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Campo label="Documento" value={a.documento} inputMode="numeric" onChange={(v) => actualizarAsistente(i, "documento", v)} />
-                  <Campo label="Cargo / oficio" value={a.cargo} onChange={(v) => actualizarAsistente(i, "cargo", v)} />
-                </div>
-                <Campo label="Empresa" value={a.empresa} onChange={(v) => actualizarAsistente(i, "empresa", v)} />
+                <Campo label="Documento" value={a.documento} inputMode="numeric" onChange={(v) => actualizarAsistente(i, "documento", v)} />
+                <BuscadorLista
+                  label="Cargo / oficio"
+                  value={a.cargo}
+                  onChange={(v) => actualizarAsistente(i, "cargo", v)}
+                  opciones={opcionesCargosObra}
+                  opcionesAlAbrir={opcionesCargosObra}
+                  maxResultados={10}
+                  placeholder="Elige un cargo de la obra o escribe otro"
+                  onBlurValor={(v) => recordarCargoObra(v)}
+                />
+                <BuscadorLista
+                  label="Empresa"
+                  value={a.empresa}
+                  onChange={(v) => actualizarAsistente(i, "empresa", v)}
+                  opciones={opcionesEmpresas}
+                  opcionesAlAbrir={opcionesEmpresas}
+                  placeholder="Escribe la empresa"
+                  onBlurValor={(v) => recordarEmpresa(v)}
+                />
               </div>
               <button type="button" onClick={() => quitarAsistente(i)} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>
                 <Trash2 size={12} />
@@ -885,30 +929,12 @@ export default function FormularioCharlaDiaria({ onVolver }) {
         </Seccion>
 
         {/* 7. FIRMAS */}
-        <Seccion id="firmas" titulo="7. Firmas" subtitulo="Se recuerdan para la próxima charla" abierta={abierta === "firmas"} onToggle={alternar}>
+        <Seccion id="firmas" titulo="7. Firmas" subtitulo="Empiezan vacías · al escribir se sugieren los nombres guardados" abierta={abierta === "firmas"} onToggle={alternar}>
           <div className="space-y-2.5">
-            <div className="text-[11px] font-semibold" style={{ color: NAVY }}>Facilitador (el mismo de arriba)</div>
-            <div className="text-[12.5px]" style={{ color: "#5B6270" }}>{d.facilitadorNombre || "— sin nombre —"} {d.facilitadorCargo ? `· ${d.facilitadorCargo}` : ""}</div>
+            <div className="text-[11px] font-semibold" style={{ color: NAVY }}>Facilitador (quien dicta la charla)</div>
+            {bloqueProfesional("Facilitador (nombre)", "Cargo del facilitador", "facilitadorNombre", "facilitadorCargo")}
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Responsable SST / Residente de obra (Vo.Bo.)</div>
-            <BuscadorLista
-              label="Nombre"
-              value={d.responsableNombre}
-              opciones={opcionesNombres}
-              opcionesAlAbrir={nombresAlAbrir}
-              placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
-              onChange={(v) => cambiarNombre("responsableNombre", "responsableCargo", v)}
-              onElegir={(o) => { cambiarNombre("responsableNombre", "responsableCargo", o.texto); recordar(o.texto, ""); }}
-              onLimpiar={() => limpiarProfesional("responsableNombre", "responsableCargo")}
-              onBlurValor={(v) => recordar(v, d.responsableCargo)}
-            />
-            <CampoCargo
-              key={reinicioCargo.responsableCargo}
-              label="Cargo"
-              value={d.responsableCargo}
-              opciones={cargos}
-              onChange={(v) => cambiarCargo("responsableCargo", v)}
-              onGuardar={(v) => recordar(d.responsableNombre, v)}
-            />
+            {bloqueProfesional("Nombre", "Cargo", "responsableNombre", "responsableCargo")}
           </div>
           {profesionales.length > 0 && (
             <div className="mt-4 pt-3 border-t" style={{ borderColor: LINE }}>

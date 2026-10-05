@@ -206,6 +206,63 @@ export function cargosDisponibles(lista) {
   return [...CARGOS_PROFESIONALES, ...Array.from(new Set(extras))];
 }
 
+// ---------- Cargos y oficios de una obra (registro de asistentes) ----------
+// Incluye los cargos de los profesionales, el personal técnico y administrativo, y todos los oficios y operadores
+// (los nombres individuales del catálogo de Mano de Obra de Gestión Técnica, sin las cuadrillas ni los "Obrero (2)").
+export const CARGOS_OBRA = [
+  // Dirección, ingeniería y administración
+  "Director de Obra", "Gerente de Proyecto", "Ingeniero Residente", "Arquitecto Residente", "Residente de Obra",
+  "Ingeniero Auxiliar", "Ingeniero Supervisor", "Ingeniero Geotecnista", "Interventor de Obra", "Inspector de Obra",
+  "Calculista", "Dibujante", "Topógrafo", "Cadenero", "Almacenista de Obra", "Auxiliar Administrativo", "Secretaria de Obra",
+  // Seguridad, salud, ambiente y social
+  "Coordinador SST", "Profesional SST", "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Coordinador Ambiental",
+  "Profesional Ambiental", "Profesional Social", "Brigadista",
+  // Oficios de construcción
+  "Maestro de Obra", "Capataz", "Oficial", "Ayudante", "Obrero", "Armador", "Carpintero", "Formaletero", "Albañil",
+  "Oficial de Mampostería", "Pañetador", "Estucador", "Pintor", "Enchapador / Embaldosador", "Soldador", "Cortador",
+  "Ornamentador", "Cerrajero", "Vidriero / Aluminero", "Oficial de Estructuras Metálicas", "Andamiero", "Concretero",
+  "Impermeabilizador", "Instalador de Cubiertas", "Instalador de Drywall", "Instalador de Cielo Raso",
+  "Electricista", "Ayudante de Electricista", "Plomero / Hidrosanitario", "Ayudante Hidrosanitario", "Instalador de Gas",
+  "Técnico en Climatización (HVAC)", "Técnico en Cableado Estructurado", "Técnico en Sistemas de Seguridad (CCTV)",
+  "Técnico Instalador de Ascensores", "Jardinero", "Perforador", "Aparejador", "Señalero / Banderillero", "Paletero", "Rastrillero",
+  // Operadores, conductores y mecánicos
+  "Operador de Retroexcavadora", "Operador de Excavadora", "Operador de Miniexcavadora", "Operador de Cargador",
+  "Operador de Minicargador", "Operador de Bulldozer", "Operador de Motoniveladora", "Operador de Vibrocompactador",
+  "Operador de Pavimentadora", "Operador de Extendedora de Asfalto", "Operador de Grúa", "Operador de Torre Grúa",
+  "Operador de Pluma Grúa", "Operador de Camión Grúa", "Operador de Montacargas", "Operador de Mezcladora de Concreto",
+  "Operador de Bomba de Concreto", "Operador de Planta Móvil de Concreto", "Operador de Vibrador",
+  "Conductor", "Conductor de Volqueta", "Conductor de Camabaja", "Mecánico", "Lubricador / Engrasador",
+  // Servicios, vigilancia e hidrocarburos
+  "Vigilante / Celador", "Aseador de Obra / Servicios Generales", "Tubero", "Soldador Homologado", "Instrumentista",
+  // Otros
+  "Visitante", "Subcontratista",
+];
+
+// Une dos listas sin repetir (sin importar mayúsculas ni tildes). Por defecto las ordena alfabéticamente.
+export function unirUnicos(base, extras, ordenar = true) {
+  const visto = new Set();
+  const salida = [];
+  for (const t of [...(base || []), ...(extras || [])]) {
+    const texto = String(t || "").trim().replace(/\s+/g, " ");
+    const k = quitarTildes(texto).toLowerCase();
+    if (!k || visto.has(k)) continue;
+    visto.add(k);
+    salida.push(texto);
+  }
+  return ordenar ? salida.sort((a, b) => a.localeCompare(b, "es")) : salida;
+}
+
+// Agrega "texto" al principio de "lista" si es nuevo (sin importar mayúsculas ni tildes) y no está en "base".
+// Devuelve la MISMA lista si no hay nada que agregar.
+export function recordarTexto(lista, texto, { base = [], min = 3, max = 100 } = {}) {
+  const t = String(texto || "").trim().replace(/\s+/g, " ");
+  if (t.length < min) return lista;
+  const k = quitarTildes(t).toLowerCase();
+  const existe = (x) => quitarTildes(String(x)).toLowerCase() === k;
+  if ((base || []).some(existe) || (lista || []).some(existe)) return lista;
+  return [t, ...(lista || [])].slice(0, max);
+}
+
 // Validaciones antes de generar. Devuelve una lista de textos (vacía = todo bien).
 export function validarCharla(d) {
   const faltan = [];
