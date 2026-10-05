@@ -5,7 +5,7 @@
 export const CODIGO_FORMATO = "RYR-SS-002";
 export const PELIGROS = ["Caída a distinto nivel (alturas)", "Caída al mismo nivel / resbalones", "Caída de objetos o herramientas", "Golpes, cortes y atrapamientos", "Sobreesfuerzo / carga manual", "Riesgo eléctrico", "Proyección de partículas", "Ruido", "Polvo / material particulado", "Tránsito de vehículos y maquinaria", "Excavaciones / taludes", "Izaje de cargas", "Trabajo en caliente / incendio", "Espacios confinados / gases", "Sustancias químicas / derrames", "Exposición solar / calor", "Lluvia / tormenta eléctrica", "Animales (serpientes, insectos)", "Seguridad pública / terceros", "Orden y aseo deficiente"];
 export const EPP = ["Casco de seguridad", "Gafas de seguridad", "Guantes", "Botas de seguridad", "Arnés y línea de vida", "Protección auditiva", "Respirador / mascarilla", "Chaleco reflectivo", "Careta / protector facial", "Overol / ropa de trabajo", "Impermeable (lluvia)", "Protector solar / hidratación"];
-export const CELDAS = {"proyecto": "C11", "contratista": "C12", "ubicacion": "J12", "fecha": "C13", "horaInicio": "E13", "horaFin": "G13", "duracion": "I13", "nCharla": "K13", "frente": "C14", "tipo": "J14", "facilitadorNombre": "C15", "facilitadorCargo": "J15", "tema": "C17", "contenido": "C18", "actividades": "C23", "otrosPeligros": "C31", "medidas": "C32", "otrosEpp": "C39", "peligros": ["A26", "D26", "G26", "J26", "A27", "D27", "G27", "J27", "A28", "D28", "G28", "J28", "A29", "D29", "G29", "J29", "A30", "D30", "G30", "J30"], "epp": ["A36", "D36", "G36", "J36", "A37", "D37", "G37", "J37", "A38", "D38", "G38", "J38"], "clima": "C41", "ordenAseo": "G41", "sintomas": "K41", "novedades": "C42", "asistentesFila0": 47, "asistentesN": 30, "personalTotal": "H77", "foto1": {"tl": {"col": 0, "row": 78}, "br": {"col": 3, "row": 94}}, "captionFoto1": "A95", "foto2": {"tl": {"col": 3, "row": 78}, "br": {"col": 6, "row": 94}}, "captionFoto2": "D95", "foto3": {"tl": {"col": 6, "row": 78}, "br": {"col": 9, "row": 94}}, "captionFoto3": "G95", "foto4": {"tl": {"col": 9, "row": 78}, "br": {"col": 12, "row": 94}}, "captionFoto4": "J95", "fotoAspecto": [0.87, 0.932, 0.825, 0.915], "fondoFoto": "F2F2F2", "facilitadorNombreFirma": "C99", "facilitadorCargoFirma": "C100", "responsableNombre": "I99", "responsableCargo": "I100"};
+export const CELDAS = {"proyecto": "C11", "contratista": "C12", "ubicacion": "J12", "fecha": "C13", "horaInicio": "E13", "horaFin": "G13", "duracion": "I13", "nCharla": "K13", "frente": "C14", "tipo": "J14", "facilitadorNombre": "C15", "facilitadorCargo": "J15", "tema": "C17", "contenido": "C18", "actividades": "C23", "otrosPeligros": "C31", "medidas": "C32", "otrosEpp": "C39", "peligros": ["A26", "D26", "G26", "J26", "A27", "D27", "G27", "J27", "A28", "D28", "G28", "J28", "A29", "D29", "G29", "J29", "A30", "D30", "G30", "J30"], "epp": ["A36", "D36", "G36", "J36", "A37", "D37", "G37", "J37", "A38", "D38", "G38", "J38"], "clima": "C41", "ordenAseo": "G41", "sintomas": "K41", "novedades": "C42", "asistentesFila0": 47, "asistentesN": 30, "personalTotal": "H77", "foto1": {"tl": {"col": 0, "row": 78}, "br": {"col": 3, "row": 94}}, "captionFoto1": "A95", "foto2": {"tl": {"col": 3, "row": 78}, "br": {"col": 6, "row": 94}}, "captionFoto2": "D95", "foto3": {"tl": {"col": 6, "row": 78}, "br": {"col": 9, "row": 94}}, "captionFoto3": "G95", "foto4": {"tl": {"col": 9, "row": 78}, "br": {"col": 12, "row": 94}}, "captionFoto4": "J95", "fotoAspecto": [0.87, 0.932, 0.825, 0.915], "fondoFoto": "F2F2F2", "facilitadorNombreFirma": "C99", "facilitadorCargoFirma": "C100", "responsableNombre": "I99", "responsableCargo": "I100", "leyendaPeligros": "A25", "leyendaEpp": "A35"};
 export const MAX_ASISTENTES = CELDAS.asistentesN;
 
 export const TIPOS_CHARLA = [
@@ -74,12 +74,38 @@ export function parsearPegado(texto) {
     .filter((a) => a.nombre);
 }
 
-// Marca ☒ / ☐ en cada opción de una lista según las opciones elegidas.
+// Marcas de las casillas de peligros y EPP: ✔ (chulito negro y grueso) = aplica hoy, ☐ = no aplica.
+export const GLIFO_SI = "✔";
+export const GLIFO_NO = "☐";
+
+// Texto plano de un valor de celda de ExcelJS (texto, texto con formato, fórmula o hipervínculo).
+export function textoDe(valor) {
+  if (valor === null || valor === undefined) return "";
+  if (typeof valor === "object") {
+    if (Array.isArray(valor.richText)) return valor.richText.map((p) => p.text).join("");
+    if (valor.text !== undefined && valor.text !== null) return String(valor.text);
+    if (valor.result !== undefined && valor.result !== null) return String(valor.result);
+    return "";
+  }
+  return String(valor);
+}
+const quitarGlifo = (t) => String(t).replace(/^[☒☐✔✓☑]\s*/, "");
+
+// Marca cada opción según las elegidas. Conserva el texto que tenga la plantilla en cada casilla (si el usuario
+// le cambió el nombre a una opción, se respeta) y solo usa el de la lista cuando la casilla está vacía.
 function marcarGrid(ws, opciones, celdas, elegidas) {
   opciones.forEach((op, i) => {
     if (!celdas[i]) return;
-    ws.getCell(celdas[i]).value = (elegidas.includes(op) ? "☒ " : "☐ ") + op;
+    const actual = quitarGlifo(textoDe(ws.getCell(celdas[i]).value)).trim() || op;
+    ws.getCell(celdas[i]).value = (elegidas.includes(op) ? GLIFO_SI : GLIFO_NO) + " " + actual;
   });
+}
+
+// Las leyendas de las secciones decían "(☒ = aplica hoy)": se actualizan al chulito.
+function actualizarLeyenda(ws, ref) {
+  if (!ref) return;
+  const t = textoDe(ws.getCell(ref).value);
+  if (t.includes("☒")) ws.getCell(ref).value = t.replace(/☒/g, GLIFO_SI);
 }
 
 function poner(ws, ref, valor) {
@@ -90,8 +116,8 @@ function poner(ws, ref, valor) {
 // Escribe TODOS los datos de la charla en la hoja de la plantilla.
 // Solo escribe en celdas "ancla" (la esquina de cada celda combinada) — escribir en otra celda de
 // una combinación falla en ExcelJS.
-export function escribirCharlaEnHoja(ws, d) {
-  const C = CELDAS;
+export function escribirCharlaEnHoja(ws, d, celdas = CELDAS) {
+  const C = celdas;
   poner(ws, C.proyecto, d.proyecto);
   poner(ws, C.contratista, d.contratista);
   poner(ws, C.ubicacion, d.ubicacion);
@@ -113,6 +139,8 @@ export function escribirCharlaEnHoja(ws, d) {
   poner(ws, C.otrosPeligros, d.otrosPeligros);
   poner(ws, C.medidas, d.medidas);
   marcarGrid(ws, EPP, C.epp, d.epp || []);
+  actualizarLeyenda(ws, C.leyendaPeligros);
+  actualizarLeyenda(ws, C.leyendaEpp);
   poner(ws, C.otrosEpp, d.otrosEpp);
 
   poner(ws, C.clima, d.clima);
@@ -261,6 +289,153 @@ export function recordarTexto(lista, texto, { base = [], min = 3, max = 100 } = 
   const existe = (x) => quitarTildes(String(x)).toLowerCase() === k;
   if ((base || []).some(existe) || (lista || []).some(existe)) return lista;
   return [t, ...(lista || [])].slice(0, max);
+}
+
+// ---------- Lectura de la distribución de la plantilla ----------
+// En vez de depender de números de fila fijos, la app LEE la plantilla que esté subida y ubica cada celda por el texto
+// de su etiqueta ("Proyecto / Obra", "Tema principal", "6. EVIDENCIA…"). Así, si el formato cambia (filas insertadas,
+// casillas de foto más altas o más bajas, etc.), todo sigue cayendo en su lugar, y las fotos quedan DENTRO de su casilla.
+// Si no se puede leer, se usa CELDAS (la distribución de la plantilla entregada).
+const GRUPOS_4 = ["A", "D", "G", "J"];
+
+export function colNum(letras) {
+  let n = 0;
+  for (const ch of String(letras)) n = n * 26 + (ch.charCodeAt(0) - 64);
+  return n;
+}
+export function colLetra(n) {
+  let s = "";
+  while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+export function parseRango(texto) {
+  const m = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(String(texto));
+  return m ? { left: colNum(m[1]), top: Number(m[2]), right: colNum(m[3]), bottom: Number(m[4]) } : null;
+}
+
+// Devuelve { celdas, problemas }. Si "problemas" trae algo, "celdas" es null y se debe usar CELDAS.
+export function descubrirCeldas(ws) {
+  const problemas = [];
+  const maxFila = Math.min(Math.max(Number(ws.rowCount) || 0, 1), 400);
+  const texto = (r, c) => textoDe(ws.getCell(r, c).value).trim();
+  const filaDe = (etiqueta, letra = "A", desde = 1, empieza = false) => {
+    const c = colNum(letra);
+    for (let r = desde; r <= maxFila; r++) {
+      const t = texto(r, c);
+      if (empieza ? t.startsWith(etiqueta) : t === etiqueta) return r;
+    }
+    problemas.push(`No encontré "${etiqueta}" (columna ${letra})`);
+    return 0;
+  };
+  // Una celda es escribible si es libre o la ESQUINA de una combinación (nunca el resto de la combinación)
+  const esEsquina = (ref) => {
+    try { const c = ws.getCell(ref); return !c.master || c.master.address === c.address; } catch (e) { return true; }
+  };
+  const ancla = (ref) => {
+    if (!esEsquina(ref)) problemas.push(`${ref} es parte de una celda combinada y no es su esquina`);
+    return ref;
+  };
+  const C = {};
+  let r;
+
+  // 1. Datos generales
+  if ((r = filaDe("Proyecto / Obra"))) C.proyecto = ancla(`C${r}`);
+  if ((r = filaDe("Contratista / Empresa"))) C.contratista = ancla(`C${r}`);
+  if ((r = filaDe("Ubicación", "H"))) C.ubicacion = ancla(`J${r}`);
+  if ((r = filaDe("Fecha"))) {
+    C.fecha = ancla(`C${r}`); C.horaInicio = ancla(`E${r}`); C.horaFin = ancla(`G${r}`);
+    C.duracion = ancla(`I${r}`); C.nCharla = ancla(`K${r}`);
+  }
+  if ((r = filaDe("Frente / lugar"))) C.frente = ancla(`C${r}`);
+  if ((r = filaDe("Tipo de charla", "H"))) C.tipo = ancla(`J${r}`);
+  if ((r = filaDe("Facilitador"))) {
+    C.facilitadorNombre = ancla(`C${r}`);
+    const rc = filaDe("Cargo", "H", r);
+    if (rc) C.facilitadorCargo = ancla(`J${rc}`);
+  }
+  // 2. Tema
+  if ((r = filaDe("Tema principal"))) C.tema = ancla(`C${r}`);
+  if ((r = filaDe("Contenido / puntos tratados"))) C.contenido = ancla(`C${r}`);
+  // 3. Actividades, peligros y controles
+  if ((r = filaDe("Actividades programadas hoy"))) C.actividades = ancla(`C${r}`);
+  const rSubPel = filaDe("Peligros identificados", "A", 1, true);
+  const rOtrosPel = filaDe("Otros peligros");
+  if (rSubPel && rOtrosPel) {
+    C.leyendaPeligros = `A${rSubPel}`;
+    C.otrosPeligros = ancla(`C${rOtrosPel}`);
+    C.peligros = [];
+    for (let f = rSubPel + 1; f < rOtrosPel; f++) for (const a of GRUPOS_4) C.peligros.push(ancla(`${a}${f}`));
+  }
+  if ((r = filaDe("Medidas de control acordadas"))) C.medidas = ancla(`C${r}`);
+  const rSubEpp = filaDe("EPP requerido", "A", 1, true);
+  const rOtrosEpp = filaDe("Otros EPP / elementos");
+  if (rSubEpp && rOtrosEpp) {
+    C.leyendaEpp = `A${rSubEpp}`;
+    C.otrosEpp = ancla(`C${rOtrosEpp}`);
+    C.epp = [];
+    for (let f = rSubEpp + 1; f < rOtrosEpp; f++) for (const a of GRUPOS_4) C.epp.push(ancla(`${a}${f}`));
+  }
+  // 4. Condiciones y novedades
+  if ((r = filaDe("Clima"))) { C.clima = ancla(`C${r}`); C.ordenAseo = ancla(`G${r}`); C.sintomas = ancla(`K${r}`); }
+  if ((r = filaDe("Novedades, observaciones y compromisos"))) C.novedades = ancla(`C${r}`);
+  // 5. Asistentes
+  const rCab = filaDe("No.");
+  const rTot = filaDe("Total de asistentes");
+  if (rCab && rTot) {
+    C.asistentesFila0 = rCab + 1;
+    C.asistentesN = rTot - rCab - 1;
+    if (C.asistentesN < 1) problemas.push("No hay filas de asistentes entre el encabezado y el total");
+    for (let i = 0; i < C.asistentesN; i++) for (const l of ["B", "E", "G", "I"]) ancla(`${l}${C.asistentesFila0 + i}`);
+  }
+  if ((r = filaDe("Personal total en obra hoy", "E"))) C.personalTotal = ancla(`H${r}`);
+
+  // 6. Fotos: las casillas son las celdas combinadas altas que hay entre los títulos "6." y "7."
+  const r6 = filaDe("6. EVIDENCIA", "A", 1, true);
+  const r7 = r6 ? filaDe("7. FIRMAS", "A", r6 + 1, true) : 0;
+  if (r6 && r7) {
+    let rangos = [];
+    try { rangos = ((ws.model && ws.model.merges) || []).map(parseRango).filter(Boolean); } catch (e) { rangos = []; }
+    if (!rangos.length) {
+      // Segunda forma de leer las combinadas (por si "model" no está disponible)
+      try { rangos = Object.values(ws._merges || {}).map((m) => ({ left: m.left, top: m.top, right: m.right, bottom: m.bottom })); } catch (e) { rangos = []; }
+    }
+    const cajas = rangos
+      .filter((g) => g.top > r6 && g.bottom < r7 && g.bottom - g.top >= 3 && g.right - g.left >= 1)
+      .sort((a, b) => a.top - b.top || a.left - b.left);
+    if (!cajas.length) problemas.push("No encontré las casillas de foto (celdas combinadas altas entre los títulos 6 y 7)");
+    const anchoPx = (c) => (Number(ws.getColumn(c).width) || 8.43) * 7;
+    const altoPx = (f) => ((Number(ws.getRow(f).height) || 15) * 96) / 72;
+    const aspectos = [];
+    cajas.forEach((g, i) => {
+      C[`foto${i + 1}`] = { tl: { col: g.left - 1, row: g.top - 1 }, br: { col: g.right, row: g.bottom } };
+      let w = 0; let h = 0;
+      for (let c = g.left; c <= g.right; c++) w += anchoPx(c);
+      for (let f = g.top; f <= g.bottom; f++) h += altoPx(f);
+      aspectos.push(Math.round((w / h) * 1000) / 1000);
+      // La descripción va en la fila de abajo de la casilla (si esa celda se puede escribir)
+      const refPie = `${colLetra(g.left)}${g.bottom + 1}`;
+      if (g.bottom + 1 < r7 && esEsquina(refPie)) C[`captionFoto${i + 1}`] = refPie;
+    });
+    C.fotoAspecto = aspectos;
+    C.fondoFoto = CELDAS.fondoFoto || "F2F2F2";
+  }
+  // 7. Firmas
+  const rFirma = filaDe("Firma:");
+  const rNombre = rFirma ? filaDe("Nombre:", "A", rFirma) : 0;
+  const rCargo = rNombre ? filaDe("Cargo:", "A", rNombre) : 0;
+  if (rNombre && rCargo) {
+    C.facilitadorNombreFirma = ancla(`C${rNombre}`); C.facilitadorCargoFirma = ancla(`C${rCargo}`);
+    C.responsableNombre = ancla(`I${rNombre}`); C.responsableCargo = ancla(`I${rCargo}`);
+  }
+
+  // Validaciones finales: todo lo que la app necesita debe haberse encontrado
+  const obligatorias = ["proyecto", "contratista", "ubicacion", "fecha", "nCharla", "frente", "tipo", "facilitadorNombre", "facilitadorCargo", "tema", "contenido",
+    "actividades", "peligros", "otrosPeligros", "medidas", "epp", "otrosEpp", "clima", "ordenAseo", "sintomas", "novedades",
+    "asistentesFila0", "personalTotal", "foto1", "facilitadorNombreFirma", "responsableNombre", "responsableCargo"];
+  for (const k of obligatorias) if (C[k] === undefined) problemas.push(`Falta ubicar: ${k}`);
+  if (C.peligros && C.peligros.length < PELIGROS.length) problemas.push(`La plantilla tiene ${C.peligros.length} casillas de peligros y la app maneja ${PELIGROS.length}`);
+  if (C.epp && C.epp.length < EPP.length) problemas.push(`La plantilla tiene ${C.epp.length} casillas de EPP y la app maneja ${EPP.length}`);
+  return { celdas: problemas.length ? null : C, problemas };
 }
 
 // Validaciones antes de generar. Devuelve una lista de textos (vacía = todo bien).

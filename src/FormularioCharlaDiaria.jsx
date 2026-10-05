@@ -6,7 +6,7 @@ import {
   MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre,
-  CARGOS_OBRA, unirUnicos, recordarTexto,
+  CARGOS_OBRA, unirUnicos, recordarTexto, descubrirCeldas,
 } from "./charlaDiariaDatos";
 
 const NAVY = "#1B2A45";
@@ -427,6 +427,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState(false);
   const [numeroUsado, setNumeroUsado] = useState("");
+  const [avisoGeneracion, setAvisoGeneracion] = useState("");
   const [, setRefresco] = useState(0);
   const [pegarAbierto, setPegarAbierto] = useState(false);
   const [textoPegado, setTextoPegado] = useState("");
@@ -625,6 +626,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   // ---- Generar Excel ----
   async function generarExcel() {
     setMensajeError("");
+    setAvisoGeneracion("");
     const faltan = validarCharla(d);
     if (faltan.length) {
       setMensajeError("Falta completar: " + faltan.join(", ") + ".");
@@ -645,19 +647,46 @@ export default function FormularioCharlaDiaria({ onVolver }) {
 
       // N° de charla: si se dejó vacío, se asigna el siguiente consecutivo
       const nUsar = d.nCharla && String(d.nCharla).trim() ? String(d.nCharla).trim() : String(siguienteConsecutivo());
-      escribirCharlaEnHoja(ws, { ...d, nCharla: nUsar });
+      // Distribución REAL de la plantilla subida: cada celda se ubica por el texto de su etiqueta. Si el formato cambia
+      // (filas insertadas, casillas de foto distintas…) todo sigue cayendo en su lugar. Si no se puede leer, se usa la
+      // distribución por defecto y se avisa.
+      let celdas = CELDAS;
+      const avisos = [];
+      try {
+        const lectura = descubrirCeldas(ws);
+        if (lectura.celdas) celdas = lectura.celdas;
+        else {
+          console.warn("No pude leer la distribución de la plantilla; uso la de por defecto:", lectura.problemas);
+          avisos.push("No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame.");
+        }
+      } catch (e) {
+        console.warn("Error al leer la plantilla; uso la distribución por defecto:", e);
+      }
+      const capacidad = celdas.asistentesN || MAX_ASISTENTES;
+      const conNombre = asistentes.filter((x) => x.nombre && x.nombre.trim()).length;
+      if (conNombre > capacidad) throw new Error(`la plantilla tiene espacio para ${capacidad} asistentes y hay ${conNombre}`);
+
+      escribirCharlaEnHoja(ws, { ...d, nCharla: nUsar }, celdas);
       // Si la plantilla ya trae el logo dentro (como el formato diseñado por el usuario), no se agrega otro encima.
       const plantillaTraeLogo = typeof ws.getImages === "function" && ws.getImages().length > 0;
       if (!plantillaTraeLogo) await agregarLogo(workbook, ws);
 
-      const posiciones = Array.from({ length: N_FOTOS }, (_, i) => ({ pos: CELDAS[`foto${i + 1}`], caption: CELDAS[`captionFoto${i + 1}`] }));
+      // Cada foto va en SU casilla de la plantilla (estirada exactamente a esa casilla, sin salirse)
+      let fotosSinCasilla = 0;
       for (let i = 0; i < fotos.length; i++) {
         if (!fotos[i].file) continue;
-        const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, (CELDAS.fotoAspecto || [])[i] || null, "#" + (CELDAS.fondoFoto || "F2F2F2"));
+        const caja = celdas[`foto${i + 1}`];
+        if (!caja) { fotosSinCasilla++; continue; }
+        const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, (celdas.fotoAspecto || [])[i] || null, "#" + (celdas.fondoFoto || "F2F2F2"));
         const id = workbook.addImage({ buffer: buf, extension: "jpeg" });
-        ws.addImage(id, { tl: posiciones[i].pos.tl, br: posiciones[i].pos.br });
-        if (fotos[i].caption) ws.getCell(posiciones[i].caption).value = fotos[i].caption;
+        // "twoCell": la foto se mueve y cambia de tamaño junto con las celdas de su casilla, así que NO puede quedar más
+        // grande que el recuadro aunque después se cambie el alto de las filas en Excel.
+        ws.addImage(id, { tl: caja.tl, br: caja.br, editAs: "twoCell" });
+        const refPie = celdas[`captionFoto${i + 1}`];
+        if (fotos[i].caption && refPie) ws.getCell(refPie).value = fotos[i].caption;
       }
+      if (fotosSinCasilla) avisos.push(`La plantilla no tiene casilla para ${fotosSinCasilla} de las fotos y no se incluyó${fotosSinCasilla > 1 ? "eron" : ""}.`);
+      setAvisoGeneracion(avisos.join(" "));
 
       const salida = await workbook.xlsx.writeBuffer();
       const blob = new Blob([salida], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -966,6 +995,9 @@ export default function FormularioCharlaDiaria({ onVolver }) {
         <div className="max-w-md mx-auto">
           {mensajeError && (
             <div className="text-[11.5px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FDECEC", color: "#B42318" }}>{mensajeError}</div>
+          )}
+          {avisoGeneracion && !mensajeError && (
+            <div className="text-[11.5px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FFF4DB", color: "#8A5A00" }}>{avisoGeneracion}</div>
           )}
           {generado && !mensajeError && (
             <div className="text-[11.5px] mb-2 px-2 py-1.5 rounded" style={{ background: "#E8F5EC", color: "#1D6B3A" }}>
