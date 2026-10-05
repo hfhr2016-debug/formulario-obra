@@ -74,20 +74,39 @@ function tieneContenido(d) {
 }
 
 // ---------- Fotos ----------
-function comprimirFoto(file, maxAncho = 1000, calidad = 0.75) {
+// Comprime la foto. Con "aspecto" (ancho/alto de la casilla del Excel) la foto se ajusta COMPLETA a esa proporción,
+// sin recortarla ni deformarla: el sobrante se rellena con el gris de la casilla. Así, aunque el Excel estire la imagen
+// para llenar la casilla, se ve con su forma real.
+function comprimirFoto(file, maxAncho = 1000, calidad = 0.75, aspecto = null, fondo = "#F2F2F2") {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      let { width, height } = img;
-      if (width > maxAncho) {
-        height = Math.round((height * maxAncho) / width);
-        width = maxAncho;
+      let ancho, alto, dx = 0, dy = 0, dw, dh;
+      if (aspecto) {
+        ancho = Math.min(maxAncho, Math.max(img.width, Math.round(img.height * aspecto)));
+        alto = Math.round(ancho / aspecto);
+        const escala = Math.min(ancho / img.width, alto / img.height);
+        dw = Math.round(img.width * escala);
+        dh = Math.round(img.height * escala);
+        dx = Math.round((ancho - dw) / 2);
+        dy = Math.round((alto - dh) / 2);
+      } else {
+        ancho = img.width;
+        alto = img.height;
+        if (ancho > maxAncho) {
+          alto = Math.round((alto * maxAncho) / ancho);
+          ancho = maxAncho;
+        }
+        dw = ancho;
+        dh = alto;
       }
       const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      canvas.width = ancho;
+      canvas.height = alto;
+      const ctx = canvas.getContext("2d");
+      if (aspecto) { ctx.fillStyle = fondo; ctx.fillRect(0, 0, ancho, alto); }
+      ctx.drawImage(img, dx, dy, dw, dh);
       canvas.toBlob(
         (blob) => {
           URL.revokeObjectURL(url);
@@ -543,12 +562,14 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       // N° de charla: si se dejó vacío, se asigna el siguiente consecutivo
       const nUsar = d.nCharla && String(d.nCharla).trim() ? String(d.nCharla).trim() : String(siguienteConsecutivo());
       escribirCharlaEnHoja(ws, { ...d, nCharla: nUsar });
-      await agregarLogo(workbook, ws);
+      // Si la plantilla ya trae el logo dentro (como el formato diseñado por el usuario), no se agrega otro encima.
+      const plantillaTraeLogo = typeof ws.getImages === "function" && ws.getImages().length > 0;
+      if (!plantillaTraeLogo) await agregarLogo(workbook, ws);
 
       const posiciones = Array.from({ length: N_FOTOS }, (_, i) => ({ pos: CELDAS[`foto${i + 1}`], caption: CELDAS[`captionFoto${i + 1}`] }));
       for (let i = 0; i < fotos.length; i++) {
         if (!fotos[i].file) continue;
-        const buf = await comprimirFoto(fotos[i].file);
+        const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, (CELDAS.fotoAspecto || [])[i] || null, "#" + (CELDAS.fondoFoto || "F2F2F2"));
         const id = workbook.addImage({ buffer: buf, extension: "jpeg" });
         ws.addImage(id, { tl: posiciones[i].pos.tl, br: posiciones[i].pos.br });
         if (fotos[i].caption) ws.getCell(posiciones[i].caption).value = fotos[i].caption;
