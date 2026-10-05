@@ -58,7 +58,7 @@ function datosIniciales() {
     proyecto: (tipoProyecto && tipoProyecto.proyecto) || "",
     contratista: "", ubicacion: "", frente: "",
     tipo: "",
-    facilitadorNombre: firmantes.facilitadorNombre || "", facilitadorCargo: firmantes.facilitadorCargo || "",
+    facilitadorNombre: "", facilitadorCargo: "",      // el facilitador cambia de una charla a otra: empieza vacío
     tema: "", contenido: "",
     actividades: "", peligros: [], otrosPeligros: "", medidas: "", epp: [], otrosEpp: "",
     clima: "", ordenAseo: "", sintomas: "", novedades: "",
@@ -191,8 +191,11 @@ function Campo({ label, value, onChange, placeholder, type = "text", lista, inpu
 
 // Casilla de texto con lista desplegable: al tocarla vacía muestra "opcionesAlAbrir"; al escribir filtra
 // "opciones" (sin importar tildes ni mayúsculas). Siempre se puede escribir un valor que no esté en la lista.
-function BuscadorLista({ label, value, onChange, onElegir, opciones, opcionesAlAbrir, placeholder, onBlurValor, maxResultados = 8 }) {
+// Con "onLimpiar" aparece una × para borrar. La sugerencia se elige con un toque COMPLETO (click): se evita que la
+// casilla pierda el foco antes (mousedown), que en el celular cerraba la lista antes de poder tocarla.
+function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opciones, opcionesAlAbrir, placeholder, onBlurValor, maxResultados = 8 }) {
   const [abierto, setAbierto] = useState(false);
+  const inputRef = useRef(null);
   const eligiendo = useRef(false);
   const cierre = useRef(null); // cierre pendiente (150 ms después de salir de la casilla)
   const abrir = () => { clearTimeout(cierre.current); setAbierto(true); };
@@ -200,35 +203,59 @@ function BuscadorLista({ label, value, onChange, onElegir, opciones, opcionesAlA
   const resultados = texto ? filtrarOpciones(opciones, value, maxResultados) : opcionesAlAbrir || [];
   // Si lo escrito ya es exactamente la única sugerencia, no hace falta mostrarla
   const visibles = resultados.length === 1 && quitarTildes(resultados[0].texto).toLowerCase() === quitarTildes(texto).toLowerCase() ? [] : resultados;
+  const conBorrar = !!onLimpiar && !!value;
+
+  function elegir(o) {
+    eligiendo.current = true; // al soltar el foco no se guarda el texto a medio escribir
+    if (onElegir) onElegir(o); else onChange(o.texto);
+    setAbierto(false);
+    if (inputRef.current) inputRef.current.blur(); // cierra el teclado del celular
+  }
+
   return (
     <div className="w-full relative">
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
-      <input
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        autoComplete="off"
-        onChange={(e) => { onChange(e.target.value); abrir(); }}
-        onFocus={(e) => { e.target.style.borderColor = GOLD; abrir(); }}
-        onBlur={(e) => {
-          e.target.style.borderColor = LINE;
-          // Si el usuario tocó una sugerencia, no se guarda el texto a medio escribir
-          if (onBlurValor && !eligiendo.current) onBlurValor(e.target.value);
-          eligiendo.current = false;
-          clearTimeout(cierre.current);
-          cierre.current = setTimeout(() => setAbierto(false), 150);
-        }}
-        className={claseInput}
-        style={estiloInput}
-      />
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          placeholder={placeholder}
+          autoComplete="off"
+          onChange={(e) => { onChange(e.target.value); abrir(); }}
+          onFocus={(e) => { e.target.style.borderColor = GOLD; abrir(); }}
+          onBlur={(e) => {
+            e.target.style.borderColor = LINE;
+            if (onBlurValor && !eligiendo.current) onBlurValor(e.target.value);
+            eligiendo.current = false;
+            clearTimeout(cierre.current);
+            cierre.current = setTimeout(() => setAbierto(false), 150);
+          }}
+          className={claseInput}
+          style={conBorrar ? { ...estiloInput, paddingRight: 30 } : estiloInput}
+        />
+        {conBorrar && (
+          <button
+            type="button"
+            aria-label={`Borrar ${label}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { onLimpiar(); abrir(); if (inputRef.current) inputRef.current.focus(); }}
+            className="absolute right-2 text-[18px] leading-none px-1"
+            style={{ top: "50%", transform: "translateY(-50%)", color: "#8A8F99" }}
+          >
+            ×
+          </button>
+        )}
+      </div>
       {abierto && visibles.length > 0 && (
         <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-52 overflow-y-auto" style={{ borderColor: LINE }}>
           {visibles.map((o, i) => (
             <button
               key={o.texto + i}
               type="button"
-              onMouseDown={() => { eligiendo.current = true; if (onElegir) onElegir(o); else onChange(o.texto); setAbierto(false); }}
-              className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 text-[12.5px]"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => elegir(o)}
+              className="w-full text-left px-2.5 py-2 border-b last:border-b-0 text-[12.5px]"
               style={{ borderColor: LINE, color: NAVY }}
             >
               {o.texto}{o.detalle ? <span style={{ color: "#8A8F99" }}> · {o.detalle}</span> : null}
@@ -440,10 +467,31 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   ];
   const nombresAlAbrir = profesionales.slice(0, 8).map((p) => ({ texto: p.nombre, detalle: p.cargo }));
   // Al escribir/elegir un nombre ya guardado, se completa solo su cargo.
+  // Si el cargo se completó solo (por elegir un nombre guardado) y luego el nombre cambia a otra persona, ese cargo ya
+  // no corresponde y se quita. Un cargo que el usuario eligió a mano nunca se toca.
+  const cargoAutomatico = useRef({});
+  const [reinicioCargo, setReinicioCargo] = useState({ facilitadorCargo: 0, responsableCargo: 0 });
   function cambiarNombre(campoNombre, campoCargo, valor) {
     const p = buscarProfesional(profesionales, valor);
+    let quitarCargo = false;
+    if (p) { if (p.cargo) cargoAutomatico.current[campoCargo] = true; }
+    else if (cargoAutomatico.current[campoCargo]) { cargoAutomatico.current[campoCargo] = false; quitarCargo = true; }
     // Si coincide con uno guardado, se usa su escritura (mayúsculas/acentos) y su cargo.
-    setD((cur) => ({ ...cur, [campoNombre]: p ? p.nombre : valor, ...(p && p.cargo ? { [campoCargo]: p.cargo } : {}) }));
+    setD((cur) => ({
+      ...cur,
+      [campoNombre]: p ? p.nombre : valor,
+      ...(p && p.cargo ? { [campoCargo]: p.cargo } : {}),
+      ...(quitarCargo ? { [campoCargo]: "" } : {}),
+    }));
+  }
+  function cambiarCargo(campoCargo, valor) {
+    cargoAutomatico.current[campoCargo] = false;
+    set(campoCargo, valor);
+  }
+  function limpiarProfesional(campoNombre, campoCargo) {
+    cargoAutomatico.current[campoCargo] = false;
+    setD((cur) => ({ ...cur, [campoNombre]: "", [campoCargo]: "" }));
+    setReinicioCargo((cur) => ({ ...cur, [campoCargo]: cur[campoCargo] + 1 })); // la lista de cargos vuelve a "Seleccione…"
   }
 
   // ---- Borrador (las fotos no se guardan) ----
@@ -455,14 +503,11 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     else borrar(CLAVE_BORRADOR);
   }, [d, borradorAplicado]);
 
-  // ---- Recuerda facilitador y responsable (así no hay que escribirlos cada día) ----
+  // ---- Recuerda al responsable / residente (suele ser el mismo todos los días). El facilitador NO se recuerda. ----
   useEffect(() => {
     if (!borradorAplicado) return;
-    guardarJSON(CLAVE_FIRMANTES, {
-      facilitadorNombre: d.facilitadorNombre, facilitadorCargo: d.facilitadorCargo,
-      responsableNombre: d.responsableNombre, responsableCargo: d.responsableCargo,
-    });
-  }, [borradorAplicado, d.facilitadorNombre, d.facilitadorCargo, d.responsableNombre, d.responsableCargo]);
+    guardarJSON(CLAVE_FIRMANTES, { responsableNombre: d.responsableNombre, responsableCargo: d.responsableCargo });
+  }, [borradorAplicado, d.responsableNombre, d.responsableCargo]);
 
   function restaurarBorrador() {
     const guardado = leerJSON(CLAVE_BORRADOR, null);
@@ -624,6 +669,8 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   function nuevaCharla() {
     if (!window.confirm("¿Empezar una charla nueva? Se limpian los datos de esta (el facilitador y el responsable se conservan).")) return;
     borrar(CLAVE_BORRADOR);
+    cargoAutomatico.current = {};
+    setReinicioCargo((cur) => ({ facilitadorCargo: cur.facilitadorCargo + 1, responsableCargo: cur.responsableCargo + 1 }));
     setD(datosIniciales());
     setFotos(Array.from({ length: N_FOTOS }, fotoVacia));
     setGenerado(false);
@@ -723,13 +770,15 @@ export default function FormularioCharlaDiaria({ onVolver }) {
               placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
               onChange={(v) => cambiarNombre("facilitadorNombre", "facilitadorCargo", v)}
               onElegir={(o) => { cambiarNombre("facilitadorNombre", "facilitadorCargo", o.texto); recordar(o.texto, ""); }}
+              onLimpiar={() => limpiarProfesional("facilitadorNombre", "facilitadorCargo")}
               onBlurValor={(v) => recordar(v, d.facilitadorCargo)}
             />
             <CampoCargo
+              key={reinicioCargo.facilitadorCargo}
               label="Cargo del facilitador"
               value={d.facilitadorCargo}
               opciones={cargos}
-              onChange={(v) => set("facilitadorCargo", v)}
+              onChange={(v) => cambiarCargo("facilitadorCargo", v)}
               onGuardar={(v) => recordar(d.facilitadorNombre, v)}
             />
           </div>
@@ -849,13 +898,15 @@ export default function FormularioCharlaDiaria({ onVolver }) {
               placeholder={profesionales.length ? "Elige un nombre guardado o escribe uno nuevo" : "Nombre completo"}
               onChange={(v) => cambiarNombre("responsableNombre", "responsableCargo", v)}
               onElegir={(o) => { cambiarNombre("responsableNombre", "responsableCargo", o.texto); recordar(o.texto, ""); }}
+              onLimpiar={() => limpiarProfesional("responsableNombre", "responsableCargo")}
               onBlurValor={(v) => recordar(v, d.responsableCargo)}
             />
             <CampoCargo
+              key={reinicioCargo.responsableCargo}
               label="Cargo"
               value={d.responsableCargo}
               opciones={cargos}
-              onChange={(v) => set("responsableCargo", v)}
+              onChange={(v) => cambiarCargo("responsableCargo", v)}
               onGuardar={(v) => recordar(d.responsableNombre, v)}
             />
           </div>
