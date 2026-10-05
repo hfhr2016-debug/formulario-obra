@@ -1483,9 +1483,9 @@ const MODULOS = [
 
 const MODULOS_SST = [
   // --- Uso diario ---
-  { id: "sst-charla-diaria", nombre: "Charla Diaria de Seguridad", emoji: "🗣️", activo: true },
-  { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", activo: false },
-  { id: "sst-permisos", nombre: "Permisos de Trabajo", emoji: "📝", activo: false },
+  { id: "sst-charla-diaria", nombre: "Charla Diaria de Seguridad", emoji: "🗣️", icono: "/icons/icon-sst-charla-diaria.png", activo: true },
+  { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", icono: "/icons/icon-sst-asistencia.png", activo: false },
+  { id: "sst-permisos", nombre: "Permisos de Trabajo", emoji: "📝", icono: "/icons/icon-sst-permisos.png", activo: false },
   { id: "sst-ats", nombre: "Análisis de Trabajo Seguro", emoji: "⚠️", activo: false },
   { id: "sst-personal", nombre: "Registro de Personal", emoji: "👷", activo: false },
   // --- Varias veces por semana ---
@@ -1684,12 +1684,18 @@ function InicioSST({ onSeleccionar, onVolverSelector }) {
             className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
             style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
           >
-            <div className="text-[34px] leading-none">{m.emoji}</div>
+            <div className="h-[70px] flex items-center justify-center">
+              {m.icono ? (
+                <img src={m.icono} alt={m.nombre} className="w-[70px] h-[70px] object-contain" />
+              ) : (
+                <div className="text-[34px] leading-none">{m.emoji}</div>
+              )}
+            </div>
             <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
               {m.nombre}
             </div>
             {!m.activo && (
-              <div className="absolute top-2 right-2 text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+              <div className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
                 Próximamente
               </div>
             )}
