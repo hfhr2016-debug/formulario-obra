@@ -85,8 +85,7 @@ export function filtrarOpciones(opciones, texto, max = 8) {
 export const CARGOS_PROFESIONALES = [
   "Ingeniero Residente", "Arquitecto Residente", "Director de Obra", "Coordinador SST", "Profesional SST",
   "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Maestro de Obra", "Supervisor de Obra",
-  "Interventor de Obra", "Gerente de Proyecto",
-];
+  "Interventor de Obra", "Gerente de Proyecto", "Almacenista de Obra", "Auxiliar de SST"];
 
 export function normalizarNombre(n) {
   return String(n || "").trim().replace(/\s+/g, " ");
@@ -208,9 +207,12 @@ export function parseRango(texto) {
 // =====================================================================================================================
 // Motor de lectura de plantillas por etiquetas
 // =====================================================================================================================
-// Una "descripción" (spec) dice, para cada campo: [clave, etiqueta, columnaDeLaEtiqueta, columnaDelValor, buscarDespuesDe?]
-//   campos: [["proyecto", "Proyecto / Obra", "A", "C"], ["facilitadorCargo", "Cargo", "H", "J", "facilitadorNombre"], ...]
-//   tabla:  { clave: "asistentes", cabecera: "No.", fin: "Total de asistentes", columnas: { nombre: "B", documento: "E" } }
+// Una "descripción" (spec) dice, para cada campo: [clave, etiqueta, columnaDeLaEtiqueta, columnaDelValor, buscarDespuesDe?, filasDebajo?]
+//   campos: [["proyecto", "Proyecto / Obra", "A", "C"], ["facilitadorCargo", "Cargo", "H", "J", "facilitadorNombre"],
+//            ["metaCobertura", "Meta de cobertura", "N", "N", null, 1]]    // el valor está 1 fila debajo de su etiqueta
+//   tablas: [{ clave: "asistentes", cabecera: "No.", fin: "Total de asistentes", columnas: { nombre: "B", documento: "E" } },
+//            { clave: "temas", cabecera: "No.", despuesDe: "asistentes", fin: "5. EVALUACIÓN", columnas: {...} }]
+//            (también se acepta "tabla" con una sola)
 //   firmas: { firma: "Firma:", nombre: "Nombre:", personas: [{ clave: "facilitador", col: "C" }, ...] }
 // Devuelve { celdas, problemas }. Si hay problemas, "celdas" es null y se debe usar el mapa por defecto del formato.
 
@@ -243,20 +245,22 @@ export function descubrirPorEtiquetas(ws, spec) {
   };
 
   const filas = {};
-  for (const [clave, etiqueta, colEtq, colVal, despues] of spec.campos || []) {
+  for (const [clave, etiqueta, colEtq, colVal, despues, filasDebajo] of spec.campos || []) {
     const r = filaDe(etiqueta, colEtq, despues ? filas[despues] || 1 : 1, !!spec.empieza && spec.empieza.includes(clave));
-    if (r) { filas[clave] = r; celdas[clave] = ancla(`${colVal}${r}`); }
+    if (r) { filas[clave] = r; celdas[clave] = ancla(`${colVal}${r + (filasDebajo || 0)}`); }
   }
 
-  if (spec.tabla) {
-    const t = spec.tabla;
-    const rc = filaDe(t.cabecera, t.colCabecera || "A");
+  const tablas = spec.tablas || (spec.tabla ? [spec.tabla] : []);
+  const finDe = {};   // fila donde termina cada tabla (para buscar la siguiente después de ella)
+  for (const t of tablas) {
+    const rc = filaDe(t.cabecera, t.colCabecera || "A", t.despuesDe && finDe[t.despuesDe] ? finDe[t.despuesDe] : 1);
     const rf = rc ? filaDe(t.fin, t.colFin || "A", rc + 1) : 0;
     if (rc && rf) {
       const n = rf - rc - 1;
       if (n < 1) problemas.push(`No hay filas entre "${t.cabecera}" y "${t.fin}"`);
       for (let i = 0; i < n; i++) for (const col of Object.values(t.columnas)) ancla(`${col}${rc + 1 + i}`);
-      celdas.tablas = { [t.clave]: { fila0: rc + 1, n, columnas: { ...t.columnas } } };
+      celdas.tablas = { ...(celdas.tablas || {}), [t.clave]: { fila0: rc + 1, n, columnas: { ...t.columnas } } };
+      finDe[t.clave] = rf;
     }
   }
 
@@ -278,4 +282,45 @@ export function escribirTabla(ws, tabla, filas) {
   (filas || []).slice(0, tabla.n).forEach((fila, i) => {
     for (const [campo, col] of Object.entries(tabla.columnas)) poner(ws, `${col}${tabla.fila0 + i}`, fila[campo]);
   });
+}
+
+
+// ---------- Trabajadores (nombre, documento, cargo, empresa) ----------
+// Mezcla dos listas de personas sin repetir (sin importar mayúsculas ni tildes): los nuevos van primero y, si una persona ya
+// existía, se completan los datos que le faltaban (documento, cargo, empresa).
+// "Bien escrito": palabras con la primera letra en mayúscula y el resto en minúscula ("Pedro Soto" > "PEDRO SOTO" > "pedro soto").
+const puntajeEscritura = (t) => String(t).split(" ").filter((w) => /^[A-ZÁÉÍÓÚÑÜ][a-záéíóúñü]+$/.test(w)).length;
+export function mezclarTrabajadores(actuales, nuevos, max = 300) {
+  const vistos = new Map();
+  const salida = [];
+  for (const p of [...(nuevos || []), ...(actuales || [])]) {
+    const nombre = normalizarNombre((p && p.nombre) || "");
+    if (nombre.length < 3) continue;
+    const k = quitarTildes(nombre).toLowerCase();
+    if (vistos.has(k)) {
+      const e = vistos.get(k);
+      for (const c of ["documento", "cargo", "empresa"]) if (!e[c] && p[c]) e[c] = p[c];
+      if (puntajeEscritura(nombre) > puntajeEscritura(e.nombre)) e.nombre = nombre;   // se queda con la mejor escritura
+      continue;
+    }
+    const reg = { nombre, documento: p.documento || "", cargo: p.cargo || "", empresa: p.empresa || "" };
+    vistos.set(k, reg);
+    salida.push(reg);
+  }
+  return salida.slice(0, max);
+}
+export function buscarTrabajador(lista, nombre) {
+  const k = quitarTildes(normalizarNombre(nombre || "")).toLowerCase();
+  return k ? (lista || []).find((t) => quitarTildes(t.nombre).toLowerCase() === k) || null : null;
+}
+
+
+// Suma meses a una fecha ISO (AAAA-MM-DD) sin pasarse de fin de mes (31 ene + 1 mes = 28 feb).
+export function sumarMesesISO(iso, meses) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  if (!m) return "";
+  const y = Number(m[1]), mes = Number(m[2]) - 1, d = Number(m[3]);
+  const ultimoDia = new Date(y, mes + meses + 1, 0).getDate();
+  const r = new Date(y, mes + meses, Math.min(d, ultimoDia));
+  return `${r.getFullYear()}-${String(r.getMonth() + 1).padStart(2, "0")}-${String(r.getDate()).padStart(2, "0")}`;
 }

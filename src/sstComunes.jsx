@@ -6,7 +6,7 @@ import ExcelJS from "exceljs";
 import { ChevronDown, Loader2, FileSpreadsheet } from "lucide-react";
 import {
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre, CARGOS_OBRA, unirUnicos, recordarTexto,
-  buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
+  buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles, mezclarTrabajadores, buscarTrabajador,
 } from "./sstBase";
 
 export const NAVY = "#1B2A45";
@@ -20,6 +20,7 @@ export const CLAVE_PROFESIONALES = "ryr_sst_profesionales";
 export const CLAVE_CARGOS_OBRA = "ryr_sst_cargos_oficio";
 export const CLAVE_EMPRESAS = "ryr_sst_empresas";
 export const CLAVE_NOMBRES_TECNICA = "ryr_nombres_usados";   // la misma memoria de nombres de Gestión Técnica
+export const CLAVE_TRABAJADORES = "ryr_sst_trabajadores";     // personas (nombre, documento, cargo, empresa) usadas en los formatos
 export const CLAVE_EVENTOS = "ryr_sst_eventos";               // resumen de cada actividad registrada (alimenta la Matriz de Capacitación)
 
 export const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento }));
@@ -39,6 +40,65 @@ export function guardarJSON(clave, valor) {
 }
 export function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
+}
+
+// ---------- Numeración consecutiva (por formato) ----------
+export function siguienteConsecutivo(clave) {
+  let ultimo = 0;
+  try { ultimo = parseInt(localStorage.getItem(clave) || "0", 10) || 0; } catch (e) {}
+  return ultimo + 1;
+}
+// Un número escrito a mano se respeta; el consecutivo solo avanza si el número usado es mayor o igual al guardado.
+export function registrarConsecutivo(clave, n) {
+  const num = parseInt(n, 10);
+  if (isNaN(num)) return;
+  let guardado = 0;
+  try { guardado = parseInt(localStorage.getItem(clave) || "0", 10) || 0; } catch (e) {}
+  try { localStorage.setItem(clave, String(Math.max(num, guardado))); } catch (e) {}
+}
+export function fijarSiguienteConsecutivo(clave, siguiente) {
+  try { localStorage.setItem(clave, String(siguiente - 1)); } catch (e) {}
+}
+
+// ---------- Borrador: se guarda solo mientras se escribe; al volver se ofrece continuar ----------
+export function useBorrador({ clave, d, setD, inicial, tieneContenido }) {
+  const [borradorDisponible, setBorradorDisponible] = useState(() => {
+    try { return !!localStorage.getItem(clave); } catch (e) { return false; }
+  });
+  const omitir = useRef(false);
+  const [aplicado, setAplicado] = useState(() => {
+    try { return !localStorage.getItem(clave); } catch (e) { return true; }
+  });
+  useEffect(() => {
+    if (!aplicado) return;
+    if (omitir.current) { omitir.current = false; return; }
+    if (tieneContenido(d)) guardarJSON(clave, d);
+    else borrar(clave);
+  }, [d, aplicado]);   // eslint-disable-line
+  return {
+    borradorDisponible,
+    restaurar: () => {
+      const guardado = leerJSON(clave, null);
+      if (guardado) setD({ ...inicial(), ...guardado });
+      setAplicado(true);
+      setBorradorDisponible(false);
+    },
+    descartar: () => { borrar(clave); setAplicado(true); setBorradorDisponible(false); },
+    omitirProximoGuardado: () => { omitir.current = true; },
+    borrarBorrador: () => borrar(clave),
+  };
+}
+
+// ---------- Trabajadores ya escritos en otros formatos (sugerencias al escribir un nombre) ----------
+export function useTrabajadores() {
+  const [lista, setLista] = useState(() => mezclarTrabajadores(leerJSON(CLAVE_TRABAJADORES, []), leerJSON(CLAVE_ULTIMOS, [])));
+  const opciones = lista.map((t) => ({ texto: t.nombre, detalle: [t.documento, t.cargo].filter(Boolean).join(" · ") }));
+  function recordar(personas) {
+    const nueva = mezclarTrabajadores(lista, personas);
+    setLista(nueva);
+    guardarJSON(CLAVE_TRABAJADORES, nueva);
+  }
+  return { lista, opciones, alAbrir: opciones.slice(0, 8), recordar, buscar: (nombre) => buscarTrabajador(lista, nombre) };
 }
 
 // ---------- Plantilla de Excel: cargar y descargar ----------

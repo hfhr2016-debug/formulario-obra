@@ -16,6 +16,9 @@ import FormularioMensual from "./FormularioMensual";
 import FormularioMemoria from "./FormularioMemoria";
 import FormularioCharlaDiaria from "./FormularioCharlaDiaria";
 import FormularioListaAsistencia from "./FormularioListaAsistencia";
+import FormularioInduccion from "./FormularioInduccion";
+import FormularioEntregaEPP from "./FormularioEntregaEPP";
+import FormularioCapacitaciones from "./FormularioCapacitaciones";
 import {
 
   ChevronDown,
@@ -1490,13 +1493,13 @@ const MODULOS_SST = [
   { id: "sst-ats", nombre: "Análisis de Trabajo Seguro", emoji: "⚠️", icono: "/icons/icon-sst-ats.png", activo: false },
   { id: "sst-personal", nombre: "Registro de Personal", emoji: "👷", icono: "/icons/icon-sst-personal.png", activo: false },
   // --- Varias veces por semana ---
-  { id: "sst-induccion", nombre: "Inducción SST Personal Nuevo", emoji: "🆕", icono: "/icons/icon-sst-induccion.png", activo: false },
+  { id: "sst-induccion", nombre: "Inducción SST Personal Nuevo", emoji: "🆕", icono: "/icons/icon-sst-induccion.png", activo: true },
   { id: "sst-inspecciones", nombre: "Inspecciones", emoji: "🔍", icono: "/icons/icon-sst-inspecciones.png", activo: false },
   { id: "sst-actos-inseguros", nombre: "Actos y Condiciones Inseguras", emoji: "🚧", icono: "/icons/icon-sst-actos-inseguros.png", activo: false },
-  { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", icono: "/icons/icon-sst-epp.png", activo: false },
+  { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", icono: "/icons/icon-sst-epp.png", activo: true },
   // --- Semanal / periódico ---
   { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", icono: "/icons/icon-sst-semanal.png", activo: false },
-  { id: "sst-capacitaciones", nombre: "Capacitaciones", emoji: "🎓", icono: "/icons/icon-sst-capacitaciones.png", activo: false },
+  { id: "sst-capacitaciones", nombre: "Capacitaciones", emoji: "🎓", icono: "/icons/icon-sst-capacitaciones.png", activo: true },
   { id: "sst-acciones", nombre: "Acciones Correctivas", emoji: "✅", icono: "/icons/icon-sst-acciones.png", activo: false },
   { id: "sst-indicadores", nombre: "Indicadores", emoji: "📊", icono: "/icons/icon-sst-indicadores.png", activo: false },
   // --- Mensual / cuando ocurre un evento ---
@@ -1737,6 +1740,15 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "sst-asistencia") {
     return <FormularioListaAsistencia onVolver={() => setVista("inicio-sst")} />;
+  }
+  if (vista === "sst-induccion") {
+    return <FormularioInduccion onVolver={() => setVista("inicio-sst")} />;
+  }
+  if (vista === "sst-epp") {
+    return <FormularioEntregaEPP onVolver={() => setVista("inicio-sst")} />;
+  }
+  if (vista === "sst-capacitaciones") {
+    return <FormularioCapacitaciones onVolver={() => setVista("inicio-sst")} />;
   }
   if (vista === "sst-charla-diaria") {
     return <FormularioCharlaDiaria onVolver={() => setVista("inicio-sst")} />;

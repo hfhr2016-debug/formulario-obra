@@ -1,5 +1,5 @@
 // Lista de Asistencia (RYR-SS-003): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, textoDuracion, fechaDDMMYYYY } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, textoDuracion, fechaDDMMYYYY, minutosEntre } from "./sstBase";
 
 export const CODIGO_LISTA = "RYR-SS-003";
 export const TIPOS_ACTIVIDAD = ["Capacitación", "Inducción", "Reinducción", "Charla de seguridad", "Reunión COPASST / Vigía", "Reunión de seguimiento", "Simulacro", "Entrenamiento", "Otra"];
@@ -86,7 +86,7 @@ export function validarLista(d) {
 export function resumenEvento(d, nAsistentes) {
   return {
     id: `${d.fecha || "sin-fecha"}_${(d.tema || "").slice(0, 30)}`, formato: "lista-asistencia", fecha: d.fecha, tipo: d.tipo, tema: d.tema,
-    proyecto: d.proyecto, facilitador: d.facilitadorNombre, entidad: d.entidad, horaInicio: d.horaInicio, horaFin: d.horaFin,
+    proyecto: d.proyecto, facilitador: d.facilitadorNombre, entidad: d.entidad, horaInicio: d.horaInicio, horaFin: d.horaFin, hoja: d.hoja || "", duracionMin: minutosEntre(d.horaInicio, d.horaFin) || 0,
     convocados: Number(d.convocados) || 0, asistentes: nAsistentes, seEvaluo: d.seEvaluo, evaluados: Number(d.evaluados) || 0, aprobaron: Number(d.aprobaron) || 0,
   };
 }

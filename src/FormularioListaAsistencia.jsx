@@ -7,7 +7,7 @@ import {
 } from "./listaAsistenciaDatos";
 import {
   NAVY, GOLD, PAPER, LINE, CLAVE_ULTIMOS, CLAVE_EVENTOS, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR,
-  leerJSON, guardarJSON, borrar, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST,
+  leerJSON, guardarJSON, borrar, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, useTrabajadores,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora, claseInput, estiloInput,
 } from "./sstComunes";
@@ -56,6 +56,7 @@ export default function FormularioListaAsistencia({ onVolver }) {
   const set = (campo, valor) => setD((cur) => ({ ...cur, [campo]: valor }));
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
   const memoria = useMemoriaSST(d.contratista);
+  const trabajadores = useTrabajadores();      // los asistentes quedan como sugerencia en Inducción y Entrega de EPP
 
   // Cambio parcial { nombre?, cargo? } de una persona -> campos del formulario
   const cambiarPersona = (campoNombre, campoCargo) => (patch) =>
@@ -173,6 +174,7 @@ export default function FormularioListaAsistencia({ onVolver }) {
       // Memoria para la próxima vez
       const conNombre = asistentes.filter((x) => x.nombre && x.nombre.trim());
       guardarJSON(CLAVE_ULTIMOS, conNombre);
+      trabajadores.recordar(conNombre);
       memoria.recordarUso({
         personas: [[d.facilitadorNombre, d.facilitadorCargo], [d.responsableNombre, d.responsableCargo]],
         cargosObra: conNombre.map((a) => a.cargo), empresasUsadas: conNombre.map((a) => a.empresa),
