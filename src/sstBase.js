@@ -254,8 +254,16 @@ export function descubrirPorEtiquetas(ws, spec) {
   const finDe = {};   // fila donde termina cada tabla (para buscar la siguiente después de ella)
   for (const t of tablas) {
     const rc = filaDe(t.cabecera, t.colCabecera || "A", t.despuesDe && finDe[t.despuesDe] ? finDe[t.despuesDe] : 1);
-    const rf = rc ? filaDe(t.fin, t.colFin || "A", rc + 1) : 0;
-    if (rc && rf) {
+    const rf = rc ? filaDe(t.fin, t.colFin || "A", rc + 1, !!t.finEmpieza) : 0;
+    if (rc && rf && t.numerada) {
+      // Tabla "numerada": solo cuentan las filas cuyo número (columna A) es un entero; los subtítulos intercalados se saltan
+      const filasItem = [];
+      for (let r = rc + 1; r < rf; r++) if (/^\d+$/.test(texto(r, colNum(t.colNumero || "A")))) filasItem.push(r);
+      if (!filasItem.length) problemas.push(`No hay filas numeradas entre "${t.cabecera}" y "${t.fin}"`);
+      for (const r of filasItem) for (const col of Object.values(t.columnas)) ancla(`${col}${r}`);
+      celdas.tablas = { ...(celdas.tablas || {}), [t.clave]: { fila0: filasItem[0] || rc + 1, n: filasItem.length, filas: filasItem, columnas: { ...t.columnas } } };
+      finDe[t.clave] = rf;
+    } else if (rc && rf) {
       const n = rf - rc - 1;
       if (n < 1) problemas.push(`No hay filas entre "${t.cabecera}" y "${t.fin}"`);
       for (let i = 0; i < n; i++) for (const col of Object.values(t.columnas)) ancla(`${col}${rc + 1 + i}`);
@@ -264,13 +272,55 @@ export function descubrirPorEtiquetas(ws, spec) {
     }
   }
 
-  if (spec.firmas) {
-    const f = spec.firmas;
-    const rFirma = filaDe(f.firma, "A", f.desde || 1);
+  // Opciones para marcar (☐ -> ✔): las celdas que empiezan por ☐ entre dos títulos
+  for (const o of spec.opciones || []) {
+    const r0 = filaDe(o.desde, "A", 1, true);
+    const r1 = r0 ? filaDe(o.hasta, "A", r0 + 1, true) : 0;
+    if (r0 && r1) {
+      const lista = [];
+      for (let r = r0 + 1; r < r1; r++) {
+        for (let c = 1; c <= (o.hastaCol || 12); c++) {
+          const t = texto(r, c);
+          const ref = `${colLetra(c)}${r}`;
+          if (/^[☐✔☒]/.test(t) && esEsquina(ref)) lista.push({ ref, texto: t.replace(/^[☐✔☒]\s*/, "") });
+        }
+      }
+      if (!lista.length) problemas.push(`No encontré casillas ☐ entre "${o.desde}" y "${o.hasta}"`);
+      celdas.opciones = { ...(celdas.opciones || {}), [o.clave]: lista };
+    }
+  }
+
+  // Recuadros para fotos: celdas combinadas altas entre dos títulos (la foto se ancla a su recuadro)
+  for (const fo of spec.fotos || []) {
+    const r0 = filaDe(fo.desde, "A", 1, true);
+    const r1 = r0 ? filaDe(fo.hasta, "A", r0 + 1, true) : 0;
+    if (r0 && r1) {
+      let rangos = [];
+      try { rangos = ((ws.model && ws.model.merges) || []).map(parseRango).filter(Boolean); } catch (e) { rangos = []; }
+      const cajas = rangos.filter((g) => g.top > r0 && g.bottom < r1 && g.bottom - g.top >= (fo.minAlto || 3) && g.right - g.left >= 1).sort((a, b) => a.top - b.top || a.left - b.left);
+      if (!cajas.length) problemas.push(`No encontré los recuadros de foto entre "${fo.desde}" y "${fo.hasta}"`);
+      const anchoPx = (c) => (Number(ws.getColumn(c).width) || 8.43) * 7;
+      const altoPx = (f) => ((Number(ws.getRow(f).height) || 15) * 96) / 72;
+      celdas.fotos = { ...(celdas.fotos || {}), [fo.clave]: cajas.map((g) => {
+        let w = 0; let h = 0;
+        for (let c = g.left; c <= g.right; c++) w += anchoPx(c);
+        for (let f = g.top; f <= g.bottom; f++) h += altoPx(f);
+        return { tl: { col: g.left - 1, row: g.top - 1 }, br: { col: g.right, row: g.bottom }, aspecto: Math.round((w / h) * 1000) / 1000 };
+      }) };
+    }
+  }
+
+  const bandas = spec.firmas ? (Array.isArray(spec.firmas) ? spec.firmas : [spec.firmas]) : [];
+  for (const f of bandas) {
+    const desde = f.desdeEtiqueta ? filaDe(f.desdeEtiqueta, "A", 1, true) : (f.desde || 1);
+    const rFirma = desde ? filaDe(f.firma, "A", desde) : 0;
     const rNombre = rFirma ? filaDe(f.nombre, "A", rFirma) : 0;
     if (rNombre) {
-      celdas.firmas = {};
-      for (const p of f.personas) celdas.firmas[p.clave] = { nombre: ancla(`${p.col}${rNombre}`), cargo: ancla(`${p.col}${rNombre + 1}`) };
+      celdas.firmas = celdas.firmas || {};
+      for (const p of f.personas) {
+        celdas.firmas[p.clave] = { nombre: ancla(`${p.col}${rNombre}`), cargo: ancla(`${p.col}${rNombre + 1}`) };
+        if (f.hora) celdas.firmas[p.clave].hora = ancla(`${p.col}${rNombre + 2}`);
+      }
     }
   }
   return { celdas: problemas.length ? null : celdas, problemas };
@@ -280,8 +330,31 @@ export function descubrirPorEtiquetas(ws, spec) {
 export function escribirTabla(ws, tabla, filas) {
   if (!tabla) return;
   (filas || []).slice(0, tabla.n).forEach((fila, i) => {
-    for (const [campo, col] of Object.entries(tabla.columnas)) poner(ws, `${col}${tabla.fila0 + i}`, fila[campo]);
+    const r = tabla.filas ? tabla.filas[i] : tabla.fila0 + i;
+    for (const [campo, col] of Object.entries(tabla.columnas)) poner(ws, `${col}${r}`, fila[campo]);
   });
+}
+
+// ---------- Casillas para marcar ("☐ Trabajo en alturas" -> "✔ Trabajo en alturas") ----------
+export const GLIFO_SI = "✔";
+export const GLIFO_NO = "☐";
+const claveOpcion = (t) => quitarTildes(String(t || "")).toLowerCase().replace(/[_\s]+/g, " ").trim();
+// "Otro: ____________" -> "Otro:"  (la parte fija; lo escrito por la persona va después)
+export const baseOpcion = (t) => String(t || "").replace(/[_\s]+$/, "").trim();
+export const esOpcionOtro = (t) => /:$/.test(baseOpcion(t));
+// Marca las opciones elegidas. "marcadas" son textos (sin ☐). "otros" = { "Otro:": "texto escrito" }.
+// Devuelve los textos que NO se encontraron en la plantilla (para avisar y no perder datos sin decirlo).
+export function marcarOpciones(ws, opciones, marcadas, otros = {}) {
+  const noEncontradas = [];
+  const porClave = new Map((opciones || []).map((o) => [claveOpcion(baseOpcion(o.texto)), o]));
+  for (const m of marcadas || []) {
+    const o = porClave.get(claveOpcion(baseOpcion(m)));
+    if (!o) { noEncontradas.push(m); continue; }
+    const base = baseOpcion(o.texto);
+    const extra = esOpcionOtro(o.texto) ? (otros[base] || otros[baseOpcion(m)] || "").trim() : "";
+    ws.getCell(o.ref).value = extra ? `${GLIFO_SI} ${base} ${extra}` : `${GLIFO_SI} ${esOpcionOtro(o.texto) ? o.texto : base}`;
+  }
+  return noEncontradas;
 }
 
 
