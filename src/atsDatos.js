@@ -1,5 +1,5 @@
 // Análisis de Trabajo Seguro - ATS (RYR-SS-008): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY, textoResponsable } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY, textoResponsable, saltoDePagina } from "./sstBase";
 
 export const CODIGO_ATS = "RYR-SS-008";
 export const HOJA_ATS = "ATS";
@@ -103,6 +103,7 @@ export function escribirAtsEnHoja(ws, d, celdas = CELDAS_ATS) {
     paso: p.paso, peligro: p.peligro, riesgo: p.riesgo, prob: num13(p.prob) === null ? "" : num13(p.prob), sev: num13(p.sev) === null ? "" : num13(p.sev),
     control: p.control, responsable: textoResponsable(p.responsableNombre || p.responsable, p.responsableCargo), residual: p.residual,
   })));
+  if (T.pasos) saltoDePagina(ws, T.pasos.fila0 + T.pasos.n - 1);   // la hoja 2 empieza en "3. EPP y permisos" (la librería pierde el salto de la plantilla)
   escribirTabla(ws, T.equipo, equipoConDatos(d).map((e) => ({ nombre: e.nombre, documento: e.documento, cargo: e.cargo, hora: e.hora || d.horaSocializacion || "" })));
   const F = C.firmas || {};
   // Quien elabora es el supervisor de la tarea

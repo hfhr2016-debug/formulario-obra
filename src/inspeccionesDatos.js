@@ -1,5 +1,5 @@
 // Inspección de seguridad (RYR-SS-010): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoDuracion, textoResponsable } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoDuracion, textoResponsable, saltoDePagina } from "./sstBase";
 
 export const CODIGO_INSPECCION = "RYR-SS-010";
 export const HOJA_INSPECCION = "Inspecciones";
@@ -74,6 +74,7 @@ export function escribirInspeccionEnHoja(ws, d, celdas = CELDAS_INSPECCION) {
     const v = arr(d.respuestas)[i];
     return { cumple: v === "Cumple" ? MARCA : "", no: v === "No cumple" ? MARCA : "", na: v === "N/A" ? MARCA : "", obs: arr(d.observaciones)[i] || "" };
   }));
+  if (T.hallazgos) saltoDePagina(ws, T.hallazgos.fila0 - 3);   // la hoja 2 empieza en "3. Hallazgos" (la librería pierde el salto de la plantilla)
   escribirTabla(ws, T.hallazgos, hallazgosConDatos(d).map((h) => ({ hallazgo: h.hallazgo, nivel: h.nivel, accion: h.accion, responsable: textoResponsable(h.responsable, h.responsableCargo), fecha: fechaDDMMYYYY(h.fecha), estado: h.estado })));
   const F = C.firmas || {};
   if (F.inspector) { poner(ws, F.inspector.nombre, d.inspectorNombre); poner(ws, F.inspector.cargo, d.inspectorCargo); }

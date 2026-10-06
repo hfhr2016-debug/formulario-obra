@@ -285,7 +285,8 @@ export function descubrirPorEtiquetas(ws, spec) {
     const columnas = { ...t.columnas };
     if (rc && t.encabezados) {
       for (const [clave, enc] of Object.entries(t.encabezados)) {
-        for (let c = 1; c <= MAX_COL; c++) if (texto(rc, c) === enc && esEsquina(refDe(rc, c))) { columnas[clave] = colLetra(c); break; }
+        const posibles = Array.isArray(enc) ? enc : [enc];          // una o varias redacciones posibles del título
+        for (let c = 1; c <= MAX_COL; c++) if (posibles.includes(texto(rc, c)) && esEsquina(refDe(rc, c))) { columnas[clave] = colLetra(c); break; }
       }
     }
     if (rc && rf && t.numerada) {
@@ -459,4 +460,14 @@ export function decidirDistribucion(lectura, porDefecto) {
 // Sube la altura de una fila (si ya es más alta, la deja): para que un texto de varias líneas se vea completo.
 export function alturaMinimaFila(ws, fila, puntos) {
   try { const f = ws.getRow(fila); if (!f.height || f.height < puntos) f.height = puntos; } catch (e) { /* sin altura: no es grave */ }
+}
+
+// La librería de Excel pierde los saltos de página manuales de la plantilla al abrirla. Se vuelven a poner (debajo de la fila indicada)
+// para que las secciones no se partan a mitad de hoja (p. ej. una barra de título sola al pie de la hoja 1).
+export function saltoDePagina(ws, fila) {
+  try {
+    if (!fila || fila < 1) return;
+    const ya = (ws.rowBreaks || []).some((s) => s && s.id === fila);
+    if (!ya) ws.getRow(fila).addPageBreak();
+  } catch (e) { /* si la librería no lo permite, el Excel sale igual: solo cambia dónde corta la hoja */ }
 }

@@ -1,7 +1,7 @@
 // Permiso de trabajo de alto riesgo (RYR-SS-007): datos y lógica propios de este formato. Lo común está en sstBase.js.
 // Cada permiso es de UN tipo (alturas, caliente, espacios confinados, eléctricos, sustancias químicas, excavaciones, condiciones extremas).
 // El tipo elegido pinta la fila superior del formato de su color y trae sus propios requisitos para marcar con ✔.
-import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, pintarCelda, alturaMinimaFila } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, pintarCelda, alturaMinimaFila, saltoDePagina } from "./sstBase";
 
 export const CODIGO_PERMISO = "RYR-SS-007";
 export const HOJA_PERMISO = "Permisos de Trabajo";
@@ -42,10 +42,17 @@ export const SPEC_PERMISO = {
     ["motivoCancelacion", "Motivo de suspensión o cancelación", "A", "C"],
   ],
   tablas: [
-    { clave: "personal", cabecera: "No.", fin: "3. VERIFICACIÓN PREVIA", finEmpieza: true, columnas: { nombre: "B", documento: "E", cargo: "G", cert: "I" } },
-    { clave: "verifPrevia", cabecera: "No.", despuesDe: "personal", fin: "4. REQUISITOS ESPECÍFICOS", finEmpieza: true, numerada: true, columnas: { cumple: "I", obs: "K" } },
-    { clave: "requisitos", cabecera: "No.", despuesDe: "verifPrevia", fin: "5. MEDICIÓN DE GASES", finEmpieza: true, numerada: true, columnas: { texto: "B", cumple: "H", no: "I", na: "J", obs: "K" } },
-    { clave: "gases", cabecera: "Medición", despuesDe: "requisitos", fin: "Registre las lecturas", finEmpieza: true, columnas: { hora: "C", o2: "D", lel: "E", co: "G", h2s: "H", resp: "I" } },
+    { clave: "personal", cabecera: "No.", fin: "3. VERIFICACIÓN PREVIA", finEmpieza: true, columnas: { nombre: "B", documento: "E", cargo: "G", cert: "I" },
+      // Las columnas se ubican por el título de su encabezado: si se insertan columnas, se siguen encontrando. La fecha de vencimiento
+      // ("vence") es opcional: si la plantilla tiene una columna aparte para ella se escribe ahí; si no, va junto al tipo de certificación.
+      encabezados: { nombre: "Nombre completo", documento: "Documento de identidad", cargo: "Cargo / oficio",
+        cert: ["Certificación (tipo y vigencia)", "Certificación (tipo)", "Certificación", "Tipo de certificación"],
+        vence: ["Fecha de vencimiento", "Vencimiento", "Vigencia", "Vence", "Fecha de vigencia", "Vigencia de la certificación"] } },
+    { clave: "verifPrevia", cabecera: "No.", despuesDe: "personal", fin: "4. REQUISITOS ESPECÍFICOS", finEmpieza: true, numerada: true, columnas: { cumple: "I", obs: "K" }, encabezados: { cumple: ["¿Cumple?", "Cumple"], obs: "Observación" } },
+    { clave: "requisitos", cabecera: "No.", despuesDe: "verifPrevia", fin: "5. MEDICIÓN DE GASES", finEmpieza: true, numerada: true, columnas: { texto: "B", cumple: "H", no: "I", na: "J", obs: "K" },
+      encabezados: { texto: "Requisito", cumple: "Cumple", no: "No cumple", na: "N/A", obs: "Observación" } },
+    { clave: "gases", cabecera: "Medición", despuesDe: "requisitos", fin: "Registre las lecturas", finEmpieza: true, columnas: { hora: "C", o2: "D", lel: "E", co: "G", h2s: "H", resp: "I" },
+      encabezados: { hora: "Hora", o2: "Oxígeno O₂ (%)", lel: "Explosividad LEL (%)", co: "CO (ppm)", h2s: "H₂S (ppm)", resp: "Responsable de la medición" } },
   ],
   firmas: [
     { firma: "Firma:", nombre: "Nombre:", desdeEtiqueta: "6. AUTORIZACIÓN", hora: true, personas: [{ clave: "solicitante", col: "C" }, { clave: "autoriza", col: "G" }, { clave: "vigia", col: "K" }] },
@@ -77,8 +84,8 @@ export function certTexto(p) {
   return c && v ? `${c}\nvence ${v}` : c || (v ? `Vence ${v}` : "");     // en dos líneas: la casilla es angosta y el texto largo no se leería
 }
 // Altura que necesita la casilla de la certificación para que se lea completa (unos 26 caracteres por línea)
-export function alturaCertificacion(p) {
-  const t = certTexto(p);
+export function alturaCertificacion(p, separado = false) {
+  const t = separado ? String((p && p.cert) || "").trim() : certTexto(p);
   if (!t) return 0;
   const lineas = t.split("\n").reduce((n, linea) => n + Math.max(1, Math.ceil(linea.length / 26)), 0);
   return Math.max(28, lineas * 12 + 6);
@@ -111,8 +118,12 @@ export function escribirPermisoEnHoja(ws, d, celdas = CELDAS_PERMISO) {
   }
   const T = C.tablas || {};
   const personal = personalConDatos(d);
-  escribirTabla(ws, T.personal, personal.map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, cert: certTexto(p) })));
-  if (T.personal) personal.slice(0, T.personal.n).forEach((p, i) => { const alto = alturaCertificacion(p); if (alto) alturaMinimaFila(ws, T.personal.fila0 + i, alto); });
+  const separado = !!(T.personal && T.personal.columnas && T.personal.columnas.vence);   // ¿hay una columna aparte para la fecha de vencimiento?
+  escribirTabla(ws, T.personal, personal.map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo,
+    cert: separado ? p.cert : certTexto(p), vence: separado ? fechaDDMMYYYY(p.certVence) : "" })));
+  if (T.personal) personal.slice(0, T.personal.n).forEach((p, i) => { const alto = alturaCertificacion(p, separado); if (alto) alturaMinimaFila(ws, T.personal.fila0 + i, alto); });
+  // El salto de página manual de la plantilla se pierde al abrirla: se vuelve a poner (la hoja 2 empieza en los requisitos)
+  if (T.verifPrevia && T.verifPrevia.filas) saltoDePagina(ws, T.verifPrevia.filas[T.verifPrevia.filas.length - 1]);
   escribirTabla(ws, T.verifPrevia, VERIF_PREVIA.map((_, i) => ({ cumple: arr(d.previa)[i] || "", obs: arr(d.previaObs)[i] || "" })));
   // Requisitos específicos del tipo: el texto de cada uno y un ✔ en la casilla que corresponde (Cumple / No cumple / N/A)
   escribirTabla(ws, T.requisitos, requisitosDe(d).map((texto, i) => {
