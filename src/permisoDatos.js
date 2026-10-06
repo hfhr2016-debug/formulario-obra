@@ -76,7 +76,19 @@ export const gasesObligatorios = (d) => arr(d.tipos).includes("Espacios confinad
 export const gasesVisibles = (d) => gasesObligatorios(d) || arr(d.tipos).includes("Trabajo en caliente");
 const lecturaConDatos = (g) => !!(g && (g.hora || g.o2 || g.lel || g.co || g.h2s || g.resp));
 
-const personaVacia = (p) => !(p && (p.nombre || p.documento || p.cargo || p.cert));
+const personaVacia = (p) => !(p && (p.nombre || p.documento || p.cargo || p.cert || p.certVence));
+// La plantilla tiene una sola casilla "Certificación (tipo y vigencia)": ahí se escribe el tipo y su fecha de vencimiento juntos
+export function certTexto(p) {
+  const c = String((p && p.cert) || "").trim();
+  const v = p && p.certVence ? fechaDDMMYYYY(p.certVence) : "";
+  return c && v ? `${c} — vence ${v}` : c || (v ? `Vence ${v}` : "");
+}
+// Personas cuya certificación ya estaba vencida el día del permiso (la fecha de vencimiento es anterior a la del permiso)
+export function certificacionesVencidas(d, hoyISO) {
+  const ref = d.fecha || hoyISO || "";
+  if (!ref) return [];
+  return personalConDatos(d).filter((p) => p.certVence && p.certVence < ref).map((p) => p.nombre || "Sin nombre");
+}
 export const personalConDatos = (d) => arr(d.personal).filter((p) => !personaVacia(p));
 
 // Condiciones marcadas "No" (el permiso no debería autorizarse mientras haya alguna)
@@ -93,7 +105,7 @@ export function escribirPermisoEnHoja(ws, d, celdas = CELDAS_PERMISO) {
   poner(ws, C.fecha, fechaDDMMYYYY(d.fecha));
   const noMarcadas = marcarOpciones(ws, C.opciones && C.opciones.tipos, arr(d.tipos), d.otros || {});
   const T = C.tablas || {};
-  escribirTabla(ws, T.personal, personalConDatos(d).map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, cert: p.cert })));
+  escribirTabla(ws, T.personal, personalConDatos(d).map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, cert: certTexto(p) })));
   escribirTabla(ws, T.verifPrevia, VERIF_PREVIA.map((_, i) => ({ cumple: arr(d.previa)[i] || "", obs: arr(d.previaObs)[i] || "" })));
   escribirTabla(ws, T.verifEspec, VERIF_ESPECIFICA.map((_, i) => ({ cumple: respuestaEspecifica(d, i), obs: itemActivo(d, i) ? arr(d.especObs)[i] || "" : "" })));
   if (gasesVisibles(d)) {

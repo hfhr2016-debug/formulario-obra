@@ -4,13 +4,16 @@ import { baseOpcion } from "./sstBase";
 import {
   CODIGO_PERMISO, HOJA_PERMISO, CELDAS_PERMISO, VIGENCIAS, RESPUESTAS, LECTURAS, TIPOS_TRABAJO, VERIF_PREVIA, VERIF_ESPECIFICA,
   grupoDeItem, textoDeItem, descubrirPermiso, escribirPermisoEnHoja, validarPermiso, resumenPermiso, itemActivo, gasesVisibles, gasesObligatorios,
-  personalConDatos, condicionesEnNo,
+  personalConDatos, condicionesEnNo, certificacionesVencidas,
 } from "./permisoDatos";
 import {
   NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo,
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { CERTIFICACIONES } from "./sstListas";
+import { fechaHoyISO } from "./sstBase";
 import { ChipsOpcion, CampoFecha, GrillaOpciones, FilaVerificacion } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_permiso_trabajo";
@@ -20,13 +23,12 @@ const CLAVE_ULTIMO_PERSONAL = "ryr_sst_permiso_ultimo_personal";  // personal de
 const MAX_PERSONAL = (CELDAS_PERMISO.tablas && CELDAS_PERMISO.tablas.personal.n) || 6;
 
 const vacios = (n) => Array.from({ length: n }, () => "");
-const personaNueva = (base = {}) => ({ nombre: "", documento: "", cargo: "", cert: "", ...base });
+const personaNueva = (base = {}) => ({ nombre: "", documento: "", cargo: "", cert: "", certVence: "", ...base });
 const lecturaNueva = () => ({ hora: "", o2: "", lel: "", co: "", h2s: "", resp: "" });
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "", nPermiso: "", fecha: "", horaInicio: "", horaFin: "", vigencia: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "", nPermiso: "", fecha: "", horaInicio: "", horaFin: "", vigencia: "",
     frente: "", altura: "", descripcion: "", solicitanteNombre: "", solicitanteCargo: "", solicitanteHora: "",
     tipos: [], otros: {},
     personal: [personaNueva()],
@@ -56,6 +58,7 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
   const memoria = useMemoriaSST(d.contratista);
   const trabajadores = useTrabajadores();
+  const certs = useListaRecordada("ryr_sst_certificaciones", CERTIFICACIONES, { min: 4 });   // certificados de construcción + los que se escriban
   const borrador = useBorrador({ clave: CLAVE_BORRADOR, d, setD, inicial: datosIniciales, tieneContenido });
 
   const cambiarPersona = (campoNombre, campoCargo) => (patch) =>
@@ -143,6 +146,8 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
       trabajadores.recordar(personal.map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, empresa: d.contratista })));
       guardarJSON(CLAVE_ULTIMO_PERSONAL, personal);
+      guardarProyectoSST(d.proyecto);
+      personal.forEach((p) => certs.recordar(p.cert));
       memoria.recordarUso({
         personas: [[d.solicitanteNombre, d.solicitanteCargo], [d.autorizaNombre, d.autorizaCargo], [d.vigiaNombre, d.vigiaCargo]],
         cargosObra: personal.map((p) => p.cargo), empresasUsadas: [d.contratista],
@@ -151,8 +156,10 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
       guardarJSON(CLAVE_PERMISOS, [res, ...leerJSON(CLAVE_PERMISOS, []).filter((x) => x.id !== res.id)].slice(0, 500));
       borrador.borrarBorrador(); borrador.omitirProximoGuardado();
       setD((cur) => ({ ...cur, nPermiso: nUsar }));
+      const vencidas = certificacionesVencidas(d, fechaHoyISO());
       setGenerado(`✓ Excel descargado (permiso N° ${nUsar}, ${personal.length} ${personal.length === 1 ? "persona" : "personas"}). Imprímelo para las firmas.` +
-        (enNo.length ? ` ⚠ Hay ${enNo.length} ${enNo.length === 1 ? "condición marcada" : "condiciones marcadas"} en "No": el permiso no debe autorizarse hasta corregirlas.` : ""));
+        (enNo.length ? ` ⚠ Hay ${enNo.length} ${enNo.length === 1 ? "condición marcada" : "condiciones marcadas"} en "No": el permiso no debe autorizarse hasta corregirlas.` : "") +
+        (vencidas.length ? ` ⚠ Certificación vencida: ${vencidas.join(", ")}.` : ""));
     } catch (err) {
       console.error(err);
       setMensajeError("No se pudo generar el Excel: " + (err && err.message ? err.message : "error desconocido"));
@@ -169,7 +176,7 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
   }
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar un permiso en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
-    borrador.borrarBorrador(); setD(datosIniciales()); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoPersonal(""); setAbierta("datos"); window.scrollTo(0, 0);
+    borrador.borrarBorrador(); setD({ ...datosIniciales(), proyecto: "" }); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoPersonal(""); setAbierta("datos"); window.scrollTo(0, 0);
   }
 
   if (borrador.borradorDisponible) {
@@ -232,7 +239,13 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
                   <Campo label="Documento" value={p.documento} inputMode="numeric" onChange={(v) => actualizarPersona(i, { documento: v.replace(/[^0-9A-Za-z.-]/g, "") })} />
                   <BuscadorLista label="Cargo / oficio" value={p.cargo} onChange={(v) => actualizarPersona(i, { cargo: v })} opciones={memoria.opcionesCargosObra} opcionesAlAbrir={memoria.opcionesCargosObra} maxResultados={10} placeholder="Cargo" />
                 </div>
-                <Campo label="Certificación (tipo y vigencia)" value={p.cert} placeholder="Ej. Alturas avanzado, vence 03/2027" onChange={(v) => actualizarPersona(i, { cert: v })} />
+                <BuscadorLista label="Certificación" value={p.cert} opciones={certs.opciones} opcionesAlAbrir={certs.opciones} maxResultados={10} placeholder="Elige el certificado o escribe otro" onChange={(v) => actualizarPersona(i, { cert: v })} />
+                <div>
+                  <Campo label="Fecha de vencimiento" type="date" value={p.certVence} onChange={(v) => actualizarPersona(i, { certVence: v })} />
+                  {p.certVence && p.certVence < (d.fecha || fechaHoyISO()) && (
+                    <div className="text-[11px] mt-1 font-semibold" style={{ color: "#B3401F" }}>⚠ Certificación vencida{d.fecha ? " el día del permiso" : ""}</div>
+                  )}
+                </div>
               </div>
               <button type="button" onClick={() => quitarPersona(i)} aria-label={`Quitar persona ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>
                 <Trash2 size={12} />

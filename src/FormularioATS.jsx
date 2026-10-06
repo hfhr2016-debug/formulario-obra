@@ -9,6 +9,7 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 import { ChipsOpcion, CampoFecha, GrillaOpciones } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_ats";
@@ -27,9 +28,8 @@ const valorDe = (lista, e) => (lista.find(([, l]) => l === e) || ["", ""])[0];
 const OPCIONES_PELIGROS = PELIGROS_COMUNES.map((p) => ({ texto: p.peligro, detalle: "" }));
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "", fecha: "", tarea: "", area: "", nAts: "", horaInicio: "", horaFin: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "", fecha: "", tarea: "", area: "", nAts: "", horaInicio: "", horaFin: "",
     supervisorNombre: "", supervisorCargo: "", permisoAsociado: "",
     pasos: [pasoNuevo()], epp: [], permisos: [], otros: {},
     equipo: [personaNueva()], horaSocializacion: "",
@@ -152,6 +152,7 @@ export default function FormularioATS({ onVolver }) {
       if (d.puntoEncuentro || d.telefono || d.brigadista || d.centroSalud || d.ruta) {
         guardarJSON(CLAVE_ULTIMA_EMERGENCIA, { puntoEncuentro: d.puntoEncuentro, telefono: d.telefono, brigadista: d.brigadista, centroSalud: d.centroSalud, ruta: d.ruta });
       }
+      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({
         personas: [[d.supervisorNombre, d.supervisorCargo], [d.revisoNombre, d.revisoCargo], [d.aproboNombre, d.aproboCargo]],
         cargosObra: equipoCon.map((e) => e.cargo), empresasUsadas: [d.contratista],
@@ -178,7 +179,7 @@ export default function FormularioATS({ onVolver }) {
   }
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar un ATS en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
-    borrador.borrarBorrador(); setD(datosIniciales()); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoPasos(""); setAvisoEquipo(""); setAbierta("datos"); window.scrollTo(0, 0);
+    borrador.borrarBorrador(); setD({ ...datosIniciales(), proyecto: "" }); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoPasos(""); setAvisoEquipo(""); setAbierta("datos"); window.scrollTo(0, 0);
   }
 
   if (borrador.borradorDisponible) {

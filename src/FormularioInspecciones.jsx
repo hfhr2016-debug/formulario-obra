@@ -11,6 +11,7 @@ import {
   useMemoriaSST, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_inspeccion";
@@ -24,9 +25,8 @@ const vacios = (n) => Array.from({ length: n }, () => "");
 const hallazgoNuevo = (base = {}) => ({ hallazgo: "", nivel: "", accion: "", responsable: "", fecha: "", estado: "Abierta", ...base });
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "", fecha: "", horaInicio: "", horaFin: "", nInspeccion: "", tipo: "", area: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "", fecha: "", horaInicio: "", horaFin: "", nInspeccion: "", tipo: "", area: "",
     inspectorNombre: "", inspectorCargo: "", acompanaNombre: "", acompanaCargo: "",
     respuestas: vacios(N_ITEMS), observaciones: vacios(N_ITEMS),
     hallazgos: [], obsGenerales: "", responsableNombre: "", responsableCargo: "",
@@ -125,6 +125,7 @@ export default function FormularioInspecciones({ onVolver }) {
 
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
+      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({ personas: [[d.inspectorNombre, d.inspectorCargo], [d.acompanaNombre, d.acompanaCargo], [d.responsableNombre, d.responsableCargo]], empresasUsadas: [d.contratista] });
       const res = resumenInspeccion({ ...d, nInspeccion: nUsar });
       guardarJSON(CLAVE_INSPECCIONES, [res, ...leerJSON(CLAVE_INSPECCIONES, []).filter((x) => x.id !== res.id)].slice(0, 500));
@@ -149,7 +150,7 @@ export default function FormularioInspecciones({ onVolver }) {
   }
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar una inspección en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
-    borrador.borrarBorrador(); setD(datosIniciales()); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoHallazgos(""); setAbierta("datos"); window.scrollTo(0, 0);
+    borrador.borrarBorrador(); setD({ ...datosIniciales(), proyecto: "" }); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoHallazgos(""); setAbierta("datos"); window.scrollTo(0, 0);
   }
 
   if (borrador.borradorDisponible) {

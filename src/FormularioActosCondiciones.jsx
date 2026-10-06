@@ -8,6 +8,7 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 import { ChipsOpcion, CampoFecha, GrillaOpciones, CasillaFoto, fotoVacia, agregarFotosARecuadros } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_actos_condiciones";
@@ -16,9 +17,8 @@ const CLAVE_REPORTES = "ryr_sst_reportes_actos";          // resumen de cada rep
 const COLOR_NIVEL = { Alto: "#B3401F", Medio: "#C98A00", Bajo: "#2E7D4F" };
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "", fecha: "", hora: "", nReporte: "", lugar: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "", fecha: "", hora: "", nReporte: "", lugar: "",
     reportaNombre: "", reportaCargo: "",
     actos: [], condiciones: [], otros: {},
     observado: "", consecuencia: "", involucrados: "", probabilidad: "", severidad: "",
@@ -106,6 +106,7 @@ export default function FormularioActosCondiciones({ onVolver }) {
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
       trabajadores.recordar([{ nombre: d.reportaNombre, cargo: d.reportaCargo, empresa: d.contratista }]);
+      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({ personas: [[d.recibeNombre, d.recibeCargo], [d.verificaNombre, d.verificaCargo]], cargosObra: [d.reportaCargo], empresasUsadas: [d.contratista] });
       const res = resumenActos({ ...d, nReporte: nUsar });
       guardarJSON(CLAVE_REPORTES, [res, ...leerJSON(CLAVE_REPORTES, []).filter((x) => x.id !== res.id)].slice(0, 500));
@@ -129,7 +130,7 @@ export default function FormularioActosCondiciones({ onVolver }) {
   }
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar un reporte en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
-    borrador.borrarBorrador(); setD(datosIniciales()); setFotos([fotoVacia(), fotoVacia()]); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAbierta("datos"); window.scrollTo(0, 0);
+    borrador.borrarBorrador(); setD({ ...datosIniciales(), proyecto: "" }); setFotos([fotoVacia(), fotoVacia()]); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAbierta("datos"); window.scrollTo(0, 0);
   }
 
   if (borrador.borradorDisponible) {

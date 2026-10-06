@@ -11,15 +11,16 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora, claseInput, estiloInput,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 
 const CLAVE_BORRADOR = "ryr_borrador_lista_asistencia";
 const CLAVE_TEMAS = "ryr_sst_temas_lista";                      // temas que el usuario ha escrito antes
 const MAX_ASISTENTES = (CELDAS_LISTA.tablas && CELDAS_LISTA.tablas.asistentes.n) || 25;
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "",
     tipo: "", modalidad: "", tema: "", fecha: "", horaInicio: "", horaFin: "", hoja: "", lugar: "", entidad: "",
     facilitadorNombre: "", facilitadorCargo: "",
     contenido: "",
@@ -71,6 +72,7 @@ export default function FormularioListaAsistencia({ onVolver }) {
   );
 
   // Temas: los frecuentes + los que el usuario ya escribió
+  const entidades = useListaRecordada("ryr_sst_entidades_dictan", ENTIDADES_QUE_DICTAN);   // ARL, SENA, Bomberos… + las que se escriban
   const [temasExtra, setTemasExtra] = useState(() => leerJSON(CLAVE_TEMAS, []));
   const opcionesTemas = useMemo(() => unirUnicos(temasExtra, TEMAS_LISTA, false).map((t) => ({ texto: t, detalle: "" })), [temasExtra]);
 
@@ -175,6 +177,8 @@ export default function FormularioListaAsistencia({ onVolver }) {
       const conNombre = asistentes.filter((x) => x.nombre && x.nombre.trim());
       guardarJSON(CLAVE_ULTIMOS, conNombre);
       trabajadores.recordar(conNombre);
+      guardarProyectoSST(d.proyecto);
+      entidades.recordar(d.entidad);
       memoria.recordarUso({
         personas: [[d.facilitadorNombre, d.facilitadorCargo], [d.responsableNombre, d.responsableCargo]],
         cargosObra: conNombre.map((a) => a.cargo), empresasUsadas: conNombre.map((a) => a.empresa),
@@ -197,7 +201,7 @@ export default function FormularioListaAsistencia({ onVolver }) {
   function nuevaLista() {
     if (!window.confirm("¿Empezar una lista nueva? Se limpian los datos de esta.")) return;
     borrar(CLAVE_BORRADOR);
-    setD(datosIniciales());
+    setD({ ...datosIniciales(), proyecto: "" });
     setGenerado(false);
     setMensajeError("");
     setAvisoGeneracion("");
@@ -244,7 +248,7 @@ export default function FormularioListaAsistencia({ onVolver }) {
             )}
             <Campo label="Hoja N°" value={d.hoja} placeholder="Ej. 1 de 1 (si son varias hojas: 1 de 2)" onChange={(v) => set("hoja", v)} />
             <Campo label="Lugar / sitio" value={d.lugar} onChange={(v) => set("lugar", v)} placeholder="Ej. Sala de reuniones, Torre A" />
-            <Campo label="Entidad que dicta (si es externa)" value={d.entidad} onChange={(v) => set("entidad", v)} placeholder="Ej. ARL, SENA, Bomberos" />
+            <BuscadorLista label="Entidad que dicta (si es externa)" value={d.entidad} opciones={entidades.opciones} opcionesAlAbrir={entidades.opciones} maxResultados={10} placeholder="Elige una entidad de la lista o escribe otra" onChange={(v) => set("entidad", v)} />
             {bloqueFacilitador()}
           </div>
         </Seccion>

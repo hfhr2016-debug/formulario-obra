@@ -10,6 +10,8 @@ import {
   NAVY, GOLD, PAPER, LINE, CLAVE_EVENTOS, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro,
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 
 const CLAVE_BORRADOR = "ryr_borrador_capacitaciones";
 const CLAVE_TEMAS = "ryr_sst_temas_lista";                 // la misma memoria de temas de la Lista de Asistencia
@@ -18,10 +20,9 @@ const CLAVE_INDUCCIONES = "ryr_sst_inducciones";           // resumen de cada in
 const MAX_FILAS = (CELDAS_CAPACITACIONES.tablas && CELDAS_CAPACITACIONES.tablas.matriz.n) || 15;
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   const metas = leerJSON(CLAVE_METAS, {});
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "", responsableNombre: "", responsableCargo: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "", responsableNombre: "", responsableCargo: "",
     periodoDesde: "", periodoHasta: "", actualizacion: "",
     metaCumplimiento: String(metas.cumplimiento || METAS_POR_DEFECTO.cumplimiento), metaCobertura: String(metas.cobertura || METAS_POR_DEFECTO.cobertura), metaEficacia: String(metas.eficacia || METAS_POR_DEFECTO.eficacia),
     filas: [], observaciones: "", revisoNombre: "", revisoCargo: "", voboNombre: "", voboCargo: "",
@@ -48,6 +49,7 @@ export default function FormularioCapacitaciones({ onVolver }) {
   const set = (campo, valor) => setD((cur) => ({ ...cur, [campo]: valor }));
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
   const memoria = useMemoriaSST(d.contratista);
+  const entidades = useListaRecordada("ryr_sst_entidades_dictan", ENTIDADES_QUE_DICTAN);   // la misma lista de entidades que en la Lista de Asistencia
   const borrador = useBorrador({ clave: CLAVE_BORRADOR, d, setD, inicial: datosIniciales, tieneContenido });
 
   const [temasExtra, setTemasExtra] = useState(() => leerJSON(CLAVE_TEMAS, []));
@@ -134,6 +136,8 @@ export default function FormularioCapacitaciones({ onVolver }) {
 
       // Memoria para la próxima vez
       guardarJSON(CLAVE_METAS, { cumplimiento: Number(d.metaCumplimiento) || METAS_POR_DEFECTO.cumplimiento, cobertura: Number(d.metaCobertura) || METAS_POR_DEFECTO.cobertura, eficacia: Number(d.metaEficacia) || METAS_POR_DEFECTO.eficacia });
+      guardarProyectoSST(d.proyecto);
+      (d.filas || []).forEach((f) => entidades.recordar(f.capacitador));
       memoria.recordarUso({ personas: [[d.responsableNombre, d.responsableCargo], [d.revisoNombre, d.revisoCargo], [d.voboNombre, d.voboCargo]], empresasUsadas: [d.contratista] });
       let nuevos = temasExtra;
       for (const f of conTema) nuevos = recordarTexto(nuevos, f.tema, { base: TEMAS_LISTA, min: 4, max: 60 });
@@ -166,7 +170,7 @@ export default function FormularioCapacitaciones({ onVolver }) {
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar una matriz en blanco? Se limpian todos los datos, incluidos los del programa.")) return;
     borrador.borrarBorrador();
-    setD(datosIniciales());
+    setD({ ...datosIniciales(), proyecto: "" });
     setGenerado("");
     setMensajeError("");
     setAvisoGeneracion("");
@@ -248,7 +252,7 @@ export default function FormularioCapacitaciones({ onVolver }) {
                     <Campo label="Fecha ejecutada" type="date" value={f.ejecutada} onChange={(v) => actualizarFila(i, { ejecutada: v })} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Campo label="Capacitador / entidad" value={f.capacitador} onChange={(v) => actualizarFila(i, { capacitador: v })} />
+                    <BuscadorLista label="Capacitador / entidad" value={f.capacitador} opciones={entidades.opciones} opcionesAlAbrir={entidades.opciones} maxResultados={10} placeholder="Elige una entidad de la lista o escribe quién dicta" onChange={(v) => actualizarFila(i, { capacitador: v })} />
                     <Campo label="Duración (h)" value={f.duracion} inputMode="decimal" onChange={(v) => actualizarFila(i, { duracion: v.replace(/[^0-9.]/g, "") })} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">

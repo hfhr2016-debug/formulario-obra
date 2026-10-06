@@ -8,6 +8,7 @@ import {
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre,
   CARGOS_OBRA, unirUnicos, recordarTexto, descubrirCeldas,
 } from "./charlaDiariaDatos";
+import { BotonMenuSST } from "./sstNavegacion";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -25,7 +26,7 @@ const CLAVE_NOMBRES_TECNICA = "ryr_nombres_usados"; // la misma memoria de nombr
 const N_FOTOS = 4;
 const fotoVacia = () => ({ file: null, previewUrl: "", caption: "" });
 
-const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento }));
+const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento, buscaDetalle: true }));
 const CIUDADES_AL_ABRIR = CIUDADES_PRINCIPALES.map((n) => OPCIONES_CIUDADES.find((o) => o.texto === n)).filter(Boolean);
 const OPCIONES_TEMAS = TEMAS_SUGERIDOS.map((t) => ({ texto: t, detalle: "" }));
 
@@ -45,6 +46,12 @@ function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
 }
 
+// El proyecto de SG-SST es propio de este sistema: los formatos sirven igual para edificaciones, vías e hidrocarburos,
+// así que NO dependen del tipo de proyecto de Gestión Técnica. Se recuerda el último proyecto escrito al generar un formato.
+const CLAVE_PROYECTO_SST = "ryr_sst_proyecto";
+function proyectoSST() { const p = leerJSON(CLAVE_PROYECTO_SST, ""); return typeof p === "string" ? p : ""; }
+function guardarProyectoSST(nombre) { const t = String(nombre || "").trim(); if (t) guardarJSON(CLAVE_PROYECTO_SST, t); }
+
 // Último consecutivo usado en este dispositivo + 1
 function siguienteConsecutivo() {
   let ultimo = 0;
@@ -53,10 +60,9 @@ function siguienteConsecutivo() {
 }
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
     fecha: "", horaInicio: "", horaFin: "", nCharla: "",
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "",
+    proyecto: proyectoSST(),
     contratista: "", ubicacion: "", frente: "",
     tipo: "",
     facilitadorNombre: "", facilitadorCargo: "",      // el facilitador cambia de una charla a otra: empieza vacío
@@ -700,6 +706,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       URL.revokeObjectURL(url);
 
       // Memoria para la próxima charla
+      guardarProyectoSST(d.proyecto);
       guardarJSON(CLAVE_ULTIMOS, asistentes.filter((x) => x.nombre && x.nombre.trim()));
       const n = parseInt(nUsar, 10);
       if (!isNaN(n)) {
@@ -747,7 +754,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     borrar(CLAVE_BORRADOR);
     cargoAutomatico.current = {};
     setReinicioCargo((cur) => ({ facilitadorCargo: cur.facilitadorCargo + 1, responsableCargo: cur.responsableCargo + 1 }));
-    setD(datosIniciales());
+    setD(datosIniciales());   // conserva el proyecto (uso diario): sale de la memoria propia de SG-SST
     setFotos(Array.from({ length: N_FOTOS }, fotoVacia));
     setGenerado(false);
     setMensajeError("");
@@ -758,7 +765,8 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   // ---------------- Pantalla de borrador ----------------
   if (borradorDisponible) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative" style={{ background: PAPER }}>
+        <div className="absolute top-3 left-3"><BotonMenuSST color={NAVY} /></div>
         <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes una charla sin terminar</div>
         <div className="text-[12.5px] text-gray-500 mb-5">
           Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel (las fotos no se guardan, hay que volver a subirlas). ¿Quieres continuar donde quedaste?
@@ -770,7 +778,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
           Empezar en blanco
         </button>
         {onVolver && (
-          <button type="button" onClick={onVolver} className="text-[12px] underline" style={{ color: NAVY }}>← Volver a Gestión SST</button>
+          <button type="button" onClick={onVolver} className="text-[12px] underline" style={{ color: NAVY }}>← Volver a Gestión SG – SST</button>
         )}
       </div>
     );
@@ -784,12 +792,15 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            {onVolver && (
-              <button type="button" onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
-                Gestión SST
-              </button>
-            )}
+            <div className="flex items-center gap-3 mb-3">
+              <BotonMenuSST />
+              {onVolver && (
+                <button type="button" onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+                  Gestión SG – SST
+                </button>
+              )}
+            </div>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>CHARLA DIARIA DE SEGURIDAD</div>
             <div className="text-[11px]" style={{ color: GOLD }}>{CODIGO_FORMATO} · Charla de 5 minutos</div>
           </div>

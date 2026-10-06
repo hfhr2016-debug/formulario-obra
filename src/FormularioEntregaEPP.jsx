@@ -10,18 +10,20 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_entrega_epp";
 const CLAVE_EPP_USADOS = "ryr_sst_epp_usados";            // elementos de EPP que el usuario ha escrito antes
 const CLAVE_ENTREGAS = "ryr_sst_entregas_epp";            // resumen de cada hoja de entrega generada
 const MAX_LINEAS = (CELDAS_EPP.tablas && CELDAS_EPP.tablas.entregas.n) || 16;
 
-const lineaNueva = (base = {}) => ({ fecha: "", nombre: "", documento: "", cargo: "", epp: "", referencia: "", cantidad: "1", talla: "", motivo: "", reposicion: "", ...base });
+const lineaNueva = (base = {}) => ({ fecha: "", nombre: "", documento: "", cargo: "", epp: "", referencia: "", cantidad: "1", talla: "", motivo: "", reposicion: "", cambiar: false, ...base });
+// ¿Esta línea es del mismo trabajador que la anterior? (entonces sus datos no se vuelven a mostrar)
+const mismoTrabajador = (a, b) => !!a && !!b && !!(a.nombre || "").trim() && (a.nombre || "").trim().toLowerCase() === (b.nombre || "").trim().toLowerCase() && (a.documento || "") === (b.documento || "") && (a.cargo || "") === (b.cargo || "");
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "", tipoEntrega: "", hoja: "", fechaEntrega: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "", tipoEntrega: "", hoja: "", fechaEntrega: "",
     entregaNombre: "", entregaCargo: "", voboNombre: "", voboCargo: "",
     lineas: [],
   };
@@ -148,6 +150,7 @@ export default function FormularioEntregaEPP({ onVolver }) {
 
       // Memoria para la próxima vez
       trabajadores.recordar(conDatos.map((l) => ({ nombre: l.nombre, documento: l.documento, cargo: l.cargo, empresa: d.contratista })));
+      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({ personas: [[d.entregaNombre, d.entregaCargo], [d.voboNombre, d.voboCargo]], cargosObra: conDatos.map((l) => l.cargo), empresasUsadas: [d.contratista] });
       let extra = eppExtra;
       for (const l of conDatos) extra = recordarTexto(extra, l.epp, { base: EPP_CATALOGO, min: 3, max: 60 });
@@ -179,7 +182,7 @@ export default function FormularioEntregaEPP({ onVolver }) {
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar una entrega en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
     borrador.borrarBorrador();
-    setD(datosIniciales());
+    setD({ ...datosIniciales(), proyecto: "" });
     setGenerado("");
     setMensajeError("");
     setAvisoGeneracion("");
@@ -228,12 +231,19 @@ export default function FormularioEntregaEPP({ onVolver }) {
             <div key={i} className="border rounded-lg p-2.5 mb-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>
               <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>#{i + 1}</div>
               <div className="space-y-2">
+                {i > 0 && mismoTrabajador(l, lineas[i - 1]) && !l.cambiar ? (
+                  <div className="flex items-center justify-between gap-2 text-[12.5px] rounded-md px-2.5 py-2" style={{ background: "white", border: `1px solid ${LINE}`, color: NAVY }}>
+                    <span>👤 <b>{l.nombre}</b>{l.documento ? ` · ${l.documento}` : ""}{l.cargo ? ` · ${l.cargo}` : ""}</span>
+                    <button type="button" onClick={() => actualizarLinea(i, { cambiar: true })} className="text-[11px] underline shrink-0" style={{ color: NAVY }}>Cambiar trabajador</button>
+                  </div>
+                ) : (<>
                 <BuscadorLista label="Nombre del trabajador" value={l.nombre} opciones={trabajadores.opciones} opcionesAlAbrir={trabajadores.alAbrir} placeholder="Escribe el nombre (si ya lo registraste, se sugiere)"
                   onChange={(v) => actualizarLinea(i, { nombre: v })} onElegir={(o) => elegirTrabajador(i, o)} />
                 <div className="grid grid-cols-2 gap-2">
                   <Campo label="Documento" value={l.documento} inputMode="numeric" onChange={(v) => actualizarLinea(i, { documento: v.replace(/[^0-9A-Za-z.-]/g, "") })} />
                   <BuscadorLista label="Cargo / oficio" value={l.cargo} onChange={(v) => actualizarLinea(i, { cargo: v })} opciones={memoria.opcionesCargosObra} opcionesAlAbrir={memoria.opcionesCargosObra} maxResultados={10} placeholder="Cargo" onBlurValor={(v) => memoria.recordarCargoObra(v)} />
                 </div>
+                </>)}
                 <BuscadorLista label="EPP o elemento entregado" value={l.epp} onChange={(v) => actualizarLinea(i, { epp: v })} opciones={opcionesEpp} opcionesAlAbrir={opcionesEpp} maxResultados={10} placeholder="Elige un EPP o escribe otro" onBlurValor={(v) => recordarEpp(v)} />
                 <Campo label="Referencia / marca / norma" value={l.referencia} onChange={(v) => actualizarLinea(i, { referencia: v })} />
                 <div className="grid grid-cols-2 gap-2">
@@ -258,18 +268,18 @@ export default function FormularioEntregaEPP({ onVolver }) {
             </div>
           ))}
           <div className="space-y-2">
+            {lineas.length > 0 && (
+              <button type="button" onClick={otroEppMismoTrabajador} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY }}>
+                ➕ Otro EPP para el mismo trabajador
+              </button>
+            )}
             <button type="button" onClick={agregarLinea} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-md w-full justify-center border border-dashed" style={{ borderColor: GOLD, color: NAVY }}>
               <Plus size={14} /> Agregar línea
             </button>
             {lineas.length > 0 && (
-              <>
-                <button type="button" onClick={otroEppMismoTrabajador} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY }}>
-                  ➕ Otro EPP para el mismo trabajador
-                </button>
-                <button type="button" onClick={agregarKit} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold text-white" style={{ background: NAVY }}>
-                  🦺 Agregar el kit básico al último trabajador
-                </button>
-              </>
+              <button type="button" onClick={agregarKit} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold text-white" style={{ background: NAVY }}>
+                🦺 Agregar el kit básico al último trabajador
+              </button>
             )}
           </div>
           {avisoLineas && <div className="text-[11.5px] mt-2" style={{ color: "#B3401F" }}>{avisoLineas}</div>}

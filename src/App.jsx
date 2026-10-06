@@ -23,6 +23,7 @@ import FormularioPermisoTrabajo from "./FormularioPermisoTrabajo";
 import FormularioATS from "./FormularioATS";
 import FormularioInspecciones from "./FormularioInspecciones";
 import FormularioActosCondiciones from "./FormularioActosCondiciones";
+import { ContextoSST } from "./sstNavegacion";
 import {
 
   ChevronDown,
@@ -1520,7 +1521,7 @@ const MODULOS_SST = [
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
-    { id: "sst", nombre: "Gestión SST", icono: "/icons/icon-gestion-sst.png", activo: true },
+    { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
     { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
@@ -1674,7 +1675,7 @@ function InicioSST({ onSeleccionar, onVolverSelector }) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              GESTIÓN SST
+              GESTIÓN SG – SST
             </div>
             <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
               Seguridad y Salud en el Trabajo
@@ -1716,6 +1717,17 @@ function InicioSST({ onSeleccionar, onVolverSelector }) {
 
 function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const [vista, setVista] = useState("selector-apps");
+  // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
+  const ctxSST = {
+    modulos: MODULOS_SST.filter((m) => m.activo),
+    vistaActual: vista,
+    ir: (id) => setVista(id),
+    irInicio: () => setVista("inicio-sst"),
+    irSelector: () => setVista("selector-apps"),
+    nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
+    cerrarSesion: onCerrarSesion,
+  };
+  const conMenuSST = (nodo) => <ContextoSST.Provider value={ctxSST}>{nodo}</ContextoSST.Provider>;
 
   if (vista === "inicio") {
     return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
@@ -1743,31 +1755,31 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
     return <InicioSST onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
   if (vista === "sst-asistencia") {
-    return <FormularioListaAsistencia onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioListaAsistencia onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-induccion") {
-    return <FormularioInduccion onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioInduccion onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-epp") {
-    return <FormularioEntregaEPP onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioEntregaEPP onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-capacitaciones") {
-    return <FormularioCapacitaciones onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioCapacitaciones onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-permisos") {
-    return <FormularioPermisoTrabajo onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioPermisoTrabajo onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-ats") {
-    return <FormularioATS onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioATS onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-inspecciones") {
-    return <FormularioInspecciones onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioInspecciones onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-actos-inseguros") {
-    return <FormularioActosCondiciones onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioActosCondiciones onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-charla-diaria") {
-    return <FormularioCharlaDiaria onVolver={() => setVista("inicio-sst")} />;
+    return conMenuSST(<FormularioCharlaDiaria onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista.startsWith("sst-")) {
     return <Proximamente nombre={(MODULOS_SST.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-sst")} />;

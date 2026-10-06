@@ -9,6 +9,8 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo, fijarSiguienteConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { EPS, ARL, AFP, PARENTESCOS } from "./sstListas";
 
 const CLAVE_BORRADOR = "ryr_borrador_induccion";
 const CLAVE_CONSECUTIVO = "ryr_sst_induccion_consecutivo";
@@ -18,9 +20,8 @@ const filaDoc = () => ({ presento: "", vigencia: "", observacion: "" });
 const filaTema = () => ({ impartido: "", observacion: "" });
 
 function datosIniciales() {
-  const tipoProyecto = leerJSON("ryr_tipo_proyecto", null);
   return {
-    proyecto: (tipoProyecto && tipoProyecto.proyecto) || "", contratista: "", ubicacion: "",
+    proyecto: proyectoSST(), contratista: "", ubicacion: "",
     fecha: "", horaInicio: "", horaFin: "", nInduccion: "", inductorNombre: "", inductorCargo: "",
     nombre: "", documento: "", cargo: "", empresa: "", fechaIngreso: "", vinculacion: "", rh: "", eps: "", arl: "", afp: "",
     examenFecha: "", aptitud: "", restricciones: "", contactoNombre: "", parentesco: "", telefono: "",
@@ -58,6 +59,10 @@ export default function FormularioInduccion({ onVolver }) {
   const set = (campo, valor) => setD((cur) => ({ ...cur, [campo]: valor }));
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
   const memoria = useMemoriaSST(d.contratista);
+  const listaEps = useListaRecordada("ryr_sst_eps", EPS);              // EPS, ARL y AFP del país + las que se escriban
+  const listaArl = useListaRecordada("ryr_sst_arl", ARL);
+  const listaAfp = useListaRecordada("ryr_sst_afp", AFP);
+  const listaParentesco = useListaRecordada("ryr_sst_parentescos", PARENTESCOS, { min: 3 });
   const trabajadores = useTrabajadores();
   const borrador = useBorrador({ clave: CLAVE_BORRADOR, d, setD, inicial: datosIniciales, tieneContenido });
 
@@ -127,6 +132,8 @@ export default function FormularioInduccion({ onVolver }) {
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
       trabajadores.recordar([{ nombre: d.nombre, documento: d.documento, cargo: d.cargo, empresa: d.empresa }]);
+      guardarProyectoSST(d.proyecto);
+      listaEps.recordar(d.eps); listaArl.recordar(d.arl); listaAfp.recordar(d.afp); listaParentesco.recordar(d.parentesco);
       memoria.recordarUso({ personas: [[d.inductorNombre, d.inductorCargo], [d.responsableNombre, d.responsableCargo]], cargosObra: [d.cargo], empresasUsadas: [d.empresa] });
       const res = resumenInduccion(d);
       guardarJSON(CLAVE_INDUCCIONES, [res, ...leerJSON(CLAVE_INDUCCIONES, []).filter((x) => x.id !== res.id)].slice(0, 500));
@@ -165,7 +172,7 @@ export default function FormularioInduccion({ onVolver }) {
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar una inducción en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
     borrador.borrarBorrador();
-    setD(datosIniciales());
+    setD({ ...datosIniciales(), proyecto: "" });
     setGenerado("");
     setMensajeError("");
     setAvisoGeneracion("");
@@ -234,11 +241,9 @@ export default function FormularioInduccion({ onVolver }) {
               <Lista label="Tipo de vinculación" value={d.vinculacion} onChange={(v) => set("vinculacion", v)} opciones={VINCULACIONES} />
               <Lista label="Grupo sanguíneo (RH)" value={d.rh} onChange={(v) => set("rh", v)} opciones={GRUPOS_RH} />
             </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              <Campo label="EPS" value={d.eps} onChange={(v) => set("eps", v)} />
-              <Campo label="ARL" value={d.arl} onChange={(v) => set("arl", v)} />
-              <Campo label="AFP" value={d.afp} onChange={(v) => set("afp", v)} placeholder="Pensiones" />
-            </div>
+            <BuscadorLista label="EPS" value={d.eps} opciones={listaEps.opciones} opcionesAlAbrir={listaEps.opciones} maxResultados={10} placeholder="Elige la EPS o escribe otra" onChange={(v) => set("eps", v)} />
+            <BuscadorLista label="ARL" value={d.arl} opciones={listaArl.opciones} opcionesAlAbrir={listaArl.opciones} maxResultados={10} placeholder="Elige la ARL o escribe otra" onChange={(v) => set("arl", v)} />
+            <BuscadorLista label="AFP" value={d.afp} opciones={listaAfp.opciones} opcionesAlAbrir={listaAfp.opciones} maxResultados={10} placeholder="Elige el fondo de pensiones o escribe otro" onChange={(v) => set("afp", v)} />
             <div className="text-[10px] uppercase tracking-wide font-medium pt-1" style={{ color: "#8A8F99" }}>Examen médico de ingreso</div>
             <Campo label="Fecha del examen" type="date" value={d.examenFecha} onChange={(v) => set("examenFecha", v)} />
             <Lista label="Concepto de aptitud" value={d.aptitud} onChange={(v) => set("aptitud", v)} opciones={APTITUDES} />
@@ -246,7 +251,7 @@ export default function FormularioInduccion({ onVolver }) {
             <div className="text-[10px] uppercase tracking-wide font-medium pt-1" style={{ color: "#8A8F99" }}>Contacto de emergencia</div>
             <Campo label="Nombre del contacto" value={d.contactoNombre} onChange={(v) => set("contactoNombre", v)} />
             <div className="grid grid-cols-2 gap-2.5">
-              <Campo label="Parentesco" value={d.parentesco} onChange={(v) => set("parentesco", v)} />
+              <BuscadorLista label="Parentesco" value={d.parentesco} opciones={listaParentesco.opciones} opcionesAlAbrir={listaParentesco.opciones} maxResultados={10} placeholder="Elige el parentesco" onChange={(v) => set("parentesco", v)} />
               <Campo label="Teléfono" value={d.telefono} inputMode="tel" onChange={(v) => set("telefono", v.replace(/[^0-9+ ]/g, ""))} />
             </div>
           </div>

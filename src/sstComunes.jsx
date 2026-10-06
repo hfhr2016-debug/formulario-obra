@@ -1,4 +1,4 @@
-// sstComunes.jsx — piezas de pantalla y memoria COMPARTIDAS por los formularios de Gestión SST.
+// sstComunes.jsx — piezas de pantalla y memoria COMPARTIDAS por los formularios de Gestión SG – SST.
 // Las piezas visuales (Seccion, Campo, BuscadorLista, AreaTexto, Lista, CampoCargo, SelectorHora) son las mismas de la Charla
 // Diaria. La lógica sin pantalla está en sstBase.js.
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -8,6 +8,7 @@ import {
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre, CARGOS_OBRA, unirUnicos, recordarTexto,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles, mezclarTrabajadores, buscarTrabajador,
 } from "./sstBase";
+import { BotonMenuSST } from "./sstNavegacion";
 
 export const NAVY = "#1B2A45";
 export const GOLD = "#D9A233";
@@ -23,7 +24,7 @@ export const CLAVE_NOMBRES_TECNICA = "ryr_nombres_usados";   // la misma memoria
 export const CLAVE_TRABAJADORES = "ryr_sst_trabajadores";     // personas (nombre, documento, cargo, empresa) usadas en los formatos
 export const CLAVE_EVENTOS = "ryr_sst_eventos";               // resumen de cada actividad registrada (alimenta la Matriz de Capacitación)
 
-export const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento }));
+export const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento, buscaDetalle: true }));
 export const CIUDADES_AL_ABRIR = CIUDADES_PRINCIPALES.map((n) => OPCIONES_CIUDADES.find((o) => o.texto === n)).filter(Boolean);
 
 // ---------- Memoria local (nunca debe romper la pantalla si el navegador la bloquea) ----------
@@ -38,6 +39,18 @@ export function leerJSON(clave, porDefecto) {
 export function guardarJSON(clave, valor) {
   try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) {}
 }
+// El proyecto de SG-SST es propio de este sistema: los formatos sirven igual para edificaciones, vías e hidrocarburos, así que NO
+// dependen del tipo de proyecto de Gestión Técnica. Se recuerda el último proyecto escrito al generar un formato.
+export const CLAVE_PROYECTO_SST = "ryr_sst_proyecto";
+export function proyectoSST() {
+  const p = leerJSON(CLAVE_PROYECTO_SST, "");
+  return typeof p === "string" ? p : "";
+}
+export function guardarProyectoSST(nombre) {
+  const n = String(nombre || "").trim();
+  if (n) guardarJSON(CLAVE_PROYECTO_SST, n);
+}
+
 export function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
 }
@@ -99,6 +112,17 @@ export function useTrabajadores() {
     guardarJSON(CLAVE_TRABAJADORES, nueva);
   }
   return { lista, opciones, alAbrir: opciones.slice(0, 8), recordar, buscar: (nombre) => buscarTrabajador(lista, nombre) };
+}
+
+// ---------- Lista desplegable con opciones fijas + las que la persona escribe (se recuerdan en el dispositivo) ----------
+export function useListaRecordada(clave, base, { min = 3, max = 60 } = {}) {
+  const [extra, setExtra] = useState(() => leerJSON(clave, []));
+  const opciones = useMemo(() => unirUnicos(extra, base, false).map((t) => ({ texto: t, detalle: "" })), [extra]);   // eslint-disable-line
+  function recordar(valor) {
+    const nueva = recordarTexto(extra, valor, { base, min, max });
+    if (nueva !== extra) { setExtra(nueva); guardarJSON(clave, nueva); }
+  }
+  return { opciones, recordar };
 }
 
 // ---------- Plantilla de Excel: cargar y descargar ----------
@@ -238,7 +262,8 @@ export function BloqueProfesional({ memoria, etqNombre, etqCargo, nombre, cargo,
 // ---------- Pantallas y barras comunes ----------
 export function PantallaBorrador({ cual, onContinuar, onEmpezar, onVolver }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ background: PAPER }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative" style={{ background: PAPER }}>
+      <div className="absolute top-3 left-3"><BotonMenuSST color={NAVY} /></div>
       <div className="text-[15px] font-bold mb-2" style={{ color: NAVY }}>Tienes {cual} sin terminar</div>
       <div className="text-[12.5px] text-gray-500 mb-5">
         Encontramos datos guardados de la última vez que trabajaste aquí sin descargar el Excel. ¿Quieres continuar donde quedaste?
@@ -250,7 +275,7 @@ export function PantallaBorrador({ cual, onContinuar, onEmpezar, onVolver }) {
         Empezar en blanco
       </button>
       {onVolver && (
-        <button type="button" onClick={onVolver} className="text-[12px] underline" style={{ color: NAVY }}>← Volver a Gestión SST</button>
+        <button type="button" onClick={onVolver} className="text-[12px] underline" style={{ color: NAVY }}>← Volver a Gestión SG – SST</button>
       )}
     </div>
   );
@@ -261,12 +286,15 @@ export function EncabezadoFormulario({ titulo, subtitulo, onVolver }) {
     <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          {onVolver && (
-            <button type="button" onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px] mb-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
-              Gestión SST
-            </button>
-          )}
+          <div className="flex items-center gap-3 mb-3">
+            <BotonMenuSST />
+            {onVolver && (
+              <button type="button" onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+                Gestión SG – SST
+              </button>
+            )}
+          </div>
           <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{titulo}</div>
           <div className="text-[11px]" style={{ color: GOLD }}>{subtitulo}</div>
         </div>
