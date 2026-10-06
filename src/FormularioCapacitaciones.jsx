@@ -10,6 +10,7 @@ import {
   NAVY, GOLD, PAPER, LINE, CLAVE_EVENTOS, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro,
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
 } from "./sstComunes";
+import { decidirDistribucion } from "./sstBase";
 import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 
@@ -118,16 +119,10 @@ export default function FormularioCapacitaciones({ onVolver }) {
       // Distribución REAL de la plantilla subida (ubicada por el texto de sus etiquetas); si no se puede leer, la de por defecto.
       let celdas = CELDAS_CAPACITACIONES;
       const avisos = [];
-      try {
-        const lectura = descubrirCapacitaciones(ws);
-        if (lectura.celdas) celdas = lectura.celdas;
-        else {
-          console.warn("No pude leer la distribución de la plantilla; uso la de por defecto:", lectura.problemas);
-          avisos.push("No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame.");
-        }
-      } catch (e) {
-        console.warn("Error al leer la plantilla; uso la distribución por defecto:", e);
-      }
+      const lectura = descubrirCapacitaciones(ws);
+      const decision = decidirDistribucion(lectura, CELDAS_CAPACITACIONES);   // si el formato de la plantilla no coincide con la app, se detiene
+      celdas = decision.celdas;
+      if (decision.aviso) avisos.push(decision.aviso);
       const capacidad = (celdas.tablas && celdas.tablas.matriz.n) || MAX_FILAS;
       if (conTema.length > capacidad) throw new Error(`la plantilla tiene espacio para ${capacidad} capacitaciones y hay ${conTema.length}`);
       escribirCapacitacionesEnHoja(ws, d, celdas);

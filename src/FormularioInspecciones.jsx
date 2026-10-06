@@ -11,6 +11,7 @@ import {
   useMemoriaSST, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { decidirDistribucion } from "./sstBase";
 import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
 
@@ -106,14 +107,10 @@ export default function FormularioInspecciones({ onVolver }) {
       const { workbook, ws } = await cargarPlantilla("/plantilla-inspecciones.xlsx", HOJA_INSPECCION);
       let celdas = CELDAS_INSPECCION;
       const avisos = [];
-      try {
-        const lectura = descubrirInspeccion(ws);
-        if (lectura.celdas) celdas = lectura.celdas;
-        else {
-          console.warn("No pude leer la distribución de la plantilla; uso la de por defecto:", lectura.problemas);
-          avisos.push("No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame.");
-        }
-      } catch (e) { console.warn("Error al leer la plantilla; uso la distribución por defecto:", e); }
+      const lectura = descubrirInspeccion(ws);
+      const decision = decidirDistribucion(lectura, CELDAS_INSPECCION);   // si el formato de la plantilla no coincide con la app, se detiene
+      celdas = decision.celdas;
+      if (decision.aviso) avisos.push(decision.aviso);
       const capHallazgos = (celdas.tablas && celdas.tablas.hallazgos && celdas.tablas.hallazgos.n) || MAX_HALLAZGOS;
       if (hallazgosCon.length > capHallazgos) throw new Error(`la plantilla tiene espacio para ${capHallazgos} hallazgos y hay ${hallazgosCon.length}`);
       const capItems = (celdas.tablas && celdas.tablas.checklist && celdas.tablas.checklist.n) || N_ITEMS;

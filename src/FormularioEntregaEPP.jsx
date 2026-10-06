@@ -10,6 +10,7 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
+import { decidirDistribucion } from "./sstBase";
 import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_entrega_epp";
@@ -131,16 +132,10 @@ export default function FormularioEntregaEPP({ onVolver }) {
       // Distribución REAL de la plantilla subida (ubicada por el texto de sus etiquetas); si no se puede leer, la de por defecto.
       let celdas = CELDAS_EPP;
       const avisos = [];
-      try {
-        const lectura = descubrirEpp(ws);
-        if (lectura.celdas) celdas = lectura.celdas;
-        else {
-          console.warn("No pude leer la distribución de la plantilla; uso la de por defecto:", lectura.problemas);
-          avisos.push("No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame.");
-        }
-      } catch (e) {
-        console.warn("Error al leer la plantilla; uso la distribución por defecto:", e);
-      }
+      const lectura = descubrirEpp(ws);
+      const decision = decidirDistribucion(lectura, CELDAS_EPP);   // si el formato de la plantilla no coincide con la app, se detiene
+      celdas = decision.celdas;
+      if (decision.aviso) avisos.push(decision.aviso);
       const capacidad = (celdas.tablas && celdas.tablas.entregas.n) || MAX_LINEAS;
       if (conDatos.length > capacidad) throw new Error(`la plantilla tiene espacio para ${capacidad} líneas y hay ${conDatos.length}`);
       escribirEppEnHoja(ws, d, celdas);

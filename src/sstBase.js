@@ -360,7 +360,7 @@ export function descubrirPorEtiquetas(ws, spec) {
       });
     }
   }
-  return { celdas: problemas.length ? null : celdas, problemas };
+  return { celdas: problemas.length ? null : celdas, problemas, parcial: celdas };
 }
 
 // Escribe las filas de una tabla (p. ej. los asistentes) desde su primera fila; ignora lo que no quepa.
@@ -440,4 +440,23 @@ export function pintarCelda(ws, ref, rellenoARGB, fuenteARGB) {
   const c = ws.getCell(ref);
   c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rellenoARGB } };
   c.font = { ...(c.font || {}), bold: true, color: { argb: fuenteARGB } };
+}
+
+// ¿Se puede usar la distribución de respaldo? Solo si lo que SÍ se encontró en la plantilla está exactamente donde el respaldo dice
+// (o sea, el formato no se movió y solo falta una etiqueta renombrada). Si algo está corrido —por ejemplo, una plantilla nueva con una
+// versión vieja de la app— se DETIENE: es mejor no generar el Excel que escribir los datos en filas equivocadas.
+export function decidirDistribucion(lectura, porDefecto) {
+  if (lectura.celdas) return { celdas: lectura.celdas, aviso: "" };
+  const hallados = Object.entries(lectura.parcial || {}).filter(([, v]) => typeof v === "string");
+  const corridos = hallados.filter(([k, v]) => porDefecto[k] !== undefined && porDefecto[k] !== v).map(([k]) => k);
+  if (!hallados.length || corridos.length) {
+    throw new Error("La plantilla de Excel de la app no coincide con esta versión del formulario (" + ((lectura.problemas || [])[0] || "no pude leerla") +
+      "). No se generó el Excel para no escribir los datos en filas equivocadas. Sube juntos el código y la plantilla de la misma entrega, o avísame.");
+  }
+  return { celdas: porDefecto, aviso: "No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame." };
+}
+
+// Sube la altura de una fila (si ya es más alta, la deja): para que un texto de varias líneas se vea completo.
+export function alturaMinimaFila(ws, fila, puntos) {
+  try { const f = ws.getRow(fila); if (!f.height || f.height < puntos) f.height = puntos; } catch (e) { /* sin altura: no es grave */ }
 }

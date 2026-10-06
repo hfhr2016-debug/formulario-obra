@@ -11,6 +11,7 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora, claseInput, estiloInput,
 } from "./sstComunes";
+import { decidirDistribucion } from "./sstBase";
 import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 
@@ -155,16 +156,10 @@ export default function FormularioListaAsistencia({ onVolver }) {
       // Distribución REAL de la plantilla subida (ubicada por el texto de sus etiquetas); si no se puede leer, la de por defecto.
       let celdas = CELDAS_LISTA;
       const avisos = [];
-      try {
-        const lectura = descubrirLista(ws);
-        if (lectura.celdas) celdas = lectura.celdas;
-        else {
-          console.warn("No pude leer la distribución de la plantilla; uso la de por defecto:", lectura.problemas);
-          avisos.push("No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame.");
-        }
-      } catch (e) {
-        console.warn("Error al leer la plantilla; uso la distribución por defecto:", e);
-      }
+      const lectura = descubrirLista(ws);
+      const decision = decidirDistribucion(lectura, CELDAS_LISTA);   // si el formato de la plantilla no coincide con la app, se detiene
+      celdas = decision.celdas;
+      if (decision.aviso) avisos.push(decision.aviso);
       const capacidad = (celdas.tablas && celdas.tablas.asistentes.n) || MAX_ASISTENTES;
       if (nAsistentes > capacidad) throw new Error(`la plantilla tiene espacio para ${capacidad} asistentes y hay ${nAsistentes}`);
 

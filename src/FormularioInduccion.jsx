@@ -9,6 +9,7 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo, fijarSiguienteConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { decidirDistribucion } from "./sstBase";
 import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
 import { EPS, ARL, AFP, PARENTESCOS } from "./sstListas";
 
@@ -113,16 +114,10 @@ export default function FormularioInduccion({ onVolver }) {
       // Distribución REAL de la plantilla subida (ubicada por el texto de sus etiquetas); si no se puede leer, la de por defecto.
       let celdas = CELDAS_INDUCCION;
       const avisos = [];
-      try {
-        const lectura = descubrirInduccion(ws);
-        if (lectura.celdas) celdas = lectura.celdas;
-        else {
-          console.warn("No pude leer la distribución de la plantilla; uso la de por defecto:", lectura.problemas);
-          avisos.push("No pude leer la distribución de la plantilla y usé la de por defecto (" + lectura.problemas[0] + "). Si ves datos fuera de lugar, avísame.");
-        }
-      } catch (e) {
-        console.warn("Error al leer la plantilla; uso la distribución por defecto:", e);
-      }
+      const lectura = descubrirInduccion(ws);
+      const decision = decidirDistribucion(lectura, CELDAS_INDUCCION);   // si el formato de la plantilla no coincide con la app, se detiene
+      celdas = decision.celdas;
+      if (decision.aviso) avisos.push(decision.aviso);
       // N° de inducción: si se dejó vacío, se asigna el siguiente consecutivo
       const nUsar = d.nInduccion && String(d.nInduccion).trim() ? String(d.nInduccion).trim() : String(siguienteConsecutivo(CLAVE_CONSECUTIVO));
       escribirInduccionEnHoja(ws, { ...d, nInduccion: nUsar }, celdas);

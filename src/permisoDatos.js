@@ -1,7 +1,7 @@
 // Permiso de trabajo de alto riesgo (RYR-SS-007): datos y lógica propios de este formato. Lo común está en sstBase.js.
 // Cada permiso es de UN tipo (alturas, caliente, espacios confinados, eléctricos, sustancias químicas, excavaciones, condiciones extremas o en cliente).
 // El tipo elegido pinta la fila superior del formato de su color y trae sus propios requisitos para marcar con ✔.
-import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, pintarCelda } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, pintarCelda, alturaMinimaFila } from "./sstBase";
 
 export const CODIGO_PERMISO = "RYR-SS-007";
 export const HOJA_PERMISO = "Permisos de Trabajo";
@@ -74,7 +74,14 @@ const personaVacia = (p) => !(p && (p.nombre || p.documento || p.cargo || p.cert
 export function certTexto(p) {
   const c = String((p && p.cert) || "").trim();
   const v = p && p.certVence ? fechaDDMMYYYY(p.certVence) : "";
-  return c && v ? `${c} — vence ${v}` : c || (v ? `Vence ${v}` : "");
+  return c && v ? `${c}\nvence ${v}` : c || (v ? `Vence ${v}` : "");     // en dos líneas: la casilla es angosta y el texto largo no se leería
+}
+// Altura que necesita la casilla de la certificación para que se lea completa (unos 26 caracteres por línea)
+export function alturaCertificacion(p) {
+  const t = certTexto(p);
+  if (!t) return 0;
+  const lineas = t.split("\n").reduce((n, linea) => n + Math.max(1, Math.ceil(linea.length / 26)), 0);
+  return Math.max(28, lineas * 12 + 6);
 }
 // Personas cuya certificación ya estaba vencida el día del permiso (la fecha de vencimiento es anterior a la del permiso)
 export function certificacionesVencidas(d, hoyISO) {
@@ -103,7 +110,9 @@ export function escribirPermisoEnHoja(ws, d, celdas = CELDAS_PERMISO) {
     pintarCelda(ws, C.tipoPermiso, "FF" + tipo.relleno, "FF" + tipo.fuente);
   }
   const T = C.tablas || {};
-  escribirTabla(ws, T.personal, personalConDatos(d).map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, cert: certTexto(p) })));
+  const personal = personalConDatos(d);
+  escribirTabla(ws, T.personal, personal.map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, cert: certTexto(p) })));
+  if (T.personal) personal.slice(0, T.personal.n).forEach((p, i) => { const alto = alturaCertificacion(p); if (alto) alturaMinimaFila(ws, T.personal.fila0 + i, alto); });
   escribirTabla(ws, T.verifPrevia, VERIF_PREVIA.map((_, i) => ({ cumple: arr(d.previa)[i] || "", obs: arr(d.previaObs)[i] || "" })));
   // Requisitos específicos del tipo: el texto de cada uno y un ✔ en la casilla que corresponde (Cumple / No cumple / N/A)
   escribirTabla(ws, T.requisitos, requisitosDe(d).map((texto, i) => {
