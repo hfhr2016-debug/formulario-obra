@@ -1,27 +1,26 @@
 // Permiso de trabajo de alto riesgo (RYR-SS-007): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY } from "./sstBase";
+// Cada permiso es de UN tipo (alturas, caliente, espacios confinados, eléctricos, sustancias químicas, excavaciones, condiciones extremas o en cliente).
+// El tipo elegido pinta la fila superior del formato de su color y trae sus propios requisitos para marcar con ✔.
+import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, pintarCelda } from "./sstBase";
 
 export const CODIGO_PERMISO = "RYR-SS-007";
 export const HOJA_PERMISO = "Permisos de Trabajo";
 export const VIGENCIAS = ["Un turno", "Un día", "Varios días (renovar a diario)"];
 export const RESPUESTAS = ["Sí", "No", "N/A"];
+export const RESPUESTAS_REQ = ["Cumple", "No cumple", "N/A"];
 export const LECTURAS = ["Inicial", "Intermedia", "Final"];
+export const MARCA = "✔";
 
-// Tipos de trabajo, tal como están en la plantilla (sin la casilla ☐)
-export const TIPOS_TRABAJO = ["Trabajo en alturas", "Trabajo en caliente", "Espacios confinados", "Excavaciones y zanjas", "Riesgo eléctrico / bloqueo (LOTO)", "Izaje de cargas", "Demolición o desmonte", "Otro: ______________"];
-// Qué verificación específica aplica a cada tipo de trabajo (el grupo es la palabra que abre cada condición específica)
-export const GRUPO_DE_TIPO = {
-  "Trabajo en alturas": "ALTURAS", "Trabajo en caliente": "CALIENTE", "Espacios confinados": "CONFINADOS",
-  "Excavaciones y zanjas": "EXCAVACIONES", "Riesgo eléctrico / bloqueo (LOTO)": "ELÉCTRICO", "Izaje de cargas": "IZAJE",
-};
+// Tipos de permiso: nombre (lo que se imprime en la fila superior), color de fondo y de letra, y si pide medición de gases
+export const TIPOS_PERMISO = [{"id": "caliente", "nombre": "TRABAJO EN CALIENTE", "relleno": "C00000", "fuente": "FFFFFF", "gases": "opcional"}, {"id": "alturas", "nombre": "TRABAJO EN ALTURAS", "relleno": "E36C09", "fuente": "FFFFFF", "gases": "no"}, {"id": "confinados", "nombre": "TRABAJO EN ESPACIOS CONFINADOS", "relleno": "7030A0", "fuente": "FFFFFF", "gases": "obligatoria"}, {"id": "electricos", "nombre": "TRABAJOS ELÉCTRICOS", "relleno": "FFC000", "fuente": "000000", "gases": "no"}, {"id": "quimicos", "nombre": "SUSTANCIAS PELIGROSAS O QUÍMICAS", "relleno": "548235", "fuente": "FFFFFF", "gases": "opcional"}, {"id": "excavaciones", "nombre": "EXCAVACIONES", "relleno": "7F4F24", "fuente": "FFFFFF", "gases": "opcional"}, {"id": "extremas", "nombre": "TRABAJO EN CONDICIONES EXTREMAS", "relleno": "0070C0", "fuente": "FFFFFF", "gases": "no"}, {"id": "cliente", "nombre": "TRABAJO EN CLIENTE", "relleno": "595959", "fuente": "FFFFFF", "gases": "no"}];
+// Requisitos específicos de cada tipo (hasta 12). Es el mismo contenido de la hoja "Requisitos por permiso" del Excel.
+export const REQUISITOS_PERMISO = {"caliente": ["Área despejada de combustibles e inflamables (o protegidos con mantas ignífugas)", "Extintor adecuado, cargado y a la mano", "Vigía de fuego designado (permanece 30 minutos después de terminar)", "Mantas o pantallas ignífugas contra chispas y escoria", "Equipos de soldadura u oxicorte inspeccionados (cables, mangueras, válvulas y antirretorno)", "Cilindros asegurados en posición vertical, con capuchón y lejos de la fuente de calor", "Ventilación o extracción de humos y gases", "Aberturas, ductos y alcantarillas cercanas selladas o protegidas", "Medición de atmósfera inflamable realizada si hay riesgo de gases o vapores", "EPP específicos (careta, guantes, peto, polainas) y ropa sin material inflamable", "Revisión del área 30 minutos después de terminar el trabajo"], "alturas": ["Personal con certificación vigente en trabajo seguro en alturas y aptitud médica", "Coordinador de trabajo en alturas presente", "Procedimiento de trabajo en alturas y ATS socializados", "Sistema de acceso seguro (andamio certificado, escalera o plataforma inspeccionada)", "Puntos de anclaje identificados y con la resistencia requerida", "Arnés, eslingas, absorbedor de impacto y línea de vida inspeccionados", "Barandas, cerramientos o redes de protección instalados", "Área inferior demarcada y señalizada contra caída de objetos", "Plan de rescate y equipo de rescate disponibles; personal entrenado", "Herramientas aseguradas contra caídas", "Condiciones climáticas evaluadas (lluvia, viento fuerte, tormenta eléctrica)", "Comunicación entre quien trabaja y el coordinador o vigía"], "confinados": ["Espacio identificado, señalizado y con acceso controlado", "Personal autorizado con capacitación y certificación en espacios confinados", "Energías y fluidos aislados, bloqueados y etiquetados (tuberías, equipos, electricidad)", "Medición de gases previa y continua (oxígeno, explosividad, CO y H₂S)", "Ventilación natural o forzada en funcionamiento", "Vigía permanente en el exterior con registro de ingreso y salida", "Comunicación continua entre el vigía y las personas en el interior", "Plan de rescate, equipo de rescate (trípode, malacate) y respiración disponibles", "Iluminación y equipos aptos para el ambiente (a prueba de explosión si aplica)", "Limpieza, drenaje o inertización del espacio realizada", "EPP y ropa adecuados al riesgo", "Tiempo máximo de permanencia definido"], "electricos": ["Personal competente y autorizado para el trabajo eléctrico (RETIE)", "Procedimiento de bloqueo y etiquetado (LOTO) aplicado", "Circuito abierto y desenergizado en el punto de corte", "Ausencia de tensión verificada con detector adecuado", "Puesta a tierra temporal instalada", "Zona de trabajo delimitada y señalizada", "Distancias de seguridad respetadas frente a partes energizadas", "EPP dieléctrico en buen estado (casco, guantes, calzado y careta)", "Herramientas y equipos aislados, inspeccionados y con protección diferencial", "Condiciones climáticas evaluadas (lluvia, tormenta eléctrica)", "Coordinación con el operador de red o responsable del sistema eléctrico"], "quimicos": ["Hojas de datos de seguridad (SDS) disponibles y leídas por el personal", "Sustancias rotuladas con el sistema globalmente armonizado (SGA)", "Cantidad limitada a la necesaria y en recipientes adecuados", "Compatibilidad entre sustancias verificada", "Ventilación adecuada en el área de trabajo", "EPP específico (respirador, guantes, gafas, delantal) según la SDS", "Duchas y lavaojos de emergencia disponibles y cercanos", "Kit de derrames y material absorbente disponible", "Fuentes de ignición controladas o eliminadas", "Personal capacitado en manejo de sustancias químicas y en el plan de emergencia", "Disposición de residuos peligrosos definida"], "excavaciones": ["Servicios enterrados localizados y señalizados (gas, energía, agua y datos)", "Tipo de suelo evaluado y sistema de contención definido (talud o entibado)", "Taludes o entibados construidos según el diseño", "Material excavado y equipos retirados del borde (distancia segura)", "Zona delimitada, con barandas o cerramiento y señalización visible", "Accesos y salidas seguros (escaleras o rampas) cerca del personal", "Control de agua, drenaje o bombeo implementado", "Inspección previa por persona competente (cada turno o después de lluvia)", "Atmósfera verificada si hay sospecha de gases (excavaciones profundas)", "Control de tránsito y de vibraciones cerca de la excavación", "Plan de rescate y equipo básico de emergencia disponibles", "EPP completos y vigía cuando se requiera"], "extremas": ["Condiciones evaluadas (temperatura, radiación UV, lluvia, viento, tormenta eléctrica y visibilidad)", "Criterios para suspender el trabajo definidos y comunicados", "Hidratación disponible y pausas programadas", "Sombra, refugio o zona de descanso disponible", "Ropa adecuada al clima y protección solar", "Aclimatación del personal nuevo o que regresa", "Monitoreo de síntomas (golpe de calor, hipotermia y fatiga)", "Iluminación suficiente si el trabajo es nocturno", "Trabajo en parejas o con vigía", "Primeros auxilios y medio de comunicación disponibles", "Plan de evacuación o suspensión ante tormenta eléctrica"], "cliente": ["Autorización escrita del cliente para el trabajo", "Inducción de seguridad del cliente recibida por todo el personal", "Personal con afiliación vigente a EPS, ARL y pensión (carné o planilla)", "Responsable o interventor del cliente informado y coordinado", "Zona de trabajo asignada, delimitada y señalizada", "Normas del cliente conocidas (EPP, ingreso, prohibiciones y horario)", "Plan de emergencia y rutas de evacuación del cliente conocidos", "Equipos y herramientas inspeccionados y relacionados en el ingreso", "Actividades simultáneas del cliente coordinadas", "Orden, aseo y manejo de residuos acordados", "Seguros y pólizas exigidas por el cliente al día"]};
 export const VERIF_PREVIA = ["ATS elaborado, socializado y firmado por todo el personal que ejecuta", "Personal con aptitud médica y capacitación o certificación vigente para este trabajo", "Elementos de protección personal completos, certificados y en buen estado", "Área demarcada, señalizada y con acceso restringido a personas ajenas", "Herramientas, equipos y sistemas de protección inspeccionados", "Plan de emergencia y de rescate conocido; medio de comunicación disponible", "Extintor y botiquín disponibles en el sitio del trabajo", "Condiciones del entorno evaluadas (lluvia, viento, tormenta eléctrica)", "Permisos complementarios tramitados y adjuntos (si aplica)", "Coordinación con otras actividades simultáneas en el área"];
-export const VERIF_ESPECIFICA = ["ALTURAS · Puntos de anclaje certificados; arnés, eslingas y línea de vida inspeccionados", "ALTURAS · Andamios o plataformas certificados y con tarjeta de inspección", "ALTURAS · Equipo y personal de rescate en alturas disponibles", "CALIENTE · Área libre de combustibles; extintor y vigía de fuego presentes", "CALIENTE · Cilindros, mangueras y equipos de soldadura o corte inspeccionados", "CALIENTE · Protección contra chispas y escoria (mantas, pantallas)", "CONFINADOS · Espacio aislado, ventilado y con medición de gases previa", "CONFINADOS · Vigía permanente en el exterior y comunicación constante", "CONFINADOS · Equipo de rescate y de respiración disponible", "EXCAVACIONES · Servicios enterrados localizados y señalizados", "EXCAVACIONES · Taludes, entibados o sistema de contención; acceso y salida seguros", "ELÉCTRICO · Energía aislada, bloqueada, etiquetada y verificada sin tensión", "ELÉCTRICO · Elementos dieléctricos y distancias de seguridad respetadas", "IZAJE · Plan de izaje, equipo certificado, señalero y área restringida"];
-export const grupoDeItem = (t) => String(t).split(" · ")[0];
-export const textoDeItem = (t) => (String(t).includes(" · ") ? String(t).split(" · ").slice(1).join(" · ") : String(t));
 
 // Cómo se reconoce cada dato en la plantilla: [clave, etiqueta, columna de la etiqueta, columna del valor, buscar después de…, filas debajo]
 export const SPEC_PERMISO = {
   campos: [
+    ["tipoPermiso", "TIPO DE PERMISO DE TRABAJO", "A", "D"],
     ["proyecto", "Proyecto / Obra", "A", "C"],
     ["contratista", "Contratista / Empresa", "A", "C"],
     ["ubicacion", "Ubicación", "H", "J"],
@@ -32,6 +31,7 @@ export const SPEC_PERMISO = {
     ["vigencia", "Vigencia", "J", "K"],
     ["frente", "Frente / lugar del trabajo", "A", "C"],
     ["altura", "Altura o profundidad (m)", "H", "J"],
+    ["equipo", "Equipo, sustancia o circuito", "A", "C"],
     ["descripcion", "Descripción del trabajo", "A", "C"],
     ["solicitanteNombre", "Solicitante", "A", "C"],
     ["solicitanteCargo", "Cargo", "H", "J", "solicitanteNombre"],
@@ -43,11 +43,10 @@ export const SPEC_PERMISO = {
   ],
   tablas: [
     { clave: "personal", cabecera: "No.", fin: "3. VERIFICACIÓN PREVIA", finEmpieza: true, columnas: { nombre: "B", documento: "E", cargo: "G", cert: "I" } },
-    { clave: "verifPrevia", cabecera: "No.", despuesDe: "personal", fin: "4. VERIFICACIÓN ESPECÍFICA", finEmpieza: true, numerada: true, columnas: { cumple: "I", obs: "K" } },
-    { clave: "verifEspec", cabecera: "No.", despuesDe: "verifPrevia", fin: "5. MEDICIÓN DE GASES", finEmpieza: true, numerada: true, columnas: { cumple: "I", obs: "K" } },
-    { clave: "gases", cabecera: "Medición", despuesDe: "verifEspec", fin: "Registre las lecturas", finEmpieza: true, columnas: { hora: "C", o2: "D", lel: "E", co: "G", h2s: "H", resp: "I" } },
+    { clave: "verifPrevia", cabecera: "No.", despuesDe: "personal", fin: "4. REQUISITOS ESPECÍFICOS", finEmpieza: true, numerada: true, columnas: { cumple: "I", obs: "K" } },
+    { clave: "requisitos", cabecera: "No.", despuesDe: "verifPrevia", fin: "5. MEDICIÓN DE GASES", finEmpieza: true, numerada: true, columnas: { texto: "B", cumple: "H", no: "I", na: "J", obs: "K" } },
+    { clave: "gases", cabecera: "Medición", despuesDe: "requisitos", fin: "Registre las lecturas", finEmpieza: true, columnas: { hora: "C", o2: "D", lel: "E", co: "G", h2s: "H", resp: "I" } },
   ],
-  opciones: [{ clave: "tipos", desde: "Tipo de trabajo", hasta: "2. PERSONAL QUE EJECUTA" }],
   firmas: [
     { firma: "Firma:", nombre: "Nombre:", desdeEtiqueta: "6. AUTORIZACIÓN", hora: true, personas: [{ clave: "solicitante", col: "C" }, { clave: "autoriza", col: "G" }, { clave: "vigia", col: "K" }] },
     { firma: "Firma:", nombre: "Nombre:", desdeEtiqueta: "7. CIERRE DEL PERMISO", personas: [{ clave: "cierra", col: "C" }, { clave: "recibe", col: "I" }] },
@@ -55,7 +54,7 @@ export const SPEC_PERMISO = {
 };
 
 // Distribución de la plantilla entregada (se usa solo si no se puede leer la plantilla subida). Generado por el motor.
-export const CELDAS_PERMISO = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","nPermiso":"C13","fecha":"E13","horaInicio":"G13","horaFin":"I13","vigencia":"K13","frente":"C14","altura":"J14","descripcion":"C15","solicitanteNombre":"C16","solicitanteCargo":"J16","horaCierre":"C69","trabajoTerminado":"G69","areaEnOrden":"K69","obsCierre":"C70","motivoCancelacion":"C71","tablas":{"personal":{"fila0":22,"n":6,"columnas":{"nombre":"B","documento":"E","cargo":"G","cert":"I"}},"verifPrevia":{"fila0":30,"n":10,"filas":[30,31,32,33,34,35,36,37,38,39],"columnas":{"cumple":"I","obs":"K"}},"verifEspec":{"fila0":42,"n":14,"filas":[42,43,44,45,46,47,48,49,50,51,52,53,54,55],"columnas":{"cumple":"I","obs":"K"}},"gases":{"fila0":58,"n":3,"columnas":{"hora":"C","o2":"D","lel":"E","co":"G","h2s":"H","resp":"I"}}},"opciones":{"tipos":[{"ref":"A18","texto":"Trabajo en alturas"},{"ref":"D18","texto":"Trabajo en caliente"},{"ref":"G18","texto":"Espacios confinados"},{"ref":"J18","texto":"Excavaciones y zanjas"},{"ref":"A19","texto":"Riesgo eléctrico / bloqueo (LOTO)"},{"ref":"D19","texto":"Izaje de cargas"},{"ref":"G19","texto":"Demolición o desmonte"},{"ref":"J19","texto":"Otro: ______________"}]},"firmas":{"solicitante":{"nombre":"C65","cargo":"C66","hora":"C67"},"autoriza":{"nombre":"G65","cargo":"G66","hora":"G67"},"vigia":{"nombre":"K65","cargo":"K66","hora":"K67"},"cierra":{"nombre":"C74","cargo":"C75"},"recibe":{"nombre":"I74","cargo":"I75"}}};
+export const CELDAS_PERMISO = {"tipoPermiso":"D10","proyecto":"C12","contratista":"C13","ubicacion":"J13","nPermiso":"C14","fecha":"E14","horaInicio":"G14","horaFin":"I14","vigencia":"K14","frente":"C15","altura":"J15","equipo":"C16","descripcion":"C17","solicitanteNombre":"C18","solicitanteCargo":"J18","horaCierre":"C66","trabajoTerminado":"G66","areaEnOrden":"K66","obsCierre":"C67","motivoCancelacion":"C68","tablas":{"personal":{"fila0":21,"n":6,"columnas":{"nombre":"B","documento":"E","cargo":"G","cert":"I"}},"verifPrevia":{"fila0":29,"n":10,"filas":[29,30,31,32,33,34,35,36,37,38],"columnas":{"cumple":"I","obs":"K"}},"requisitos":{"fila0":41,"n":12,"filas":[41,42,43,44,45,46,47,48,49,50,51,52],"columnas":{"texto":"B","cumple":"H","no":"I","na":"J","obs":"K"}},"gases":{"fila0":55,"n":3,"columnas":{"hora":"C","o2":"D","lel":"E","co":"G","h2s":"H","resp":"I"}}},"firmas":{"solicitante":{"nombre":"C62","cargo":"C63","hora":"C64"},"autoriza":{"nombre":"G62","cargo":"G63","hora":"G64"},"vigia":{"nombre":"K62","cargo":"K63","hora":"K64"},"cierra":{"nombre":"C71","cargo":"C72"},"recibe":{"nombre":"I71","cargo":"I72"}}};
 
 export const descubrirPermiso = (ws) => descubrirPorEtiquetas(ws, SPEC_PERMISO);
 
@@ -64,16 +63,10 @@ const numero = (v) => { const t = String(v === undefined || v === null ? "" : v)
 const numeroOTexto = (v) => { const n = numero(v); return n === null ? String(v === undefined || v === null ? "" : v).trim() : n; };
 const arr = (a) => (Array.isArray(a) ? a : []);
 
-// Grupos de verificación específica que aplican según los tipos de trabajo marcados
-export function gruposActivos(d) {
-  return new Set(arr(d.tipos).map((t) => GRUPO_DE_TIPO[t]).filter(Boolean));
-}
-export const itemActivo = (d, i) => gruposActivos(d).has(grupoDeItem(VERIF_ESPECIFICA[i]));
-// Lo que se escribe en el Excel: las condiciones de un trabajo que NO se va a hacer quedan en N/A
-export const respuestaEspecifica = (d, i) => (itemActivo(d, i) ? arr(d.espec)[i] || "" : "N/A");
-
-export const gasesObligatorios = (d) => arr(d.tipos).includes("Espacios confinados");
-export const gasesVisibles = (d) => gasesObligatorios(d) || arr(d.tipos).includes("Trabajo en caliente");
+export const tipoDe = (d) => TIPOS_PERMISO.find((t) => t.id === d.tipoPermiso) || null;
+export const requisitosDe = (d) => { const t = tipoDe(d); return t ? REQUISITOS_PERMISO[t.id] || [] : []; };
+export const gasesObligatorios = (d) => { const t = tipoDe(d); return !!t && t.gases === "obligatoria"; };
+export const gasesVisibles = (d) => { const t = tipoDe(d); return !!t && t.gases !== "no"; };
 const lecturaConDatos = (g) => !!(g && (g.hora || g.o2 || g.lel || g.co || g.h2s || g.resp));
 
 const personaVacia = (p) => !(p && (p.nombre || p.documento || p.cargo || p.cert || p.certVence));
@@ -91,23 +84,32 @@ export function certificacionesVencidas(d, hoyISO) {
 }
 export const personalConDatos = (d) => arr(d.personal).filter((p) => !personaVacia(p));
 
-// Condiciones marcadas "No" (el permiso no debería autorizarse mientras haya alguna)
+// Condiciones marcadas "No" / "No cumple" (el permiso no debería autorizarse mientras haya alguna)
 export function condicionesEnNo(d) {
   const previa = VERIF_PREVIA.filter((_, i) => arr(d.previa)[i] === "No");
-  const espec = VERIF_ESPECIFICA.filter((_, i) => itemActivo(d, i) && arr(d.espec)[i] === "No");
-  return [...previa, ...espec];
+  const req = requisitosDe(d).filter((_, i) => arr(d.requisitos)[i] === "No cumple");
+  return [...previa, ...req];
 }
 
 export function escribirPermisoEnHoja(ws, d, celdas = CELDAS_PERMISO) {
   const C = celdas;
-  for (const k of ["proyecto", "contratista", "ubicacion", "nPermiso", "horaInicio", "horaFin", "vigencia", "frente", "altura", "descripcion", "solicitanteNombre", "solicitanteCargo",
+  const tipo = tipoDe(d);
+  for (const k of ["proyecto", "contratista", "ubicacion", "nPermiso", "horaInicio", "horaFin", "vigencia", "frente", "altura", "equipo", "descripcion", "solicitanteNombre", "solicitanteCargo",
     "horaCierre", "trabajoTerminado", "areaEnOrden", "obsCierre", "motivoCancelacion"]) poner(ws, C[k], d[k]);
   poner(ws, C.fecha, fechaDDMMYYYY(d.fecha));
-  const noMarcadas = marcarOpciones(ws, C.opciones && C.opciones.tipos, arr(d.tipos), d.otros || {});
+  // La fila del tipo de permiso: el nombre y SU color (en el Excel manual lo hace una regla de color; aquí se pinta directamente)
+  if (tipo && C.tipoPermiso) {
+    poner(ws, C.tipoPermiso, tipo.nombre);
+    pintarCelda(ws, C.tipoPermiso, "FF" + tipo.relleno, "FF" + tipo.fuente);
+  }
   const T = C.tablas || {};
   escribirTabla(ws, T.personal, personalConDatos(d).map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, cert: certTexto(p) })));
   escribirTabla(ws, T.verifPrevia, VERIF_PREVIA.map((_, i) => ({ cumple: arr(d.previa)[i] || "", obs: arr(d.previaObs)[i] || "" })));
-  escribirTabla(ws, T.verifEspec, VERIF_ESPECIFICA.map((_, i) => ({ cumple: respuestaEspecifica(d, i), obs: itemActivo(d, i) ? arr(d.especObs)[i] || "" : "" })));
+  // Requisitos específicos del tipo: el texto de cada uno y un ✔ en la casilla que corresponde (Cumple / No cumple / N/A)
+  escribirTabla(ws, T.requisitos, requisitosDe(d).map((texto, i) => {
+    const v = arr(d.requisitos)[i];
+    return { texto, cumple: v === "Cumple" ? MARCA : "", no: v === "No cumple" ? MARCA : "", na: v === "N/A" ? MARCA : "", obs: arr(d.requisitosObs)[i] || "" };
+  }));
   if (gasesVisibles(d)) {
     escribirTabla(ws, T.gases, arr(d.gases).slice(0, LECTURAS.length).map((g) => (lecturaConDatos(g)
       ? { hora: g.hora, o2: numeroOTexto(g.o2), lel: numeroOTexto(g.lel), co: numeroOTexto(g.co), h2s: numeroOTexto(g.h2s), resp: g.resp } : {})));
@@ -119,22 +121,22 @@ export function escribirPermisoEnHoja(ws, d, celdas = CELDAS_PERMISO) {
   // Al cierre firma quien solicitó y recibe quien autorizó, salvo que se indique otra persona
   if (F.cierra) { poner(ws, F.cierra.nombre, d.cierraNombre || d.solicitanteNombre); poner(ws, F.cierra.cargo, d.cierraNombre ? d.cierraCargo : d.solicitanteCargo); }
   if (F.recibe) { poner(ws, F.recibe.nombre, d.recibeNombre || d.autorizaNombre); poner(ws, F.recibe.cargo, d.recibeNombre ? d.recibeCargo : d.autorizaCargo); }
-  return noMarcadas;
+  return [];
 }
 
 export function validarPermiso(d) {
   const faltan = [];
+  if (!tipoDe(d)) faltan.push("el tipo de permiso");
   if (!d.fecha) faltan.push("la fecha");
   if (!d.descripcion || !d.descripcion.trim()) faltan.push("la descripción del trabajo");
-  if (!arr(d.tipos).length) faltan.push("al menos un tipo de trabajo");
   if (!d.solicitanteNombre || !d.solicitanteNombre.trim()) faltan.push("el solicitante");
   const personal = personalConDatos(d);
   if (!personal.length) faltan.push("al menos una persona que ejecuta el trabajo");
   else if (personal.some((p) => !p.nombre || !p.nombre.trim())) faltan.push("el nombre de cada persona que ejecuta");
   const sinPrevia = VERIF_PREVIA.filter((_, i) => !arr(d.previa)[i]).length;
   if (sinPrevia) faltan.push(`responder la verificación previa (faltan ${sinPrevia})`);
-  const sinEspec = VERIF_ESPECIFICA.filter((_, i) => itemActivo(d, i) && !arr(d.espec)[i]).length;
-  if (sinEspec) faltan.push(`responder la verificación específica de este trabajo (faltan ${sinEspec})`);
+  const sinReq = requisitosDe(d).filter((_, i) => !arr(d.requisitos)[i]).length;
+  if (sinReq) faltan.push(`responder los requisitos del permiso (faltan ${sinReq})`);
   if (gasesObligatorios(d)) {
     const g = arr(d.gases)[0];
     if (!g || numero(g.o2) === null || numero(g.lel) === null) faltan.push("la medición inicial de gases (oxígeno y explosividad)");
@@ -146,8 +148,9 @@ export function validarPermiso(d) {
 // Resumen que se guarda en el dispositivo (para informes y para las acciones correctivas)
 export function resumenPermiso(d) {
   const noCumple = condicionesEnNo(d);
+  const t = tipoDe(d);
   return {
     id: `${d.fecha || "sin-fecha"}_${d.nPermiso || ""}`, formato: "permiso-trabajo", fecha: d.fecha || "", proyecto: d.proyecto || "", nPermiso: d.nPermiso || "",
-    tipos: arr(d.tipos), descripcion: d.descripcion || "", personas: personalConDatos(d).length, condicionesEnNo: noCumple.length,
+    tipoPermiso: t ? t.nombre : "", tipos: t ? [t.nombre] : [], descripcion: d.descripcion || "", personas: personalConDatos(d).length, condicionesEnNo: noCumple.length,
   };
 }

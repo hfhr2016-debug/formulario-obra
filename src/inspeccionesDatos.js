@@ -1,5 +1,5 @@
 // Inspección de seguridad (RYR-SS-010): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoDuracion } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoDuracion, textoResponsable } from "./sstBase";
 
 export const CODIGO_INSPECCION = "RYR-SS-010";
 export const HOJA_INSPECCION = "Inspecciones";
@@ -60,7 +60,7 @@ export function porcentajeCumplimiento(d) {
   const c = conteo(d);
   return c.cumple + c.no === 0 ? null : Math.round((c.cumple / (c.cumple + c.no)) * 100);
 }
-const hallazgoVacio = (h) => !(h && (h.hallazgo || h.accion || h.responsable || h.fecha));
+const hallazgoVacio = (h) => !(h && (h.hallazgo || h.accion || h.responsable || h.responsableCargo || h.fecha));
 export const hallazgosConDatos = (d) => arr(d.hallazgos).filter((h) => !hallazgoVacio(h));
 
 export function escribirInspeccionEnHoja(ws, d, celdas = CELDAS_INSPECCION) {
@@ -74,7 +74,7 @@ export function escribirInspeccionEnHoja(ws, d, celdas = CELDAS_INSPECCION) {
     const v = arr(d.respuestas)[i];
     return { cumple: v === "Cumple" ? MARCA : "", no: v === "No cumple" ? MARCA : "", na: v === "N/A" ? MARCA : "", obs: arr(d.observaciones)[i] || "" };
   }));
-  escribirTabla(ws, T.hallazgos, hallazgosConDatos(d).map((h) => ({ hallazgo: h.hallazgo, nivel: h.nivel, accion: h.accion, responsable: h.responsable, fecha: fechaDDMMYYYY(h.fecha), estado: h.estado })));
+  escribirTabla(ws, T.hallazgos, hallazgosConDatos(d).map((h) => ({ hallazgo: h.hallazgo, nivel: h.nivel, accion: h.accion, responsable: textoResponsable(h.responsable, h.responsableCargo), fecha: fechaDDMMYYYY(h.fecha), estado: h.estado })));
   const F = C.firmas || {};
   if (F.inspector) { poner(ws, F.inspector.nombre, d.inspectorNombre); poner(ws, F.inspector.cargo, d.inspectorCargo); }
   if (F.responsable) { poner(ws, F.responsable.nombre, d.responsableNombre || d.acompanaNombre); poner(ws, F.responsable.cargo, d.responsableNombre ? d.responsableCargo : d.acompanaCargo); }

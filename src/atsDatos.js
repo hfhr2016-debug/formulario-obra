@@ -1,5 +1,5 @@
 // Análisis de Trabajo Seguro - ATS (RYR-SS-008): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY, textoResponsable } from "./sstBase";
 
 export const CODIGO_ATS = "RYR-SS-008";
 export const HOJA_ATS = "ATS";
@@ -56,8 +56,8 @@ export const SPEC_ATS = {
     ["ruta", "Ruta de evacuación o rescate", "E", "H"],
   ],
   tablas: [
-    { clave: "pasos", cabecera: "No.", fin: "3. EPP Y PERMISOS REQUERIDOS", finEmpieza: true, columnas: { paso: "B", peligro: "C", riesgo: "D", prob: "E", sev: "F", control: "H", responsable: "I", residual: "J" } },
-    { clave: "equipo", cabecera: "No.", despuesDe: "pasos", fin: "5. PLAN DE EMERGENCIA", finEmpieza: true, columnas: { nombre: "B", documento: "C", cargo: "D", hora: "I" } },
+    { clave: "pasos", cabecera: "No.", fin: "3. EPP Y PERMISOS REQUERIDOS", finEmpieza: true, columnas: { paso: "B", peligro: "C", riesgo: "D", prob: "E", sev: "F", control: "H", responsable: "I", residual: "J" }, encabezados: { paso: "Paso de la tarea", peligro: "Peligro identificado", riesgo: "Riesgo / consecuencia", prob: "Prob. (1-3)", sev: "Sev. (1-3)", control: "Medidas de control", responsable: "Responsable", residual: "Nivel residual" } },
+    { clave: "equipo", cabecera: "No.", despuesDe: "pasos", fin: "5. PLAN DE EMERGENCIA", finEmpieza: true, columnas: { nombre: "B", documento: "C", cargo: "D", hora: "I" }, encabezados: { nombre: "Nombre completo", documento: "Documento", cargo: "Cargo / oficio", hora: "Hora de socialización" } },
   ],
   opciones: [
     { clave: "epp", desde: "EPP requerido", hasta: "Permisos y requisitos asociados" },
@@ -82,7 +82,7 @@ export function nivelRiesgo(prob, sev) {
   return v >= 6 ? "Alto" : v >= 3 ? "Medio" : "Bajo";
 }
 
-const pasoVacio = (p) => !(p && (p.paso || p.peligro || p.riesgo || p.control || p.responsable || p.prob || p.sev || p.residual));
+const pasoVacio = (p) => !(p && (p.paso || p.peligro || p.riesgo || p.control || p.responsable || p.responsableNombre || p.responsableCargo || p.prob || p.sev || p.residual));
 export const pasosConDatos = (d) => arr(d.pasos).filter((p) => !pasoVacio(p));
 const equipoVacio = (e) => !(e && (e.nombre || e.documento || e.cargo));
 export const equipoConDatos = (d) => arr(d.equipo).filter((e) => !equipoVacio(e));
@@ -101,7 +101,7 @@ export function escribirAtsEnHoja(ws, d, celdas = CELDAS_ATS) {
   // Probabilidad y severidad van como NÚMEROS: el Excel calcula el nivel con su fórmula
   escribirTabla(ws, T.pasos, pasosConDatos(d).map((p) => ({
     paso: p.paso, peligro: p.peligro, riesgo: p.riesgo, prob: num13(p.prob) === null ? "" : num13(p.prob), sev: num13(p.sev) === null ? "" : num13(p.sev),
-    control: p.control, responsable: p.responsable, residual: p.residual,
+    control: p.control, responsable: textoResponsable(p.responsableNombre || p.responsable, p.responsableCargo), residual: p.residual,
   })));
   escribirTabla(ws, T.equipo, equipoConDatos(d).map((e) => ({ nombre: e.nombre, documento: e.documento, cargo: e.cargo, hora: e.hora || d.horaSocializacion || "" })));
   const F = C.firmas || {};

@@ -21,7 +21,7 @@ const MAX_PASOS = (CELDAS_ATS.tablas && CELDAS_ATS.tablas.pasos.n) || 12;
 const MAX_EQUIPO = (CELDAS_ATS.tablas && CELDAS_ATS.tablas.equipo.n) || 8;
 const COLOR_NIVEL = { Alto: "#B3401F", Medio: "#C98A00", Bajo: "#2E7D4F" };
 
-const pasoNuevo = (base = {}) => ({ paso: "", peligro: "", riesgo: "", prob: "", sev: "", control: "", responsable: "", residual: "", ...base });
+const pasoNuevo = (base = {}) => ({ paso: "", peligro: "", riesgo: "", prob: "", sev: "", control: "", responsableNombre: "", responsableCargo: "", residual: "", ...base });
 const personaNueva = (base = {}) => ({ nombre: "", documento: "", cargo: "", hora: "", ...base });
 const etiquetaDe = (lista, v) => (lista.find(([x]) => x === v) || ["", ""])[1];
 const valorDe = (lista, e) => (lista.find(([, l]) => l === e) || ["", ""])[0];
@@ -86,7 +86,7 @@ export default function FormularioATS({ onVolver }) {
     const ultimo = d.pasos[d.pasos.length - 1];
     if (!ultimo) return agregarPaso();
     if (!hayEspacio) return sinEspacio();
-    setAvisoPasos(""); setPasos([...d.pasos, pasoNuevo({ paso: ultimo.paso, responsable: ultimo.responsable })]);
+    setAvisoPasos(""); setPasos([...d.pasos, pasoNuevo({ paso: ultimo.paso, responsableNombre: ultimo.responsableNombre, responsableCargo: ultimo.responsableCargo })]);
   }
   // Al elegir un peligro de la lista se sugieren su riesgo y su control (solo si esos campos están vacíos)
   function elegirPeligro(i, o) {
@@ -154,7 +154,7 @@ export default function FormularioATS({ onVolver }) {
       }
       guardarProyectoSST(d.proyecto);
       memoria.recordarUso({
-        personas: [[d.supervisorNombre, d.supervisorCargo], [d.revisoNombre, d.revisoCargo], [d.aproboNombre, d.aproboCargo]],
+        personas: [[d.supervisorNombre, d.supervisorCargo], [d.revisoNombre, d.revisoCargo], [d.aproboNombre, d.aproboCargo], ...pasosCon.map((p) => [p.responsableNombre, p.responsableCargo])],
         cargosObra: equipoCon.map((e) => e.cargo), empresasUsadas: [d.contratista],
       });
       const res = resumenAts({ ...d, nAts: nUsar });
@@ -238,7 +238,8 @@ export default function FormularioATS({ onVolver }) {
                   <ChipsOpcion label="Severidad" nombre={`Severidad ${i + 1}`} value={etiquetaDe(SEVERIDADES, p.sev)} opciones={SEVERIDADES.map((x) => x[1])} pequeno
                     onChange={(e) => actualizarPaso(i, { sev: valorDe(SEVERIDADES, e) })} />
                   <AreaTexto label="Medidas de control" value={p.control} onChange={(v) => actualizarPaso(i, { control: v })} filas={3} />
-                  <Campo label="Responsable del control" value={p.responsable} onChange={(v) => actualizarPaso(i, { responsable: v })} />
+                  <BloqueProfesional memoria={memoria} etqNombre="Responsable del control" etqCargo="Cargo del responsable" nombre={p.responsableNombre} cargo={p.responsableCargo}
+                    onChange={(patch) => actualizarPaso(i, { ...(patch.nombre !== undefined ? { responsableNombre: patch.nombre } : {}), ...(patch.cargo !== undefined ? { responsableCargo: patch.cargo } : {}) })} />
                   <ChipsOpcion label="Nivel de riesgo residual (después de los controles)" nombre={`Residual ${i + 1}`} value={p.residual} opciones={NIVELES} colores={COLOR_NIVEL} pequeno onChange={(v) => actualizarPaso(i, { residual: v })} />
                 </div>
                 <button type="button" onClick={() => quitarPaso(i)} aria-label={`Quitar fila ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>
@@ -248,14 +249,14 @@ export default function FormularioATS({ onVolver }) {
             );
           })}
           <div className="space-y-2">
-            <button type="button" onClick={agregarPaso} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-md w-full justify-center border border-dashed" style={{ borderColor: GOLD, color: NAVY }}>
-              <Plus size={14} /> Agregar paso
-            </button>
             {d.pasos.length > 0 && (
               <button type="button" onClick={otroPeligroMismoPaso} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY }}>
                 ➕ Otro peligro del mismo paso
               </button>
             )}
+            <button type="button" onClick={agregarPaso} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-md w-full justify-center border border-dashed" style={{ borderColor: GOLD, color: NAVY }}>
+              <Plus size={14} /> Agregar paso
+            </button>
           </div>
           {avisoPasos && <div className="text-[11.5px] mt-2" style={{ color: "#B3401F" }}>{avisoPasos}</div>}
         </Seccion>

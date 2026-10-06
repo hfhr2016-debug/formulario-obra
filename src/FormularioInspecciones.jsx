@@ -22,7 +22,7 @@ const COLOR_NIVEL = { Alto: "#B3401F", Medio: "#C98A00", Bajo: "#2E7D4F" };
 const N_ITEMS = ITEMS_INSPECCION.length;
 
 const vacios = (n) => Array.from({ length: n }, () => "");
-const hallazgoNuevo = (base = {}) => ({ hallazgo: "", nivel: "", accion: "", responsable: "", fecha: "", estado: "Abierta", ...base });
+const hallazgoNuevo = (base = {}) => ({ hallazgo: "", nivel: "", accion: "", responsable: "", responsableCargo: "", fecha: "", estado: "Abierta", ...base });
 
 function datosIniciales() {
   return {
@@ -126,7 +126,7 @@ export default function FormularioInspecciones({ onVolver }) {
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
       guardarProyectoSST(d.proyecto);
-      memoria.recordarUso({ personas: [[d.inspectorNombre, d.inspectorCargo], [d.acompanaNombre, d.acompanaCargo], [d.responsableNombre, d.responsableCargo]], empresasUsadas: [d.contratista] });
+      memoria.recordarUso({ personas: [[d.inspectorNombre, d.inspectorCargo], [d.acompanaNombre, d.acompanaCargo], [d.responsableNombre, d.responsableCargo], ...hallazgosCon.map((h) => [h.responsable, h.responsableCargo])], empresasUsadas: [d.contratista] });
       const res = resumenInspeccion({ ...d, nInspeccion: nUsar });
       guardarJSON(CLAVE_INSPECCIONES, [res, ...leerJSON(CLAVE_INSPECCIONES, []).filter((x) => x.id !== res.id)].slice(0, 500));
       borrador.borrarBorrador(); borrador.omitirProximoGuardado();
@@ -230,10 +230,9 @@ export default function FormularioInspecciones({ onVolver }) {
                 <AreaTexto label="Hallazgo" value={h.hallazgo} onChange={(v) => actualizarHallazgo(i, { hallazgo: v })} filas={2} />
                 <ChipsOpcion label="Nivel de riesgo" nombre={`Nivel ${i + 1}`} value={h.nivel} opciones={NIVELES} colores={COLOR_NIVEL} pequeno onChange={(v) => actualizarHallazgo(i, { nivel: v })} />
                 <AreaTexto label="Acción correctiva" value={h.accion} onChange={(v) => actualizarHallazgo(i, { accion: v })} filas={2} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Campo label="Responsable" value={h.responsable} onChange={(v) => actualizarHallazgo(i, { responsable: v })} />
-                  <Campo label="Fecha límite" type="date" value={h.fecha} onChange={(v) => actualizarHallazgo(i, { fecha: v })} />
-                </div>
+                <BloqueProfesional memoria={memoria} etqNombre="Responsable" etqCargo="Cargo del responsable" nombre={h.responsable} cargo={h.responsableCargo}
+                  onChange={(patch) => actualizarHallazgo(i, { ...(patch.nombre !== undefined ? { responsable: patch.nombre } : {}), ...(patch.cargo !== undefined ? { responsableCargo: patch.cargo } : {}) })} />
+                <Campo label="Fecha límite" type="date" value={h.fecha} onChange={(v) => actualizarHallazgo(i, { fecha: v })} />
                 <ChipsOpcion label="Estado" nombre={`Estado ${i + 1}`} value={h.estado} opciones={ESTADOS_HALLAZGO} pequeno onChange={(v) => actualizarHallazgo(i, { estado: v })} />
               </div>
               <button type="button" onClick={() => quitarHallazgo(i)} aria-label={`Quitar hallazgo ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>

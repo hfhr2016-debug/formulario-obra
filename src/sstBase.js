@@ -220,7 +220,14 @@ export function parseRango(texto) {
 
 export function poner(ws, ref, valor) {
   if (!ref || valor === undefined || valor === null || valor === "") return;
-  ws.getCell(ref).value = valor;
+  const c = ws.getCell(ref);
+  c.value = valor;
+  // Un texto de varias líneas (p. ej. "Nombre" y debajo "Cargo") necesita que la celda ajuste el texto para verse completo
+  if (typeof valor === "string" && valor.includes("\n")) c.alignment = { ...(c.alignment || {}), wrapText: true, vertical: "middle" };
+}
+// "Luis Mora" + "Maestro de Obra" -> "Luis Mora\nMaestro de Obra" (el cargo va debajo del nombre; si falta alguno, solo el otro)
+export function textoResponsable(nombre, cargo) {
+  return [nombre, cargo].map((x) => String(x || "").trim()).filter(Boolean).join("\n");
 }
 
 export function descubrirPorEtiquetas(ws, spec) {
@@ -237,6 +244,13 @@ export function descubrirPorEtiquetas(ws, spec) {
     problemas.push(`No encontré "${etiqueta}" (columna ${letra})`);
     return 0;
   };
+  // Si el usuario inserta columnas, las letras cambian: por eso se buscan las etiquetas en cualquier columna y el valor se ubica
+  // "justo a la derecha de la etiqueta" (después de su celda combinada), en vez de usar una letra fija.
+  const MAX_COL = 26;
+  const refDe = (r, c) => `${colLetra(c)}${r}`;
+  let rangosMerge = [];
+  try { rangosMerge = ((ws.model && ws.model.merges) || []).map(parseRango).filter(Boolean); } catch (e) { rangosMerge = []; }
+  const finDeCombinada = (r, c) => { const g = rangosMerge.find((x) => r >= x.top && r <= x.bottom && c >= x.left && c <= x.right); return g ? g.right : c; };
   // Una celda es escribible si es libre o la ESQUINA de una combinación (nunca el resto de la combinación)
   const esEsquina = (ref) => {
     try { const c = ws.getCell(ref); return !c.master || c.master.address === c.address; } catch (e) { return true; }
@@ -245,11 +259,21 @@ export function descubrirPorEtiquetas(ws, spec) {
     if (!esEsquina(ref)) problemas.push(`${ref} es parte de una celda combinada y no es su esquina`);
     return ref;
   };
+  const buscar = (etiqueta, letra, desde, empieza) => {
+    const coincide = (t) => (empieza ? t.startsWith(etiqueta) : t === etiqueta);
+    const c0 = colNum(letra);
+    for (let r = desde; r <= maxFila; r++) if (coincide(texto(r, c0)) && esEsquina(refDe(r, c0))) return { r, c: c0 };
+    for (let r = desde; r <= maxFila; r++) for (let c = 1; c <= MAX_COL; c++) if (c !== c0 && coincide(texto(r, c)) && esEsquina(refDe(r, c))) return { r, c };
+    return null;
+  };
 
   const filas = {};
   for (const [clave, etiqueta, colEtq, colVal, despues, filasDebajo] of spec.campos || []) {
-    const r = filaDe(etiqueta, colEtq, despues ? filas[despues] || 1 : 1, !!spec.empieza && spec.empieza.includes(clave));
-    if (r) { filas[clave] = r; celdas[clave] = ancla(`${colVal}${r + (filasDebajo || 0)}`); }
+    const hit = buscar(etiqueta, colEtq, despues ? filas[despues] || 1 : 1, !!spec.empieza && spec.empieza.includes(clave));
+    if (!hit) { problemas.push(`No encontré "${etiqueta}" (columna ${colEtq})`); continue; }
+    const valorDebajo = colNum(colVal) === colNum(colEtq);                    // el valor está en la misma columna, filas más abajo
+    const cv = valorDebajo ? hit.c : finDeCombinada(hit.r, hit.c) + 1;       // si no, justo a la derecha de la etiqueta
+    filas[clave] = hit.r; celdas[clave] = ancla(refDe(hit.r + (filasDebajo || 0), cv));
   }
 
   const tablas = spec.tablas || (spec.tabla ? [spec.tabla] : []);
@@ -257,19 +281,26 @@ export function descubrirPorEtiquetas(ws, spec) {
   for (const t of tablas) {
     const rc = filaDe(t.cabecera, t.colCabecera || "A", t.despuesDe && finDe[t.despuesDe] ? finDe[t.despuesDe] : 1);
     const rf = rc ? filaDe(t.fin, t.colFin || "A", rc + 1, !!t.finEmpieza) : 0;
+    // Columnas: por el título de su encabezado (si el usuario inserta una columna, se siguen encontrando); si no, por la letra indicada
+    const columnas = { ...t.columnas };
+    if (rc && t.encabezados) {
+      for (const [clave, enc] of Object.entries(t.encabezados)) {
+        for (let c = 1; c <= MAX_COL; c++) if (texto(rc, c) === enc && esEsquina(refDe(rc, c))) { columnas[clave] = colLetra(c); break; }
+      }
+    }
     if (rc && rf && t.numerada) {
       // Tabla "numerada": solo cuentan las filas cuyo número (columna A) es un entero; los subtítulos intercalados se saltan
       const filasItem = [];
       for (let r = rc + 1; r < rf; r++) if (/^\d+$/.test(texto(r, colNum(t.colNumero || "A")))) filasItem.push(r);
       if (!filasItem.length) problemas.push(`No hay filas numeradas entre "${t.cabecera}" y "${t.fin}"`);
-      for (const r of filasItem) for (const col of Object.values(t.columnas)) ancla(`${col}${r}`);
-      celdas.tablas = { ...(celdas.tablas || {}), [t.clave]: { fila0: filasItem[0] || rc + 1, n: filasItem.length, filas: filasItem, columnas: { ...t.columnas } } };
+      for (const r of filasItem) for (const col of Object.values(columnas)) ancla(`${col}${r}`);
+      celdas.tablas = { ...(celdas.tablas || {}), [t.clave]: { fila0: filasItem[0] || rc + 1, n: filasItem.length, filas: filasItem, columnas } };
       finDe[t.clave] = rf;
     } else if (rc && rf) {
       const n = rf - rc - 1;
       if (n < 1) problemas.push(`No hay filas entre "${t.cabecera}" y "${t.fin}"`);
-      for (let i = 0; i < n; i++) for (const col of Object.values(t.columnas)) ancla(`${col}${rc + 1 + i}`);
-      celdas.tablas = { ...(celdas.tablas || {}), [t.clave]: { fila0: rc + 1, n, columnas: { ...t.columnas } } };
+      for (let i = 0; i < n; i++) for (const col of Object.values(columnas)) ancla(`${col}${rc + 1 + i}`);
+      celdas.tablas = { ...(celdas.tablas || {}), [t.clave]: { fila0: rc + 1, n, columnas } };
       finDe[t.clave] = rf;
     }
   }
@@ -281,7 +312,7 @@ export function descubrirPorEtiquetas(ws, spec) {
     if (r0 && r1) {
       const lista = [];
       for (let r = r0 + 1; r < r1; r++) {
-        for (let c = 1; c <= (o.hastaCol || 12); c++) {
+        for (let c = 1; c <= (o.hastaCol || MAX_COL); c++) {
           const t = texto(r, c);
           const ref = `${colLetra(c)}${r}`;
           if (/^[☐✔☒]/.test(t) && esEsquina(ref)) lista.push({ ref, texto: t.replace(/^[☐✔☒]\s*/, "") });
@@ -319,10 +350,14 @@ export function descubrirPorEtiquetas(ws, spec) {
     const rNombre = rFirma ? filaDe(f.nombre, "A", rFirma) : 0;
     if (rNombre) {
       celdas.firmas = celdas.firmas || {};
-      for (const p of f.personas) {
-        celdas.firmas[p.clave] = { nombre: ancla(`${p.col}${rNombre}`), cargo: ancla(`${p.col}${rNombre + 1}`) };
-        if (f.hora) celdas.firmas[p.clave].hora = ancla(`${p.col}${rNombre + 2}`);
-      }
+      const cols = [];
+      for (let c = 1; c <= MAX_COL; c++) if (texto(rFirma, c) === f.firma && esEsquina(refDe(rFirma, c))) cols.push(colLetra(finDeCombinada(rFirma, c) + 1));
+      const porRotulo = cols.length === f.personas.length;           // tantas "Firma:" como firmantes: se usan sus posiciones reales
+      f.personas.forEach((p, k) => {
+        const col = porRotulo ? cols[k] : p.col;
+        celdas.firmas[p.clave] = { nombre: ancla(`${col}${rNombre}`), cargo: ancla(`${col}${rNombre + 1}`) };
+        if (f.hora) celdas.firmas[p.clave].hora = ancla(`${col}${rNombre + 2}`);
+      });
     }
   }
   return { celdas: problemas.length ? null : celdas, problemas };
@@ -398,4 +433,11 @@ export function sumarMesesISO(iso, meses) {
   const ultimoDia = new Date(y, mes + meses + 1, 0).getDate();
   const r = new Date(y, mes + meses, Math.min(d, ultimoDia));
   return `${r.getFullYear()}-${String(r.getMonth() + 1).padStart(2, "0")}-${String(r.getDate()).padStart(2, "0")}`;
+}
+
+// Pinta una celda (relleno y letra) con colores ARGB ("FFC00000"). Sirve para la fila del tipo de permiso, que cambia de color según el tipo.
+export function pintarCelda(ws, ref, rellenoARGB, fuenteARGB) {
+  const c = ws.getCell(ref);
+  c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rellenoARGB } };
+  c.font = { ...(c.font || {}), bold: true, color: { argb: fuenteARGB } };
 }

@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { baseOpcion } from "./sstBase";
 import {
-  CODIGO_PERMISO, HOJA_PERMISO, CELDAS_PERMISO, VIGENCIAS, RESPUESTAS, LECTURAS, TIPOS_TRABAJO, VERIF_PREVIA, VERIF_ESPECIFICA,
-  grupoDeItem, textoDeItem, descubrirPermiso, escribirPermisoEnHoja, validarPermiso, resumenPermiso, itemActivo, gasesVisibles, gasesObligatorios,
+  CODIGO_PERMISO, HOJA_PERMISO, CELDAS_PERMISO, VIGENCIAS, RESPUESTAS, RESPUESTAS_REQ, LECTURAS, TIPOS_PERMISO, VERIF_PREVIA,
+  tipoDe, requisitosDe, descubrirPermiso, escribirPermisoEnHoja, validarPermiso, resumenPermiso, gasesVisibles, gasesObligatorios,
   personalConDatos, condicionesEnNo, certificacionesVencidas,
 } from "./permisoDatos";
 import {
@@ -14,7 +13,7 @@ import {
 import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
 import { CERTIFICACIONES } from "./sstListas";
 import { fechaHoyISO } from "./sstBase";
-import { ChipsOpcion, CampoFecha, GrillaOpciones, FilaVerificacion } from "./sstControles";
+import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_permiso_trabajo";
 const CLAVE_CONSECUTIVO = "ryr_sst_permiso_consecutivo";
@@ -30,10 +29,10 @@ function datosIniciales() {
   return {
     proyecto: proyectoSST(), contratista: "", ubicacion: "", nPermiso: "", fecha: "", horaInicio: "", horaFin: "", vigencia: "",
     frente: "", altura: "", descripcion: "", solicitanteNombre: "", solicitanteCargo: "", solicitanteHora: "",
-    tipos: [], otros: {},
+    tipoPermiso: "", equipo: "",
     personal: [personaNueva()],
     previa: vacios(VERIF_PREVIA.length), previaObs: vacios(VERIF_PREVIA.length),
-    espec: vacios(VERIF_ESPECIFICA.length), especObs: vacios(VERIF_ESPECIFICA.length),
+    requisitos: vacios(12), requisitosObs: vacios(12),
     gases: LECTURAS.map(lecturaNueva),
     autorizaNombre: "", autorizaCargo: "", autorizaHora: "", vigiaNombre: "", vigiaCargo: "", vigiaHora: "",
     horaCierre: "", trabajoTerminado: "", areaEnOrden: "", obsCierre: "", motivoCancelacion: "",
@@ -41,13 +40,13 @@ function datosIniciales() {
 }
 
 function tieneContenido(d) {
-  return !!(d.contratista || d.ubicacion || d.nPermiso || d.fecha || d.horaInicio || d.frente || d.descripcion || d.solicitanteNombre || d.tipos.length ||
-    d.personal.some((p) => p.nombre || p.documento) || d.previa.some(Boolean) || d.espec.some(Boolean) || d.autorizaNombre);
+  return !!(d.contratista || d.ubicacion || d.nPermiso || d.fecha || d.horaInicio || d.frente || d.descripcion || d.solicitanteNombre || d.tipoPermiso ||
+    d.personal.some((p) => p.nombre || p.documento) || d.previa.some(Boolean) || d.requisitos.some(Boolean) || d.autorizaNombre);
 }
 
 export default function FormularioPermisoTrabajo({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
-  const [abierta, setAbierta] = useState("datos");
+  const [abierta, setAbierta] = useState("tipo");
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -77,13 +76,8 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
   }
 
   // ---- Tipo de trabajo ----
-  // Los tipos quedan siempre en el orden del formato (así el resumen y el nombre del archivo no dependen de qué se tocó primero)
-  const ordenTipos = TIPOS_TRABAJO.map(baseOpcion);
-  const alternarTipo = (base) => setD((cur) => {
-    const nuevos = cur.tipos.includes(base) ? cur.tipos.filter((t) => t !== base) : [...cur.tipos, base];
-    return { ...cur, tipos: nuevos.sort((a, b) => ordenTipos.indexOf(a) - ordenTipos.indexOf(b)) };
-  });
-  const cambiarOtro = (base, texto) => setD((cur) => ({ ...cur, otros: { ...cur.otros, [base]: texto } }));
+  // Cada permiso es de UN tipo. Al cambiar de tipo se limpian los requisitos (cada tipo tiene los suyos).
+  const elegirTipo = (id) => setD((cur) => (cur.tipoPermiso === id ? { ...cur, tipoPermiso: "" } : { ...cur, tipoPermiso: id, requisitos: vacios(12), requisitosObs: vacios(12) }));
 
   // ---- Personal ----
   const setPersonal = (nuevo) => setD((cur) => ({ ...cur, personal: nuevo }));
@@ -104,11 +98,11 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
   // ---- Verificaciones ----
   const poner = (campo, i, valor) => setD((cur) => ({ ...cur, [campo]: cur[campo].map((v, k) => (k === i ? valor : v)) }));
   const marcarSiPrevia = () => setD((cur) => ({ ...cur, previa: cur.previa.map((v) => v || "Sí") }));
-  const marcarSiEspec = () => setD((cur) => ({ ...cur, espec: cur.espec.map((v, i) => (itemActivo(cur, i) ? v || "Sí" : v)) }));
-  const itemsActivos = VERIF_ESPECIFICA.map((t, i) => ({ t, i })).filter(({ i }) => itemActivo(d, i));
-  const gruposOcultos = [...new Set(VERIF_ESPECIFICA.map(grupoDeItem))].filter((g) => !itemsActivos.some(({ t }) => grupoDeItem(t) === g));
+  const tipo = tipoDe(d);
+  const reqs = requisitosDe(d);
+  const marcarCumpleReq = () => setD((cur) => ({ ...cur, requisitos: cur.requisitos.map((v, i) => (i < reqs.length ? v || "Cumple" : v)) }));
+  const respondidasReq = reqs.filter((_, i) => d.requisitos[i]).length;
   const respondidasPrevia = d.previa.filter(Boolean).length;
-  const respondidasEspec = itemsActivos.filter(({ i }) => d.espec[i]).length;
   const enNo = condicionesEnNo(d);
 
   // ---- Gases ----
@@ -137,10 +131,9 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
       const capacidad = (celdas.tablas && celdas.tablas.personal && celdas.tablas.personal.n) || MAX_PERSONAL;
       if (personal.length > capacidad) throw new Error(`la plantilla tiene espacio para ${capacidad} personas y hay ${personal.length}`);
       const nUsar = d.nPermiso && String(d.nPermiso).trim() ? String(d.nPermiso).trim() : String(siguienteConsecutivo(CLAVE_CONSECUTIVO));
-      const sinMarcar = escribirPermisoEnHoja(ws, { ...d, nPermiso: nUsar }, celdas);
-      if (sinMarcar.length) avisos.push(`No encontré estos tipos de trabajo en la plantilla y no se marcaron: ${sinMarcar.join(", ")}.`);
+      escribirPermisoEnHoja(ws, { ...d, nPermiso: nUsar }, celdas);
       setAvisoGeneracion(avisos.join(" "));
-      await descargarLibro(workbook, `Permiso_Trabajo_${d.fecha}_N${textoParaArchivo(nUsar, 10)}_${textoParaArchivo(d.tipos[0] || "", 22)}.xlsx`);
+      await descargarLibro(workbook, `Permiso_Trabajo_${d.fecha}_N${textoParaArchivo(nUsar, 10)}_${textoParaArchivo(tipo ? tipo.nombre : "", 40)}.xlsx`);
 
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
@@ -187,11 +180,34 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="PERMISO DE TRABAJO" subtitulo={`${CODIGO_PERMISO} · Alto riesgo: alturas, caliente, confinados, excavaciones…`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="PERMISO DE TRABAJO" subtitulo={`${CODIGO_PERMISO} · Alto riesgo: elige el tipo de permiso`} onVolver={onVolver} />
 
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
-        {/* 1. DATOS */}
-        <Seccion id="datos" titulo="1. Datos del permiso" subtitulo="Obra, fecha, vigencia y trabajo a realizar" abierta={abierta === "datos"} onToggle={alternar}>
+        {/* 1. TIPO DE PERMISO */}
+        <Seccion id="tipo" titulo="1. Tipo de permiso" subtitulo={tipo ? tipo.nombre : "Elige el tipo de permiso de trabajo"} abierta={abierta === "tipo"} onToggle={alternar} contador={tipo ? 1 : 0}>
+          <div className="grid grid-cols-1 gap-1.5" role="group" aria-label="Tipo de permiso">
+            {TIPOS_PERMISO.map((t) => {
+              const activo = d.tipoPermiso === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  aria-pressed={activo}
+                  onClick={() => elegirTipo(t.id)}
+                  className="w-full flex items-center gap-2.5 text-left text-[13px] px-3 py-2.5 rounded-md border font-semibold"
+                  style={activo ? { background: "#" + t.relleno, borderColor: "#" + t.relleno, color: "#" + t.fuente } : { background: "white", borderColor: LINE, color: NAVY }}
+                >
+                  <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ background: "#" + t.relleno, border: activo ? "2px solid white" : "none" }} />
+                  {t.nombre}
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>Cada permiso es de un solo tipo y la fila superior del formato toma su color. Si el trabajo necesita dos tipos (por ejemplo, caliente dentro de un espacio confinado), se hace un permiso para cada uno.</div>
+        </Seccion>
+
+        {/* 2. DATOS */}
+        <Seccion id="datos" titulo="2. Datos del permiso" subtitulo="Obra, fecha, vigencia y trabajo a realizar" abierta={abierta === "datos"} onToggle={alternar}>
           <button type="button" onClick={traerDeFicha} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold text-white mb-3" style={{ background: NAVY }}>
             📋 Traer proyecto, contratista y ubicación de la Ficha Técnica
           </button>
@@ -210,16 +226,11 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
             <Lista label="Vigencia del permiso" value={d.vigencia} onChange={(v) => set("vigencia", v)} opciones={VIGENCIAS} />
             <Campo label="Frente / lugar del trabajo" value={d.frente} onChange={(v) => set("frente", v)} />
             <Campo label="Altura o profundidad (m), si aplica" value={d.altura} onChange={(v) => set("altura", v)} />
+            <Campo label="Equipo, sustancia o circuito" value={d.equipo} placeholder="Ej. Equipo de soldadura, ácido muriático, tablero TD-3" onChange={(v) => set("equipo", v)} />
             <AreaTexto label="Descripción del trabajo" value={d.descripcion} onChange={(v) => set("descripcion", v)} placeholder="Qué se va a hacer, con qué equipos y dónde" filas={3} />
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Solicitante del permiso</div>
             <BloqueProfesional memoria={memoria} etqNombre="Nombre del solicitante" etqCargo="Cargo del solicitante" nombre={d.solicitanteNombre} cargo={d.solicitanteCargo} onChange={cambiarPersona("solicitanteNombre", "solicitanteCargo")} />
           </div>
-        </Seccion>
-
-        {/* 2. TIPO DE TRABAJO */}
-        <Seccion id="tipo" titulo="2. Tipo de trabajo" subtitulo={d.tipos.length ? d.tipos.join(" · ") : "Marca los que apliquen"} abierta={abierta === "tipo"} onToggle={alternar} contador={d.tipos.length}>
-          <GrillaOpciones nombre="Tipo de trabajo" opciones={TIPOS_TRABAJO} marcadas={d.tipos} onAlternar={alternarTipo} otros={d.otros} onOtro={cambiarOtro} />
-          <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>Según lo que marques se piden las verificaciones específicas de ese trabajo.</div>
         </Seccion>
 
         {/* 3. PERSONAL */}
@@ -269,37 +280,32 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
           ))}
         </Seccion>
 
-        {/* 5. VERIFICACIÓN ESPECÍFICA */}
-        <Seccion id="espec" titulo="5. Verificación específica" subtitulo={d.tipos.length ? `${respondidasEspec} de ${itemsActivos.length} respondidas` : "Primero elige el tipo de trabajo"} abierta={abierta === "espec"} onToggle={alternar} contador={respondidasEspec}>
-          {!itemsActivos.length ? (
-            <div className="text-[12px]" style={{ color: "#8A8F99" }}>Elige en "2. Tipo de trabajo" qué se va a hacer (alturas, caliente, confinados, excavaciones, eléctrico o izaje) y aquí aparecen sus condiciones.</div>
+        {/* 5. REQUISITOS ESPECÍFICOS DEL TIPO */}
+        <Seccion id="req" titulo="5. Requisitos específicos" subtitulo={tipo ? `${respondidasReq} de ${reqs.length} respondidos` : "Primero elige el tipo de permiso"} abierta={abierta === "req"} onToggle={alternar} contador={respondidasReq}>
+          {!tipo ? (
+            <div className="text-[12px]" style={{ color: "#8A8F99" }}>Elige en "1. Tipo de permiso" qué se va a hacer y aquí aparecen los requisitos que ese permiso debe cumplir.</div>
           ) : (
             <>
-              <button type="button" onClick={marcarSiEspec} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border mb-3" style={{ borderColor: NAVY, color: NAVY }}>
-                ✔ Marcar "Sí" en las que faltan por responder
+              <div className="text-[11px] font-bold px-2.5 py-1 rounded mb-2.5 inline-block" style={{ background: "#" + tipo.relleno, color: "#" + tipo.fuente }}>{tipo.nombre}</div>
+              <button type="button" onClick={marcarCumpleReq} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border mb-3" style={{ borderColor: NAVY, color: NAVY }}>
+                ✔ Marcar "Cumple" en los que faltan por responder
               </button>
-              {itemsActivos.map(({ t, i }) => (
-                <div key={i}>
-                  <div className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: GOLD }}>{grupoDeItem(t)}</div>
-                  <FilaVerificacion numero={i + 1} texto={textoDeItem(t)} valor={d.espec[i]} onChange={(v) => poner("espec", i, v)} opciones={RESPUESTAS}
-                    observacion={d.especObs[i]} onObservacion={(v) => poner("especObs", i, v)} />
-                </div>
+              {reqs.map((t, i) => (
+                <FilaVerificacion key={i} numero={i + 1} texto={t} valor={d.requisitos[i]} onChange={(v) => poner("requisitos", i, v)} opciones={RESPUESTAS_REQ}
+                  observacion={d.requisitosObs[i]} onObservacion={(v) => poner("requisitosObs", i, v)} />
               ))}
             </>
           )}
-          {gruposOcultos.length > 0 && d.tipos.length > 0 && (
-            <div className="text-[10.5px] mt-1" style={{ color: "#8A8F99" }}>No aplican a este trabajo y quedan en N/A: {gruposOcultos.map((g) => g.toLowerCase()).join(", ")}.</div>
-          )}
           {enNo.length > 0 && (
             <div className="text-[11.5px] mt-3 p-2 rounded" style={{ background: "#FDECE7", color: "#B3401F" }}>
-              ⚠ Hay {enNo.length} {enNo.length === 1 ? "condición" : "condiciones"} en "No". El permiso no debería autorizarse hasta corregirlas.
+              ⚠ Hay {enNo.length} {enNo.length === 1 ? "condición" : "condiciones"} sin cumplir. El permiso no debería autorizarse hasta corregirlas.
             </div>
           )}
         </Seccion>
 
         {/* 6. GASES */}
         {gasesVisibles(d) && (
-          <Seccion id="gases" titulo="6. Medición de gases" subtitulo={gasesObligatorios(d) ? "Obligatoria: espacios confinados" : "Trabajo en caliente (si aplica)"} abierta={abierta === "gases"} onToggle={alternar}>
+          <Seccion id="gases" titulo="6. Medición de gases" subtitulo={gasesObligatorios(d) ? "Obligatoria: espacios confinados" : "Opcional según el tipo de permiso"} abierta={abierta === "gases"} onToggle={alternar}>
             {LECTURAS.map((nombre, i) => (
               <div key={nombre} className="border rounded-lg p-2.5 mb-2.5" style={{ borderColor: LINE, background: PAPER }}>
                 <div className="text-[10px] font-bold mb-1.5" style={{ color: GOLD }}>{nombre.toUpperCase()}</div>
