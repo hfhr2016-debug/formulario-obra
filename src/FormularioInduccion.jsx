@@ -10,7 +10,7 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { useListaRecordada } from "./sstComunes";
 import { EPS, ARL, AFP, PARENTESCOS } from "./sstListas";
 
 const CLAVE_BORRADOR = "ryr_borrador_induccion";
@@ -22,7 +22,7 @@ const filaTema = () => ({ impartido: "", observacion: "" });
 
 function datosIniciales() {
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "",
+    proyecto: "", contratista: "", ubicacion: "",
     fecha: "", horaInicio: "", horaFin: "", nInduccion: "", inductorNombre: "", inductorCargo: "",
     nombre: "", documento: "", cargo: "", empresa: "", fechaIngreso: "", vinculacion: "", rh: "", eps: "", arl: "", afp: "",
     examenFecha: "", aptitud: "", restricciones: "", contactoNombre: "", parentesco: "", telefono: "",
@@ -127,7 +127,6 @@ export default function FormularioInduccion({ onVolver }) {
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
       trabajadores.recordar([{ nombre: d.nombre, documento: d.documento, cargo: d.cargo, empresa: d.empresa }]);
-      guardarProyectoSST(d.proyecto);
       listaEps.recordar(d.eps); listaArl.recordar(d.arl); listaAfp.recordar(d.afp); listaParentesco.recordar(d.parentesco);
       memoria.recordarUso({ personas: [[d.inductorNombre, d.inductorCargo], [d.responsableNombre, d.responsableCargo]], cargosObra: [d.cargo], empresasUsadas: [d.empresa] });
       const res = resumenInduccion(d);

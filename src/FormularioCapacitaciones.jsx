@@ -11,7 +11,7 @@ import {
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 
 const CLAVE_BORRADOR = "ryr_borrador_capacitaciones";
@@ -23,7 +23,7 @@ const MAX_FILAS = (CELDAS_CAPACITACIONES.tablas && CELDAS_CAPACITACIONES.tablas.
 function datosIniciales() {
   const metas = leerJSON(CLAVE_METAS, {});
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "", responsableNombre: "", responsableCargo: "",
+    proyecto: "", contratista: "", ubicacion: "", responsableNombre: "", responsableCargo: "",
     periodoDesde: "", periodoHasta: "", actualizacion: "",
     metaCumplimiento: String(metas.cumplimiento || METAS_POR_DEFECTO.cumplimiento), metaCobertura: String(metas.cobertura || METAS_POR_DEFECTO.cobertura), metaEficacia: String(metas.eficacia || METAS_POR_DEFECTO.eficacia),
     filas: [], observaciones: "", revisoNombre: "", revisoCargo: "", voboNombre: "", voboCargo: "",
@@ -131,7 +131,6 @@ export default function FormularioCapacitaciones({ onVolver }) {
 
       // Memoria para la próxima vez
       guardarJSON(CLAVE_METAS, { cumplimiento: Number(d.metaCumplimiento) || METAS_POR_DEFECTO.cumplimiento, cobertura: Number(d.metaCobertura) || METAS_POR_DEFECTO.cobertura, eficacia: Number(d.metaEficacia) || METAS_POR_DEFECTO.eficacia });
-      guardarProyectoSST(d.proyecto);
       (d.filas || []).forEach((f) => entidades.recordar(f.capacitador));
       memoria.recordarUso({ personas: [[d.responsableNombre, d.responsableCargo], [d.revisoNombre, d.revisoCargo], [d.voboNombre, d.voboCargo]], empresasUsadas: [d.contratista] });
       let nuevos = temasExtra;

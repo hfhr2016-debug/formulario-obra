@@ -11,7 +11,6 @@ import {
   Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_entrega_epp";
 const CLAVE_EPP_USADOS = "ryr_sst_epp_usados";            // elementos de EPP que el usuario ha escrito antes
@@ -24,7 +23,7 @@ const mismoTrabajador = (a, b) => !!a && !!b && !!(a.nombre || "").trim() && (a.
 
 function datosIniciales() {
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "", tipoEntrega: "", hoja: "", fechaEntrega: "",
+    proyecto: "", contratista: "", ubicacion: "", tipoEntrega: "", hoja: "", fechaEntrega: "",
     entregaNombre: "", entregaCargo: "", voboNombre: "", voboCargo: "",
     lineas: [],
   };
@@ -145,7 +144,6 @@ export default function FormularioEntregaEPP({ onVolver }) {
 
       // Memoria para la próxima vez
       trabajadores.recordar(conDatos.map((l) => ({ nombre: l.nombre, documento: l.documento, cargo: l.cargo, empresa: d.contratista })));
-      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({ personas: [[d.entregaNombre, d.entregaCargo], [d.voboNombre, d.voboCargo]], cargosObra: conDatos.map((l) => l.cargo), empresasUsadas: [d.contratista] });
       let extra = eppExtra;
       for (const l of conDatos) extra = recordarTexto(extra, l.epp, { base: EPP_CATALOGO, min: 3, max: 60 });

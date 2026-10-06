@@ -10,7 +10,6 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, BuscadorLista, SelectorHora,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 import { ChipsOpcion, CampoFecha, GrillaOpciones } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_ats";
@@ -30,7 +29,7 @@ const OPCIONES_PELIGROS = PELIGROS_COMUNES.map((p) => ({ texto: p.peligro, detal
 
 function datosIniciales() {
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "", fecha: "", tarea: "", area: "", nAts: "", horaInicio: "", horaFin: "",
+    proyecto: "", contratista: "", ubicacion: "", fecha: "", tarea: "", area: "", nAts: "", horaInicio: "", horaFin: "",
     supervisorNombre: "", supervisorCargo: "", permisoAsociado: "",
     pasos: [pasoNuevo()], epp: [], permisos: [], otros: {},
     equipo: [personaNueva()], horaSocializacion: "",
@@ -149,7 +148,6 @@ export default function FormularioATS({ onVolver }) {
       if (d.puntoEncuentro || d.telefono || d.brigadista || d.centroSalud || d.ruta) {
         guardarJSON(CLAVE_ULTIMA_EMERGENCIA, { puntoEncuentro: d.puntoEncuentro, telefono: d.telefono, brigadista: d.brigadista, centroSalud: d.centroSalud, ruta: d.ruta });
       }
-      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({
         personas: [[d.supervisorNombre, d.supervisorCargo], [d.revisoNombre, d.revisoCargo], [d.aproboNombre, d.aproboCargo], ...pasosCon.map((p) => [p.responsableNombre, p.responsableCargo])],
         cargosObra: equipoCon.map((e) => e.cargo), empresasUsadas: [d.contratista],

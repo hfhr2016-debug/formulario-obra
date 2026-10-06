@@ -11,7 +11,7 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { useListaRecordada } from "./sstComunes";
 import { CERTIFICACIONES } from "./sstListas";
 import { fechaHoyISO } from "./sstBase";
 import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
@@ -28,7 +28,7 @@ const lecturaNueva = () => ({ hora: "", o2: "", lel: "", co: "", h2s: "", resp: 
 
 function datosIniciales() {
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "", nPermiso: "", fecha: "", horaInicio: "", horaFin: "", vigencia: "",
+    proyecto: "", contratista: "", ubicacion: "", nPermiso: "", fecha: "", horaInicio: "", horaFin: "", vigencia: "",
     frente: "", altura: "", descripcion: "", solicitanteNombre: "", solicitanteCargo: "", solicitanteHora: "",
     tipoPermiso: "", equipo: "",
     personal: [personaNueva()],
@@ -136,7 +136,6 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
       trabajadores.recordar(personal.map((p) => ({ nombre: p.nombre, documento: p.documento, cargo: p.cargo, empresa: d.contratista })));
       guardarJSON(CLAVE_ULTIMO_PERSONAL, personal);
-      guardarProyectoSST(d.proyecto);
       personal.forEach((p) => certs.recordar(p.cert));
       memoria.recordarUso({
         personas: [[d.solicitanteNombre, d.solicitanteCargo], [d.autorizaNombre, d.autorizaCargo], [d.vigiaNombre, d.vigiaCargo]],

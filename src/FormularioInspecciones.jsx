@@ -12,7 +12,6 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST } from "./sstComunes";
 import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_inspeccion";
@@ -27,7 +26,7 @@ const hallazgoNuevo = (base = {}) => ({ hallazgo: "", nivel: "", accion: "", res
 
 function datosIniciales() {
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "", fecha: "", horaInicio: "", horaFin: "", nInspeccion: "", tipo: "", area: "",
+    proyecto: "", contratista: "", ubicacion: "", fecha: "", horaInicio: "", horaFin: "", nInspeccion: "", tipo: "", area: "",
     inspectorNombre: "", inspectorCargo: "", acompanaNombre: "", acompanaCargo: "",
     respuestas: vacios(N_ITEMS), observaciones: vacios(N_ITEMS),
     hallazgos: [], obsGenerales: "", responsableNombre: "", responsableCargo: "",
@@ -122,7 +121,6 @@ export default function FormularioInspecciones({ onVolver }) {
 
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
-      guardarProyectoSST(d.proyecto);
       memoria.recordarUso({ personas: [[d.inspectorNombre, d.inspectorCargo], [d.acompanaNombre, d.acompanaCargo], [d.responsableNombre, d.responsableCargo], ...hallazgosCon.map((h) => [h.responsable, h.responsableCargo])], empresasUsadas: [d.contratista] });
       const res = resumenInspeccion({ ...d, nInspeccion: nUsar });
       guardarJSON(CLAVE_INSPECCIONES, [res, ...leerJSON(CLAVE_INSPECCIONES, []).filter((x) => x.id !== res.id)].slice(0, 500));

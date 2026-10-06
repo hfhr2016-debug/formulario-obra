@@ -39,18 +39,6 @@ export function leerJSON(clave, porDefecto) {
 export function guardarJSON(clave, valor) {
   try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) {}
 }
-// El proyecto de SG-SST es propio de este sistema: los formatos sirven igual para edificaciones, vías e hidrocarburos, así que NO
-// dependen del tipo de proyecto de Gestión Técnica. Se recuerda el último proyecto escrito al generar un formato.
-export const CLAVE_PROYECTO_SST = "ryr_sst_proyecto";
-export function proyectoSST() {
-  const p = leerJSON(CLAVE_PROYECTO_SST, "");
-  return typeof p === "string" ? p : "";
-}
-export function guardarProyectoSST(nombre) {
-  const n = String(nombre || "").trim();
-  if (n) guardarJSON(CLAVE_PROYECTO_SST, n);
-}
-
 export function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
 }

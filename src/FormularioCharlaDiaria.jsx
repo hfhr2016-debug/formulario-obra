@@ -46,11 +46,6 @@ function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
 }
 
-// El proyecto de SG-SST es propio de este sistema: los formatos sirven igual para edificaciones, vías e hidrocarburos,
-// así que NO dependen del tipo de proyecto de Gestión Técnica. Se recuerda el último proyecto escrito al generar un formato.
-const CLAVE_PROYECTO_SST = "ryr_sst_proyecto";
-function proyectoSST() { const p = leerJSON(CLAVE_PROYECTO_SST, ""); return typeof p === "string" ? p : ""; }
-function guardarProyectoSST(nombre) { const t = String(nombre || "").trim(); if (t) guardarJSON(CLAVE_PROYECTO_SST, t); }
 
 // Último consecutivo usado en este dispositivo + 1
 function siguienteConsecutivo() {
@@ -62,7 +57,7 @@ function siguienteConsecutivo() {
 function datosIniciales() {
   return {
     fecha: "", horaInicio: "", horaFin: "", nCharla: "",
-    proyecto: proyectoSST(),
+    proyecto: "",
     contratista: "", ubicacion: "", frente: "",
     tipo: "",
     facilitadorNombre: "", facilitadorCargo: "",      // el facilitador cambia de una charla a otra: empieza vacío
@@ -706,7 +701,6 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       URL.revokeObjectURL(url);
 
       // Memoria para la próxima charla
-      guardarProyectoSST(d.proyecto);
       guardarJSON(CLAVE_ULTIMOS, asistentes.filter((x) => x.nombre && x.nombre.trim()));
       const n = parseInt(nUsar, 10);
       if (!isNaN(n)) {
@@ -754,7 +748,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     borrar(CLAVE_BORRADOR);
     cargoAutomatico.current = {};
     setReinicioCargo((cur) => ({ facilitadorCargo: cur.facilitadorCargo + 1, responsableCargo: cur.responsableCargo + 1 }));
-    setD(datosIniciales());   // conserva el proyecto (uso diario): sale de la memoria propia de SG-SST
+    setD(datosIniciales());   // el proyecto también empieza vacío (se conservan solo el facilitador y el responsable)
     setFotos(Array.from({ length: N_FOTOS }, fotoVacia));
     setGenerado(false);
     setMensajeError("");

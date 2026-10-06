@@ -12,7 +12,7 @@ import {
   Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora, claseInput, estiloInput,
 } from "./sstComunes";
 import { decidirDistribucion } from "./sstBase";
-import { proyectoSST, guardarProyectoSST, useListaRecordada } from "./sstComunes";
+import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 
 const CLAVE_BORRADOR = "ryr_borrador_lista_asistencia";
@@ -21,7 +21,7 @@ const MAX_ASISTENTES = (CELDAS_LISTA.tablas && CELDAS_LISTA.tablas.asistentes.n)
 
 function datosIniciales() {
   return {
-    proyecto: proyectoSST(), contratista: "", ubicacion: "",
+    proyecto: "", contratista: "", ubicacion: "",
     tipo: "", modalidad: "", tema: "", fecha: "", horaInicio: "", horaFin: "", hoja: "", lugar: "", entidad: "",
     facilitadorNombre: "", facilitadorCargo: "",
     contenido: "",
@@ -172,7 +172,6 @@ export default function FormularioListaAsistencia({ onVolver }) {
       const conNombre = asistentes.filter((x) => x.nombre && x.nombre.trim());
       guardarJSON(CLAVE_ULTIMOS, conNombre);
       trabajadores.recordar(conNombre);
-      guardarProyectoSST(d.proyecto);
       entidades.recordar(d.entidad);
       memoria.recordarUso({
         personas: [[d.facilitadorNombre, d.facilitadorCargo], [d.responsableNombre, d.responsableCargo]],
