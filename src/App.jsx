@@ -27,7 +27,7 @@ import FormularioAcciones from "./FormularioAcciones";
 import FormularioAccidente from "./FormularioAccidente";
 import FormularioInvestigacion from "./FormularioInvestigacion";
 import FormularioIndicadores from "./FormularioIndicadores";
-import FormularioFicha from "./FormularioFicha";
+import FormularioFichaSST from "./FormularioFichaSST";
 import FormularioPersonal from "./FormularioPersonal";
 import FormularioMatriz from "./FormularioMatriz";
 import FormularioEmergencias from "./FormularioEmergencias";
@@ -1799,7 +1799,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
     return conMenuSST(<FormularioIndicadores onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-ficha") {
-    return conMenuSST(<FormularioFicha onVolver={() => setVista("inicio-sst")} />);
+    return conMenuSST(<FormularioFichaSST onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-personal") {
     return conMenuSST(<FormularioPersonal onVolver={() => setVista("inicio-sst")} />);
