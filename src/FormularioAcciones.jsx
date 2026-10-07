@@ -87,6 +87,10 @@ export default function FormularioAcciones({ onVolver }) {
     setAvisoAcciones(`Se ${agregadas === 1 ? "agregó 1 acción" : `agregaron ${agregadas} acciones`} ${nombre}${repetidas ? ` (${repetidas} ya estaban)` : ""}.` +
       (sobran > 0 ? ` Solo cabían ${MAX_ACCIONES} en esta hoja: ${sobran} ${sobran === 1 ? "queda" : "quedan"} para la hoja siguiente.` : ""));
   }
+  // Las inspecciones guardadas ANTES de esta versión no guardaron el detalle de sus hallazgos: se avisa para que no parezca que "no está conectado"
+  const inspSinDetalle = leerJSON(CLAVE_INSPECCIONES, []).filter((r) => !Array.isArray(r.detalle) && (r.hallazgosAbiertos || 0) > 0);
+  const hallazgosSinDetalle = inspSinDetalle.reduce((s, r) => s + (r.hallazgosAbiertos || 0), 0);
+  const hayFuentes = leerJSON(CLAVE_INSPECCIONES, []).length + leerJSON(CLAVE_ACTOS, []).length + leerJSON(CLAVE_INVESTIGACIONES, []).length + hojasAnteriores.length;
   const botonesTraer = [["inspecciones", "de Inspecciones"], ["actos", "de Actos y Condiciones"], ["investigaciones", "de Investigaciones"], ["anteriores", "de hojas anteriores"]];
 
   const conDatos = accionesConDatos(d);
@@ -181,6 +185,16 @@ export default function FormularioAcciones({ onVolver }) {
               );
             })}
           </div>
+          {!hayFuentes && (
+            <div className="text-[11.5px] mb-2.5 p-2 rounded" style={{ background: "#F2F6FB", color: "#4B5563" }}>
+              Todavía no hay nada para traer en este dispositivo. Cuando generes inspecciones, tarjetas iCAI o investigaciones, aquí aparecerá lo que quede pendiente.
+            </div>
+          )}
+          {hallazgosSinDetalle > 0 && (
+            <div className="text-[11.5px] mb-2.5 p-2 rounded" style={{ background: "#FFF8E8", color: "#7A5A00" }}>
+              ℹ Hay {hallazgosSinDetalle} {hallazgosSinDetalle === 1 ? "hallazgo abierto" : "hallazgos abiertos"} en {inspSinDetalle.length} {inspSinDetalle.length === 1 ? "inspección guardada" : "inspecciones guardadas"} antes de esta versión: no se pueden traer porque no guardaron su detalle. Vuelve a generar esas inspecciones, o agrega las acciones a mano.
+            </div>
+          )}
           {avisoAcciones && <div className="text-[11.5px] mb-2.5 p-2 rounded" style={{ background: "#FFF8E8", color: "#7A5A00" }}>{avisoAcciones}</div>}
           {d.acciones.map((a, i) => {
             const est = estadoEfectivo(a, refFecha);

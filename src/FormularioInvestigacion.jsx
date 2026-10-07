@@ -169,6 +169,11 @@ export default function FormularioInvestigacion({ onVolver }) {
         {/* 1. DATOS */}
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={d.nReporte ? `Reporte N° ${d.nReporte}` : "Obra, evento y trabajador"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">
+            {reportes.length === 0 && (
+              <div className="text-[11.5px] p-2 rounded" style={{ background: "#F2F6FB", color: "#4B5563" }}>
+                Todavía no hay reportes de accidente guardados en este dispositivo. Cuando generes uno en <b>Accidentalidad</b>, podrás traer sus datos aquí.
+              </div>
+            )}
             {reportes.length > 0 && (
               <div className="p-2.5 rounded-lg" style={{ background: "#F2F6FB", border: `1px solid ${LINE}` }}>
                 <Lista label="📥 Traer los datos de un reporte de accidente" value="" onChange={traerReporte} opciones={reportes.map(textoReporte)} />

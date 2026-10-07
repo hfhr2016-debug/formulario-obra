@@ -24,7 +24,8 @@ const CLAVE_CARGOS_OBRA = "ryr_sst_cargos_oficio";   // cargos/oficios nuevos qu
 const CLAVE_EMPRESAS = "ryr_sst_empresas";             // empresas escritas en los asistentes
 const CLAVE_NOMBRES_TECNICA = "ryr_nombres_usados"; // la misma memoria de nombres de Gestión Técnica
 
-const N_FOTOS = 4;
+// Cuántas fotos admite la plantilla: tantas como recuadros de foto tenga (el mapa se regenera cada vez que cambia el diseño de la plantilla)
+const N_FOTOS = Math.max(1, Object.keys(CELDAS).filter((k) => /^foto\d+$/.test(k)).length);
 const fotoVacia = () => ({ file: null, previewUrl: "", caption: "" });
 
 const OPCIONES_CIUDADES = CIUDADES.map((x) => ({ texto: x.ciudad, detalle: x.departamento, buscaDetalle: true }));
