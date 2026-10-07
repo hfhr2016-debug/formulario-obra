@@ -3,12 +3,13 @@ import ExcelJS from "exceljs";
 import { ChevronDown, Plus, Trash2, Camera, X, Loader2, FileSpreadsheet } from "lucide-react";
 import {
   CODIGO_FORMATO, CELDAS, PELIGROS, EPP, TIPOS_CHARLA, CLIMAS, ORDEN_ASEO, SINTOMAS, TEMAS_SUGERIDOS,
-  MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla,
+  MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla, camposFaltantesCharla,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre,
   CARGOS_OBRA, unirUnicos, recordarTexto, descubrirCeldas,
 } from "./charlaDiariaDatos";
 import { BotonMenuSST } from "./sstNavegacion";
+import { useFaltantes } from "./sstFaltantes";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -150,7 +151,7 @@ async function agregarLogo(workbook, ws) {
 function Seccion({ id, titulo, subtitulo, abierta, onToggle, contador, children }) {
   return (
     <div className="border-b" style={{ borderColor: LINE }}>
-      <button type="button" onClick={() => onToggle(id)} className="w-full flex items-center justify-between py-3.5 px-1 text-left">
+      <button type="button" data-seccion={id} onClick={() => onToggle(id)} className="w-full flex items-center justify-between py-3.5 px-1 text-left relative">
         <div>
           <div className="text-[13.5px] font-semibold" style={{ color: NAVY }}>{titulo}</div>
           {subtitulo && <div className="text-[11px]" style={{ color: "#8A8F99" }}>{subtitulo}</div>}
@@ -173,7 +174,7 @@ const etiquetaCls = "block text-[10px] uppercase tracking-wide mb-1 font-medium"
 
 function Campo({ label, value, onChange, placeholder, type = "text", lista, inputMode, onBlur }) {
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <input
         type={type}
@@ -215,7 +216,7 @@ function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opciones, 
   }
 
   return (
-    <div className="w-full relative">
+    <div className="w-full relative" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <div className="relative">
         <input
@@ -271,7 +272,7 @@ function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opciones, 
 
 function AreaTexto({ label, value, onChange, placeholder, filas = 3 }) {
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <textarea
         rows={filas}
@@ -289,7 +290,7 @@ function AreaTexto({ label, value, onChange, placeholder, filas = 3 }) {
 
 function Lista({ label, value, onChange, opciones }) {
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)} className={claseInput + " bg-white"} style={estiloInput}>
         <option value="">Seleccione…</option>
@@ -308,7 +309,7 @@ function CampoCargo({ label, value, onChange, onGuardar, opciones }) {
   }, [value, opciones, modoOtro]);
   const mostrarInput = modoOtro || (!!value && !opciones.includes(value));
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <select
         value={mostrarInput ? "__otro__" : value || ""}
@@ -344,7 +345,7 @@ function SelectorHora({ label, value, onChange }) {
   const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
   return (
-    <div className="flex-1 min-w-0">
+    <div className="flex-1 min-w-0" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <div className="flex items-center gap-1">
         <select value={h || ""} onChange={(e) => onChange(`${e.target.value}:${m || "00"}`)} className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white" style={{ borderColor: LINE }}>
@@ -424,6 +425,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [fotos, setFotos] = useState(() => Array.from({ length: N_FOTOS }, fotoVacia));
   const [abierta, setAbierta] = useState("general");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState(false);
@@ -630,9 +632,11 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     setAvisoGeneracion("");
     const faltan = validarCharla(d);
     if (faltan.length) {
-      setMensajeError("Falta completar: " + faltan.join(", ") + ".");
+      setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo.");
+      resaltarFaltantes(camposFaltantesCharla(d));
       return;
     }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const resp = await fetch("/plantilla-charla-diaria.xlsx?v=" + Date.now(), { cache: "no-store" });

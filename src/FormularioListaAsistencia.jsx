@@ -11,6 +11,8 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora, claseInput, estiloInput,
 } from "./sstComunes";
+import { camposFaltantesLista } from "./listaAsistenciaDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
@@ -39,6 +41,7 @@ function tieneContenido(d) {
 export default function FormularioListaAsistencia({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [abierta, setAbierta] = useState("general");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState(false);
@@ -149,7 +152,8 @@ export default function FormularioListaAsistencia({ onVolver }) {
     setMensajeError("");
     setAvisoGeneracion("");
     const faltan = validarLista(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesLista(d)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-lista-asistencia.xlsx", "Lista de Asistencia");

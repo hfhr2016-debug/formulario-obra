@@ -10,6 +10,8 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar,
   Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
+import { camposFaltantesEpp } from "./eppDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 
 const CLAVE_BORRADOR = "ryr_borrador_entrega_epp";
@@ -39,6 +41,7 @@ const OPCIONES_TALLAS = TALLAS.map((t) => ({ texto: t, detalle: "" }));
 export default function FormularioEntregaEPP({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [abierta, setAbierta] = useState("general");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -124,7 +127,8 @@ export default function FormularioEntregaEPP({ onVolver }) {
     setMensajeError("");
     setAvisoGeneracion("");
     const faltan = validarEpp(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesEpp(d, (k) => d.lineas && d.lineas[k] && k > 0 && mismoTrabajador(d.lineas[k], d.lineas[k - 1]) && !d.lineas[k].cambiar)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-entrega-epp.xlsx", "Entrega de EPP");

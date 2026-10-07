@@ -325,7 +325,7 @@ export function BarraGenerar({ mensajeError, aviso, mensajeOk, generando, textoB
 export function Seccion({ id, titulo, subtitulo, abierta, onToggle, contador, children }) {
   return (
     <div className="border-b" style={{ borderColor: LINE }}>
-      <button type="button" onClick={() => onToggle(id)} className="w-full flex items-center justify-between py-3.5 px-1 text-left">
+      <button type="button" data-seccion={id} onClick={() => onToggle(id)} className="w-full flex items-center justify-between py-3.5 px-1 text-left relative">
         <div>
           <div className="text-[13.5px] font-semibold" style={{ color: NAVY }}>{titulo}</div>
           {subtitulo && <div className="text-[11px]" style={{ color: "#8A8F99" }}>{subtitulo}</div>}
@@ -350,7 +350,7 @@ export const etiquetaCls = "block text-[10px] uppercase tracking-wide mb-1 font-
 
 export function Campo({ label, value, onChange, placeholder, type = "text", lista, inputMode, onBlur }) {
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <input
         type={type}
@@ -392,7 +392,7 @@ export function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opc
   }
 
   return (
-    <div className="w-full relative">
+    <div className="w-full relative" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <div className="relative">
         <input
@@ -448,7 +448,7 @@ export function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opc
 
 export function AreaTexto({ label, value, onChange, placeholder, filas = 3 }) {
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <textarea
         rows={filas}
@@ -466,7 +466,7 @@ export function AreaTexto({ label, value, onChange, placeholder, filas = 3 }) {
 
 export function Lista({ label, value, onChange, opciones }) {
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)} className={claseInput + " bg-white"} style={estiloInput}>
         <option value="">Seleccione…</option>
@@ -485,7 +485,7 @@ export function CampoCargo({ label, value, onChange, onGuardar, opciones }) {
   }, [value, opciones, modoOtro]);
   const mostrarInput = modoOtro || (!!value && !opciones.includes(value));
   return (
-    <div className="w-full">
+    <div className="w-full" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <select
         value={mostrarInput ? "__otro__" : value || ""}
@@ -521,7 +521,7 @@ export function SelectorHora({ label, value, onChange }) {
   const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
   return (
-    <div className="flex-1 min-w-0">
+    <div className="flex-1 min-w-0" data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <div className="flex items-center gap-1">
         <select value={h || ""} onChange={(e) => onChange(`${e.target.value}:${m || "00"}`)} className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white" style={{ borderColor: LINE }}>

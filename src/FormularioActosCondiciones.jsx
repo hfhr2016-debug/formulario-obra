@@ -8,6 +8,8 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { camposFaltantesActos } from "./actosDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha, GrillaOpciones, CasillaFoto, fotoVacia, agregarFotosARecuadros } from "./sstControles";
 
@@ -36,6 +38,7 @@ export default function FormularioActosCondiciones({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [fotos, setFotos] = useState(() => [fotoVacia(), fotoVacia()]);   // 0 = antes, 1 = después (las fotos no se guardan en el borrador)
   const [abierta, setAbierta] = useState("datos");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -79,7 +82,8 @@ export default function FormularioActosCondiciones({ onVolver }) {
   async function generarExcel() {
     setMensajeError(""); setAvisoGeneracion("");
     const faltan = validarActos(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesActos(d)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-actos-condiciones.xlsx", HOJA_ACTOS);

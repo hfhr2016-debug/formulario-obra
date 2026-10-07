@@ -106,3 +106,15 @@ export function resumenActos(d) {
     corregido: d.corregido || "", responsable: d.responsableCorreccion || "", fechaCompromiso: d.fechaCompromiso || "",
   };
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarActos().
+export function camposFaltantesActos(d) {
+  const f = [];
+  if (!d.fecha) f.push({ etiqueta: "Fecha del hallazgo", seccion: "datos" });
+  if (!arr(d.actos).length && !arr(d.condiciones).length) { f.push({ etiqueta: "Actos inseguros", seccion: "clasificacion" }); f.push({ etiqueta: "Condiciones inseguras", seccion: "clasificacion" }); }
+  if (!d.lugar || !d.lugar.trim()) f.push({ etiqueta: "Lugar exacto del hallazgo", seccion: "datos" });
+  if (!d.observado || !d.observado.trim()) f.push({ etiqueta: "¿Qué se observó?", seccion: "descripcion" });
+  if (!d.reportaNombre || !d.reportaNombre.trim()) f.push({ etiqueta: "Nombre de quien reporta", seccion: "datos" });
+  return f;
+}

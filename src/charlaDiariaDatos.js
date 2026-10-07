@@ -449,3 +449,13 @@ export function validarCharla(d) {
   if (!(d.asistentes || []).some((a) => a.nombre && a.nombre.trim())) faltan.push("al menos un asistente");
   return faltan;
 }
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarCharla().
+export function camposFaltantesCharla(d) {
+  const f = [];
+  if (!d.fecha) f.push({ etiqueta: "Fecha", seccion: "general" });
+  if (!d.tema || !d.tema.trim()) f.push({ etiqueta: "Tema principal", seccion: "tema" });
+  if (!d.facilitadorNombre || !d.facilitadorNombre.trim()) f.push({ etiqueta: "Facilitador (nombre)", seccion: "general" });
+  if (!(d.asistentes || []).some((a) => a.nombre && a.nombre.trim())) f.push({ etiqueta: "Nombre completo", indice: 0, seccion: "asistentes" });
+  return f;
+}

@@ -9,6 +9,8 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { camposFaltantesAts } from "./atsDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha, GrillaOpciones } from "./sstControles";
 
@@ -46,6 +48,7 @@ function tieneContenido(d) {
 export default function FormularioATS({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [abierta, setAbierta] = useState("datos");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -121,7 +124,8 @@ export default function FormularioATS({ onVolver }) {
   async function generarExcel() {
     setMensajeError(""); setAvisoGeneracion("");
     const faltan = validarAts(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesAts(d)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-ats.xlsx", HOJA_ATS);

@@ -6,9 +6,9 @@ import { fechaHoyISO, baseOpcion, esOpcionOtro } from "./sstBase";
 import { NAVY, GOLD, PAPER, LINE, Campo, etiquetaCls } from "./sstComunes";
 
 // ---------- Elección rápida: una fila de botones; tocar el elegido lo desmarca ----------
-export function ChipsOpcion({ label, value, onChange, opciones, colores = {}, pequeno = false, nombre }) {
+export function ChipsOpcion({ label, value, onChange, opciones, colores = {}, pequeno = false, nombre, sinMarca = false }) {
   return (
-    <div>
+    <div data-campo={sinMarca ? undefined : nombre || label}>
       {label && <span className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</span>}
       <div className="flex flex-wrap gap-1.5" role="group" aria-label={nombre || label}>
         {opciones.map((o) => {
@@ -48,7 +48,7 @@ export function CampoFecha({ label, value, onChange }) {
 // opciones: textos como están en la plantilla. Las que terminan en ":" ("Otro:") piden además un texto.
 export function GrillaOpciones({ opciones, marcadas, onAlternar, otros = {}, onOtro, nombre }) {
   return (
-    <div className="grid grid-cols-1 gap-1.5" role="group" aria-label={nombre}>
+    <div className="grid grid-cols-1 gap-1.5" role="group" aria-label={nombre} data-campo={nombre}>
       {opciones.map((o) => {
         const base = baseOpcion(o);
         const activa = marcadas.includes(base) || marcadas.includes(o);
@@ -87,11 +87,11 @@ export function GrillaOpciones({ opciones, marcadas, onAlternar, otros = {}, onO
 export function FilaVerificacion({ numero, texto, valor, onChange, observacion, onObservacion, opciones = ["Sí", "No", "N/A"], colores, automatico = false }) {
   const coloresPorDefecto = { "Sí": "#2E7D4F", "Cumple": "#2E7D4F", "No": "#B3401F", "No cumple": "#B3401F", "N/A": "#6B7280" };
   return (
-    <div className="border rounded-lg p-2.5 mb-2" style={{ borderColor: valor === "No" || valor === "No cumple" ? "#E8B4A6" : LINE, background: PAPER }}>
+    <div className="border rounded-lg p-2.5 mb-2" data-campo={`Respuesta ${numero}`} style={{ borderColor: valor === "No" || valor === "No cumple" ? "#E8B4A6" : LINE, background: PAPER }}>
       <div className="text-[12.5px] mb-2" style={{ color: NAVY }}>
         <span className="font-bold mr-1.5" style={{ color: GOLD }}>{numero}.</span>{texto}
       </div>
-      <ChipsOpcion value={valor} onChange={onChange} opciones={opciones} colores={colores || coloresPorDefecto} pequeno nombre={`Respuesta ${numero}`} />
+      <ChipsOpcion value={valor} onChange={onChange} opciones={opciones} colores={colores || coloresPorDefecto} pequeno nombre={`Respuesta ${numero}`} sinMarca />
       {automatico && <div className="text-[10.5px] mt-1" style={{ color: "#8A8F99" }}>Se marca N/A automáticamente porque este trabajo no aplica.</div>}
       {onObservacion && (valor === "No" || valor === "No cumple" || observacion) && (
         <input

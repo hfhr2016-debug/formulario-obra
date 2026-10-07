@@ -122,3 +122,17 @@ export function resumenInduccion(d) {
     temasImpartidos: (d.temas || []).filter((t) => t.impartido === "Sí").length,
   };
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarInduccion().
+export function camposFaltantesInduccion(d) {
+  const f = [];
+  if (!d.fecha) f.push({ etiqueta: "Fecha de la inducción", seccion: "general" });
+  if (!d.inductorNombre || !d.inductorNombre.trim()) f.push({ etiqueta: "Inductor (nombre)", seccion: "general" });
+  if (!d.nombre || !d.nombre.trim()) f.push({ etiqueta: "Nombre completo", seccion: "trabajador" });
+  if (!d.documento || !String(d.documento).trim()) f.push({ etiqueta: "Documento de identidad", seccion: "trabajador" });
+  if (!d.cargo || !d.cargo.trim()) f.push({ etiqueta: "Cargo / oficio", seccion: "trabajador" });
+  const nota = numero(d.calificacion);
+  if (d.calificacion !== "" && (nota === null || nota < 0 || nota > 100)) f.push({ etiqueta: "Calificación (0 a 100)", seccion: "evaluacion" });
+  return f;
+}

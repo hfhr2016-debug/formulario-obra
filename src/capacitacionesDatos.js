@@ -112,3 +112,16 @@ export function filaDesdeInducciones(inducciones, desde, hasta, yaTraidos = []) 
     convocados: String(del.length), asistentes: String(del.length), evaluados: String(conNota.length), aprobados: String(conNota.filter((x) => x.resultado === "Aprobó").length),
     estado: "Ejecutada", observaciones: `${del.length} trabajadores inducidos en el periodo`, origen: "induccion:" + (desde || "") + "_" + (hasta || "") };
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarCapacitaciones().
+export function camposFaltantesCapacitaciones(d) {
+  const f = [];
+  if (!d.periodoDesde) f.push({ etiqueta: "Periodo — desde", seccion: "general" });
+  if (!d.periodoHasta || (d.periodoDesde && d.periodoHasta < d.periodoDesde)) f.push({ etiqueta: "Periodo — hasta", seccion: "general" });
+  if (!d.responsableNombre || !d.responsableNombre.trim()) f.push({ etiqueta: "Responsable del programa SST (nombre)", seccion: "general" });
+  const filas = filasConTema(d);
+  if (!filas.length) f.push({ etiqueta: "Tema de la capacitación", indice: 0, seccion: "matriz" });
+  (d.filas || []).forEach((fila, i) => { if (numero(fila.aprobados) !== null && numero(fila.aprobados) > (numero(fila.evaluados) || 0)) f.push({ etiqueta: "Personas aprobadas", indice: i, seccion: "matriz" }); });
+  return f;
+}

@@ -90,3 +90,16 @@ export function resumenEvento(d, nAsistentes) {
     convocados: Number(d.convocados) || 0, asistentes: nAsistentes, seEvaluo: d.seEvaluo, evaluados: Number(d.evaluados) || 0, aprobaron: Number(d.aprobaron) || 0,
   };
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarLista().
+export function camposFaltantesLista(d) {
+  const f = [];
+  if (!d.fecha) f.push({ etiqueta: "Fecha", seccion: "general" });
+  if (!d.tipo) f.push({ etiqueta: "Tipo de actividad", seccion: "general" });
+  if (!d.tema || !d.tema.trim()) f.push({ etiqueta: "Tema / asunto", seccion: "general" });
+  if (!d.facilitadorNombre || !d.facilitadorNombre.trim()) f.push({ etiqueta: "Facilitador (nombre)", seccion: "general" });
+  if (!(d.asistentes || []).some((a) => a.nombre && a.nombre.trim())) f.push({ etiqueta: "Nombre completo", indice: 0, seccion: "asistentes" });
+  if (d.seEvaluo === "Sí" && Number(d.aprobaron) > Number(d.evaluados)) f.push({ etiqueta: "Aprobaron", seccion: "evaluacion" });
+  return f;
+}

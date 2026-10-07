@@ -10,6 +10,8 @@ import {
   NAVY, GOLD, PAPER, LINE, CLAVE_EVENTOS, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro,
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
 } from "./sstComunes";
+import { camposFaltantesCapacitaciones } from "./capacitacionesDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
@@ -41,6 +43,7 @@ const color = (estado) => (estado === "cumple" ? "#1D6B3A" : estado === "no cump
 export default function FormularioCapacitaciones({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [abierta, setAbierta] = useState("general");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -112,7 +115,8 @@ export default function FormularioCapacitaciones({ onVolver }) {
     setMensajeError("");
     setAvisoGeneracion("");
     const faltan = validarCapacitaciones(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesCapacitaciones(d)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-capacitaciones.xlsx", "Capacitaciones");

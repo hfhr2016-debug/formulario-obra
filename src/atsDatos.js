@@ -138,3 +138,24 @@ export function resumenAts(d) {
     pasos: pasos.length, riesgosAltos: niveles.filter((n) => n === "Alto").length, equipo: equipoConDatos(d).length,
   };
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarAts().
+export function camposFaltantesAts(d) {
+  const f = [];
+  if (!d.fecha) f.push({ etiqueta: "Fecha", seccion: "datos" });
+  if (!d.tarea || !d.tarea.trim()) f.push({ etiqueta: "Tarea o actividad a analizar", seccion: "datos" });
+  if (!d.supervisorNombre || !d.supervisorNombre.trim()) f.push({ etiqueta: "Nombre del supervisor", seccion: "datos" });
+  const todos = arr(d.pasos);
+  if (!pasosConDatos(d).length) f.push({ etiqueta: "Paso de la tarea", indice: 0, seccion: "pasos" });
+  else todos.forEach((p, i) => {
+    if (pasoVacio(p)) return;
+    if (!p.paso || !p.paso.trim()) f.push({ etiqueta: "Paso de la tarea", indice: i, seccion: "pasos" });
+    if (!p.peligro || !p.peligro.trim()) f.push({ etiqueta: "Peligro identificado", indice: i, seccion: "pasos" });
+    if (num13(p.prob) === null) f.push({ etiqueta: `Probabilidad ${i + 1}`, seccion: "pasos" });
+    if (num13(p.sev) === null) f.push({ etiqueta: `Severidad ${i + 1}`, seccion: "pasos" });
+    if (!p.control || !p.control.trim()) f.push({ etiqueta: "Medidas de control", indice: i, seccion: "pasos" });
+  });
+  if (!equipoConDatos(d).length) f.push({ etiqueta: "Nombre completo", indice: 0, seccion: "equipo" });
+  return f;
+}

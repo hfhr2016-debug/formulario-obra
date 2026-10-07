@@ -9,6 +9,8 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo, fijarSiguienteConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { camposFaltantesInduccion } from "./induccionDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { EPS, ARL, AFP, PARENTESCOS } from "./sstListas";
@@ -51,6 +53,7 @@ function tieneContenido(d) {
 export default function FormularioInduccion({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [abierta, setAbierta] = useState("general");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -107,7 +110,8 @@ export default function FormularioInduccion({ onVolver }) {
     setMensajeError("");
     setAvisoGeneracion("");
     const faltan = validarInduccion(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesInduccion(d)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-induccion-sst.xlsx", "Inducción SST");

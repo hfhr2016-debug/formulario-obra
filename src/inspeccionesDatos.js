@@ -111,3 +111,15 @@ export function resumenInspeccion(d) {
     hallazgosAbiertos: hallazgosConDatos(d).filter((h) => h.estado !== "Cerrada").length,
   };
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarInspeccion().
+export function camposFaltantesInspeccion(d) {
+  const f = [];
+  if (!d.fecha) f.push({ etiqueta: "Fecha de la inspección", seccion: "datos" });
+  if (!d.tipo || !d.tipo.trim()) f.push({ etiqueta: "Tipo de inspección", seccion: "datos" });
+  if (!d.inspectorNombre || !d.inspectorNombre.trim()) f.push({ etiqueta: "Nombre del inspector", seccion: "datos" });
+  ITEMS_INSPECCION.forEach((_, i) => { if (!arr(d.respuestas)[i]) f.push({ etiqueta: `Respuesta ${i + 1}`, seccion: "lista" }); });
+  arr(d.hallazgos).forEach((h, i) => { if (!hallazgoVacio(h) && (!h.hallazgo || !h.hallazgo.trim())) f.push({ etiqueta: "Hallazgo", indice: i, seccion: "hallazgos" }); });
+  return f;
+}

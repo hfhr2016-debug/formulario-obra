@@ -285,8 +285,9 @@ export function descubrirPorEtiquetas(ws, spec) {
     const columnas = { ...t.columnas };
     if (rc && t.encabezados) {
       for (const [clave, enc] of Object.entries(t.encabezados)) {
-        const posibles = Array.isArray(enc) ? enc : [enc];          // una o varias redacciones posibles del título
-        for (let c = 1; c <= MAX_COL; c++) if (posibles.includes(texto(rc, c)) && esEsquina(refDe(rc, c))) { columnas[clave] = colLetra(c); break; }
+        const norm = (x) => quitarTildes(String(x || "")).toLowerCase().replace(/\s+/g, " ").trim();   // sin importar mayúsculas, tildes ni espacios sobrantes
+        const posibles = (Array.isArray(enc) ? enc : [enc]).map(norm);                                 // una o varias redacciones posibles del título
+        for (let c = 1; c <= MAX_COL; c++) if (posibles.includes(norm(texto(rc, c))) && esEsquina(refDe(rc, c))) { columnas[clave] = colLetra(c); break; }
       }
     }
     if (rc && rf && t.numerada) {

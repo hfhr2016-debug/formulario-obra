@@ -10,6 +10,8 @@ import {
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
+import { camposFaltantesPermiso } from "./permisoDatos";
+import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { CERTIFICACIONES } from "./sstListas";
@@ -48,6 +50,7 @@ function tieneContenido(d) {
 export default function FormularioPermisoTrabajo({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
   const [abierta, setAbierta] = useState("tipo");
+  const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -113,7 +116,8 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
   async function generarExcel() {
     setMensajeError(""); setAvisoGeneracion("");
     const faltan = validarPermiso(d);
-    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + "."); return; }
+    if (faltan.length) { setMensajeError("Falta completar: " + faltan.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(camposFaltantesPermiso(d)); return; }
+    limpiarFaltantes();
     setGenerando(true);
     try {
       const { workbook, ws } = await cargarPlantilla("/plantilla-permiso-trabajo.xlsx", HOJA_PERMISO);
@@ -181,7 +185,7 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         {/* 1. TIPO DE PERMISO */}
         <Seccion id="tipo" titulo="1. Tipo de permiso" subtitulo={tipo ? tipo.nombre : "Elige el tipo de permiso de trabajo"} abierta={abierta === "tipo"} onToggle={alternar} contador={tipo ? 1 : 0}>
-          <div className="grid grid-cols-1 gap-1.5" role="group" aria-label="Tipo de permiso">
+          <div className="grid grid-cols-1 gap-1.5" role="group" aria-label="Tipo de permiso" data-campo="Tipo de permiso">
             {TIPOS_PERMISO.map((t) => {
               const activo = d.tipoPermiso === t.id;
               return (

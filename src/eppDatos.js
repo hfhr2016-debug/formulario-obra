@@ -87,3 +87,22 @@ export function siguienteHoja(hoja) {
   const m = /^(\s*)(\d+)(.*)$/.exec(String(hoja || ""));
   return m ? `${m[1]}${Number(m[2]) + 1}${m[3]}` : "";
 }
+
+
+// Qué casilla exacta falta (para marcarla en rojo): [{ etiqueta, indice?, seccion }]. Va en el mismo orden que validarEpp().
+// "esCompacta(i)": las líneas del mismo trabajador que la anterior no muestran su nombre; el índice de la casilla es el de las que sí lo muestran.
+export function camposFaltantesEpp(d, esCompacta = () => false) {
+  const f = [];
+  if (!d.entregaNombre || !d.entregaNombre.trim()) f.push({ etiqueta: "Entrega a cargo de (nombre)", seccion: "general" });
+  const todas = d.lineas || [];
+  const lineas = lineasConDatos(d);
+  if (!lineas.length) { f.push({ etiqueta: "Nombre del trabajador", indice: 0, seccion: "lineas" }); return f; }
+  if (lineas.some((l) => !fechaDeLinea(l, d))) f.push({ etiqueta: "Fecha de la entrega", seccion: "general" });
+  todas.forEach((l, i) => {
+    if (!lineas.includes(l)) return;
+    if (!l.nombre || !l.nombre.trim()) f.push({ etiqueta: "Nombre del trabajador", indice: todas.slice(0, i).filter((_, k) => !esCompacta(k)).length, seccion: "lineas" });
+    if (!l.epp || !l.epp.trim()) f.push({ etiqueta: "EPP o elemento entregado", indice: i, seccion: "lineas" });
+    if (!(numero(l.cantidad) > 0)) f.push({ etiqueta: "Cant.", indice: i, seccion: "lineas" });
+  });
+  return f;
+}
