@@ -1,5 +1,5 @@
 // Inspección de seguridad (RYR-SS-010): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoDuracion, textoResponsable, saltoDePagina } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoDuracion, textoResponsable, saltoDePagina, alturaMinimaFila } from "./sstBase";
 
 export const CODIGO_INSPECCION = "RYR-SS-010";
 export const HOJA_INSPECCION = "Inspecciones";
@@ -63,9 +63,20 @@ export function porcentajeCumplimiento(d) {
 const hallazgoVacio = (h) => !(h && (h.hallazgo || h.accion || h.responsable || h.responsableCargo || h.fecha));
 export const hallazgosConDatos = (d) => arr(d.hallazgos).filter((h) => !hallazgoVacio(h));
 
+// Una misma inspección puede ser de VARIOS tipos: d.tipos es la lista (d.tipo, un solo texto, se sigue entendiendo por los borradores viejos)
+export const tiposDe = (d) => {
+  const lista = Array.isArray(d.tipos) ? d.tipos.filter((t) => String(t || "").trim()) : [];
+  return lista.length ? lista : (d.tipo && String(d.tipo).trim() ? [String(d.tipo).trim()] : []);
+};
+export const textoTipos = (d) => tiposDe(d).join(" · ");
+const filaDe = (ref) => Number(String(ref || "").replace(/\D/g, "")) || 0;
+
 export function escribirInspeccionEnHoja(ws, d, celdas = CELDAS_INSPECCION) {
   const C = celdas;
-  for (const k of ["proyecto", "contratista", "ubicacion", "horaInicio", "horaFin", "nInspeccion", "tipo", "area", "inspectorNombre", "inspectorCargo", "acompanaNombre", "acompanaCargo", "obsGenerales"]) poner(ws, C[k], d[k]);
+  // Los tipos van juntos en la casilla del tipo; si son varios, la fila sube de altura para que se lean completos (unos 60 caracteres por línea)
+  poner(ws, C.tipo, textoTipos(d));
+  if (C.tipo && textoTipos(d).length > 58) alturaMinimaFila(ws, filaDe(C.tipo), Math.min(60, 12 * Math.ceil(textoTipos(d).length / 58) + 8));
+  for (const k of ["proyecto", "contratista", "ubicacion", "horaInicio", "horaFin", "nInspeccion", "area", "inspectorNombre", "inspectorCargo", "acompanaNombre", "acompanaCargo", "obsGenerales"]) poner(ws, C[k], d[k]);
   poner(ws, C.fecha, fechaDDMMYYYY(d.fecha));
   poner(ws, C.duracion, textoDuracion(d.horaInicio, d.horaFin));
   const T = C.tablas || {};
@@ -84,7 +95,7 @@ export function escribirInspeccionEnHoja(ws, d, celdas = CELDAS_INSPECCION) {
 export function validarInspeccion(d) {
   const faltan = [];
   if (!d.fecha) faltan.push("la fecha de la inspección");
-  if (!d.tipo || !d.tipo.trim()) faltan.push("el tipo de inspección");
+  if (!tiposDe(d).length) faltan.push("al menos un tipo de inspección");
   if (!d.inspectorNombre || !d.inspectorNombre.trim()) faltan.push("quién inspecciona");
   const c = conteo(d);
   if (c.sin) faltan.push(`responder los aspectos de la lista (faltan ${c.sin})`);
@@ -106,7 +117,7 @@ export const textoHallazgoDeAspecto = (d, i) => {
 export function resumenInspeccion(d) {
   const c = conteo(d);
   return {
-    id: `${d.fecha || "sin-fecha"}_${d.nInspeccion || ""}`, formato: "inspeccion", fecha: d.fecha || "", proyecto: d.proyecto || "", nInspeccion: d.nInspeccion || "", tipo: d.tipo || "",
+    id: `${d.fecha || "sin-fecha"}_${d.nInspeccion || ""}`, formato: "inspeccion", fecha: d.fecha || "", proyecto: d.proyecto || "", nInspeccion: d.nInspeccion || "", tipo: textoTipos(d), tipos: tiposDe(d),
     cumple: c.cumple, noCumple: c.no, na: c.na, porcentaje: porcentajeCumplimiento(d), hallazgos: hallazgosConDatos(d).length,
     hallazgosAbiertos: hallazgosConDatos(d).filter((h) => h.estado !== "Cerrada").length,
     // el detalle de cada hallazgo: de aquí los trae Acciones Correctivas
@@ -119,7 +130,7 @@ export function resumenInspeccion(d) {
 export function camposFaltantesInspeccion(d) {
   const f = [];
   if (!d.fecha) f.push({ etiqueta: "Fecha de la inspección", seccion: "datos" });
-  if (!d.tipo || !d.tipo.trim()) f.push({ etiqueta: "Tipo de inspección", seccion: "datos" });
+  if (!tiposDe(d).length) f.push({ etiqueta: "Tipo de inspección", seccion: "datos" });
   if (!d.inspectorNombre || !d.inspectorNombre.trim()) f.push({ etiqueta: "Nombre del inspector", seccion: "datos" });
   ITEMS_INSPECCION.forEach((_, i) => { if (!arr(d.respuestas)[i]) f.push({ etiqueta: `Respuesta ${i + 1}`, seccion: "lista" }); });
   arr(d.hallazgos).forEach((h, i) => { if (!hallazgoVacio(h) && (!h.hallazgo || !h.hallazgo.trim())) f.push({ etiqueta: "Hallazgo", indice: i, seccion: "hallazgos" }); });

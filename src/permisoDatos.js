@@ -73,7 +73,8 @@ const arr = (a) => (Array.isArray(a) ? a : []);
 export const tipoDe = (d) => TIPOS_PERMISO.find((t) => t.id === d.tipoPermiso) || null;
 export const requisitosDe = (d) => { const t = tipoDe(d); return t ? REQUISITOS_PERMISO[t.id] || [] : []; };
 export const gasesObligatorios = (d) => { const t = tipoDe(d); return !!t && t.gases === "obligatoria"; };
-export const gasesVisibles = (d) => { const t = tipoDe(d); return !!t && t.gases !== "no"; };
+// La medición de gases se puede diligenciar en cualquier permiso (la plantilla siempre tiene su sección); solo es OBLIGATORIA en espacios confinados
+export const gasesVisibles = () => true;
 const lecturaConDatos = (g) => !!(g && (g.hora || g.o2 || g.lel || g.co || g.h2s || g.resp));
 
 const personaVacia = (p) => !(p && (p.nombre || p.documento || p.cargo || p.cert || p.certVence));
@@ -130,7 +131,7 @@ export function escribirPermisoEnHoja(ws, d, celdas = CELDAS_PERMISO) {
     const v = arr(d.requisitos)[i];
     return { texto, cumple: v === "Cumple" ? MARCA : "", no: v === "No cumple" ? MARCA : "", na: v === "N/A" ? MARCA : "", obs: arr(d.requisitosObs)[i] || "" };
   }));
-  if (gasesVisibles(d)) {
+  if (arr(d.gases).some(lecturaConDatos)) {              // se escribe lo que se haya medido, sea cual sea el tipo de permiso
     escribirTabla(ws, T.gases, arr(d.gases).slice(0, LECTURAS.length).map((g) => (lecturaConDatos(g)
       ? { hora: g.hora, o2: numeroOTexto(g.o2), lel: numeroOTexto(g.lel), co: numeroOTexto(g.co), h2s: numeroOTexto(g.h2s), resp: g.resp } : {})));
   }

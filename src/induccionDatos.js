@@ -1,5 +1,5 @@
 // Inducción en SST para personal nuevo (RYR-SS-004): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, escribirTabla, descubrirPorEtiquetas, textoDuracion, fechaDDMMYYYY } from "./sstBase";
+import { poner, escribirTabla, descubrirPorEtiquetas, textoDuracion, fechaDDMMYYYY, pintarCelda } from "./sstBase";
 
 export const CODIGO_INDUCCION = "RYR-SS-004";
 export const VINCULACIONES = ["Contrato directo", "Contratista", "Subcontratista", "Independiente"];
@@ -57,6 +57,7 @@ export const SPEC_INDUCCION = {
     ["parentesco", "Parentesco", "H", "I"],
     ["telefono", "Teléfono", "K", "L"],
     ["calificacion", "Calificación (0 a 100)", "A", "C"],
+    ["resultado", "Resultado", "F", "G", "calificacion"],     // la casilla donde el Excel calcula "Aprobó" o "Requiere refuerzo": se pinta de verde o de rojo
     ["notaMinima", "Nota mínima", "D", "E"],
     ["reinduccion", "Reinducción prevista", "I", "K"],
   ],
@@ -68,7 +69,7 @@ export const SPEC_INDUCCION = {
 };
 
 // Distribución de la plantilla entregada (se usa solo si no se puede leer la plantilla subida). Generado por el motor.
-export const CELDAS_INDUCCION = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","fecha":"C13","horaInicio":"E13","horaFin":"G13","duracion":"I13","nInduccion":"K13","inductorNombre":"C14","inductorCargo":"J14","nombre":"C16","documento":"J16","cargo":"C17","empresa":"J17","fechaIngreso":"C18","vinculacion":"G18","rh":"K18","eps":"C19","arl":"G19","afp":"K19","examenFecha":"C20","aptitud":"G20","restricciones":"K20","contactoNombre":"C21","parentesco":"I21","telefono":"L21","calificacion":"C52","notaMinima":"E52","reinduccion":"K52","tablas":{"documentos":{"fila0":24,"n":10,"columnas":{"presento":"G","vigencia":"I","observacion":"K"}},"temas":{"fila0":36,"n":15,"columnas":{"impartido":"I","observacion":"K"}}},"firmas":{"trabajador":{"nombre":"C59","cargo":"C60"},"inductor":{"nombre":"G59","cargo":"G60"},"responsable":{"nombre":"K59","cargo":"K60"}}};
+export const CELDAS_INDUCCION = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","fecha":"C13","horaInicio":"E13","horaFin":"G13","duracion":"I13","nInduccion":"K13","inductorNombre":"C14","inductorCargo":"J14","nombre":"C16","documento":"J16","cargo":"C17","empresa":"J17","fechaIngreso":"C18","vinculacion":"G18","rh":"K18","eps":"C19","arl":"G19","afp":"K19","examenFecha":"C20","aptitud":"G20","restricciones":"K20","contactoNombre":"C21","parentesco":"I21","telefono":"L21","calificacion":"C52","resultado":"G52","notaMinima":"E52","reinduccion":"K52","tablas":{"documentos":{"fila0":24,"n":10,"columnas":{"presento":"G","vigencia":"I","observacion":"K"}},"temas":{"fila0":36,"n":15,"columnas":{"impartido":"I","observacion":"K"}}},"firmas":{"trabajador":{"nombre":"C59","cargo":"C60"},"inductor":{"nombre":"G59","cargo":"G60"},"responsable":{"nombre":"K59","cargo":"K60"}}};
 
 export const descubrirInduccion = (ws) => descubrirPorEtiquetas(ws, SPEC_INDUCCION);
 
@@ -83,8 +84,14 @@ export function resultadoInduccion(d) {
   return nota >= minima ? "Aprobó" : "Requiere refuerzo";
 }
 
+// Color de la casilla del resultado: verde si aprobó, rojo si requiere refuerzo
+export const COLORES_RESULTADO = { "Aprobó": { relleno: "00A651", fuente: "000000" }, "Requiere refuerzo": { relleno: "C00000", fuente: "FFFFFF" } };
+
 export function escribirInduccionEnHoja(ws, d, celdas = CELDAS_INDUCCION) {
   const C = celdas;
+  // El texto "Aprobó" / "Requiere refuerzo" lo calcula la fórmula del Excel; aquí solo se le pone el color que le corresponde
+  const color = COLORES_RESULTADO[resultadoInduccion(d)];
+  if (color && C.resultado) pintarCelda(ws, C.resultado, "FF" + color.relleno, "FF" + color.fuente);
   for (const k of ["proyecto", "contratista", "ubicacion", "horaInicio", "horaFin", "nInduccion", "inductorNombre", "inductorCargo", "nombre", "documento", "cargo", "empresa",
     "vinculacion", "rh", "eps", "arl", "afp", "aptitud", "restricciones", "contactoNombre", "parentesco", "telefono"]) poner(ws, C[k], d[k]);
   for (const k of ["fecha", "fechaIngreso", "examenFecha", "reinduccion"]) poner(ws, C[k], fechaDDMMYYYY(d[k]));

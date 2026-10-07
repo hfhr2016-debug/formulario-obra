@@ -1504,7 +1504,7 @@ const MODULOS_SST = [
   // --- Varias veces por semana ---
   { id: "sst-induccion", nombre: "Inducción SST Personal Nuevo", emoji: "🆕", icono: "/icons/icon-sst-induccion.png", activo: true },
   { id: "sst-inspecciones", nombre: "Inspecciones", emoji: "🔍", icono: "/icons/icon-sst-inspecciones.png", activo: true },
-  { id: "sst-actos-inseguros", nombre: "Actos y Condiciones Inseguras", emoji: "🚧", icono: "/icons/icon-sst-actos-inseguros.png", activo: true },
+  { id: "sst-actos-inseguros", nombre: "Actos y Condiciones (Tarjeta iCAI)", emoji: "🚧", icono: "/icons/icon-sst-actos-inseguros.png", activo: true },
   { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", icono: "/icons/icon-sst-epp.png", activo: true },
   // --- Semanal / periódico ---
   { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", icono: "/icons/icon-sst-semanal.png", activo: false },

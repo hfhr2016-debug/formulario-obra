@@ -3,7 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { textoDuracion } from "./sstBase";
 import {
   CODIGO_INSPECCION, HOJA_INSPECCION, CELDAS_INSPECCION, TIPOS_INSPECCION, ESTADOS, NIVELES, ESTADOS_HALLAZGO, GRUPOS_INSPECCION, ITEMS_INSPECCION,
-  descubrirInspeccion, escribirInspeccionEnHoja, validarInspeccion, resumenInspeccion, conteo, porcentajeCumplimiento, hallazgosConDatos,
+  tiposDe, descubrirInspeccion, escribirInspeccionEnHoja, validarInspeccion, resumenInspeccion, conteo, porcentajeCumplimiento, hallazgosConDatos,
   pendientesDePasarAHallazgos, textoHallazgoDeAspecto,
 } from "./inspeccionesDatos";
 import {
@@ -14,7 +14,7 @@ import {
 import { camposFaltantesInspeccion } from "./inspeccionesDatos";
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
-import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
+import { ChipsOpcion, CampoFecha, FilaVerificacion, GrillaOpciones } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_inspeccion";
 const CLAVE_CONSECUTIVO = "ryr_sst_inspeccion_consecutivo";
@@ -28,7 +28,7 @@ const hallazgoNuevo = (base = {}) => ({ hallazgo: "", nivel: "", accion: "", res
 
 function datosIniciales() {
   return {
-    proyecto: "", contratista: "", ubicacion: "", fecha: "", horaInicio: "", horaFin: "", nInspeccion: "", tipo: "", area: "",
+    proyecto: "", contratista: "", ubicacion: "", fecha: "", horaInicio: "", horaFin: "", nInspeccion: "", tipos: [], area: "",
     inspectorNombre: "", inspectorCargo: "", acompanaNombre: "", acompanaCargo: "",
     respuestas: vacios(N_ITEMS), observaciones: vacios(N_ITEMS),
     hallazgos: [], obsGenerales: "", responsableNombre: "", responsableCargo: "",
@@ -36,7 +36,7 @@ function datosIniciales() {
 }
 
 function tieneContenido(d) {
-  return !!(d.contratista || d.ubicacion || d.fecha || d.horaInicio || d.nInspeccion || d.tipo || d.area || d.inspectorNombre || d.acompanaNombre ||
+  return !!(d.contratista || d.ubicacion || d.fecha || d.horaInicio || d.nInspeccion || tiposDe(d).length || d.area || d.inspectorNombre || d.acompanaNombre ||
     d.respuestas.some(Boolean) || d.hallazgos.length || d.obsGenerales);
 }
 
@@ -121,7 +121,7 @@ export default function FormularioInspecciones({ onVolver }) {
       const nUsar = d.nInspeccion && String(d.nInspeccion).trim() ? String(d.nInspeccion).trim() : String(siguienteConsecutivo(CLAVE_CONSECUTIVO));
       escribirInspeccionEnHoja(ws, { ...d, nInspeccion: nUsar }, celdas);
       setAvisoGeneracion(avisos.join(" "));
-      await descargarLibro(workbook, `Inspeccion_${d.fecha}_N${textoParaArchivo(nUsar, 10)}_${textoParaArchivo(d.tipo, 24)}.xlsx`);
+      await descargarLibro(workbook, `Inspeccion_${d.fecha}_N${textoParaArchivo(nUsar, 10)}_${textoParaArchivo(tiposDe(d).length > 1 ? "Varios-tipos" : tiposDe(d)[0] || "", 24)}.xlsx`);
 
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
@@ -180,7 +180,10 @@ export default function FormularioInspecciones({ onVolver }) {
               <SelectorHora label="Hora fin" value={d.horaFin} onChange={(v) => set("horaFin", v)} />
             </div>
             {duracion && <div className="text-[11.5px] font-semibold" style={{ color: NAVY }}>⏱ Duración: {duracion}</div>}
-            <Lista label="Tipo de inspección" value={d.tipo} onChange={(v) => set("tipo", v)} opciones={TIPOS_INSPECCION} />
+            <div>
+              <div className="text-[10.5px] font-medium mb-1" style={{ color: "#8A8F99" }}>Tipo de inspección (puedes marcar varios)</div>
+              <GrillaOpciones nombre="Tipo de inspección" opciones={TIPOS_INSPECCION} marcadas={tiposDe(d)} onAlternar={(t) => setD((cur) => { const act = tiposDe(cur); const nuevos = act.includes(t) ? act.filter((x) => x !== t) : [...act, t]; return { ...cur, tipos: TIPOS_INSPECCION.filter((x) => nuevos.includes(x)), tipo: "" }; })} />
+            </div>
             <Campo label="Área / frente inspeccionado" value={d.area} onChange={(v) => set("area", v)} />
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Inspector</div>
             <BloqueProfesional memoria={memoria} etqNombre="Nombre del inspector" etqCargo="Cargo del inspector" nombre={d.inspectorNombre} cargo={d.inspectorCargo} onChange={cambiarPersona("inspectorNombre", "inspectorCargo")} />

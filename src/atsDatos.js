@@ -56,7 +56,9 @@ export const SPEC_ATS = {
     ["ruta", "Ruta de evacuación o rescate", "E", "H"],
   ],
   tablas: [
-    { clave: "pasos", cabecera: "No.", fin: "3. EPP Y PERMISOS REQUERIDOS", finEmpieza: true, columnas: { paso: "B", peligro: "C", riesgo: "D", prob: "E", sev: "F", control: "H", responsable: "I", residual: "J" }, encabezados: { paso: "Paso de la tarea", peligro: "Peligro identificado", riesgo: "Riesgo / consecuencia", prob: "Prob. (1-3)", sev: "Sev. (1-3)", control: "Medidas de control", responsable: "Responsable", residual: "Nivel residual" } },
+    { clave: "pasos", cabecera: "No.", fin: "3. EPP Y PERMISOS REQUERIDOS", finEmpieza: true, columnas: { paso: "B", peligro: "C", riesgo: "D", prob: "E", sev: "F", control: "H", responsable: "I", residual: "J" }, encabezados: { paso: "Paso de la tarea", peligro: "Peligro identificado", riesgo: "Riesgo / consecuencia", prob: "Prob. (1-3)", sev: "Sev. (1-3)", control: "Medidas de control", responsable: "Responsable", residual: "Nivel residual",
+        // Columna opcional para el cargo del responsable: si la plantilla la tiene (con alguno de estos títulos), el cargo va ahí y no junto al nombre
+        cargo: ["Cargo", "Cargo del responsable", "Cargo / oficio del responsable"] } },
     { clave: "equipo", cabecera: "No.", despuesDe: "pasos", fin: "5. PLAN DE EMERGENCIA", finEmpieza: true, columnas: { nombre: "B", documento: "C", cargo: "D", hora: "I" }, encabezados: { nombre: "Nombre completo", documento: "Documento", cargo: "Cargo / oficio", hora: "Hora de socialización" } },
   ],
   opciones: [
@@ -72,6 +74,7 @@ export const descubrirAts = (ws) => descubrirPorEtiquetas(ws, SPEC_ATS);
 
 // ---------- Lógica del ATS ----------
 const arr = (a) => (Array.isArray(a) ? a : []);
+const texto = (v) => String(v === undefined || v === null ? "" : v).trim();
 const num13 = (v) => { const n = Number(v); return n >= 1 && n <= 3 ? n : null; };
 
 // Nivel = probabilidad × severidad: 1-2 Bajo · 3-4 Medio · 6-9 Alto (igual que la fórmula del Excel)
@@ -99,9 +102,10 @@ export function escribirAtsEnHoja(ws, d, celdas = CELDAS_ATS) {
   ];
   const T = C.tablas || {};
   // Probabilidad y severidad van como NÚMEROS: el Excel calcula el nivel con su fórmula
+  const cargoAparte = !!(T.pasos && T.pasos.columnas && T.pasos.columnas.cargo);   // ¿la plantilla tiene una columna aparte para el cargo del responsable?
   escribirTabla(ws, T.pasos, pasosConDatos(d).map((p) => ({
     paso: p.paso, peligro: p.peligro, riesgo: p.riesgo, prob: num13(p.prob) === null ? "" : num13(p.prob), sev: num13(p.sev) === null ? "" : num13(p.sev),
-    control: p.control, responsable: textoResponsable(p.responsableNombre || p.responsable, p.responsableCargo), residual: p.residual,
+    control: p.control, responsable: cargoAparte ? texto(p.responsableNombre || p.responsable) : textoResponsable(p.responsableNombre || p.responsable, p.responsableCargo), cargo: cargoAparte ? texto(p.responsableCargo) : "", residual: p.residual,
   })));
   if (T.pasos) saltoDePagina(ws, T.pasos.fila0 + T.pasos.n - 1);   // la hoja 2 empieza en "3. EPP y permisos" (la librería pierde el salto de la plantilla)
   escribirTabla(ws, T.equipo, equipoConDatos(d).map((e) => ({ nombre: e.nombre, documento: e.documento, cargo: e.cargo, hora: e.hora || d.horaSocializacion || "" })));

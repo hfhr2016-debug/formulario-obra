@@ -307,7 +307,7 @@ export function descubrirPorEtiquetas(ws, spec) {
     }
   }
 
-  // Opciones para marcar (☐ -> ✔): las celdas que empiezan por ☐ entre dos títulos
+  // Opciones para marcar (☐ -> ☑): las celdas que empiezan por ☐ entre dos títulos
   for (const o of spec.opciones || []) {
     const r0 = filaDe(o.desde, "A", 1, true);
     const r1 = r0 ? filaDe(o.hasta, "A", r0 + 1, true) : 0;
@@ -317,7 +317,7 @@ export function descubrirPorEtiquetas(ws, spec) {
         for (let c = 1; c <= (o.hastaCol || MAX_COL); c++) {
           const t = texto(r, c);
           const ref = `${colLetra(c)}${r}`;
-          if (/^[☐✔☒]/.test(t) && esEsquina(ref)) lista.push({ ref, texto: t.replace(/^[☐✔☒]\s*/, "") });
+          if (/^[☐☑✔☒]/.test(t) && esEsquina(ref)) lista.push({ ref, texto: t.replace(/^[☐☑✔☒]\s*/, "") });
         }
       }
       if (!lista.length) problemas.push(`No encontré casillas ☐ entre "${o.desde}" y "${o.hasta}"`);
@@ -376,8 +376,8 @@ export function escribirTabla(ws, tabla, filas) {
   });
 }
 
-// ---------- Casillas para marcar ("☐ Trabajo en alturas" -> "✔ Trabajo en alturas") ----------
-export const GLIFO_SI = "✔";
+// ---------- Casillas para marcar ("☐ Trabajo en alturas" -> "☑ Trabajo en alturas": el chulo va DENTRO del cuadro, el cuadro no se quita) ----------
+export const GLIFO_SI = "☑";
 export const GLIFO_NO = "☐";
 const claveOpcion = (t) => quitarTildes(String(t || "")).toLowerCase().replace(/[_\s]+/g, " ").trim();
 // "Otro: ____________" -> "Otro:"  (la parte fija; lo escrito por la persona va después)

@@ -305,7 +305,7 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
 
         {/* 6. GASES */}
         {gasesVisibles(d) && (
-          <Seccion id="gases" titulo="6. Medición de gases" subtitulo={gasesObligatorios(d) ? "Obligatoria: espacios confinados" : "Opcional según el tipo de permiso"} abierta={abierta === "gases"} onToggle={alternar}>
+          <Seccion id="gases" titulo="6. Medición de gases" subtitulo={gasesObligatorios(d) ? "Obligatoria: espacios confinados" : "Opcional: si midió gases, regístrelo aquí"} abierta={abierta === "gases"} onToggle={alternar}>
             {LECTURAS.map((nombre, i) => (
               <div key={nombre} className="border rounded-lg p-2.5 mb-2.5" style={{ borderColor: LINE, background: PAPER }}>
                 <div className="text-[10px] font-bold mb-1.5" style={{ color: GOLD }}>{nombre.toUpperCase()}</div>

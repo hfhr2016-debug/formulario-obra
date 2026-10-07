@@ -1,7 +1,8 @@
 // Reporte de actos y condiciones inseguras (RYR-SS-011): datos y lógica propios de este formato. Lo común está en sstBase.js.
-import { poner, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY } from "./sstBase";
+import { poner, descubrirPorEtiquetas, marcarOpciones, fechaDDMMYYYY, pintarCelda } from "./sstBase";
 
 export const CODIGO_ACTOS = "RYR-SS-011";
+export const NOMBRE_TARJETA = "Tarjeta iCAI";      // los reportes de actos y condiciones inseguras también se llaman Tarjeta iCAI
 export const HOJA_ACTOS = "Actos y Condiciones";
 export const ACTOS_INSEGUROS = ["No usar o usar mal los EPP", "Omitir procedimientos o permisos", "Trabajar sin ATS o sin autorización", "Usar herramientas o equipos inadecuados", "Trabajar en alturas sin protección", "Bloquear salidas o rutas de evacuación", "Cargas o posturas inadecuadas", "Distracción o uso del celular", "Bromas o juegos en el área de trabajo", "Trabajar bajo alcohol o sustancias", "Manejo inseguro de vehículos", "Otro acto: ____________"];
 export const CONDICIONES_INSEGURAS = ["Desorden o falta de aseo", "Herramienta o equipo defectuoso", "Falta de señalización o demarcación", "Falta de guardas o protecciones", "Instalación eléctrica deficiente", "Andamio, escalera o plataforma en mal estado", "Iluminación o ventilación insuficiente", "Piso irregular, húmedo o con huecos", "Material mal almacenado", "Fugas o derrames", "Falta de extintor o de botiquín", "Otra condición: ____________"];
@@ -66,15 +67,41 @@ export function tipoDeReporte(d) {
   return a && c ? "Ambos" : a ? "Acto inseguro" : c ? "Condición insegura" : "";
 }
 
+// Consecuencias que puede traer cada acto o condición insegura (el desplegable muestra las de lo que se marcó; "Otra" queda para lo que no esté)
+export const CONSECUENCIAS_ACTOS = {"No usar o usar mal los EPP": ["Lesiones por golpes, cortes o proyección de partículas", "Enfermedad laboral por exposición (ruido, polvo, químicos)", "Lesión grave o incapacidad permanente"], "Omitir procedimientos o permisos": ["Accidente por ejecutar el trabajo sin controles", "Lesión grave o muerte en trabajos de alto riesgo", "Sanción o suspensión de la obra por incumplimiento"], "Trabajar sin ATS o sin autorización": ["Peligros no identificados ni controlados", "Accidente por improvisar el método de trabajo", "Lesión grave o muerte"], "Usar herramientas o equipos inadecuados": ["Cortes, golpes o atrapamientos", "Descarga eléctrica o proyección de partículas", "Daño de la herramienta o del equipo"], "Trabajar en alturas sin protección": ["Caída a distinto nivel con lesión grave", "Muerte por caída", "Caída de objetos sobre las personas que están abajo"], "Bloquear salidas o rutas de evacuación": ["Imposibilidad de evacuar en una emergencia", "Lesiones o muertes en un incendio o evacuación", "Tropiezos y caídas de las personas"], "Cargas o posturas inadecuadas": ["Lesión de espalda u osteomuscular", "Enfermedad laboral por sobreesfuerzo", "Atrapamiento o golpe por caída de la carga"], "Distracción o uso del celular": ["Atropello o golpe por maquinaria o vehículos", "Caída o tropiezo", "Accidente por no ver el peligro"], "Bromas o juegos en el área de trabajo": ["Golpes, caídas o lesiones por los juegos", "Accidente de un compañero", "Daño de equipos o materiales"], "Trabajar bajo alcohol o sustancias": ["Accidente grave por pérdida de atención y de reflejos", "Lesión propia o a los compañeros", "Muerte"], "Manejo inseguro de vehículos": ["Atropello de personas", "Choque o volcamiento del vehículo", "Lesiones graves o muerte", "Daños materiales"]};
+export const CONSECUENCIAS_CONDICIONES = {"Desorden o falta de aseo": ["Tropiezos y caídas al mismo nivel", "Golpes con material o herramientas", "Incendio por acumulación de residuos"], "Herramienta o equipo defectuoso": ["Cortes, golpes o atrapamientos", "Descarga eléctrica", "Falla del equipo con lesión"], "Falta de señalización o demarcación": ["Ingreso de personas a zonas de peligro", "Atropellos o golpes por maquinaria", "Caídas a desnivel o en huecos"], "Falta de guardas o protecciones": ["Atrapamiento o amputación", "Contacto con partes en movimiento", "Caída a distinto nivel"], "Instalación eléctrica deficiente": ["Descarga eléctrica o electrocución", "Quemaduras", "Incendio por cortocircuito"], "Andamio, escalera o plataforma en mal estado": ["Caída a distinto nivel", "Colapso del andamio o de la plataforma", "Lesión grave o muerte"], "Iluminación o ventilación insuficiente": ["Tropiezos y caídas por poca visibilidad", "Fatiga visual", "Intoxicación o enfermedad respiratoria por mala ventilación"], "Piso irregular, húmedo o con huecos": ["Resbalones, tropiezos y caídas", "Esguinces o fracturas", "Caída en un hueco"], "Material mal almacenado": ["Caída del material sobre las personas", "Atrapamiento o aplastamiento", "Obstrucción de las rutas de evacuación"], "Fugas o derrames": ["Intoxicación o quemaduras químicas", "Resbalones y caídas", "Incendio o explosión", "Contaminación del suelo o del agua"], "Falta de extintor o de botiquín": ["Un conato de incendio que se vuelve incendio", "Atención tardía de una lesión", "Agravamiento de una lesión por falta de primeros auxilios"]};
+export const CONSECUENCIAS_GENERALES = ["Lesión leve sin incapacidad", "Lesión con incapacidad", "Lesión grave o incapacidad permanente", "Muerte", "Daño a equipos o instalaciones", "Incendio o explosión", "Afectación ambiental", "Enfermedad laboral"];
+const sinGuiones = (t) => String(t || "").replace(/[_\s]+$/, "").trim();
+export function consecuenciasPara(d) {
+  const out = [];
+  let hayOtro = false;
+  const sumar = (mapa, lista) => {
+    for (const m of arr(lista)) {
+      const c = mapa[sinGuiones(m)];
+      if (c) c.forEach((x) => { if (!out.includes(x)) out.push(x); }); else hayOtro = true;     // "Otro acto" / "Otra condición": no tienen lista propia
+    }
+  };
+  sumar(CONSECUENCIAS_ACTOS, d.actos); sumar(CONSECUENCIAS_CONDICIONES, d.condiciones);
+  if (!out.length || hayOtro) CONSECUENCIAS_GENERALES.forEach((x) => { if (!out.includes(x)) out.push(x); });   // sin nada marcado, o con un "Otro", se ofrecen las generales
+  return out;
+}
+// Lo que se escribe en la casilla: la consecuencia elegida y, si se escribió otra, también esa (separadas por punto y coma)
+export const textoConsecuencia = (d) => [d.consecuencia, d.consecuenciaOtra].map((x) => String(x || "").trim()).filter(Boolean).join("; ");
+// Color de la casilla del nivel de riesgo
+export const COLORES_NIVEL = { Alto: { relleno: "C00000", fuente: "FFFFFF" }, Medio: { relleno: "FFC000", fuente: "000000" }, Bajo: { relleno: "00A651", fuente: "000000" } };
+
 export function escribirActosEnHoja(ws, d, celdas = CELDAS_ACTOS) {
   const C = celdas;
-  for (const k of ["proyecto", "contratista", "ubicacion", "hora", "nReporte", "lugar", "reportaNombre", "reportaCargo", "observado", "consecuencia", "involucrados",
+  for (const k of ["proyecto", "contratista", "ubicacion", "hora", "nReporte", "lugar", "reportaNombre", "reportaCargo", "observado", "involucrados",
     "probabilidad", "severidad", "accionInmediata", "recomendacion", "responsableCorreccion", "corregido", "verifico", "obsCierre"]) poner(ws, C[k], d[k]);
   poner(ws, C.fecha, fechaDDMMYYYY(d.fecha));
   poner(ws, C.fechaCompromiso, fechaDDMMYYYY(d.fechaCompromiso));
   poner(ws, C.fechaCierre, fechaDDMMYYYY(d.fechaCierre));
   poner(ws, C.tipoReporte, d.tipoReporte || tipoDeReporte(d));
-  poner(ws, C.nivel, d.nivel || nivelDeRiesgo(d.probabilidad, d.severidad));
+  const nivel = d.nivel || nivelDeRiesgo(d.probabilidad, d.severidad);
+  poner(ws, C.nivel, nivel);
+  if (nivel && C.nivel && COLORES_NIVEL[nivel]) pintarCelda(ws, C.nivel, "FF" + COLORES_NIVEL[nivel].relleno, "FF" + COLORES_NIVEL[nivel].fuente);   // el nivel se ve de su color: rojo, amarillo o verde
+  poner(ws, C.consecuencia, textoConsecuencia(d));
   const O = C.opciones || {};
   const noMarcadas = [
     ...marcarOpciones(ws, O.actos, arr(d.actos), d.otros || {}),
@@ -102,7 +129,7 @@ export function resumenActos(d) {
   const nivel = d.nivel || nivelDeRiesgo(d.probabilidad, d.severidad);
   return {
     id: `${d.fecha || "sin-fecha"}_${d.nReporte || ""}`, formato: "acto-condicion", fecha: d.fecha || "", proyecto: d.proyecto || "", nReporte: d.nReporte || "",
-    tipo: d.tipoReporte || tipoDeReporte(d), nivel, lugar: d.lugar || "", observado: d.observado || "", marcados: [...arr(d.actos), ...arr(d.condiciones)],
+    tipo: d.tipoReporte || tipoDeReporte(d), nivel, lugar: d.lugar || "", observado: d.observado || "", consecuencia: textoConsecuencia(d), marcados: [...arr(d.actos), ...arr(d.condiciones)],
     recomendacion: d.recomendacion || "", accionInmediata: d.accionInmediata || "",
     corregido: d.corregido || "", responsable: d.responsableCorreccion || "", fechaCompromiso: d.fechaCompromiso || "", fechaCierre: d.fechaCierre || "",
   };

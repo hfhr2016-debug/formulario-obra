@@ -296,7 +296,7 @@ export default function FormularioInduccion({ onVolver }) {
               <Campo label="Nota mínima" value={d.notaMinima} inputMode="numeric" onChange={(v) => set("notaMinima", v.replace(/[^0-9]/g, ""))} />
             </div>
             {resultado && (
-              <div className="text-[12px] font-semibold" style={{ color: resultado === "Aprobó" ? "#1D6B3A" : "#B3401F" }}>Resultado: {resultado}</div>
+              <div className="text-[13px] font-bold px-3 py-2 rounded-md text-center" style={resultado === "Aprobó" ? { background: "#00A651", color: "#000" } : { background: "#C00000", color: "#fff" }}>Resultado: {resultado}</div>
             )}
             <Campo label="Reinducción prevista" type="date" value={d.reinduccion} onChange={(v) => set("reinduccion", v)} />
           </div>

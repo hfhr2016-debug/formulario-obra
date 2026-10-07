@@ -74,8 +74,8 @@ export function parsearPegado(texto) {
     .filter((a) => a.nombre);
 }
 
-// Marcas de las casillas de peligros y EPP: ✔ (chulito negro y grueso) = aplica hoy, ☐ = no aplica.
-export const GLIFO_SI = "✔";
+// Marcas de las casillas de peligros y EPP: ☑ (el chulo dentro de su cuadro) = aplica hoy, ☐ = no aplica.
+export const GLIFO_SI = "☑";
 export const GLIFO_NO = "☐";
 
 // Texto plano de un valor de celda de ExcelJS (texto, texto con formato, fórmula o hipervínculo).

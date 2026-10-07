@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  CODIGO_ACTOS, HOJA_ACTOS, CELDAS_ACTOS, ACTOS_INSEGUROS, CONDICIONES_INSEGURAS, PROBABILIDADES, SEVERIDADES, CORREGIDO,
+  CODIGO_ACTOS, NOMBRE_TARJETA, HOJA_ACTOS, consecuenciasPara, COLORES_NIVEL, CELDAS_ACTOS, ACTOS_INSEGUROS, CONDICIONES_INSEGURAS, PROBABILIDADES, SEVERIDADES, CORREGIDO,
   descubrirActos, escribirActosEnHoja, validarActos, resumenActos, nivelDeRiesgo, tipoDeReporte,
 } from "./actosDatos";
 import {
   NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo,
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
-  BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, BuscadorLista, SelectorHora,
+  BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
 import { camposFaltantesActos } from "./actosDatos";
 import { useFaltantes } from "./sstFaltantes";
@@ -23,7 +23,7 @@ function datosIniciales() {
     proyecto: "", contratista: "", ubicacion: "", fecha: "", hora: "", nReporte: "", lugar: "",
     reportaNombre: "", reportaCargo: "",
     actos: [], condiciones: [], otros: {},
-    observado: "", consecuencia: "", involucrados: "", probabilidad: "", severidad: "",
+    observado: "", consecuencia: "", consecuenciaOtra: "", involucrados: "", probabilidad: "", severidad: "",
     accionInmediata: "", recomendacion: "", responsableCorreccion: "", fechaCompromiso: "",
     corregido: "", fechaCierre: "", verificaNombre: "", verificaCargo: "", obsCierre: "", recibeNombre: "", recibeCargo: "",
   };
@@ -31,7 +31,7 @@ function datosIniciales() {
 
 function tieneContenido(d) {
   return !!(d.contratista || d.ubicacion || d.fecha || d.hora || d.nReporte || d.lugar || d.reportaNombre || d.actos.length || d.condiciones.length || d.observado ||
-    d.consecuencia || d.accionInmediata || d.recomendacion || d.responsableCorreccion || d.corregido || d.recibeNombre);
+    d.consecuencia || d.consecuenciaOtra || d.accionInmediata || d.recomendacion || d.responsableCorreccion || d.corregido || d.recibeNombre);
 }
 
 export default function FormularioActosCondiciones({ onVolver }) {
@@ -101,7 +101,7 @@ export default function FormularioActosCondiciones({ onVolver }) {
       if (sinRecuadro) avisos.push(`La plantilla no tiene recuadro para ${sinRecuadro} de las fotos y no se incluyó${sinRecuadro > 1 ? "eron" : ""}.`);
       setAvisoGeneracion(avisos.join(" "));
       const nFotos = fotos.filter((f) => f.file).length - sinRecuadro;
-      await descargarLibro(workbook, `Reporte_${d.fecha}_N${textoParaArchivo(nUsar, 10)}_${textoParaArchivo(tipo || "acto-condicion", 20)}.xlsx`);
+      await descargarLibro(workbook, `Tarjeta_iCAI_${d.fecha}_N${textoParaArchivo(nUsar, 10)}_${textoParaArchivo(tipo || "acto-condicion", 20)}.xlsx`);
 
       // Memoria para la próxima vez
       registrarConsecutivo(CLAVE_CONSECUTIVO, nUsar);
@@ -139,7 +139,7 @@ export default function FormularioActosCondiciones({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="ACTOS Y CONDICIONES INSEGURAS" subtitulo={`${CODIGO_ACTOS} · Reportar a tiempo evita accidentes`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="TARJETA iCAI" subtitulo={`${CODIGO_ACTOS} · Actos y condiciones inseguras · Reportar a tiempo evita accidentes`} onVolver={onVolver} />
 
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         {/* 1. DATOS */}
@@ -177,12 +177,14 @@ export default function FormularioActosCondiciones({ onVolver }) {
         <Seccion id="descripcion" titulo="3. Descripción del hallazgo" subtitulo={nivel ? `Riesgo ${nivel.toLowerCase()}` : "Qué se observó y qué tan grave es"} abierta={abierta === "descripcion"} onToggle={alternar}>
           <div className="space-y-2.5">
             <AreaTexto label="¿Qué se observó?" value={d.observado} onChange={(v) => set("observado", v)} filas={3} placeholder="Describe con claridad qué pasó o qué encontraste" />
-            <AreaTexto label="Posible consecuencia" value={d.consecuencia} onChange={(v) => set("consecuencia", v)} filas={2} placeholder="Qué podría pasar si no se corrige" />
+            <Lista label="Posible consecuencia" value={d.consecuencia} onChange={(v) => set("consecuencia", v)} opciones={d.consecuencia && !consecuenciasPara(d).includes(d.consecuencia) ? [d.consecuencia, ...consecuenciasPara(d)] : consecuenciasPara(d)} />
+            <div className="text-[10.5px] -mt-1.5" style={{ color: "#8A8F99" }}>{marcados ? "La lista cambia según el acto o la condición que marcaste." : "Marca primero el acto o la condición y la lista te mostrará sus consecuencias."}</div>
+            <Campo label="Otra consecuencia (si no está en la lista)" value={d.consecuenciaOtra} placeholder="Escribe aquí otra consecuencia" onChange={(v) => set("consecuenciaOtra", v)} />
             <Campo label="Persona(s) involucrada(s) (opcional)" value={d.involucrados} onChange={(v) => set("involucrados", v)} />
             <ChipsOpcion label="Probabilidad de que ocurra" nombre="Probabilidad" value={d.probabilidad} opciones={PROBABILIDADES} onChange={(v) => set("probabilidad", v)} />
             <ChipsOpcion label="Severidad si ocurre" nombre="Severidad" value={d.severidad} opciones={SEVERIDADES} onChange={(v) => set("severidad", v)} />
             {nivel && (
-              <div className="text-[12px] font-bold px-3 py-1.5 rounded-full text-white inline-block" style={{ background: COLOR_NIVEL[nivel] }}>Nivel de riesgo: {nivel}</div>
+              <div className="text-[13px] font-bold px-4 py-2 rounded-md text-center" style={{ background: "#" + COLORES_NIVEL[nivel].relleno, color: "#" + COLORES_NIVEL[nivel].fuente }}>Nivel de riesgo: {nivel}</div>
             )}
           </div>
         </Seccion>
