@@ -13,6 +13,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { EPS, ARL } from "./sstListas";
 import { ChipsOpcion, CampoFecha, GrillaOpciones, CasillaFoto, fotoVacia, agregarFotosARecuadros } from "./sstControles";
+import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_accidente";
 const CLAVE_CONSECUTIVO = "ryr_sst_accidente_consecutivo";
@@ -150,6 +151,7 @@ export default function FormularioAccidente({ onVolver }) {
         {/* 1. EVENTO */}
         <Seccion id="evento" titulo="1. Datos del evento" subtitulo={d.tipoEvento || "Qué pasó, cuándo y dónde"} abierta={abierta === "evento"} onToggle={alternar}>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />

@@ -537,3 +537,21 @@ export function SelectorHora({ label, value, onChange }) {
     </div>
   );
 }
+
+// ---------- "Traer los datos de la obra" desde la Ficha SST (una vez diligenciada, los demás formularios no tienen que repetirlos) ----------
+export function TraerDeFicha({ onTraer }) {
+  const [aviso, setAviso] = useState("");
+  const fichas = leerJSON("ryr_sst_ficha", []);
+  if (!fichas.length) return null;
+  const traer = (f) => { onTraer(f); setAviso(`Se trajeron los datos de «${f.proyecto}».`); };
+  return (
+    <div className="p-2 rounded-lg" style={{ background: "#F2F6FB", border: `1px solid ${LINE}` }}>
+      {fichas.length === 1 ? (
+        <button type="button" onClick={() => traer(fichas[0])} className="w-full text-left text-[12px] font-semibold" style={{ color: NAVY }}>📋 Traer los datos de la obra · {fichas[0].proyecto}</button>
+      ) : (
+        <Lista label="📋 Traer los datos de la obra (Ficha SST)" value="" onChange={(v) => { const f = fichas.find((x) => x.proyecto === v); if (f) traer(f); }} opciones={fichas.map((x) => x.proyecto)} />
+      )}
+      {aviso && <div className="text-[11px] mt-1" style={{ color: "#2E7D4F" }}>{aviso}</div>}
+    </div>
+  );
+}

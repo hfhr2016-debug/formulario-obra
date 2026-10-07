@@ -5,7 +5,7 @@ import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoRespon
 
 export const CODIGO_ACCIONES = "RYR-SS-012";
 export const HOJA_ACCIONES = "Acciones Correctivas";
-export const ORIGENES = ["Inspección", "Acto o condición insegura", "Accidente o incidente", "Auditoría", "Reunión COPASST o Vigía", "Otro"];
+export const ORIGENES = ["Inspección", "Acto o condición insegura", "Accidente o incidente", "Matriz de peligros", "Auditoría", "Reunión COPASST o Vigía", "Otro"];
 export const TIPOS_ACCION = ["Correctiva", "Preventiva", "Mejora"];
 export const ESTADOS_ACCION = ["Abierta", "En proceso", "Cerrada"];          // "Vencida" no se elige: la calcula la app según la fecha compromiso
 export const EFICACIAS = ["Eficaz", "No eficaz", "Pendiente"];
@@ -132,6 +132,16 @@ export function accionesDeInvestigaciones(resumenes) {
     if (p.estado === "Cerrada" || !texto(p.accion)) continue;
     out.push(accionNueva({ fechaApertura: r.fechaInvestigacion || r.fechaEvento || "", origen: "Accidente o incidente", ref: r.nInvestigacion || r.nReporte || "", hallazgo: r.causaRaiz || r.tipoEvento || "Investigación de accidente",
       tipo: "Correctiva", accion: p.accion, responsable: p.responsable || "", responsableCargo: p.responsableCargo || "", fechaCompromiso: p.fecha || "", estado: p.estado === "En proceso" ? "En proceso" : "Abierta" }));
+  }
+  return out;
+}
+
+// Riesgos NO ACEPTABLES de la matriz de peligros (nivel I y II): lo que hay que intervenir
+export function accionesDeMatriz(resumenes) {
+  const out = [];
+  for (const r of arr(resumenes)) for (const x of arr(r.riesgos)) {
+    if (!["I", "II"].includes(x.nivel) || !texto(x.peligro)) continue;
+    out.push(accionNueva({ fechaApertura: r.fecha || "", origen: "Matriz de peligros", ref: `${r.version || "v"}-${x.nivel}`, hallazgo: `${x.peligro}${x.tarea ? " — " + x.tarea : ""} (riesgo nivel ${x.nivel})`, tipo: "Preventiva", accion: x.medidas || x.controles || "", estado: "Abierta" }));
   }
   return out;
 }

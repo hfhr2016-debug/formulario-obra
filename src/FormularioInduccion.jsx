@@ -14,6 +14,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { EPS, ARL, AFP, PARENTESCOS } from "./sstListas";
+import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_induccion";
 const CLAVE_CONSECUTIVO = "ryr_sst_induccion_consecutivo";
@@ -194,6 +195,7 @@ export default function FormularioInduccion({ onVolver }) {
             📋 Traer proyecto, contratista y ubicación de la Ficha Técnica
           </button>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />

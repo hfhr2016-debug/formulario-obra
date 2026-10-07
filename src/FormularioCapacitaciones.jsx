@@ -15,6 +15,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
+import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_capacitaciones";
 const CLAVE_TEMAS = "ryr_sst_temas_lista";                 // la misma memoria de temas de la Lista de Asistencia
@@ -196,6 +197,7 @@ export default function FormularioCapacitaciones({ onVolver }) {
             📋 Traer proyecto, contratista y ubicación de la Ficha Técnica
           </button>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />

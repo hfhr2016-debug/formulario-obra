@@ -79,7 +79,7 @@ export const calcularAnio = (d) => calcularIndicadores(totalesAnio(d));
 
 // ---------- Traer lo ya registrado en la app ----------
 const delMes = (iso, anio, mes0) => typeof iso === "string" && iso.slice(0, 4) === String(anio) && Number(iso.slice(5, 7)) === mes0 + 1;
-// Cuenta, mes a mes, lo que hay registrado. regs = { inspecciones, actos, accidentes, acciones, capacitaciones } (listas de resúmenes)
+// Cuenta, mes a mes, lo que hay registrado. regs = { inspecciones, actos, accidentes, acciones, capacitaciones, personal } (listas de resúmenes)
 export function datosRegistrados(anio, regs = {}) {
   const por = mesesVacios().map(() => ({}));
   const suma = (i, id, n) => { if (n) por[i][id] = String((numero(por[i][id]) || 0) + n); };
@@ -95,6 +95,9 @@ export function datosRegistrados(anio, regs = {}) {
     suma(i, "inc", acc.filter((r) => !r.esAccidente).length);
     suma(i, "accAb", maestro.filter((a) => delMes(a.fechaApertura, anio, i)).length);
     suma(i, "accCe", maestro.filter((a) => a.estado === "Cerrada" && delMes(a.fechaCierre, anio, i)).length);
+    // Promedio de trabajadores: los activos de la hoja del Registro de Personal con el corte MÁS reciente del mes
+    const delMesPersonal = arr(regs.personal).filter((r) => delMes(r.fechaCorte, anio, i)).sort((x, y) => String(x.fechaCorte).localeCompare(String(y.fechaCorte)));
+    if (delMesPersonal.length) suma(i, "trab", delMesPersonal[delMesPersonal.length - 1].activos);
     const filasCap = arr(regs.capacitaciones).flatMap((r) => arr(r.filas));
     suma(i, "capProg", filasCap.filter((f) => delMes(f.programada, anio, i)).length);
     suma(i, "capEjec", filasCap.filter((f) => f.estado === "Ejecutada" && delMes(f.ejecutada, anio, i)).length);

@@ -12,10 +12,11 @@ import {
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion, fechaHoyISO } from "./sstBase";
 import { ChipsOpcion } from "./sstControles";
+import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_indicadores";
 const CLAVE_INDICADORES = "ryr_sst_indicadores";             // los datos de cada año: para seguir llenando mes a mes
-const FUENTES = { inspecciones: "ryr_sst_inspecciones", actos: "ryr_sst_reportes_actos", accidentes: "ryr_sst_accidentes", acciones: "ryr_sst_acciones", capacitaciones: "ryr_sst_capacitaciones" };
+const FUENTES = { inspecciones: "ryr_sst_inspecciones", actos: "ryr_sst_reportes_actos", accidentes: "ryr_sst_accidentes", acciones: "ryr_sst_acciones", capacitaciones: "ryr_sst_capacitaciones", personal: "ryr_sst_personal" };
 
 function datosIniciales() {
   return { proyecto: "", contratista: "", anio: "", responsable: "", meses: mesesVacios(), analisis: "", elaboroNombre: "", elaboroCargo: "", revisoNombre: "", revisoCargo: "", voboNombre: "", voboCargo: "" };
@@ -63,7 +64,7 @@ export default function FormularioIndicadores({ onVolver }) {
     const regs = Object.fromEntries(Object.entries(FUENTES).map(([k, clave]) => [k, leerJSON(clave, [])]));
     const { meses, llenadas } = completarConRegistrado(d, regs);
     setD((cur) => ({ ...cur, meses }));
-    setAvisoTraer(llenadas ? `Se llenaron ${llenadas} ${llenadas === 1 ? "casilla" : "casillas"} con lo registrado en la app (inspecciones, actos, accidentes, acciones y capacitaciones). Lo que ya habías escrito no se tocó.` : "No hay nada nuevo registrado para ese año, o ya estaba todo escrito.");
+    setAvisoTraer(llenadas ? `Se llenaron ${llenadas} ${llenadas === 1 ? "casilla" : "casillas"} con lo registrado en la app (inspecciones, actos, accidentes, acciones, capacitaciones y personal). Lo que ya habías escrito no se tocó.` : "No hay nada nuevo registrado para ese año, o ya estaba todo escrito.");
   }
 
   const mActual = d.meses[mes] || mesVacio();
@@ -124,6 +125,7 @@ export default function FormularioIndicadores({ onVolver }) {
         {/* 1. DATOS */}
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={d.anio ? `Año ${d.anio}` : "Obra y año"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <Campo label="Año" value={d.anio} placeholder="Ej. 2026" inputMode="numeric" onChange={(v) => set("anio", v.replace(/[^0-9]/g, "").slice(0, 4))} />
@@ -141,7 +143,7 @@ export default function FormularioIndicadores({ onVolver }) {
         <Seccion id="mes" titulo="2. Datos del mes" subtitulo={`${MESES_LARGO[mes]} · ${conDatos.length} ${conDatos.length === 1 ? "mes" : "meses"} con datos en el año`} abierta={abierta === "mes"} onToggle={alternar} contador={conDatos.length}>
           <div className="space-y-2.5">
             <button type="button" onClick={traerRegistrado} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY }}>
-              📥 Traer lo registrado en la app (inspecciones, actos, accidentes, acciones y capacitaciones)
+              📥 Traer lo registrado en la app (inspecciones, actos, accidentes, acciones, capacitaciones y personal)
             </button>
             {avisoTraer && abierta === "mes" && <div className="text-[11.5px] p-2 rounded" style={{ background: "#FFF8E8", color: "#7A5A00" }}>{avisoTraer}</div>}
             <ChipsOpcion label="Mes" nombre="Mes" value={MESES[mes]} opciones={MESES} pequeno onChange={(v) => { if (v) setMes(MESES.indexOf(v)); }} />   {/* tocar el mes que ya está elegido no hace nada (antes saltaba a enero) */}

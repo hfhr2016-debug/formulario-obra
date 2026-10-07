@@ -13,6 +13,7 @@ import { camposFaltantesAts } from "./atsDatos";
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha, GrillaOpciones } from "./sstControles";
+import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_ats";
 const CLAVE_CONSECUTIVO = "ryr_sst_ats_consecutivo";
@@ -197,6 +198,7 @@ export default function FormularioATS({ onVolver }) {
             📋 Traer proyecto, contratista y ubicación de la Ficha Técnica
           </button>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />

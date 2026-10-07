@@ -4,7 +4,7 @@ import { fechaHoyISO } from "./sstBase";
 import {
   CODIGO_ACCIONES, HOJA_ACCIONES, CELDAS_ACCIONES, ORIGENES, TIPOS_ACCION, ESTADOS_ACCION, EFICACIAS,
   descubrirAcciones, escribirAccionesEnHoja, validarAcciones, camposFaltantesAcciones, resumenAcciones, accionNueva, accionVacia, accionesConDatos, estadoEfectivo,
-  claveAccion, unirSinRepetir, accionesDeInspecciones, accionesDeActos, accionesDeInvestigaciones, registroMaestro, pendientesDelRegistro,
+  claveAccion, unirSinRepetir, accionesDeInspecciones, accionesDeActos, accionesDeInvestigaciones, accionesDeMatriz, registroMaestro, pendientesDelRegistro,
 } from "./accionesDatos";
 import {
   NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo,
@@ -14,6 +14,7 @@ import {
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha } from "./sstControles";
+import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_acciones";
 const CLAVE_HOJA = "ryr_sst_acciones_hoja";             // consecutivo de la hoja de seguimiento
@@ -21,6 +22,7 @@ const CLAVE_ACCIONES = "ryr_sst_acciones";              // resumen de cada hoja 
 const CLAVE_INSPECCIONES = "ryr_sst_inspecciones";      // de aquí se traen los hallazgos
 const CLAVE_ACTOS = "ryr_sst_reportes_actos";           // de aquí, los reportes de actos y condiciones
 const CLAVE_INVESTIGACIONES = "ryr_sst_investigaciones"; // de aquí, el plan de acción de las investigaciones
+const CLAVE_MATRIZ = "ryr_sst_matriz";                  // de aquí, los riesgos no aceptables de la matriz de peligros
 const MAX_ACCIONES = (CELDAS_ACCIONES.tablas && CELDAS_ACCIONES.tablas.acciones.n) || 10;
 const COLOR_ESTADO = { Abierta: "#C98A00", "En proceso": "#1F6FB5", Cerrada: "#2E7D4F" };
 
@@ -74,6 +76,7 @@ export default function FormularioAcciones({ onVolver }) {
     inspecciones: () => accionesDeInspecciones(leerJSON(CLAVE_INSPECCIONES, [])),
     actos: () => accionesDeActos(leerJSON(CLAVE_ACTOS, [])),
     investigaciones: () => accionesDeInvestigaciones(leerJSON(CLAVE_INVESTIGACIONES, [])),
+    matriz: () => accionesDeMatriz(leerJSON(CLAVE_MATRIZ, [])),
     anteriores: () => pendientesDelRegistro(hojasAnteriores),
   };
   const disponibles = (fuente) => unirSinRepetir(d.acciones, fuente === "anteriores" ? desde.anteriores() : desde[fuente]().filter((n) => !yaEnHojas.has(claveAccion(n)))).agregadas;
@@ -90,8 +93,8 @@ export default function FormularioAcciones({ onVolver }) {
   // Las inspecciones guardadas ANTES de esta versión no guardaron el detalle de sus hallazgos: se avisa para que no parezca que "no está conectado"
   const inspSinDetalle = leerJSON(CLAVE_INSPECCIONES, []).filter((r) => !Array.isArray(r.detalle) && (r.hallazgosAbiertos || 0) > 0);
   const hallazgosSinDetalle = inspSinDetalle.reduce((s, r) => s + (r.hallazgosAbiertos || 0), 0);
-  const hayFuentes = leerJSON(CLAVE_INSPECCIONES, []).length + leerJSON(CLAVE_ACTOS, []).length + leerJSON(CLAVE_INVESTIGACIONES, []).length + hojasAnteriores.length;
-  const botonesTraer = [["inspecciones", "de Inspecciones"], ["actos", "de Actos y Condiciones"], ["investigaciones", "de Investigaciones"], ["anteriores", "de hojas anteriores"]];
+  const hayFuentes = leerJSON(CLAVE_INSPECCIONES, []).length + leerJSON(CLAVE_ACTOS, []).length + leerJSON(CLAVE_INVESTIGACIONES, []).length + leerJSON(CLAVE_MATRIZ, []).length + hojasAnteriores.length;
+  const botonesTraer = [["inspecciones", "de Inspecciones"], ["actos", "de Actos y Condiciones"], ["investigaciones", "de Investigaciones"], ["matriz", "de la Matriz de Peligros"], ["anteriores", "de hojas anteriores"]];
 
   const conDatos = accionesConDatos(d);
   const refFecha = d.fechaCorte || fechaHoyISO();
@@ -163,6 +166,7 @@ export default function FormularioAcciones({ onVolver }) {
         {/* 1. DATOS */}
         <Seccion id="datos" titulo="1. Datos del seguimiento" subtitulo="Obra, fecha de corte y periodo" abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />

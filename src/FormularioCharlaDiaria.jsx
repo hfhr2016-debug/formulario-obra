@@ -10,6 +10,7 @@ import {
 } from "./charlaDiariaDatos";
 import { BotonMenuSST } from "./sstNavegacion";
 import { useFaltantes } from "./sstFaltantes";
+import { TraerDeFicha } from "./sstComunes";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -814,6 +815,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
             📋 Traer proyecto, contratista y ubicación de la Ficha Técnica
           </button>
           <div className="space-y-2.5">
+            <TraerDeFicha onTraer={(f) => setD((cur) => ({ ...cur, ...{ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion } }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista
