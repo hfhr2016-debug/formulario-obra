@@ -109,6 +109,8 @@ export function resumenInspeccion(d) {
     id: `${d.fecha || "sin-fecha"}_${d.nInspeccion || ""}`, formato: "inspeccion", fecha: d.fecha || "", proyecto: d.proyecto || "", nInspeccion: d.nInspeccion || "", tipo: d.tipo || "",
     cumple: c.cumple, noCumple: c.no, na: c.na, porcentaje: porcentajeCumplimiento(d), hallazgos: hallazgosConDatos(d).length,
     hallazgosAbiertos: hallazgosConDatos(d).filter((h) => h.estado !== "Cerrada").length,
+    // el detalle de cada hallazgo: de aquí los trae Acciones Correctivas
+    detalle: hallazgosConDatos(d).map((h) => ({ hallazgo: h.hallazgo || "", nivel: h.nivel || "", accion: h.accion || "", responsable: h.responsable || "", responsableCargo: h.responsableCargo || "", fecha: h.fecha || "", estado: h.estado || "Abierta" })),
   };
 }
 

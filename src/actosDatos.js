@@ -103,7 +103,8 @@ export function resumenActos(d) {
   return {
     id: `${d.fecha || "sin-fecha"}_${d.nReporte || ""}`, formato: "acto-condicion", fecha: d.fecha || "", proyecto: d.proyecto || "", nReporte: d.nReporte || "",
     tipo: d.tipoReporte || tipoDeReporte(d), nivel, lugar: d.lugar || "", observado: d.observado || "", marcados: [...arr(d.actos), ...arr(d.condiciones)],
-    corregido: d.corregido || "", responsable: d.responsableCorreccion || "", fechaCompromiso: d.fechaCompromiso || "",
+    recomendacion: d.recomendacion || "", accionInmediata: d.accionInmediata || "",
+    corregido: d.corregido || "", responsable: d.responsableCorreccion || "", fechaCompromiso: d.fechaCompromiso || "", fechaCierre: d.fechaCierre || "",
   };
 }
 

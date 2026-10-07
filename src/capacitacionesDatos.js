@@ -125,3 +125,9 @@ export function camposFaltantesCapacitaciones(d) {
   (d.filas || []).forEach((fila, i) => { if (numero(fila.aprobados) !== null && numero(fila.aprobados) > (numero(fila.evaluados) || 0)) f.push({ etiqueta: "Personas aprobadas", indice: i, seccion: "matriz" }); });
   return f;
 }
+
+// Resumen que se guarda en el dispositivo: alimenta los Indicadores (capacitaciones programadas y ejecutadas por mes)
+export function resumenCapacitaciones(d) {
+  return { id: `${d.periodoDesde || "sin-fecha"}_${d.periodoHasta || ""}`, formato: "capacitaciones", periodoDesde: d.periodoDesde || "", periodoHasta: d.periodoHasta || "", proyecto: d.proyecto || "",
+    filas: filasConTema(d).map((f) => ({ tema: f.tema || "", programada: f.programada || "", ejecutada: f.ejecutada || "", estado: f.estado || "" })) };
+}

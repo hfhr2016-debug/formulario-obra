@@ -10,7 +10,7 @@ import {
   NAVY, GOLD, PAPER, LINE, CLAVE_EVENTOS, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro,
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
 } from "./sstComunes";
-import { camposFaltantesCapacitaciones } from "./capacitacionesDatos";
+import { camposFaltantesCapacitaciones, resumenCapacitaciones } from "./capacitacionesDatos";
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
@@ -19,6 +19,7 @@ import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 const CLAVE_BORRADOR = "ryr_borrador_capacitaciones";
 const CLAVE_TEMAS = "ryr_sst_temas_lista";                 // la misma memoria de temas de la Lista de Asistencia
 const CLAVE_METAS = "ryr_sst_metas_capacitacion";          // últimas metas usadas
+const CLAVE_CAPACITACIONES = "ryr_sst_capacitaciones";       // resumen de cada hoja (programadas y ejecutadas por mes): de aquí lo toman los Indicadores
 const CLAVE_INDUCCIONES = "ryr_sst_inducciones";           // resumen de cada inducción (las guarda el formulario de Inducción)
 const MAX_FILAS = (CELDAS_CAPACITACIONES.tablas && CELDAS_CAPACITACIONES.tablas.matriz.n) || 15;
 
@@ -137,6 +138,8 @@ export default function FormularioCapacitaciones({ onVolver }) {
       guardarJSON(CLAVE_METAS, { cumplimiento: Number(d.metaCumplimiento) || METAS_POR_DEFECTO.cumplimiento, cobertura: Number(d.metaCobertura) || METAS_POR_DEFECTO.cobertura, eficacia: Number(d.metaEficacia) || METAS_POR_DEFECTO.eficacia });
       (d.filas || []).forEach((f) => entidades.recordar(f.capacitador));
       memoria.recordarUso({ personas: [[d.responsableNombre, d.responsableCargo], [d.revisoNombre, d.revisoCargo], [d.voboNombre, d.voboCargo]], empresasUsadas: [d.contratista] });
+      const resCap = resumenCapacitaciones(d);
+      guardarJSON(CLAVE_CAPACITACIONES, [resCap, ...leerJSON(CLAVE_CAPACITACIONES, []).filter((x) => x.id !== resCap.id)].slice(0, 100));
       let nuevos = temasExtra;
       for (const f of conTema) nuevos = recordarTexto(nuevos, f.tema, { base: TEMAS_LISTA, min: 4, max: 60 });
       if (nuevos !== temasExtra) { setTemasExtra(nuevos); guardarJSON(CLAVE_TEMAS, nuevos); }

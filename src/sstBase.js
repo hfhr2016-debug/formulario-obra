@@ -348,8 +348,10 @@ export function descubrirPorEtiquetas(ws, spec) {
   const bandas = spec.firmas ? (Array.isArray(spec.firmas) ? spec.firmas : [spec.firmas]) : [];
   for (const f of bandas) {
     const desde = f.desdeEtiqueta ? filaDe(f.desdeEtiqueta, "A", 1, true) : (f.desde || 1);
-    const rFirma = desde ? filaDe(f.firma, "A", desde) : 0;
-    const rNombre = rFirma ? filaDe(f.nombre, "A", rFirma) : 0;
+    // Los rótulos "Firma:" y "Nombre:" se buscan primero en la columna A y, si no están ahí (p. ej. la plantilla de Indicadores los tiene en la B), en cualquier columna
+    const rotulo = (txt, desdeFila) => { const h = buscar(txt, "A", desdeFila, false); if (!h) problemas.push(`No encontré "${txt}" (columna A)`); return h ? h.r : 0; };
+    const rFirma = desde ? rotulo(f.firma, desde) : 0;
+    const rNombre = rFirma ? rotulo(f.nombre, rFirma) : 0;
     if (rNombre) {
       celdas.firmas = celdas.firmas || {};
       const cols = [];
