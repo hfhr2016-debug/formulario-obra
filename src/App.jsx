@@ -1529,6 +1529,38 @@ const MODULOS_SST = [
   { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", icono: "/icons/icon-sst-contratistas.png", activo: true },
 ];
 
+const MODULOS_AMBIENTAL = [
+  // --- Uso diario ---
+  { id: "amb-residuos", nombre: "Registro de Residuos", emoji: "♻️", activo: false },
+  { id: "amb-manifiesto", nombre: "Manifiesto de Transporte de RCD", emoji: "🚛", activo: false },
+  { id: "amb-consumos", nombre: "Consumo de Agua, Energía y Combustibles", emoji: "💧", activo: false },
+  { id: "amb-emisiones", nombre: "Emisiones y Ruido", emoji: "🔊", activo: false },
+  { id: "amb-vertimientos", nombre: "Vertimientos y Manejo de Aguas", emoji: "🚰", activo: false },
+  { id: "amb-fotografico", nombre: "Registro Fotográfico", emoji: "📷", activo: false },
+  // --- Varias veces por semana ---
+  { id: "amb-inspeccion", nombre: "Inspección Ambiental de Obra", emoji: "🔍", activo: false },
+  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", activo: false },
+  { id: "amb-capacitacion", nombre: "Capacitación e Inducción Ambiental", emoji: "🎓", activo: false },
+  // --- Cuando ocurre un evento ---
+  { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", activo: false },
+  { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", activo: false },
+  // --- Condicionales según la obra ---
+  { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", activo: false },
+  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", activo: false },
+  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", activo: false },
+  // --- Una vez por proyecto ---
+  { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", activo: false },
+  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", activo: false },
+  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", activo: false },
+  // --- Seguimiento e informes ---
+  { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", activo: false },
+  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", activo: false },
+  { id: "amb-semanal", nombre: "Informe Semanal Ambiental", emoji: "📅", activo: false },
+  { id: "amb-mensual", nombre: "Informe Mensual Ambiental", emoji: "🗓️", activo: false },
+  { id: "amb-trimestral", nombre: "Informe Trimestral de Gestión Ambiental", emoji: "📈", activo: false },
+  { id: "amb-ica", nombre: "Resumen para el ICA", emoji: "🏛️", activo: false },
+];
+
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
@@ -1726,6 +1758,62 @@ function InicioSST({ onSeleccionar, onVolverSelector }) {
   );
 }
 
+function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (Técnica / SST)
+          </button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              GESTIÓN AMBIENTAL
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Control ambiental de obra
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-4">
+        {MODULOS_AMBIENTAL.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
+            style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
+          >
+            <div className="h-[70px] flex items-center justify-center">
+              {m.icono ? (
+                <img src={m.icono} alt={m.nombre} loading="lazy" decoding="async" className="w-[70px] h-[70px] object-contain" />
+              ) : (
+                <div className="text-[34px] leading-none">{m.emoji}</div>
+              )}
+            </div>
+            <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const [vista, setVista] = useState("selector-apps");
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
@@ -1757,6 +1845,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
           }
           if (id === "tecnica") setVista("inicio");
           else if (id === "sst") setVista("inicio-sst");
+          else if (id === "ambiental") setVista("inicio-ambiental");
           else setVista(`proximamente-${id}`);
         }}
       />
@@ -1827,6 +1916,12 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista.startsWith("sst-")) {
     return <Proximamente nombre={(MODULOS_SST.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-sst")} />;
+  }
+  if (vista === "inicio-ambiental") {
+    return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista.startsWith("amb-")) {
+    return <Proximamente nombre={(MODULOS_AMBIENTAL.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-ambiental")} />;
   }
   if (vista === "proximamente-ambiental") {
     return <Proximamente nombre="Gestión Ambiental" onVolver={() => setVista("selector-apps")} />;
