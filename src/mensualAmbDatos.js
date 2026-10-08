@@ -20,6 +20,7 @@ export const SPEC_MENSUAL_AMB = {
     ["mes", "Mes", "A", "C"], ["anio", "Año", "E", "G"], ["nInforme", "Informe N°", "I", "K"],
     ["trabajadores", "Trabajadores (promedio)", "A", "C"], ["dias", "Días trabajados", "E", "G"], ["avance", "% avance de obra", "I", "K"],
     ["hechos", "Hechos relevantes del mes", "A", "C"], ["conclusiones", "Conclusiones", "A", "C"], ["planMes", "Plan del próximo mes", "A", "C"],
+    ...Array.from({ length: 10 }, (_, i) => { const k = i + 1; const par = k % 2 === 0; return [`foto${k}Descripcion`, `Foto ${String(k).padStart(2, "0")}`, par ? "G" : "A", par ? "I" : "C"]; }),
   ],
   tablas: [
     { clave: "actividades", cabecera: "No.", fin: "3. RESIDUOS GENERADOS", finEmpieza: true, columnas: { prog: "G", ejec: "H", obs: "J" }, encabezados: { prog: "Programado", ejec: "Ejecutado", obs: "Observaciones" } },
@@ -27,10 +28,14 @@ export const SPEC_MENSUAL_AMB = {
     { clave: "consumos", cabecera: "No.", despuesDe: "residuos", fin: "5. GESTIÓN Y SEGUIMIENTO", finEmpieza: true, columnas: { cant: "G", acum: "I", obs: "K" }, encabezados: { cant: "Consumo del mes", acum: "Acumulado de la obra", obs: "Observaciones" } },
     { clave: "gestion", cabecera: "No.", despuesDe: "consumos", fin: "6. HECHOS RELEVANTES, CONCLUSIONES Y PLAN", finEmpieza: true, columnas: { cant: "G", acum: "I", obs: "K" }, encabezados: { cant: "Cantidad del mes", acum: "Acumulado de la obra", obs: "Observaciones" } },
   ],
+  fotos: [{ clave: "fotos", desde: "8. REGISTRO FOTOGRÁFICO", hasta: "REV.", minAltoPx: 80 }],
   firmas: { firma: "Firma:", nombre: "Nombre:", desdeEtiqueta: "7. FIRMAS", personas: [{ clave: "elaboro", col: "C" }, { clave: "reviso", col: "G" }, { clave: "vobo", col: "K" }] },
 };
 // Distribución de la plantilla entregada (se usa solo si no se puede leer la plantilla subida). Generado por el motor.
-export const CELDAS_MENSUAL_AMB = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","mes":"C13","anio":"G13","nInforme":"K13","trabajadores":"C14","dias":"G14","avance":"K14","hechos":"C46","conclusiones":"C47","planMes":"C48","tablas":{"actividades":{"fila0":17,"n":8,"columnas":{"prog":"G","ejec":"H","obs":"J"}},"residuos":{"fila0":27,"n":5,"columnas":{"cant":"G","acum":"I","obs":"K"}},"consumos":{"fila0":34,"n":3,"columnas":{"cant":"G","acum":"I","obs":"K"}},"gestion":{"fila0":39,"n":6,"columnas":{"cant":"G","acum":"I","obs":"K"}}},"firmas":{"elaboro":{"nombre":"C52","cargo":"C53"},"reviso":{"nombre":"G52","cargo":"G53"},"vobo":{"nombre":"K52","cargo":"K53"}}};
+export const CELDAS_MENSUAL_AMB = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","mes":"C13","anio":"G13","nInforme":"K13","trabajadores":"C14","dias":"G14","avance":"K14","hechos":"C46","conclusiones":"C47","planMes":"C48","foto1Descripcion":"C56","foto2Descripcion":"I56","foto3Descripcion":"C58","foto4Descripcion":"I58","foto5Descripcion":"C60","foto6Descripcion":"I60","foto7Descripcion":"C62","foto8Descripcion":"I62","foto9Descripcion":"C64","foto10Descripcion":"I64","tablas":{"actividades":{"fila0":17,"n":8,"columnas":{"prog":"G","ejec":"H","obs":"J"}},"residuos":{"fila0":27,"n":5,"columnas":{"cant":"G","acum":"I","obs":"K"}},"consumos":{"fila0":34,"n":3,"columnas":{"cant":"G","acum":"I","obs":"K"}},"gestion":{"fila0":39,"n":6,"columnas":{"cant":"G","acum":"I","obs":"K"}}},"fotos":{"fotos":[{"tl":{"col":0,"row":54},"br":{"col":6,"row":55},"aspecto":2.556},{"tl":{"col":6,"row":54},"br":{"col":12,"row":55},"aspecto":2.45},{"tl":{"col":0,"row":56},"br":{"col":6,"row":57},"aspecto":2.556},{"tl":{"col":6,"row":56},"br":{"col":12,"row":57},"aspecto":2.45},{"tl":{"col":0,"row":58},"br":{"col":6,"row":59},"aspecto":2.556},{"tl":{"col":6,"row":58},"br":{"col":12,"row":59},"aspecto":2.45},{"tl":{"col":0,"row":60},"br":{"col":6,"row":61},"aspecto":2.556},{"tl":{"col":6,"row":60},"br":{"col":12,"row":61},"aspecto":2.45},{"tl":{"col":0,"row":62},"br":{"col":6,"row":63},"aspecto":2.556},{"tl":{"col":6,"row":62},"br":{"col":12,"row":63},"aspecto":2.45}]},"firmas":{"elaboro":{"nombre":"C52","cargo":"C53"},"reviso":{"nombre":"G52","cargo":"G53"},"vobo":{"nombre":"K52","cargo":"K53"}}};
+export const N_FOTOS_MENSUAL_AMB = 10;
+export const fotoAmbNueva = () => ({ descripcion: "" });
+export const fotosAmbIniciales = () => Array.from({ length: N_FOTOS_MENSUAL_AMB }, fotoAmbNueva);
 export const descubrirMensualAmb = (ws) => descubrirPorEtiquetas(ws, SPEC_MENSUAL_AMB);
 
 const arr = (a) => (Array.isArray(a) ? a : []);
@@ -55,6 +60,7 @@ export function escribirMensualAmbEnHoja(ws, d, celdas = CELDAS_MENSUAL_AMB) {
   escribirTabla(ws, T.consumos, cant(CONSUMOS_MES_AMB, "consumos"));
   escribirTabla(ws, T.gestion, cant(GESTION_MES_AMB, "gestion"));
   if (T.residuos) saltoDePagina(ws, T.residuos.fila0 + T.residuos.n - 1);                // la hoja 2 empieza en "4. Consumos de recursos"
+  for (let i = 0; i < N_FOTOS_MENSUAL_AMB; i++) poner(ws, C[`foto${i + 1}Descripcion`], ((d.fotos || [])[i] || {}).descripcion);
   const F = C.firmas || {};
   if (F.elaboro) { poner(ws, F.elaboro.nombre, d.elaboroNombre); poner(ws, F.elaboro.cargo, d.elaboroCargo); }
   if (F.reviso) { poner(ws, F.reviso.nombre, d.revisoNombre); poner(ws, F.reviso.cargo, d.revisoCargo); }

@@ -1,6 +1,6 @@
 // sstControles.jsx — controles de pantalla de los formatos de revisión y control del riesgo (Permisos, ATS, Inspecciones, Actos y Condiciones).
 // Complementan a sstComunes.jsx: elección rápida (Sí/No/N/A…), grillas de casillas para marcar, fecha con "hoy" y fotos.
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Camera, X } from "lucide-react";
 import { fechaHoyISO, baseOpcion, esOpcionOtro } from "./sstBase";
 import { NAVY, GOLD, PAPER, LINE, Campo, etiquetaCls } from "./sstComunes";
@@ -108,10 +108,61 @@ export function FilaVerificacion({ numero, texto, valor, onChange, observacion, 
   );
 }
 
+// ---------- Marca de agua ----------
+// Banda semitransparente en la parte baja de la FOTO (no del recuadro) con el proyecto, la fecha/hora y las coordenadas.
+// Se "quema" en la imagen antes de meterla al Excel, así no se puede quitar desde el formato. Se puede apagar con el interruptor.
+const CLAVE_MARCA = "saiea_marca_agua";
+export function marcaAguaActiva() {
+  try { return localStorage.getItem(CLAVE_MARCA) !== "0"; } catch (e) { return true; }
+}
+export function fijarMarcaAgua(activa) {
+  try { localStorage.setItem(CLAVE_MARCA, activa ? "1" : "0"); } catch (e) { /* sin almacenamiento: se queda activa */ }
+}
+function dibujarMarcaAgua(ctx, x, y, w, h, lineas) {
+  const textos = lineas.filter((t) => t && String(t).trim());
+  if (!textos.length) return;
+  const tam = Math.max(11, Math.round(Math.min(w, h * 1.6) / 38));
+  const pad = Math.round(tam * 0.5);
+  const alto = textos.length * Math.round(tam * 1.25) + pad * 2;
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(x, y + h - alto, w, alto);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `bold ${tam}px Arial, sans-serif`;
+  ctx.textBaseline = "top";
+  textos.forEach((t, i) => {
+    let linea = String(t);
+    if (ctx.measureText) {
+      while (linea.length > 4 && ctx.measureText(linea).width > w - pad * 2) linea = linea.slice(0, -2);
+      if (linea.length < String(t).length) linea = linea.slice(0, -1) + "…";
+    }
+    ctx.fillText(linea, x + pad, y + h - alto + pad + i * Math.round(tam * 1.25));
+  });
+  ctx.restore();
+}
+const dos = (n) => String(n).padStart(2, "0");
+// Texto de la marca: proyecto, fecha y hora (la de la foto si se escribió, si no la del archivo) y coordenadas si hay.
+export function lineasMarca(proyecto, foto = {}, file = null) {
+  let cuando = foto.fechaHora ? new Date(foto.fechaHora.length === 10 ? foto.fechaHora + "T12:00" : foto.fechaHora) : null;
+  if (!cuando || isNaN(cuando.getTime())) cuando = new Date((file && file.lastModified) || Date.now());
+  const soloFecha = typeof foto.fechaHora === "string" && foto.fechaHora.length === 10;
+  const fecha = `${dos(cuando.getDate())}/${dos(cuando.getMonth() + 1)}/${cuando.getFullYear()}` + (soloFecha ? "" : ` ${dos(cuando.getHours())}:${dos(cuando.getMinutes())}`);
+  return [proyecto || "", foto.coordenadas ? `${fecha}  ·  ${foto.coordenadas}` : fecha];
+}
+export function InterruptorMarca() {
+  const [on, setOn] = useState(marcaAguaActiva());
+  return (
+    <label className="flex items-center gap-2 text-[12px] cursor-pointer" style={{ color: NAVY }}>
+      <input type="checkbox" checked={on} onChange={(e) => { setOn(e.target.checked); fijarMarcaAgua(e.target.checked); }} aria-label="Marca de agua en las fotos" />
+      Marca de agua en las fotos (proyecto, fecha y hora)
+    </label>
+  );
+}
+
 // ---------- Fotos ----------
 // Comprime la foto. Con "aspecto" (ancho/alto del recuadro del Excel) la foto entra COMPLETA en esa proporción, sin recortarla
 // ni deformarla: el sobrante se rellena con el gris del recuadro (igual que en la Charla Diaria).
-export function comprimirFoto(file, maxAncho = 1000, calidad = 0.75, aspecto = null, fondo = "#F2F2F2") {
+export function comprimirFoto(file, maxAncho = 1000, calidad = 0.75, aspecto = null, fondo = "#F2F2F2", marca = null) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -135,6 +186,7 @@ export function comprimirFoto(file, maxAncho = 1000, calidad = 0.75, aspecto = n
       const ctx = canvas.getContext("2d");
       if (aspecto) { ctx.fillStyle = fondo; ctx.fillRect(0, 0, ancho, alto); }
       ctx.drawImage(img, dx, dy, dw, dh);
+      if (marca && marca.length && marcaAguaActiva()) dibujarMarcaAgua(ctx, dx, dy, dw, dh, marca);
       canvas.toBlob((blob) => {
         URL.revokeObjectURL(url);
         if (!blob) return reject(new Error("No se pudo procesar la foto"));
@@ -179,13 +231,14 @@ export function CasillaFoto({ foto, titulo, onChange, onRemove }) {
 
 // Agrega cada foto a SU recuadro de la plantilla (anclada a las celdas: no se sale ni cuando cambian los tamaños de fila).
 // cajas: [{ tl, br, aspecto }]; fotos: [{ file }] en el mismo orden. Devuelve cuántas fotos se quedaron sin recuadro.
-export async function agregarFotosARecuadros(workbook, ws, fotos, cajas, fondo = "#F2F2F2") {
+// marcas (opcional): [líneas de texto por foto] en el mismo orden que fotos.
+export async function agregarFotosARecuadros(workbook, ws, fotos, cajas, fondo = "#F2F2F2", marcas = null) {
   let sinCasilla = 0;
   for (let i = 0; i < fotos.length; i++) {
     if (!fotos[i] || !fotos[i].file) continue;
     const caja = (cajas || [])[i];
     if (!caja) { sinCasilla++; continue; }
-    const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, caja.aspecto || null, fondo);
+    const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, caja.aspecto || null, fondo, marcas ? marcas[i] : null);
     const id = workbook.addImage({ buffer: buf, extension: "jpeg" });
     ws.addImage(id, { tl: caja.tl, br: caja.br, editAs: "twoCell" });
   }

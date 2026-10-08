@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   CODIGO_MENSUAL_AMB, HOJA_MENSUAL_AMB, CELDAS_MENSUAL_AMB, ACTIVIDADES_MES_AMB, RESIDUOS_MES_AMB, CONSUMOS_MES_AMB, GESTION_MES_AMB, MESES, indiceMes,
-  descubrirMensualAmb, escribirMensualAmbEnHoja, validarMensualAmb, camposFaltantesMensualAmb, resumenMensualAmb, actividadMesNueva, cantidadMesNueva, rellenarMesAmbDesdeRegistros,
+  descubrirMensualAmb, escribirMensualAmbEnHoja, validarMensualAmb, camposFaltantesMensualAmb, resumenMensualAmb, actividadMesNueva, cantidadMesNueva, rellenarMesAmbDesdeRegistros, N_FOTOS_MENSUAL_AMB, fotosAmbIniciales,
 } from "./mensualAmbDatos";
 import { FUENTES_AMB } from "./consolidadoAmb";
 import {
@@ -11,7 +11,8 @@ import {
 } from "./sstComunes";
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
-import { CLAVE_AMB_MENSUALES, TraerDeFichaAmb } from "./ambComunes";
+import { CLAVE_AMB_MENSUALES, TraerDeFichaAmb, BloqueFotosAmb, archivosFotoIniciales } from "./ambComunes";
+import { agregarFotosARecuadros, lineasMarca } from "./sstControles";
 
 const CLAVE_BORRADOR = "ryr_borrador_mensual_amb";
 const CLAVE_CONSECUTIVO = "ryr_amb_mensual_consecutivo";
@@ -23,11 +24,12 @@ function datosIniciales() {
     actividades: ACTIVIDADES_MES_AMB.map(actividadMesNueva), residuos: RESIDUOS_MES_AMB.map(cantidadMesNueva), consumos: CONSUMOS_MES_AMB.map(cantidadMesNueva), gestion: GESTION_MES_AMB.map(cantidadMesNueva),
     hechos: "", conclusiones: "", planMes: "",
     elaboroNombre: "", elaboroCargo: "", revisoNombre: "", revisoCargo: "", voboNombre: "", voboCargo: "",
+    fotos: fotosAmbIniciales(),
   };
 }
 function tieneContenido(d) {
   return !!(d.contratista || d.ubicacion || d.mes || d.anio || d.nInforme || d.trabajadores || d.dias || d.avance || d.hechos || d.conclusiones || d.planMes || d.elaboroNombre || d.revisoNombre || d.voboNombre ||
-    d.actividades.some((a) => a.prog || a.ejec || a.obs) || [d.residuos, d.consumos, d.gestion].some((g) => g.some((c) => c.cant || c.acum || c.obs)));
+    d.actividades.some((a) => a.prog || a.ejec || a.obs) || [d.residuos, d.consumos, d.gestion].some((g) => g.some((c) => c.cant || c.acum || c.obs)) || (d.fotos || []).some((f) => f && f.descripcion));
 }
 const soloNumeros = (v) => v.replace(/[^0-9.,]/g, "");
 const pct = (a) => { const p = Number(String(a.prog).replace(",", ".")), e = Number(String(a.ejec).replace(",", ".")); return String(a.prog).trim() !== "" && String(a.ejec).trim() !== "" && p > 0 ? Math.round((e / p) * 100) : null; };
@@ -41,6 +43,9 @@ export default function FormularioMensualAmbiental({ onVolver }) {
   const [generado, setGenerado] = useState("");
   const [avisoGeneracion, setAvisoGeneracion] = useState("");
   const [avisoTraer, setAvisoTraer] = useState("");
+  const [archivos, setArchivos] = useState(() => archivosFotoIniciales(N_FOTOS_MENSUAL_AMB));   // las fotos no se guardan en el borrador
+  const ponerArchivo = (i, f) => setArchivos((cur) => cur.map((x, j) => (j === i ? f : x)));
+  const ponerDescripcion = (i, v) => setD((cur) => ({ ...cur, fotos: Array.from({ length: N_FOTOS_MENSUAL_AMB }, (_, j) => (j === i ? { ...((cur.fotos || [])[j] || {}), descripcion: v } : (cur.fotos || [])[j] || { descripcion: "" })) }));
 
   const set = (campo, valor) => setD((cur) => ({ ...cur, [campo]: valor }));
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
@@ -82,6 +87,8 @@ export default function FormularioMensualAmbiental({ onVolver }) {
       if (decision.aviso) avisos.push(decision.aviso);
       const nUsar = d.nInforme && String(d.nInforme).trim() ? String(d.nInforme).trim() : String(siguienteConsecutivo(CLAVE_CONSECUTIVO));
       escribirMensualAmbEnHoja(ws, { ...d, nInforme: nUsar }, celdas);
+      const sinRecuadro = await agregarFotosARecuadros(workbook, ws, archivos, celdas.fotos && celdas.fotos.fotos, "#F2F2F2", archivos.map((a) => lineasMarca(d.proyecto, {}, a && a.file)));
+      if (sinRecuadro) avisos.push(`La plantilla no tiene recuadro para ${sinRecuadro} de las fotos y no se incluyó${sinRecuadro > 1 ? "eron" : ""}.`);
       setAvisoGeneracion(avisos.join(" "));
       await descargarLibro(workbook, `Informe_mensual_amb_${String(d.anio).trim()}_${textoParaArchivo(d.mes, 12)}.xlsx`);
 
@@ -107,11 +114,11 @@ export default function FormularioMensualAmbiental({ onVolver }) {
       mes: idx >= 0 ? MESES[(idx + 1) % 12] : "", anio: idx >= 0 && /^\d{4}$/.test(String(cur.anio)) ? String(Number(cur.anio) + (pasaAnio ? 1 : 0)) : cur.anio,
       elaboroNombre: cur.elaboroNombre, elaboroCargo: cur.elaboroCargo, revisoNombre: cur.revisoNombre, revisoCargo: cur.revisoCargo, voboNombre: cur.voboNombre, voboCargo: cur.voboCargo,
     }));
-    borrador.borrarBorrador(); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoTraer(""); setAbierta("datos"); window.scrollTo(0, 0);
+    borrador.borrarBorrador(); setArchivos(archivosFotoIniciales(N_FOTOS_MENSUAL_AMB)); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoTraer(""); setAbierta("datos"); window.scrollTo(0, 0);
   }
   function empezarEnBlanco() {
     if (!window.confirm("¿Empezar un informe en blanco? Se limpian todos los datos, incluidos los de la obra.")) return;
-    borrador.borrarBorrador(); setD(datosIniciales()); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoTraer(""); setAbierta("datos"); window.scrollTo(0, 0);
+    borrador.borrarBorrador(); setArchivos(archivosFotoIniciales(N_FOTOS_MENSUAL_AMB)); setD(datosIniciales()); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setAvisoTraer(""); setAbierta("datos"); window.scrollTo(0, 0);
   }
 
   if (borrador.borradorDisponible) {
@@ -236,6 +243,11 @@ export default function FormularioMensualAmbiental({ onVolver }) {
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Visto bueno (gerencia o interventoría)</div>
             <BloqueProfesional memoria={memoria} etqNombre="Nombre de quien da el visto bueno" etqCargo="Cargo de quien da el visto bueno" nombre={d.voboNombre} cargo={d.voboCargo} onChange={cambiarPersona("voboNombre", "voboCargo")} />
           </div>
+        </Seccion>
+
+        {/* 8. FOTOS */}
+        <Seccion id="fotos" titulo="8. Registro fotográfico" subtitulo={`${archivos.filter((a) => a && a.file).length} de ${N_FOTOS_MENSUAL_AMB} fotos`} abierta={abierta === "fotos"} onToggle={alternar} contador={archivos.filter((a) => a && a.file).length}>
+          <BloqueFotosAmb n={N_FOTOS_MENSUAL_AMB} fotos={d.fotos} archivos={archivos} onArchivo={ponerArchivo} onDescripcion={ponerDescripcion} />
         </Seccion>
 
         <div className="pt-5 space-y-2">

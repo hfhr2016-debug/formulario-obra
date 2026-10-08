@@ -9,7 +9,7 @@ import {
   NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo, siguienteConsecutivo, registrarConsecutivo,
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
-import { CasillaFoto, fotoVacia, agregarFotosARecuadros } from "./sstControles";
+import { CasillaFoto, fotoVacia, agregarFotosARecuadros, lineasMarca, InterruptorMarca } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
 import { CLAVE_AMB_FOTOGRAFICO, TraerDeFichaAmb } from "./ambComunes";
 
@@ -90,7 +90,7 @@ export default function FormularioFotografico({ onVolver }) {
       const numero = d.hoja && String(d.hoja).trim() ? String(d.hoja).trim() : String(siguienteConsecutivo(CLAVE_CONSECUTIVO));
       const dd = { ...d, hoja: numero };
       escribirFotograficoEnHoja(ws, dd, decision.celdas, archivos);
-      const sin = await agregarFotosARecuadros(workbook, ws, archivos, decision.celdas.fotos && decision.celdas.fotos.fotos);
+      const sin = await agregarFotosARecuadros(workbook, ws, archivos, decision.celdas.fotos && decision.celdas.fotos.fotos, "#F2F2F2", archivos.map((a, i) => lineasMarca(d.proyecto, d.fotos[i] || {}, a && a.file)));
       if (sin) avs.push(`La plantilla no tiene recuadro para ${sin} de las fotos y no se incluyó${sin > 1 ? "eron" : ""}.`);
       setAvisoGeneracion(avs.join(" "));
       await descargarLibro(workbook, `Registro_Fotografico_${textoParaArchivo(d.proyecto, 24)}_${d.fecha}_H${numero}.xlsx`);
@@ -138,6 +138,7 @@ export default function FormularioFotografico({ onVolver }) {
         </Seccion>
 
         <Seccion id="fotos" titulo="2. Fotografías" subtitulo={`${nFotos} de ${N_FOTOS} fotos · ${nConGps} con coordenadas`} abierta={abierta === "fotos"} onToggle={alternar} contador={nFotos}>
+          <div className="mb-2"><InterruptorMarca /></div>
           <div className="space-y-3">
             {d.fotos.map((f, i) => (
               <div key={i} className="border rounded-lg p-2.5" style={{ borderColor: LINE, background: "#EEF1F6" }}>

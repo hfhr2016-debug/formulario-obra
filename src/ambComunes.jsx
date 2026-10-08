@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { leerJSON, Lista, Campo, NAVY, GOLD, LINE } from "./sstComunes";
-import { FilaVerificacion } from "./sstControles";
+import { FilaVerificacion, CasillaFoto, fotoVacia, InterruptorMarca } from "./sstControles";
 import { RESPUESTAS_AMB, hallazgoNuevo, hallazgosConDatos, noCumplenPendientes, textoHallazgoDe } from "./ambBase";
 
 export const CLAVE_AMB_FICHA = "ryr_amb_ficha";               // resumen de la ficha ambiental de cada proyecto
@@ -125,3 +125,23 @@ export function HallazgosAmb({ hallazgos, onChange, max, items, respuestas, obse
     </div>
   );
 }
+
+
+// Fotos del informe semanal / mensual: cada foto lleva su descripción (va debajo de la foto en el Excel).
+// Los archivos de las fotos se guardan APARTE de los datos del informe (no caben en el borrador): archivos = [{ file, previewUrl }].
+export function BloqueFotosAmb({ n, fotos, archivos, onArchivo, onDescripcion }) {
+  return (
+    <div className="space-y-3">
+      <InterruptorMarca />
+      <div className="text-[11px]" style={{ color: "#6B7280" }}>Opcional · hasta {n} fotos. La descripción sale debajo de cada foto en el Excel.</div>
+      {Array.from({ length: n }, (_, i) => (
+        <div key={i} className="border rounded-lg p-2.5 space-y-2" style={{ borderColor: LINE, background: "#EEF1F6" }}>
+          <div className="text-[10px] font-bold" style={{ color: GOLD }}>FOTO {String(i + 1).padStart(2, "0")}</div>
+          <CasillaFoto foto={archivos[i] || fotoVacia()} titulo={`Foto ${String(i + 1).padStart(2, "0")}`} onChange={(f) => onArchivo(i, f)} onRemove={() => onArchivo(i, fotoVacia())} />
+          <Campo label={`Descripción de la foto ${String(i + 1).padStart(2, "0")}`} value={((fotos || [])[i] || {}).descripcion || ""} placeholder="Ej. Punto ecológico con residuos separados" onChange={(v) => onDescripcion(i, v)} />
+        </div>
+      ))}
+    </div>
+  );
+}
+export const archivosFotoIniciales = (n) => Array.from({ length: n }, fotoVacia);

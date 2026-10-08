@@ -98,7 +98,7 @@ export function camposFaltantesEmisiones(d) {
   const th = arr(d.humedecimiento); const hs = humedConDatos(d);
   th.forEach((h, i) => { if (hs.includes(h) && !texto(h.zona)) f.push({ etiqueta: "Zona o tramo", indice: i, seccion: "humedecimiento" }); });
   const tr = arr(d.ruido); const rs = ruidoConDatos(d);
-  if (rs.length && !d.sector) f.push({ etiqueta: "Sector del predio (ruido)", seccion: "datos" });
+  if (rs.length && !d.sector) f.push({ etiqueta: "Sector del predio (ruido)", seccion: "ruido" });
   tr.forEach((r, i) => {
     if (!rs.includes(r)) return;
     if (!texto(r.punto)) f.push({ etiqueta: "Punto de medición", indice: i, seccion: "ruido" });

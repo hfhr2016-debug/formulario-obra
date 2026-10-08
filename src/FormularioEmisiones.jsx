@@ -55,7 +55,7 @@ export default function FormularioEmisiones({ onVolver }) {
   function agregarHumed() {
     if (d.humedecimiento.length >= MAX_HUMED) { setAvisoHumed(`Esta hoja tiene espacio para ${MAX_HUMED} registros de humedecimiento.`); return; }
     setAvisoHumed(""); const u = d.humedecimiento[d.humedecimiento.length - 1];
-    setLista("humedecimiento")([...d.humedecimiento, humedNuevo({ metodo: (u && u.metodo) || "", responsable: (u && u.responsable) || d.responsable })]);
+    setLista("humedecimiento")([...d.humedecimiento, humedNuevo({ metodo: (u && u.metodo) || "", responsable: (u && u.responsable) || "" })]);
   }
   function agregarRuido() {
     if (d.ruido.length >= MAX_RUIDO) { setAvisoRuido(`Esta hoja tiene espacio para ${MAX_RUIDO} mediciones de ruido.`); return; }
@@ -118,7 +118,7 @@ export default function FormularioEmisiones({ onVolver }) {
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
       <EncabezadoFormulario titulo="EMISIONES Y RUIDO" subtitulo={`${CODIGO_EMISIONES} · Material particulado, humedecimiento y ruido`} onVolver={onVolver} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
-        <Seccion id="datos" titulo="1. Datos del control" subtitulo={d.proyecto ? `${d.proyecto} · ${d.fecha.split("-").reverse().join("/")}` : "Obra, fecha y sector del predio"} abierta={abierta === "datos"} onToggle={alternar}>
+        <Seccion id="datos" titulo="1. Datos del control" subtitulo={d.proyecto ? `${d.proyecto} · ${d.fecha.split("-").reverse().join("/")}` : "Obra, fecha, clima y responsable"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">
             <TraerDeFichaAmb onTraer={(f) => setD((cur) => ({ ...cur, proyecto: f.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }))} />
             <Campo label="Proyecto / obra" value={d.proyecto} onChange={(v) => set("proyecto", v)} />
@@ -126,7 +126,6 @@ export default function FormularioEmisiones({ onVolver }) {
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />
             <Campo label="Fecha" type="date" value={d.fecha} onChange={(v) => set("fecha", v)} />
             <div className="grid grid-cols-1 gap-2.5">
-              <Lista label="Sector del predio (ruido)" value={d.sector} onChange={(v) => set("sector", v)} opciones={SECTORES} />
               <Lista label="Condición del clima" value={d.clima} onChange={(v) => set("clima", v)} opciones={CLIMAS_EMI} />
             </div>
             <BloqueProfesional memoria={memoria} etqNombre="Nombre del responsable del control" etqCargo="Cargo del responsable del control" nombre={d.responsable} cargo={d.responsableCargo} onChange={cambiarPersona("responsable", "responsableCargo")} />
@@ -159,7 +158,11 @@ export default function FormularioEmisiones({ onVolver }) {
         </Seccion>
 
         <Seccion id="ruido" titulo="4. Medición de ruido (dB(A))" subtitulo={`${nRui} de ${MAX_RUIDO} mediciones${excedidas ? ` · ${excedidas} sobre el límite` : ""}`} abierta={abierta === "ruido"} onToggle={alternar} contador={nRui}>
-          {!d.sector && d.ruido.length > 0 && <div className="text-[11.5px] mb-2" style={{ color: "#B3401F" }}>Elige el «Sector del predio» en la sección 1 para ver el límite.</div>}
+          <div className="border rounded-lg p-2.5 mb-2.5 space-y-1.5" style={{ borderColor: LINE, background: "#EEF1F6" }}>
+            <Lista label="Sector del predio (ruido)" value={d.sector} onChange={(v) => set("sector", v)} opciones={SECTORES} />
+            <div className="text-[10.5px]" style={{ color: "#6B7280" }}>Es el tipo de zona donde queda la obra (residencial, comercial, industrial…). La Res. 0627 de 2006 fija el límite de ruido según ese sector y la jornada; con él la app dice si cada medición cumple. Se elige una vez por control.</div>
+            {!d.sector && d.ruido.length > 0 && <div className="text-[11.5px]" style={{ color: "#B3401F" }}>Elige el sector para ver el límite de cada medición.</div>}
+          </div>
           {d.ruido.map((r, i) => {
             const ev = evaluarRuido(d, r);
             return (

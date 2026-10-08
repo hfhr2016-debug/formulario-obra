@@ -22,15 +22,20 @@ export const SPEC_SEMANAL_AMB = {
     ["incidentes", "Incidentes ambientales", "A", "A", null, 1], ["quejas", "Quejas recibidas", "C", "C", null, 1], ["quejasAt", "Quejas atendidas", "E", "E", null, 1],
     ["abiertas", "Acciones abiertas al cierre", "G", "G", null, 1], ["vencidas", "Acciones vencidas", "I", "I", null, 1], ["cerradas", "Acciones cerradas en la semana", "K", "K", null, 1],
     ["logros", "Logros de la semana", "A", "C"], ["dificultades", "Dificultades o impactos nuevos", "A", "C"], ["plan", "Plan de la próxima semana", "A", "C"],
+    ...Array.from({ length: 6 }, (_, i) => { const k = i + 1; const par = k % 2 === 0; return [`foto${k}Descripcion`, `Foto ${String(k).padStart(2, "0")}`, par ? "G" : "A", par ? "I" : "C"]; }),
   ],
   tablas: [
     { clave: "actividades", cabecera: "No.", fin: "3. RESIDUOS GENERADOS Y CONSUMOS DE LA SEMANA", finEmpieza: true, columnas: { prog: "G", ejec: "H", obs: "J" }, encabezados: { prog: "Programado", ejec: "Ejecutado", obs: "Observaciones" } },
     { clave: "cantidades", cabecera: "No.", despuesDe: "actividades", fin: "4. SEGUIMIENTO", finEmpieza: true, columnas: { cant: "G", acum: "I", obs: "K" }, encabezados: { cant: "Cantidad de la semana", acum: "Acumulado de la obra", obs: "Observaciones" } },
   ],
+  fotos: [{ clave: "fotos", desde: "7. REGISTRO FOTOGRÁFICO", hasta: "REV.", minAltoPx: 80 }],
   firmas: { firma: "Firma:", nombre: "Nombre:", desdeEtiqueta: "6. FIRMAS", personas: [{ clave: "elaboro", col: "C" }, { clave: "reviso", col: "G" }, { clave: "vobo", col: "K" }] },
 };
 // Distribución de la plantilla entregada (se usa solo si no se puede leer la plantilla subida). Generado por el motor.
-export const CELDAS_SEMANAL_AMB = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","semana":"C13","desde":"G13","hasta":"K13","trabajadores":"C14","dias":"G14","clima":"K14","incidentes":"A38","quejas":"C38","quejasAt":"E38","abiertas":"G38","vencidas":"I38","cerradas":"K38","logros":"C40","dificultades":"C41","plan":"C42","tablas":{"actividades":{"fila0":17,"n":9,"columnas":{"prog":"G","ejec":"H","obs":"J"}},"cantidades":{"fila0":28,"n":8,"columnas":{"cant":"G","acum":"I","obs":"K"}}},"firmas":{"elaboro":{"nombre":"C46","cargo":"C47"},"reviso":{"nombre":"G46","cargo":"G47"},"vobo":{"nombre":"K46","cargo":"K47"}}};
+export const CELDAS_SEMANAL_AMB = {"proyecto":"C11","contratista":"C12","ubicacion":"J12","semana":"C13","desde":"G13","hasta":"K13","trabajadores":"C14","dias":"G14","clima":"K14","incidentes":"A38","quejas":"C38","quejasAt":"E38","abiertas":"G38","vencidas":"I38","cerradas":"K38","logros":"C40","dificultades":"C41","plan":"C42","foto1Descripcion":"C50","foto2Descripcion":"I50","foto3Descripcion":"C52","foto4Descripcion":"I52","foto5Descripcion":"C54","foto6Descripcion":"I54","tablas":{"actividades":{"fila0":17,"n":9,"columnas":{"prog":"G","ejec":"H","obs":"J"}},"cantidades":{"fila0":28,"n":8,"columnas":{"cant":"G","acum":"I","obs":"K"}}},"fotos":{"fotos":[{"tl":{"col":0,"row":48},"br":{"col":6,"row":49},"aspecto":1.687},{"tl":{"col":6,"row":48},"br":{"col":12,"row":49},"aspecto":1.617},{"tl":{"col":0,"row":50},"br":{"col":6,"row":51},"aspecto":1.687},{"tl":{"col":6,"row":50},"br":{"col":12,"row":51},"aspecto":1.617},{"tl":{"col":0,"row":52},"br":{"col":6,"row":53},"aspecto":1.687},{"tl":{"col":6,"row":52},"br":{"col":12,"row":53},"aspecto":1.617}]},"firmas":{"elaboro":{"nombre":"C46","cargo":"C47"},"reviso":{"nombre":"G46","cargo":"G47"},"vobo":{"nombre":"K46","cargo":"K47"}}};
+export const N_FOTOS_SEMANAL_AMB = 6;
+export const fotoAmbNueva = () => ({ descripcion: "" });
+export const fotosAmbIniciales = () => Array.from({ length: N_FOTOS_SEMANAL_AMB }, fotoAmbNueva);
 export const descubrirSemanalAmb = (ws) => descubrirPorEtiquetas(ws, SPEC_SEMANAL_AMB);
 
 const arr = (a) => (Array.isArray(a) ? a : []);
@@ -50,6 +55,7 @@ export function escribirSemanalAmbEnHoja(ws, d, celdas = CELDAS_SEMANAL_AMB) {
   escribirTabla(ws, T.actividades, ACTIVIDADES_AMB.map((_, i) => { const a = arr(d.actividades)[i] || {}; return { prog: numOTexto(a.prog), ejec: numOTexto(a.ejec), obs: a.obs }; }));
   escribirTabla(ws, T.cantidades, CANTIDADES_AMB.map((_, i) => { const a = arr(d.cantidades)[i] || {}; return { cant: numOTexto(a.cant), acum: numOTexto(a.acum), obs: a.obs }; }));
   if (T.actividades) saltoDePagina(ws, T.actividades.fila0 + T.actividades.n - 1);        // la hoja 2 empieza en "3. Residuos generados y consumos"
+  for (let i = 0; i < N_FOTOS_SEMANAL_AMB; i++) poner(ws, C[`foto${i + 1}Descripcion`], ((d.fotos || [])[i] || {}).descripcion);
   const F = C.firmas || {};
   if (F.elaboro) { poner(ws, F.elaboro.nombre, d.elaboroNombre); poner(ws, F.elaboro.cargo, d.elaboroCargo); }
   if (F.reviso) { poner(ws, F.reviso.nombre, d.revisoNombre); poner(ws, F.reviso.cargo, d.revisoCargo); }

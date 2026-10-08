@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
+import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { useCatalogo } from "./catalogos";
@@ -346,37 +347,6 @@ function guardarAcumulado(tipo, clave, valor) {
   }
 }
 
-// Comprime y redimensiona una foto en el navegador antes de insertarla en el Excel,
-// para que el archivo final no quede pesado. Devuelve un ArrayBuffer en JPEG.
-function comprimirFoto(file, maxAncho = 1000, calidad = 0.75) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      let { width, height } = img;
-      if (width > maxAncho) {
-        height = Math.round((height * maxAncho) / width);
-        width = maxAncho;
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          URL.revokeObjectURL(url);
-          if (!blob) return reject(new Error("No se pudo procesar la foto"));
-          blob.arrayBuffer().then(resolve).catch(reject);
-        },
-        "image/jpeg",
-        calidad
-      );
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
 
 function CasillaFoto({ foto, onChange, onRemove, numero }) {
   const inputRef = useRef(null);
@@ -960,7 +930,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
         if (!foto.file) continue;
-        const buffer = await comprimirFoto(foto.file);
+        const buffer = await comprimirFoto(foto.file, 1000, 0.75, null, "#F2F2F2", lineasMarca(general.objetoContrato, { fechaHora: general.fecha }, foto.file));
         const imageId = workbook.addImage({ buffer, extension: "jpeg" });
         const pos = posicionesFotos[i];
         ws.addImage(imageId, { tl: pos.tl, br: pos.br });
@@ -1355,6 +1325,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
           onToggle={toggle}
           count={fotos.filter((f) => f.file).length}
         >
+          <div className="mb-2"><InterruptorMarca /></div>
           <div className="grid grid-cols-2 gap-2.5">
             {fotos.map((foto, i) => (
               <CasillaFoto

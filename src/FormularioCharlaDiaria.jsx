@@ -9,6 +9,7 @@ import {
   CARGOS_OBRA, unirUnicos, recordarTexto, descubrirCeldas,
 } from "./charlaDiariaDatos";
 import { BotonMenuSST } from "./sstNavegacion";
+import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
 import { TraerDeFicha } from "./sstComunes";
 
@@ -79,53 +80,6 @@ function tieneContenido(d) {
 }
 
 // ---------- Fotos ----------
-// Comprime la foto. Con "aspecto" (ancho/alto de la casilla del Excel) la foto se ajusta COMPLETA a esa proporción,
-// sin recortarla ni deformarla: el sobrante se rellena con el gris de la casilla. Así, aunque el Excel estire la imagen
-// para llenar la casilla, se ve con su forma real.
-function comprimirFoto(file, maxAncho = 1000, calidad = 0.75, aspecto = null, fondo = "#F2F2F2") {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      let ancho, alto, dx = 0, dy = 0, dw, dh;
-      if (aspecto) {
-        ancho = Math.min(maxAncho, Math.max(img.width, Math.round(img.height * aspecto)));
-        alto = Math.round(ancho / aspecto);
-        const escala = Math.min(ancho / img.width, alto / img.height);
-        dw = Math.round(img.width * escala);
-        dh = Math.round(img.height * escala);
-        dx = Math.round((ancho - dw) / 2);
-        dy = Math.round((alto - dh) / 2);
-      } else {
-        ancho = img.width;
-        alto = img.height;
-        if (ancho > maxAncho) {
-          alto = Math.round((alto * maxAncho) / ancho);
-          ancho = maxAncho;
-        }
-        dw = ancho;
-        dh = alto;
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = ancho;
-      canvas.height = alto;
-      const ctx = canvas.getContext("2d");
-      if (aspecto) { ctx.fillStyle = fondo; ctx.fillRect(0, 0, ancho, alto); }
-      ctx.drawImage(img, dx, dy, dw, dh);
-      canvas.toBlob(
-        (blob) => {
-          URL.revokeObjectURL(url);
-          if (!blob) return reject(new Error("No se pudo procesar la foto"));
-          blob.arrayBuffer().then(resolve).catch(reject);
-        },
-        "image/jpeg",
-        calidad
-      );
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No se pudo leer la foto")); };
-    img.src = url;
-  });
-}
 
 // El logo se agrega desde el código (no va dentro de la plantilla) para evitar problemas con las imágenes del Excel.
 async function agregarLogo(workbook, ws) {
@@ -684,7 +638,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
         if (!fotos[i].file) continue;
         const caja = celdas[`foto${i + 1}`];
         if (!caja) { fotosSinCasilla++; continue; }
-        const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, (celdas.fotoAspecto || [])[i] || null, "#" + (celdas.fondoFoto || "F2F2F2"));
+        const buf = await comprimirFoto(fotos[i].file, 1000, 0.75, (celdas.fotoAspecto || [])[i] || null, "#" + (celdas.fondoFoto || "F2F2F2"), lineasMarca(d.proyecto, { fechaHora: d.fecha && d.horaInicio ? `${d.fecha}T${d.horaInicio}` : d.fecha }, fotos[i].file));
         const id = workbook.addImage({ buffer: buf, extension: "jpeg" });
         // "twoCell": la foto se mueve y cambia de tamaño junto con las celdas de su casilla, así que NO puede quedar más
         // grande que el recuadro aunque después se cambie el alto de las filas en Excel.
@@ -964,6 +918,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
 
         {/* 6. FOTOS */}
         <Seccion id="fotos" titulo="6. Evidencia fotográfica" subtitulo={`Opcional · hasta ${N_FOTOS} fotos de la charla`} abierta={abierta === "fotos"} onToggle={alternar} contador={fotos.filter((f) => f.file).length}>
+          <div className="mb-2"><InterruptorMarca /></div>
           <div className="grid grid-cols-2 gap-2.5">
             {fotos.map((f, i) => (
               <CasillaFoto key={i} foto={f} numero={i + 1} onChange={(n) => actualizarFoto(i, n)} onRemove={() => quitarFoto(i)} />
