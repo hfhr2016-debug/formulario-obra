@@ -12,6 +12,12 @@ export const CLAVE_AMB_RESIDUOS = "ryr_amb_residuos";
 export const CLAVE_AMB_CONSUMOS = "ryr_amb_consumos";
 export const CLAVE_AMB_VERTIMIENTOS = "ryr_amb_vertimientos";
 export const CLAVE_AMB_EMISIONES = "ryr_amb_emisiones";
+export const CLAVE_AMB_INSPECCIONES = "ryr_amb_inspecciones";
+export const CLAVE_AMB_MAQUINARIA = "ryr_amb_maquinaria";
+export const CLAVE_AMB_CAPACITACIONES = "ryr_amb_capacitaciones";
+export const CLAVE_AMB_FOTOGRAFICO = "ryr_amb_fotografico";
+export const CLAVE_AMB_INCIDENTES = "ryr_amb_incidentes";
+export const CLAVE_AMB_PQRS = "ryr_amb_pqrs";
 
 // Obras conocidas: primero las de la Ficha Ambiental y luego las de la Ficha SST (sin repetir el nombre)
 export function obrasConocidas() {

@@ -332,7 +332,10 @@ export function descubrirPorEtiquetas(ws, spec) {
     if (r0 && r1) {
       let rangos = [];
       try { rangos = ((ws.model && ws.model.merges) || []).map(parseRango).filter(Boolean); } catch (e) { rangos = []; }
-      const cajas = rangos.filter((g) => g.top > r0 && g.bottom < r1 && g.bottom - g.top >= (fo.minAlto || 3) && g.right - g.left >= 1).sort((a, b) => a.top - b.top || a.left - b.left);
+      const altoPx0 = (f) => ((Number(ws.getRow(f).height) || 15) * 96) / 72;
+      const altoDe = (g) => { let h = 0; for (let f = g.top; f <= g.bottom; f++) h += altoPx0(f); return h; };
+      // minAltoPx: recuadros de UNA sola fila pero altos (p. ej. el registro fotográfico); por defecto, combinadas de 4 filas o más
+      const cajas = rangos.filter((g) => g.top > r0 && g.bottom < r1 && (fo.minAltoPx ? altoDe(g) >= fo.minAltoPx : g.bottom - g.top >= (fo.minAlto || 3)) && g.right - g.left >= 1).sort((a, b) => a.top - b.top || a.left - b.left);
       if (!cajas.length) problemas.push(`No encontré los recuadros de foto entre "${fo.desde}" y "${fo.hasta}"`);
       const anchoPx = (c) => (Number(ws.getColumn(c).width) || 8.43) * 7;
       const altoPx = (f) => ((Number(ws.getRow(f).height) || 15) * 96) / 72;

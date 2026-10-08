@@ -39,6 +39,12 @@ import FormularioResiduos from "./FormularioResiduos";
 import FormularioManifiestoRCD from "./FormularioManifiestoRCD";
 import FormularioConsumos from "./FormularioConsumos";
 import FormularioVertimientos from "./FormularioVertimientos";
+import FormularioInspeccionAmbiental from "./FormularioInspeccionAmbiental";
+import FormularioMaquinaria from "./FormularioMaquinaria";
+import FormularioCapacitacionAmb from "./FormularioCapacitacionAmb";
+import FormularioFotografico from "./FormularioFotografico";
+import FormularioIncidenteAmb from "./FormularioIncidenteAmb";
+import FormularioPqrs from "./FormularioPqrs";
 import FormularioEmisiones from "./FormularioEmisiones";
 import { ContextoSST } from "./sstNavegacion";
 import {
@@ -1542,14 +1548,14 @@ const MODULOS_AMBIENTAL = [
   { id: "amb-consumos", nombre: "Consumo de Agua, Energía y Combustibles", emoji: "💧", icono: "/icons/icon-amb-consumos.png", activo: true },
   { id: "amb-emisiones", nombre: "Emisiones y Ruido", emoji: "🔊", icono: "/icons/icon-amb-emisiones.png", activo: true },
   { id: "amb-vertimientos", nombre: "Vertimientos y Manejo de Aguas", emoji: "🚰", icono: "/icons/icon-amb-vertimientos.png", activo: true },
-  { id: "amb-fotografico", nombre: "Registro Fotográfico", emoji: "📷", icono: "/icons/icon-amb-fotografico.png", activo: false },
+  { id: "amb-fotografico", nombre: "Registro Fotográfico", emoji: "📷", icono: "/icons/icon-amb-fotografico.png", activo: true },
   // --- Varias veces por semana ---
-  { id: "amb-inspeccion", nombre: "Inspección Ambiental de Obra", emoji: "🔍", icono: "/icons/icon-amb-inspeccion.png", activo: false },
-  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", icono: "/icons/icon-amb-maquinaria.png", activo: false },
-  { id: "amb-capacitacion", nombre: "Capacitación e Inducción Ambiental", emoji: "🎓", icono: "/icons/icon-amb-capacitacion.png", activo: false },
+  { id: "amb-inspeccion", nombre: "Inspección Ambiental de Obra", emoji: "🔍", icono: "/icons/icon-amb-inspeccion.png", activo: true },
+  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", icono: "/icons/icon-amb-maquinaria.png", activo: true },
+  { id: "amb-capacitacion", nombre: "Capacitación e Inducción Ambiental", emoji: "🎓", icono: "/icons/icon-amb-capacitacion.png", activo: true },
   // --- Cuando ocurre un evento ---
-  { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", icono: "/icons/icon-amb-incidente.png", activo: false },
-  { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", icono: "/icons/icon-amb-pqrs.png", activo: false },
+  { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", icono: "/icons/icon-amb-incidente.png", activo: true },
+  { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", icono: "/icons/icon-amb-pqrs.png", activo: true },
   // --- Condicionales según la obra ---
   { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", icono: "/icons/icon-amb-quimicos.png", activo: false },
   { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", icono: "/icons/icon-amb-hidrocarburos.png", activo: false },
@@ -1953,6 +1959,24 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "amb-vertimientos") {
     return conMenuAmb(<FormularioVertimientos onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-inspeccion") {
+    return conMenuAmb(<FormularioInspeccionAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-maquinaria") {
+    return conMenuAmb(<FormularioMaquinaria onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-capacitacion") {
+    return conMenuAmb(<FormularioCapacitacionAmb onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-fotografico") {
+    return conMenuAmb(<FormularioFotografico onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-incidente") {
+    return conMenuAmb(<FormularioIncidenteAmb onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-pqrs") {
+    return conMenuAmb(<FormularioPqrs onVolver={() => setVista("inicio-ambiental")} />);
   }
   if (vista === "amb-emisiones") {
     return conMenuAmb(<FormularioEmisiones onVolver={() => setVista("inicio-ambiental")} />);
