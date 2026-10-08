@@ -82,6 +82,7 @@ export function resumenInspeccionAmb(d) {
   return {
     id: `${texto(d.proyecto).toLowerCase()}|${d.fecha}|${texto(d.nInspeccion)}`, formato: "inspeccion", proyecto: texto(d.proyecto), fecha: d.fecha, nInspeccion: texto(d.nInspeccion), tipo: d.tipo || "",
     cumple: c.si, noCumple: c.no, noAplica: c.na, hallazgos: hallazgosConDatos(d.hallazgos).length, porAspecto,
+    detalle: hallazgosConDatos(d.hallazgos).map((h) => ({ hallazgo: h.hallazgo || "", accion: h.accion || "", responsable: h.responsable || "", fechaLimite: h.fechaLimite || "" })),   // lo usa el seguimiento de acciones
     porcentaje: c.si + c.no ? Math.round((c.si / (c.si + c.no)) * 1000) / 10 : null,
   };
 }

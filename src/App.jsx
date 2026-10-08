@@ -51,6 +51,12 @@ import FormularioControlHidrocarburos from "./FormularioControlHidrocarburos";
 import FormularioAprovechamientoForestal from "./FormularioAprovechamientoForestal";
 import FormularioContratistasAmbiental from "./FormularioContratistasAmbiental";
 import FormularioEmisiones from "./FormularioEmisiones";
+import FormularioAccionesAmbiental from "./FormularioAccionesAmbiental";
+import FormularioIndicadoresAmbiental from "./FormularioIndicadoresAmbiental";
+import FormularioSemanalAmbiental from "./FormularioSemanalAmbiental";
+import FormularioMensualAmbiental from "./FormularioMensualAmbiental";
+import FormularioTrimestralAmbiental from "./FormularioTrimestralAmbiental";
+import FormularioIcaAmbiental from "./FormularioIcaAmbiental";
 import { ContextoSST } from "./sstNavegacion";
 import {
 
@@ -1570,12 +1576,12 @@ const MODULOS_AMBIENTAL = [
   { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", icono: "/icons/icon-amb-matriz.png", activo: true },
   { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", icono: "/icons/icon-amb-contratistas.png", activo: true },
   // --- Seguimiento e informes ---
-  { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", icono: "/icons/icon-amb-acciones.png", activo: false },
-  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", icono: "/icons/icon-amb-indicadores.png", activo: false },
-  { id: "amb-semanal", nombre: "Informe Semanal Ambiental", emoji: "📅", icono: "/icons/icon-amb-semanal.png", activo: false },
-  { id: "amb-mensual", nombre: "Informe Mensual Ambiental", emoji: "🗓️", icono: "/icons/icon-amb-mensual.png", activo: false },
-  { id: "amb-trimestral", nombre: "Informe Trimestral de Gestión Ambiental", emoji: "📈", icono: "/icons/icon-amb-trimestral.png", activo: false },
-  { id: "amb-ica", nombre: "Resumen para el ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: false },
+  { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", icono: "/icons/icon-amb-acciones.png", activo: true },
+  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", icono: "/icons/icon-amb-indicadores.png", activo: true },
+  { id: "amb-semanal", nombre: "Informe Semanal Ambiental", emoji: "📅", icono: "/icons/icon-amb-semanal.png", activo: true },
+  { id: "amb-mensual", nombre: "Informe Mensual Ambiental", emoji: "🗓️", icono: "/icons/icon-amb-mensual.png", activo: true },
+  { id: "amb-trimestral", nombre: "Informe Trimestral de Gestión Ambiental", emoji: "📈", icono: "/icons/icon-amb-trimestral.png", activo: true },
+  { id: "amb-ica", nombre: "Resumen para el ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: true },
 ];
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
@@ -2000,6 +2006,24 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "amb-emisiones") {
     return conMenuAmb(<FormularioEmisiones onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-acciones") {
+    return conMenuAmb(<FormularioAccionesAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-indicadores") {
+    return conMenuAmb(<FormularioIndicadoresAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-semanal") {
+    return conMenuAmb(<FormularioSemanalAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-mensual") {
+    return conMenuAmb(<FormularioMensualAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-trimestral") {
+    return conMenuAmb(<FormularioTrimestralAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-ica") {
+    return conMenuAmb(<FormularioIcaAmbiental onVolver={() => setVista("inicio-ambiental")} />);
   }
   if (vista.startsWith("amb-")) {
     return <Proximamente nombre={(MODULOS_AMBIENTAL.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-ambiental")} />;

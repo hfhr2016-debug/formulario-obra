@@ -101,6 +101,6 @@ export function resumenIncidenteAmb(d) {
   return {
     id: `${texto(d.proyecto).toLowerCase()}|${texto(d.nReporte) || d.fecha}`, formato: "incidente", proyecto: texto(d.proyecto), fecha: d.fecha, nReporte: texto(d.nReporte),
     tipos: arr(d.tipos), severidad: d.severidad || "", estado: d.estado || "", componentes: arr(d.componentes),
-    notificado: d.notificado || "", acciones: correctivasConDatos(d).length, abiertas: correctivasConDatos(d).filter((c) => c.estado !== "Cerrada").length,
+    notificado: d.notificado || "", causaRaiz: texto(d.causaRaiz), plan: correctivasConDatos(d).map((c) => ({ accion: c.accion || "", responsable: c.responsable || "", fechaLimite: c.fechaLimite || "", estado: c.estado || "Abierta" })), acciones: correctivasConDatos(d).length, abiertas: correctivasConDatos(d).filter((c) => c.estado !== "Cerrada").length,
   };
 }

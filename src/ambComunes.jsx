@@ -23,6 +23,12 @@ export const CLAVE_AMB_QUIMICOS = "ryr_amb_quimicos";
 export const CLAVE_AMB_HIDROCARBUROS = "ryr_amb_hidrocarburos";
 export const CLAVE_AMB_FORESTAL = "ryr_amb_forestal";
 export const CLAVE_AMB_CONTRATISTAS = "ryr_amb_contratistas";     // resumen de cada evaluación ambiental de contratistas
+export const CLAVE_AMB_ACCIONES = "ryr_amb_acciones";               // resumen de cada hoja de seguimiento de acciones (con sus acciones): el registro entre hojas
+export const CLAVE_AMB_INDICADORES = "ryr_amb_indicadores";         // resultado mensual de los indicadores
+export const CLAVE_AMB_SEMANALES = "ryr_amb_semanales";             // resumen de cada informe semanal
+export const CLAVE_AMB_MENSUALES = "ryr_amb_mensuales";             // resumen de cada informe mensual
+export const CLAVE_AMB_TRIMESTRALES = "ryr_amb_trimestrales";       // resumen de cada informe trimestral
+export const CLAVE_AMB_ICA = "ryr_amb_ica";                         // resumen de cada resumen para el ICA
 
 // Obras conocidas: primero las de la Ficha Ambiental y luego las de la Ficha SST (sin repetir el nombre)
 export function obrasConocidas() {

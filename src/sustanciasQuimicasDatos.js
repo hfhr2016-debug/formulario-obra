@@ -85,6 +85,7 @@ export function resumenQuimicos(d) {
   const c = contarRespuestas(ITEMS_QUIMICOS, d.respuestas);
   const ss = sustanciasConDatos(d);
   return { id: `${texto(d.proyecto).toLowerCase()}|${d.fecha}|${texto(d.almacen).toLowerCase()}`, formato: "quimicos", proyecto: texto(d.proyecto), fecha: d.fecha, almacen: texto(d.almacen),
+    detalle: hallazgosConDatos(d.hallazgos).map((h) => ({ hallazgo: h.hallazgo || "", accion: h.accion || "", responsable: h.responsable || "", fechaLimite: h.fechaLimite || "" })),
     sustancias: ss.length, sinHoja: sinHojaDeSeguridad(d).length, combustibles: ss.filter((s) => s.tipo === "Combustible").length,
     cumple: c.si, noCumple: c.no, noAplica: c.na, hallazgos: hallazgosConDatos(d.hallazgos).length, porcentaje: c.si + c.no ? Math.round((c.si / (c.si + c.no)) * 1000) / 10 : null };
 }
