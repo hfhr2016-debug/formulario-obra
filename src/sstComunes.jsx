@@ -8,7 +8,7 @@ import {
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre, CARGOS_OBRA, unirUnicos, recordarTexto,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles, mezclarTrabajadores, buscarTrabajador,
 } from "./sstBase";
-import { BotonMenuSST } from "./sstNavegacion";
+import { BotonMenuSST, useNavegacionSST } from "./sstNavegacion";
 
 export const NAVY = "#1B2A45";
 export const GOLD = "#D9A233";
@@ -270,6 +270,8 @@ export function PantallaBorrador({ cual, onContinuar, onEmpezar, onVolver }) {
 }
 
 export function EncabezadoFormulario({ titulo, subtitulo, onVolver }) {
+  const nav = useNavegacionSST();
+  const sistema = (nav && nav.titulo) || "Gestión SG – SST";      // en Gestión Ambiental el contexto trae su propio título
   return (
     <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
       <div className="flex items-center justify-between gap-3">
@@ -279,7 +281,7 @@ export function EncabezadoFormulario({ titulo, subtitulo, onVolver }) {
             {onVolver && (
               <button type="button" onClick={onVolver} className="flex items-center gap-1 text-white/80 text-[12.5px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
-                Gestión SG – SST
+                {sistema}
               </button>
             )}
           </div>

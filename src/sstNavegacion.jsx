@@ -30,12 +30,12 @@ export function BotonMenuSST({ color }) {
 function MenuLateralSST({ nav, onCerrar }) {
   const ir = (fn) => () => { onCerrar(); fn(); };
   return (
-    <div className="fixed inset-0 z-50 flex" role="dialog" aria-label="Menú de formularios de Gestión SG-SST">
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-label={`Menú de formularios de ${nav.titulo || "Gestión SG-SST"}`}>
       <div className="absolute inset-0 bg-black/40" onClick={onCerrar} />
       <div className="relative w-[78%] max-w-[300px] h-full bg-white shadow-xl overflow-y-auto">
         <div className="px-4 py-4 flex items-center justify-between" style={{ background: NAVY }}>
           <div>
-            <div className="text-white font-bold text-[14px]">Gestión SG – SST</div>
+            <div className="text-white font-bold text-[14px]">{nav.titulo || "Gestión SG – SST"}</div>
             {nav.nombreUsuario && <div className="text-[10.5px] mt-0.5" style={{ color: GOLD }}>{nav.nombreUsuario}</div>}
           </div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar menú" className="text-white/80 text-[20px] leading-none">✕</button>
@@ -59,10 +59,10 @@ function MenuLateralSST({ nav, onCerrar }) {
           })}
           <div className="border-t mt-2 pt-2" style={{ borderColor: LINE }}>
             <button type="button" onClick={ir(nav.irInicio)} className="w-full text-left px-3 py-2.5 rounded-lg text-[12.5px] font-semibold" style={{ color: NAVY }}>
-              🏠 Inicio de Gestión SG – SST
+              🏠 Inicio de {nav.titulo || "Gestión SG – SST"}
             </button>
             <button type="button" onClick={ir(nav.irSelector)} className="w-full text-left px-3 py-2.5 rounded-lg text-[12.5px] font-semibold" style={{ color: NAVY }}>
-              🔄 Cambiar de sistema (Técnica / Ambiental)
+              🔄 Cambiar de sistema ({nav.otrosSistemas || "Técnica / Ambiental"})
             </button>
           </div>
           {nav.cerrarSesion && (

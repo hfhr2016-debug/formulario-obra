@@ -34,6 +34,12 @@ import FormularioEmergencias from "./FormularioEmergencias";
 import FormularioSemanalSST from "./FormularioSemanalSST";
 import FormularioMensualSST from "./FormularioMensualSST";
 import FormularioContratistas from "./FormularioContratistas";
+import FormularioFichaAmbiental from "./FormularioFichaAmbiental";
+import FormularioResiduos from "./FormularioResiduos";
+import FormularioManifiestoRCD from "./FormularioManifiestoRCD";
+import FormularioConsumos from "./FormularioConsumos";
+import FormularioVertimientos from "./FormularioVertimientos";
+import FormularioEmisiones from "./FormularioEmisiones";
 import { ContextoSST } from "./sstNavegacion";
 import {
 
@@ -1531,34 +1537,34 @@ const MODULOS_SST = [
 
 const MODULOS_AMBIENTAL = [
   // --- Uso diario ---
-  { id: "amb-residuos", nombre: "Registro de Residuos", emoji: "♻️", activo: false },
-  { id: "amb-manifiesto", nombre: "Manifiesto de Transporte de RCD", emoji: "🚛", activo: false },
-  { id: "amb-consumos", nombre: "Consumo de Agua, Energía y Combustibles", emoji: "💧", activo: false },
-  { id: "amb-emisiones", nombre: "Emisiones y Ruido", emoji: "🔊", activo: false },
-  { id: "amb-vertimientos", nombre: "Vertimientos y Manejo de Aguas", emoji: "🚰", activo: false },
-  { id: "amb-fotografico", nombre: "Registro Fotográfico", emoji: "📷", activo: false },
+  { id: "amb-residuos", nombre: "Registro de Residuos", emoji: "♻️", icono: "/icons/icon-amb-residuos.png", activo: true },
+  { id: "amb-manifiesto", nombre: "Manifiesto de Transporte de RCD", emoji: "🚛", icono: "/icons/icon-amb-manifiesto.png", activo: true },
+  { id: "amb-consumos", nombre: "Consumo de Agua, Energía y Combustibles", emoji: "💧", icono: "/icons/icon-amb-consumos.png", activo: true },
+  { id: "amb-emisiones", nombre: "Emisiones y Ruido", emoji: "🔊", icono: "/icons/icon-amb-emisiones.png", activo: true },
+  { id: "amb-vertimientos", nombre: "Vertimientos y Manejo de Aguas", emoji: "🚰", icono: "/icons/icon-amb-vertimientos.png", activo: true },
+  { id: "amb-fotografico", nombre: "Registro Fotográfico", emoji: "📷", icono: "/icons/icon-amb-fotografico.png", activo: false },
   // --- Varias veces por semana ---
-  { id: "amb-inspeccion", nombre: "Inspección Ambiental de Obra", emoji: "🔍", activo: false },
-  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", activo: false },
-  { id: "amb-capacitacion", nombre: "Capacitación e Inducción Ambiental", emoji: "🎓", activo: false },
+  { id: "amb-inspeccion", nombre: "Inspección Ambiental de Obra", emoji: "🔍", icono: "/icons/icon-amb-inspeccion.png", activo: false },
+  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", icono: "/icons/icon-amb-maquinaria.png", activo: false },
+  { id: "amb-capacitacion", nombre: "Capacitación e Inducción Ambiental", emoji: "🎓", icono: "/icons/icon-amb-capacitacion.png", activo: false },
   // --- Cuando ocurre un evento ---
-  { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", activo: false },
-  { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", activo: false },
+  { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", icono: "/icons/icon-amb-incidente.png", activo: false },
+  { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", icono: "/icons/icon-amb-pqrs.png", activo: false },
   // --- Condicionales según la obra ---
-  { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", activo: false },
-  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", activo: false },
-  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", activo: false },
+  { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", icono: "/icons/icon-amb-quimicos.png", activo: false },
+  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", icono: "/icons/icon-amb-hidrocarburos.png", activo: false },
+  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", icono: "/icons/icon-amb-forestal.png", activo: false },
   // --- Una vez por proyecto ---
-  { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", activo: false },
-  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", activo: false },
-  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", activo: false },
+  { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", icono: "/icons/icon-amb-ficha.png", activo: true },
+  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", icono: "/icons/icon-amb-matriz.png", activo: false },
+  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", icono: "/icons/icon-amb-contratistas.png", activo: false },
   // --- Seguimiento e informes ---
-  { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", activo: false },
-  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", activo: false },
-  { id: "amb-semanal", nombre: "Informe Semanal Ambiental", emoji: "📅", activo: false },
-  { id: "amb-mensual", nombre: "Informe Mensual Ambiental", emoji: "🗓️", activo: false },
-  { id: "amb-trimestral", nombre: "Informe Trimestral de Gestión Ambiental", emoji: "📈", activo: false },
-  { id: "amb-ica", nombre: "Resumen para el ICA", emoji: "🏛️", activo: false },
+  { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", icono: "/icons/icon-amb-acciones.png", activo: false },
+  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", icono: "/icons/icon-amb-indicadores.png", activo: false },
+  { id: "amb-semanal", nombre: "Informe Semanal Ambiental", emoji: "📅", icono: "/icons/icon-amb-semanal.png", activo: false },
+  { id: "amb-mensual", nombre: "Informe Mensual Ambiental", emoji: "🗓️", icono: "/icons/icon-amb-mensual.png", activo: false },
+  { id: "amb-trimestral", nombre: "Informe Trimestral de Gestión Ambiental", emoji: "📈", icono: "/icons/icon-amb-trimestral.png", activo: false },
+  { id: "amb-ica", nombre: "Resumen para el ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: false },
 ];
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
@@ -1827,6 +1833,19 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
     cerrarSesion: onCerrarSesion,
   };
   const conMenuSST = (nodo) => <ContextoSST.Provider value={ctxSST}>{nodo}</ContextoSST.Provider>;
+  // Menú lateral de Gestión Ambiental (mismo componente del menú de SST, con los módulos ambientales activos)
+  const ctxAmb = {
+    modulos: MODULOS_AMBIENTAL.filter((m) => m.activo),
+    vistaActual: vista,
+    ir: (id) => setVista(id),
+    irInicio: () => setVista("inicio-ambiental"),
+    irSelector: () => setVista("selector-apps"),
+    nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
+    cerrarSesion: onCerrarSesion,
+    titulo: "Gestión Ambiental",
+    otrosSistemas: "Técnica / SST",
+  };
+  const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{nodo}</ContextoSST.Provider>;
 
   if (vista === "inicio") {
     return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
@@ -1919,6 +1938,24 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "inicio-ambiental") {
     return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "amb-ficha") {
+    return conMenuAmb(<FormularioFichaAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-residuos") {
+    return conMenuAmb(<FormularioResiduos onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-manifiesto") {
+    return conMenuAmb(<FormularioManifiestoRCD onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-consumos") {
+    return conMenuAmb(<FormularioConsumos onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-vertimientos") {
+    return conMenuAmb(<FormularioVertimientos onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-emisiones") {
+    return conMenuAmb(<FormularioEmisiones onVolver={() => setVista("inicio-ambiental")} />);
   }
   if (vista.startsWith("amb-")) {
     return <Proximamente nombre={(MODULOS_AMBIENTAL.find((m) => m.id === vista) || {}).nombre || "Este módulo"} onVolver={() => setVista("inicio-ambiental")} />;
