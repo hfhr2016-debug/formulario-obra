@@ -207,7 +207,8 @@ export function useMemoriaSST(contratista = "") {
 // ---------- Nombre + cargo de una persona (facilitador, responsable…) ----------
 // "onChange" recibe un cambio parcial: { nombre?, cargo? }. Al elegir un nombre guardado se completa solo su cargo; si el
 // cargo se completó solo y luego el nombre pasa a otra persona, ese cargo se quita (un cargo elegido a mano nunca se toca).
-export function BloqueProfesional({ memoria, etqNombre, etqCargo, nombre, cargo, onChange }) {
+// «cargosSugeridos»: cargos propios de este bloque (p. ej. quien recibe en el sitio de disposición); se ofrecen primero
+export function BloqueProfesional({ memoria, etqNombre, etqCargo, nombre, cargo, onChange, cargosSugeridos = [] }) {
   const cargoAutomatico = useRef(false);
   const [reinicio, setReinicio] = useState(0);
   function cambiarNombre(valor) {
@@ -239,7 +240,7 @@ export function BloqueProfesional({ memoria, etqNombre, etqCargo, nombre, cargo,
         key={reinicio}
         label={etqCargo}
         value={cargo}
-        opciones={memoria.cargos}
+        opciones={cargosSugeridos.length ? [...cargosSugeridos, ...memoria.cargos.filter((c) => !cargosSugeridos.includes(c))] : memoria.cargos}
         onChange={(v) => { cargoAutomatico.current = false; onChange({ cargo: v }); }}
         onGuardar={(v) => memoria.recordar(nombre, v)}
       />

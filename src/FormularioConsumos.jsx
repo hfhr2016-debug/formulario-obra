@@ -2,30 +2,30 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { fechaHoyISO, decidirDistribucion } from "./sstBase";
 import {
-  CODIGO_CONSUMOS, HOJA_CONSUMOS, CELDAS_CONSUMOS, FUENTES_AGUA, FUENTES_ENERGIA, nombreMes, mesDe,
+  CODIGO_CONSUMOS, HOJA_CONSUMOS, CELDAS_CONSUMOS, FUENTES_AGUA, FUENTES_ENERGIA, MODOS_REGISTRO, EQUIPOS_CONSUMO, modoConsumo, nombreMes, mesDe,
   descubrirConsumos, escribirConsumosEnHoja, validarConsumos, camposFaltantesConsumos, resumenConsumos, diaNuevo, diasConDatos, consumosCalculados, totalesConsumos, avisosConsumos, num,
 } from "./consumosDatos";
 import {
   NAVY, GOLD, PAPER, LINE, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo,
-  useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto,
+  useMemoriaSST, useBorrador, BuscadorLista, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto,
 } from "./sstComunes";
 import { useFaltantes } from "./sstFaltantes";
 import { ChipsOpcion } from "./sstControles";
 import { CLAVE_AMB_CONSUMOS, TraerDeFichaAmb } from "./ambComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_consumos";
-const MAX_DIAS = (CELDAS_CONSUMOS.tablas && CELDAS_CONSUMOS.tablas.dias.n) || 31;
+const MAX_DIAS = ((CELDAS_CONSUMOS.tablas && CELDAS_CONSUMOS.tablas.dias.n) || 32) - 1;   // la primera fila de la hoja es la lectura inicial
 const fmt = (n, dec = 3) => (n === null || n === undefined ? "—" : String(Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec)).replace(".", ","));
 const masUnDia = (iso) => { const dt = new Date(iso + "T12:00:00"); dt.setDate(dt.getDate() + 1); return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`; };
 const soloNumero = (v) => v.replace(/[^0-9.,]/g, "");
 
 function datosIniciales() {
   return {
-    proyecto: "", contratista: "", mes: fechaHoyISO().slice(0, 7), trabajadores: "", medidorAgua: "", medidorEnergia: "", dias: [], observaciones: "",
+    proyecto: "", contratista: "", mes: fechaHoyISO().slice(0, 7), trabajadores: "", medidorAgua: "", medidorEnergia: "", iniAgua: "", iniEnergia: "", modo: MODOS_REGISTRO[0], dias: [], observaciones: "",
     elaboroNombre: "", elaboroCargo: "", revisoNombre: "", revisoCargo: "",
   };
 }
-const tieneContenido = (d) => !!(d.proyecto || d.contratista || d.trabajadores || d.medidorAgua || d.medidorEnergia || d.dias.length || d.observaciones || d.elaboroNombre);
+const tieneContenido = (d) => !!(d.proyecto || d.contratista || d.trabajadores || d.medidorAgua || d.medidorEnergia || d.iniAgua || d.iniEnergia || d.dias.length || d.observaciones || d.elaboroNombre);
 
 export default function FormularioConsumos({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
@@ -64,6 +64,7 @@ export default function FormularioConsumos({ onVolver }) {
   const calc = consumosCalculados(d);
   const tot = totalesConsumos(d);
   const avisos = avisosConsumos(d);
+  const porConsumo = modoConsumo(d);
   // Consumo de cada tarjeta (por su posición entre los días con datos)
   const consumoDe = (x) => { const k = conDatos.indexOf(x); return k >= 0 ? calc[k] : { agua: null, energia: null }; };
 
@@ -78,7 +79,7 @@ export default function FormularioConsumos({ onVolver }) {
       const avs = [];
       const decision = decidirDistribucion(descubrirConsumos(ws), CELDAS_CONSUMOS);
       if (decision.aviso) avs.push(decision.aviso);
-      const capacidad = (decision.celdas.tablas && decision.celdas.tablas.dias.n) || MAX_DIAS;
+      const capacidad = ((decision.celdas.tablas && decision.celdas.tablas.dias.n) || MAX_DIAS + 1) - 1;
       if (conDatos.length > capacidad) throw new Error(`la plantilla tiene espacio para ${capacidad} días y hay ${conDatos.length}`);
       escribirConsumosEnHoja(ws, d, decision.celdas);
       setAvisoGeneracion(avs.join(" "));
@@ -118,17 +119,26 @@ export default function FormularioConsumos({ onVolver }) {
               <Campo label="Medidor de agua N°" value={d.medidorAgua} onChange={(v) => set("medidorAgua", v)} />
               <Campo label="Medidor de energía N°" value={d.medidorEnergia} onChange={(v) => set("medidorEnergia", v)} />
             </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <Campo label="Lectura inicial de agua (m³)" value={d.iniAgua} inputMode="decimal" placeholder="Cierre del mes anterior" onChange={(v) => set("iniAgua", soloNumero(v))} />
+              <Campo label="Lectura inicial de energía (kWh)" value={d.iniEnergia} inputMode="decimal" placeholder="Cierre del mes anterior" onChange={(v) => set("iniEnergia", soloNumero(v))} />
+            </div>
+            <div className="text-[10.5px]" style={{ color: "#8A8F99" }}>La lectura inicial es la del medidor al cerrar el mes anterior: con ella la hoja calcula también el consumo del primer día. Si anotas el consumo de cada día, puedes dejarla vacía (se toma 0).</div>
             {anterior && (
               <div className="p-2.5 rounded-lg text-[11.5px]" style={{ background: "#F2F6FB", border: `1px solid ${LINE}`, color: NAVY }}>
                 Último mes guardado: <b>{nombreMes(anterior.mes)} {mesDe(anterior.mes).anio}</b>. Última lectura de agua: <b>{fmt(anterior.ultimaLecturaAgua)}</b> m³ · de energía: <b>{fmt(anterior.ultimaLecturaEnergia)}</b> kWh{anterior.ultimaFecha ? ` (${anterior.ultimaFecha.split("-").reverse().join("/")})` : ""}.
-                <button type="button" onClick={() => setD((cur) => ({ ...cur, medidorAgua: cur.medidorAgua || anterior.medidorAgua || "", medidorEnergia: cur.medidorEnergia || anterior.medidorEnergia || "", trabajadores: cur.trabajadores || (anterior.trabajadores ? String(anterior.trabajadores) : "") }))}
-                  className="block mt-1 underline font-semibold">Usar los medidores y trabajadores de ese mes</button>
+                <button type="button" onClick={() => setD((cur) => ({ ...cur, medidorAgua: cur.medidorAgua || anterior.medidorAgua || "", medidorEnergia: cur.medidorEnergia || anterior.medidorEnergia || "", iniAgua: cur.iniAgua || (anterior.ultimaLecturaAgua !== null && anterior.ultimaLecturaAgua !== undefined ? String(anterior.ultimaLecturaAgua) : ""), iniEnergia: cur.iniEnergia || (anterior.ultimaLecturaEnergia !== null && anterior.ultimaLecturaEnergia !== undefined ? String(anterior.ultimaLecturaEnergia) : ""), trabajadores: cur.trabajadores || (anterior.trabajadores ? String(anterior.trabajadores) : "") }))}
+                  className="block mt-1 underline font-semibold">Usar los medidores, las lecturas finales y los trabajadores de ese mes</button>
               </div>
             )}
           </div>
         </Seccion>
 
         <Seccion id="dias" titulo="2. Registro diario" subtitulo={`${conDatos.length} de ${MAX_DIAS} días`} abierta={abierta === "dias"} onToggle={alternar} contador={conDatos.length}>
+          <div className="mb-3">
+            <ChipsOpcion label="Qué anotas cada día" nombre="Qué anotas cada día" value={d.modo} opciones={MODOS_REGISTRO} pequeno onChange={(v) => set("modo", v)} />
+            <div className="text-[10.5px] mt-1" style={{ color: "#8A8F99" }}>{porConsumo ? "Escribes cuánto se consumió cada día; la app arma las lecturas del medidor sumando desde la lectura inicial." : "Escribes lo que marca el medidor; la hoja calcula el consumo restando la lectura anterior."}</div>
+          </div>
           {dias.map((x, i) => {
             const c = consumoDe(x);
             return (
@@ -137,23 +147,23 @@ export default function FormularioConsumos({ onVolver }) {
                 <div className="space-y-2">
                   <Campo label="Fecha del día" type="date" value={x.fecha} onChange={(v) => actualizar(i, { fecha: v })} />
                   <div className="grid grid-cols-2 gap-2">
-                    <Campo label="Lectura de agua (m³)" value={x.aguaLect} inputMode="decimal" onChange={(v) => actualizar(i, { aguaLect: soloNumero(v) })} />
-                    <Campo label="Lectura de energía (kWh)" value={x.enLect} inputMode="decimal" onChange={(v) => actualizar(i, { enLect: soloNumero(v) })} />
+                    <Campo label={porConsumo ? "Consumo de agua (m³)" : "Lectura de agua (m³)"} value={x.aguaLect} inputMode="decimal" onChange={(v) => actualizar(i, { aguaLect: soloNumero(v) })} />
+                    <Campo label={porConsumo ? "Consumo de energía (kWh)" : "Lectura de energía (kWh)"} value={x.enLect} inputMode="decimal" onChange={(v) => actualizar(i, { enLect: soloNumero(v) })} />
                   </div>
                   {(c.agua !== null || c.energia !== null) && (
                     <div className="text-[11.5px] px-2 py-1 rounded" style={{ background: "white", color: NAVY, border: `1px solid ${LINE}` }}>
-                      Consumo desde la lectura anterior:{c.agua !== null ? ` agua ${fmt(c.agua)} m³` : ""}{c.agua !== null && c.energia !== null ? " ·" : ""}{c.energia !== null ? ` energía ${fmt(c.energia)} kWh` : ""}
+                      {porConsumo ? "Consumo del día:" : "Consumo desde la lectura anterior:"}{c.agua !== null ? ` agua ${fmt(c.agua)} m³` : ""}{c.agua !== null && c.energia !== null ? " ·" : ""}{c.energia !== null ? ` energía ${fmt(c.energia)} kWh` : ""}
                     </div>
                   )}
                   <ChipsOpcion label="Fuente del agua" nombre={`Fuente del agua ${i + 1}`} value={x.aguaFuente} opciones={FUENTES_AGUA} pequeno onChange={(v) => actualizar(i, { aguaFuente: v })} />
                   <ChipsOpcion label="Fuente de la energía" nombre={`Fuente de la energía ${i + 1}`} value={x.enFuente} opciones={FUENTES_ENERGIA} pequeno onChange={(v) => actualizar(i, { enFuente: v })} />
-                  <div className="text-[10px] uppercase tracking-wide font-medium" style={{ color: "#8A8F99" }}>Combustibles (galones)</div>
+                  <div className="text-[10px] uppercase tracking-wide font-medium" style={{ color: "#8A8F99" }}>Combustibles</div>
                   <div className="grid grid-cols-3 gap-2">
-                    <Campo label="Diésel" value={x.diesel} inputMode="decimal" onChange={(v) => actualizar(i, { diesel: soloNumero(v) })} />
-                    <Campo label="Gasolina" value={x.gasolina} inputMode="decimal" onChange={(v) => actualizar(i, { gasolina: soloNumero(v) })} />
-                    <Campo label="Otro" value={x.otro} inputMode="decimal" onChange={(v) => actualizar(i, { otro: soloNumero(v) })} />
+                    <Campo label="Diésel (gal)" value={x.diesel} inputMode="decimal" onChange={(v) => actualizar(i, { diesel: soloNumero(v) })} />
+                    <Campo label="Gasolina (gal)" value={x.gasolina} inputMode="decimal" onChange={(v) => actualizar(i, { gasolina: soloNumero(v) })} />
+                    <Campo label="Otro (gal)" value={x.otro} inputMode="decimal" onChange={(v) => actualizar(i, { otro: soloNumero(v) })} />
                   </div>
-                  <Campo label="Equipo o actividad" value={x.equipo} placeholder="Ej. Retroexcavadora, mezcladora (o «cambio de medidor»)" onChange={(v) => actualizar(i, { equipo: v })} />
+                  <BuscadorLista label="Equipo o actividad" value={x.equipo} onChange={(v) => actualizar(i, { equipo: v })} opciones={EQUIPOS_CONSUMO} opcionesAlAbrir={EQUIPOS_CONSUMO} placeholder="Elige el equipo o actividad, o escribe otro" />
                 </div>
                 <button type="button" onClick={() => quitar(i)} aria-label={`Quitar día ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>
                   <Trash2 size={12} />
@@ -166,7 +176,7 @@ export default function FormularioConsumos({ onVolver }) {
           </button>
           {avisoDias && <div className="text-[11.5px] mt-2" style={{ color: "#B3401F" }}>{avisoDias}</div>}
           {avisos.length > 0 && <ul className="text-[11px] mt-2 space-y-1" style={{ color: "#8A5A00" }}>{avisos.map((a) => <li key={a}>⚠ {a}</li>)}</ul>}
-          <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>El primer día solo se anota la lectura; desde el segundo la hoja calcula el consumo sola.</div>
+          <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>La hoja calcula sola el consumo de cada día y los totales del mes (también el total de diésel, gasolina y otro combustible).</div>
         </Seccion>
 
         <Seccion id="resumen" titulo="3. Resumen del mes" subtitulo={tot.agua !== null || tot.energia !== null ? "Se calcula con las lecturas" : "Aún sin consumos"} abierta={abierta === "resumen"} onToggle={alternar}>

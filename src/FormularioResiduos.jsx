@@ -44,6 +44,12 @@ export default function FormularioResiduos({ onVolver }) {
   const gestoresOpc = gestores.length ? gestores : [];
 
   const registros = d.registros;
+  // Responsable de cada registro: los nombres guardados (profesionales y Gestión Técnica) y los que ya se escribieron en esta hoja
+  const opcionesResponsable = (() => {
+    const base = memoria.opcionesNombres, vistos = new Set(base.map((o) => String(o.texto).toLowerCase()));
+    const propios = [d.elaboroNombre, d.revisoNombre, d.voboNombre, ...registros.map((x) => x.responsable)].map((t) => String(t || "").trim()).filter((t) => t.length >= 3 && !vistos.has(t.toLowerCase()) && vistos.add(t.toLowerCase()));
+    return [...propios.map((t) => ({ texto: t, detalle: "" })), ...base];
+  })();
   const setRegistros = (nuevos) => setD((cur) => ({ ...cur, registros: nuevos }));
   const actualizar = (i, patch) => setRegistros(registros.map((r, k) => (k === i ? { ...r, ...patch } : r)));
   const quitar = (i) => { setRegistros(registros.filter((_, k) => k !== i)); setAvisoRegistros(""); };
@@ -164,7 +170,7 @@ export default function FormularioResiduos({ onVolver }) {
                 <ChipsOpcion label="Destino" value={r.destino} opciones={DESTINOS_RES} colores={COLOR_DESTINO} pequeno onChange={(v) => actualizar(i, { destino: v })} />
                 <BuscadorLista label="Gestor o receptor" value={r.gestor} onChange={(v) => actualizar(i, { gestor: v })} opciones={gestoresOpc} opcionesAlAbrir={gestoresOpc} placeholder={gestores.length ? "Elige un gestor de la ficha o escribe otro" : "Empresa que lo recibe"} />
                 <Campo label="N° de manifiesto o certificado" value={r.manifiesto} onChange={(v) => actualizar(i, { manifiesto: v })} />
-                <Campo label="Responsable" value={r.responsable} onChange={(v) => actualizar(i, { responsable: v })} />
+                <BuscadorLista label="Responsable" value={r.responsable} onChange={(v) => actualizar(i, { responsable: v })} onElegir={(o) => actualizar(i, { responsable: o.texto })} onBlurValor={(v) => memoria.recordar(v, "")} opciones={opcionesResponsable} opcionesAlAbrir={opcionesResponsable.slice(0, 8)} placeholder="Elige un nombre guardado o escribe uno nuevo" />
               </div>
               <button type="button" onClick={() => quitar(i)} aria-label={`Quitar registro ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>
                 <Trash2 size={12} />

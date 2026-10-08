@@ -1525,6 +1525,8 @@ const MODULOS = [
 ];
 
 const MODULOS_SST = [
+  // --- Datos generales del proyecto (primero) ---
+  { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", icono: "/icons/icon-sst-ficha.png", activo: true },
   // --- Uso diario ---
   { id: "sst-charla-diaria", nombre: "Charla Diaria de Seguridad", emoji: "🗣️", icono: "/icons/icon-sst-charla-diaria.png", activo: true },
   { id: "sst-asistencia", nombre: "Lista de Asistencia", emoji: "✍️", icono: "/icons/icon-sst-asistencia.png", activo: true },
@@ -1546,42 +1548,42 @@ const MODULOS_SST = [
   { id: "sst-accidentalidad", nombre: "Accidente o Incidente", emoji: "🚑", icono: "/icons/icon-sst-accidentalidad.png", activo: true },
   { id: "sst-investigacion", nombre: "Investigación de Accidentes", emoji: "🔎", icono: "/icons/icon-sst-investigacion.png", activo: true },
   // --- Una vez por proyecto ---
-  { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", icono: "/icons/icon-sst-ficha.png", activo: true },
   { id: "sst-matriz-peligros", nombre: "Matriz de Peligros", emoji: "🗺️", icono: "/icons/icon-sst-matriz-peligros.png", activo: true },
   { id: "sst-emergencias", nombre: "Plan de Emergencias", emoji: "🚨", icono: "/icons/icon-sst-emergencias.png", activo: true },
   { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", icono: "/icons/icon-sst-contratistas.png", activo: true },
 ];
 
 const MODULOS_AMBIENTAL = [
+  // --- Datos generales del proyecto (primero) ---
+  { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", icono: "/icons/icon-amb-ficha.png", activo: true },
   // --- Uso diario ---
   { id: "amb-residuos", nombre: "Registro de Residuos", emoji: "♻️", icono: "/icons/icon-amb-residuos.png", activo: true },
   { id: "amb-manifiesto", nombre: "Manifiesto de Transporte de RCD", emoji: "🚛", icono: "/icons/icon-amb-manifiesto.png", activo: true },
-  { id: "amb-consumos", nombre: "Consumo de Agua, Energía y Combustibles", emoji: "💧", icono: "/icons/icon-amb-consumos.png", activo: true },
-  { id: "amb-emisiones", nombre: "Emisiones y Ruido", emoji: "🔊", icono: "/icons/icon-amb-emisiones.png", activo: true },
-  { id: "amb-vertimientos", nombre: "Vertimientos y Manejo de Aguas", emoji: "🚰", icono: "/icons/icon-amb-vertimientos.png", activo: true },
-  { id: "amb-fotografico", nombre: "Registro Fotográfico", emoji: "📷", icono: "/icons/icon-amb-fotografico.png", activo: true },
+  { id: "amb-consumos", nombre: "Control de Consumo de Recursos", emoji: "💧", icono: "/icons/icon-amb-consumos.png", activo: true },
+  { id: "amb-fotografico", nombre: "Registro Fotográfico de Obra", emoji: "📷", icono: "/icons/icon-amb-fotografico.png", activo: true },
   // --- Varias veces por semana ---
   { id: "amb-inspeccion", nombre: "Inspección Ambiental de Obra", emoji: "🔍", icono: "/icons/icon-amb-inspeccion.png", activo: true },
-  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", icono: "/icons/icon-amb-maquinaria.png", activo: true },
   { id: "amb-capacitacion", nombre: "Capacitación e Inducción Ambiental", emoji: "🎓", icono: "/icons/icon-amb-capacitacion.png", activo: true },
+  { id: "amb-maquinaria", nombre: "Inspección de Maquinaria y Equipos", emoji: "🚜", icono: "/icons/icon-amb-maquinaria.png", activo: true },
+  { id: "amb-quimicos", nombre: "Control de Sustancias Químicas y Combustibles", emoji: "🧪", icono: "/icons/icon-amb-quimicos.png", activo: true },
+  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", icono: "/icons/icon-amb-hidrocarburos.png", activo: true },
+  // --- Según la actividad de la obra ---
+  { id: "amb-vertimientos", nombre: "Control de Vertimientos y Manejo de Aguas", emoji: "🚰", icono: "/icons/icon-amb-vertimientos.png", activo: true },
+  { id: "amb-emisiones", nombre: "Control de Emisiones Atmosféricas y Ruido", emoji: "🔊", icono: "/icons/icon-amb-emisiones.png", activo: true },
+  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", icono: "/icons/icon-amb-forestal.png", activo: true },
   // --- Cuando ocurre un evento ---
   { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", icono: "/icons/icon-amb-incidente.png", activo: true },
   { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", icono: "/icons/icon-amb-pqrs.png", activo: true },
-  // --- Condicionales según la obra ---
-  { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", icono: "/icons/icon-amb-quimicos.png", activo: true },
-  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", icono: "/icons/icon-amb-hidrocarburos.png", activo: true },
-  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", icono: "/icons/icon-amb-forestal.png", activo: true },
-  // --- Una vez por proyecto ---
-  { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", icono: "/icons/icon-amb-ficha.png", activo: true },
-  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", icono: "/icons/icon-amb-matriz.png", activo: true },
-  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", icono: "/icons/icon-amb-contratistas.png", activo: true },
   // --- Seguimiento e informes ---
   { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", icono: "/icons/icon-amb-acciones.png", activo: true },
-  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", icono: "/icons/icon-amb-indicadores.png", activo: true },
   { id: "amb-semanal", nombre: "Informe Semanal Ambiental", emoji: "📅", icono: "/icons/icon-amb-semanal.png", activo: true },
   { id: "amb-mensual", nombre: "Informe Mensual Ambiental", emoji: "🗓️", icono: "/icons/icon-amb-mensual.png", activo: true },
+  { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", icono: "/icons/icon-amb-indicadores.png", activo: true },
   { id: "amb-trimestral", nombre: "Informe Trimestral de Gestión Ambiental", emoji: "📈", icono: "/icons/icon-amb-trimestral.png", activo: true },
-  { id: "amb-ica", nombre: "Resumen para el ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: true },
+  // --- Una vez por proyecto o por periodo largo ---
+  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", icono: "/icons/icon-amb-matriz.png", activo: true },
+  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", icono: "/icons/icon-amb-contratistas.png", activo: true },
+  { id: "amb-ica", nombre: "Resumen para ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: true },
 ];
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {

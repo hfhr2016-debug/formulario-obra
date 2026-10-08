@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { fechaHoyISO, decidirDistribucion } from "./sstBase";
 import {
-  CODIGO_MANIFIESTO, HOJA_MANIFIESTO, CELDAS_MANIFIESTO, CLASES_RCD, DESTINOS_RCD,
+  CODIGO_MANIFIESTO, HOJA_MANIFIESTO, CELDAS_MANIFIESTO, CLASES_RCD, DESTINOS_RCD, CARGOS_RECIBE_RCD,
   descubrirManifiesto, escribirManifiestoEnHoja, validarManifiesto, camposFaltantesManifiesto, resumenManifiesto, viajeNuevo, viajesConDatos, sumaVolumen, cantidadTotal,
 } from "./manifiestoDatos";
 import {
@@ -73,7 +73,7 @@ export default function FormularioManifiestoRCD({ onVolver }) {
     if (viajes.length >= MAX_VIAJES) { setAvisoViajes(`Este manifiesto tiene espacio para ${MAX_VIAJES} viajes. Genéralo y haz otro manifiesto para los demás.`); return; }
     setAvisoViajes("");
     const u = viajes[viajes.length - 1];
-    setViajes([...viajes, viajeNuevo({ placa: (u && u.placa) || d.placa, conductor: (u && u.conductor) || d.conductor, volumen: u ? u.volumen : "" })]);
+    setViajes([...viajes, u ? viajeNuevo({ volumen: u.volumen }) : viajeNuevo({ placa: d.placa, conductor: d.conductor })]);          // la placa y el conductor del viaje nuevo quedan vacíos: es otro viaje (puede ser otro vehículo)
   }
   const nViajes = viajesConDatos(d).length;
   const suma = sumaVolumen(d);
@@ -223,7 +223,7 @@ export default function FormularioManifiestoRCD({ onVolver }) {
           <div className="space-y-2.5">
             <div className="text-[11px]" style={{ color: NAVY }}>Firman el responsable en obra ({d.respObra || "sin nombre"}) y el conductor ({d.conductor || "sin nombre"}); sus nombres vienen de las secciones 1 y 2.</div>
             <div className="text-[11px] font-semibold" style={{ color: NAVY }}>Recibe (sitio de disposición)</div>
-            <BloqueProfesional memoria={memoria} etqNombre="Nombre de quien recibe" etqCargo="Cargo de quien recibe" nombre={d.recibeNombre} cargo={d.recibeCargo} onChange={cambiarPersona("recibeNombre", "recibeCargo")} />
+            <BloqueProfesional memoria={memoria} etqNombre="Nombre de quien recibe" etqCargo="Cargo de quien recibe" nombre={d.recibeNombre} cargo={d.recibeCargo} onChange={cambiarPersona("recibeNombre", "recibeCargo")} cargosSugeridos={CARGOS_RECIBE_RCD} />
           </div>
         </Seccion>
 

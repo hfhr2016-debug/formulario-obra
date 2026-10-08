@@ -87,7 +87,10 @@ export function filtrarOpciones(opciones, texto, max = 8) {
 export const CARGOS_PROFESIONALES = [
   "Ingeniero Residente", "Arquitecto Residente", "Director de Obra", "Coordinador SST", "Profesional SST",
   "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Maestro de Obra", "Supervisor de Obra",
-  "Interventor de Obra", "Gerente de Proyecto", "Almacenista de Obra", "Auxiliar de SST"];
+  "Interventor de Obra", "Gerente de Proyecto", "Almacenista de Obra", "Auxiliar de SST",
+  // Gestión ambiental y firmas de informes
+  "Coordinador Ambiental", "Profesional Ambiental", "Responsable Ambiental", "Ingeniero Ambiental", "Tecnólogo Ambiental", "Inspector Ambiental", "Auxiliar Ambiental", "Residente Ambiental",
+  "Residente de Obra", "Representante Legal", "Gerente General"];
 
 export function normalizarNombre(n) {
   return String(n || "").trim().replace(/\s+/g, " ");
