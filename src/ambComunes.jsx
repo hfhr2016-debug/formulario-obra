@@ -18,6 +18,11 @@ export const CLAVE_AMB_CAPACITACIONES = "ryr_amb_capacitaciones";
 export const CLAVE_AMB_FOTOGRAFICO = "ryr_amb_fotografico";
 export const CLAVE_AMB_INCIDENTES = "ryr_amb_incidentes";
 export const CLAVE_AMB_PQRS = "ryr_amb_pqrs";
+export const CLAVE_AMB_MATRIZ = "ryr_amb_matriz";                 // resumen de cada matriz de aspectos e impactos
+export const CLAVE_AMB_QUIMICOS = "ryr_amb_quimicos";
+export const CLAVE_AMB_HIDROCARBUROS = "ryr_amb_hidrocarburos";
+export const CLAVE_AMB_FORESTAL = "ryr_amb_forestal";
+export const CLAVE_AMB_CONTRATISTAS = "ryr_amb_contratistas";     // resumen de cada evaluación ambiental de contratistas
 
 // Obras conocidas: primero las de la Ficha Ambiental y luego las de la Ficha SST (sin repetir el nombre)
 export function obrasConocidas() {

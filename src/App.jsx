@@ -45,6 +45,11 @@ import FormularioCapacitacionAmb from "./FormularioCapacitacionAmb";
 import FormularioFotografico from "./FormularioFotografico";
 import FormularioIncidenteAmb from "./FormularioIncidenteAmb";
 import FormularioPqrs from "./FormularioPqrs";
+import FormularioMatrizAmbiental from "./FormularioMatrizAmbiental";
+import FormularioSustanciasQuimicas from "./FormularioSustanciasQuimicas";
+import FormularioControlHidrocarburos from "./FormularioControlHidrocarburos";
+import FormularioAprovechamientoForestal from "./FormularioAprovechamientoForestal";
+import FormularioContratistasAmbiental from "./FormularioContratistasAmbiental";
 import FormularioEmisiones from "./FormularioEmisiones";
 import { ContextoSST } from "./sstNavegacion";
 import {
@@ -1557,13 +1562,13 @@ const MODULOS_AMBIENTAL = [
   { id: "amb-incidente", nombre: "Incidente o Accidente Ambiental", emoji: "⚠️", icono: "/icons/icon-amb-incidente.png", activo: true },
   { id: "amb-pqrs", nombre: "Quejas y PQRS de la Comunidad", emoji: "📢", icono: "/icons/icon-amb-pqrs.png", activo: true },
   // --- Condicionales según la obra ---
-  { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", icono: "/icons/icon-amb-quimicos.png", activo: false },
-  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", icono: "/icons/icon-amb-hidrocarburos.png", activo: false },
-  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", icono: "/icons/icon-amb-forestal.png", activo: false },
+  { id: "amb-quimicos", nombre: "Sustancias Químicas y Combustibles", emoji: "🧪", icono: "/icons/icon-amb-quimicos.png", activo: true },
+  { id: "amb-hidrocarburos", nombre: "Control de Hidrocarburos", emoji: "🛢️", icono: "/icons/icon-amb-hidrocarburos.png", activo: true },
+  { id: "amb-forestal", nombre: "Aprovechamiento Forestal", emoji: "🌳", icono: "/icons/icon-amb-forestal.png", activo: true },
   // --- Una vez por proyecto ---
   { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", icono: "/icons/icon-amb-ficha.png", activo: true },
-  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", icono: "/icons/icon-amb-matriz.png", activo: false },
-  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", icono: "/icons/icon-amb-contratistas.png", activo: false },
+  { id: "amb-matriz", nombre: "Matriz de Aspectos e Impactos", emoji: "🗺️", icono: "/icons/icon-amb-matriz.png", activo: true },
+  { id: "amb-contratistas", nombre: "Evaluación Ambiental de Contratistas", emoji: "🤝", icono: "/icons/icon-amb-contratistas.png", activo: true },
   // --- Seguimiento e informes ---
   { id: "amb-acciones", nombre: "Acciones Correctivas Ambientales", emoji: "✅", icono: "/icons/icon-amb-acciones.png", activo: false },
   { id: "amb-indicadores", nombre: "Indicadores Ambientales", emoji: "📊", icono: "/icons/icon-amb-indicadores.png", activo: false },
@@ -1974,6 +1979,21 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "amb-incidente") {
     return conMenuAmb(<FormularioIncidenteAmb onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-matriz") {
+    return conMenuAmb(<FormularioMatrizAmbiental onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-quimicos") {
+    return conMenuAmb(<FormularioSustanciasQuimicas onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-hidrocarburos") {
+    return conMenuAmb(<FormularioControlHidrocarburos onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-forestal") {
+    return conMenuAmb(<FormularioAprovechamientoForestal onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-contratistas") {
+    return conMenuAmb(<FormularioContratistasAmbiental onVolver={() => setVista("inicio-ambiental")} />);
   }
   if (vista === "amb-pqrs") {
     return conMenuAmb(<FormularioPqrs onVolver={() => setVista("inicio-ambiental")} />);
