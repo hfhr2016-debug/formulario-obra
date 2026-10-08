@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import { ChevronDown, Plus, Trash2, Camera, X, Loader2, FileSpreadsheet } from "lucide-react";
 import {
   CODIGO_FORMATO, CELDAS, PELIGROS, EPP, TIPOS_CHARLA, CLIMAS, ORDEN_ASEO, SINTOMAS, TEMAS_SUGERIDOS,
-  MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla, camposFaltantesCharla,
+  MAX_ASISTENTES, fechaHoyISO, textoDuracion, parsearPegado, escribirCharlaEnHoja, validarCharla, camposFaltantesCharla, resumenCharla,
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles,
   CIUDADES, CIUDADES_PRINCIPALES, filtrarOpciones, quitarTildes, normalizarNombre,
   CARGOS_OBRA, unirUnicos, recordarTexto, descubrirCeldas,
@@ -708,6 +708,8 @@ export default function FormularioCharlaDiaria({ onVolver }) {
 
       // Memoria para la próxima charla
       guardarJSON(CLAVE_ULTIMOS, asistentes.filter((x) => x.nombre && x.nombre.trim()));
+      const resCharla = resumenCharla(d, nUsar);          // para los informes Semanal y Mensual
+      guardarJSON("ryr_sst_charlas", [resCharla, ...leerJSON("ryr_sst_charlas", []).filter((x) => x.id !== resCharla.id)].slice(0, 500));
       const n = parseInt(nUsar, 10);
       if (!isNaN(n)) {
         let guardado = 0;

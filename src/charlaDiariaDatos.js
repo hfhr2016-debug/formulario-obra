@@ -459,3 +459,9 @@ export function camposFaltantesCharla(d) {
   if (!(d.asistentes || []).some((a) => a.nombre && a.nombre.trim())) f.push({ etiqueta: "Nombre completo", indice: 0, seccion: "asistentes" });
   return f;
 }
+
+// Resumen que se guarda en el dispositivo: los informes Semanal y Mensual cuentan de aquí las charlas diarias de cada periodo
+export function resumenCharla(d, nUsar) {
+  const asistentes = (d.asistentes || []).filter((a) => a.nombre && a.nombre.trim());
+  return { id: `${d.fecha || "sin-fecha"}_${nUsar}`, formato: "charla", fecha: d.fecha || "", nCharla: String(nUsar || ""), tema: d.tema || "", proyecto: d.proyecto || "", asistentes: asistentes.length };
+}

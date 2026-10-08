@@ -67,15 +67,17 @@ export function calcularIndicadores(m) {
   };
 }
 // El año (acumulado) usa los totales del año y el promedio de trabajadores de los meses con dato
-export function totalesAnio(d) {
+export function totalesAnio(d, hastaMes = 11) {            // hastaMes: índice del último mes que cuenta (0 = enero … 11 = diciembre)
   const tot = mesVacio();
   for (const id of IDS_MES) {
-    const vals = arr(d.meses).map((m) => numero((m || {})[id])).filter((x) => x !== null);
+    const vals = arr(d.meses).slice(0, hastaMes + 1).map((m) => numero((m || {})[id])).filter((x) => x !== null);
     tot[id] = vals.length ? String(id === "trab" ? vals.reduce((a, b) => a + b, 0) / vals.length : vals.reduce((a, b) => a + b, 0)) : "";
   }
   return tot;
 }
 export const calcularAnio = (d) => calcularIndicadores(totalesAnio(d));
+// Acumulado del año hasta el mes indicado (enero = 0): lo usa el Informe Mensual
+export const calcularAcumulado = (d, hastaMes) => calcularIndicadores(totalesAnio(d, hastaMes));
 
 // ---------- Traer lo ya registrado en la app ----------
 const delMes = (iso, anio, mes0) => typeof iso === "string" && iso.slice(0, 4) === String(anio) && Number(iso.slice(5, 7)) === mes0 + 1;

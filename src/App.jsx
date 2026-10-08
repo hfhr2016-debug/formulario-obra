@@ -31,6 +31,9 @@ import FormularioFichaSST from "./FormularioFichaSST";
 import FormularioPersonal from "./FormularioPersonal";
 import FormularioMatriz from "./FormularioMatriz";
 import FormularioEmergencias from "./FormularioEmergencias";
+import FormularioSemanalSST from "./FormularioSemanalSST";
+import FormularioMensualSST from "./FormularioMensualSST";
+import FormularioContratistas from "./FormularioContratistas";
 import { ContextoSST } from "./sstNavegacion";
 import {
 
@@ -1511,19 +1514,19 @@ const MODULOS_SST = [
   { id: "sst-actos-inseguros", nombre: "Actos y Condiciones (Tarjeta iCAI)", emoji: "🚧", icono: "/icons/icon-sst-actos-inseguros.png", activo: true },
   { id: "sst-epp", nombre: "Entrega de EPP", emoji: "🦺", icono: "/icons/icon-sst-epp.png", activo: true },
   // --- Semanal / periódico ---
-  { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", icono: "/icons/icon-sst-semanal.png", activo: false },
+  { id: "sst-semanal", nombre: "Informe Semanal SST", emoji: "📅", icono: "/icons/icon-sst-semanal.png", activo: true },
   { id: "sst-capacitaciones", nombre: "Capacitaciones", emoji: "🎓", icono: "/icons/icon-sst-capacitaciones.png", activo: true },
   { id: "sst-acciones", nombre: "Acciones Correctivas", emoji: "✅", icono: "/icons/icon-sst-acciones.png", activo: true },
   { id: "sst-indicadores", nombre: "Indicadores", emoji: "📊", icono: "/icons/icon-sst-indicadores.png", activo: true },
   // --- Mensual / cuando ocurre un evento ---
-  { id: "sst-mensual", nombre: "Informe Mensual SST", emoji: "🗓️", icono: "/icons/icon-sst-mensual.png", activo: false },
+  { id: "sst-mensual", nombre: "Informe Mensual SST", emoji: "🗓️", icono: "/icons/icon-sst-mensual.png", activo: true },
   { id: "sst-accidentalidad", nombre: "Accidentalidad", emoji: "🚑", icono: "/icons/icon-sst-accidentalidad.png", activo: true },
   { id: "sst-investigacion", nombre: "Investigación de Accidentes", emoji: "🔎", icono: "/icons/icon-sst-investigacion.png", activo: true },
   // --- Una vez por proyecto ---
   { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", icono: "/icons/icon-sst-ficha.png", activo: true },
   { id: "sst-matriz-peligros", nombre: "Matriz de Peligros", emoji: "🗺️", icono: "/icons/icon-sst-matriz-peligros.png", activo: true },
   { id: "sst-emergencias", nombre: "Plan de Emergencias", emoji: "🚨", icono: "/icons/icon-sst-emergencias.png", activo: true },
-  { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", icono: "/icons/icon-sst-contratistas.png", activo: false },
+  { id: "sst-contratistas", nombre: "Evaluación de Contratistas", emoji: "🤝", icono: "/icons/icon-sst-contratistas.png", activo: true },
 ];
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
@@ -1809,6 +1812,15 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "sst-emergencias") {
     return conMenuSST(<FormularioEmergencias onVolver={() => setVista("inicio-sst")} />);
+  }
+  if (vista === "sst-semanal") {
+    return conMenuSST(<FormularioSemanalSST onVolver={() => setVista("inicio-sst")} />);
+  }
+  if (vista === "sst-mensual") {
+    return conMenuSST(<FormularioMensualSST onVolver={() => setVista("inicio-sst")} />);
+  }
+  if (vista === "sst-contratistas") {
+    return conMenuSST(<FormularioContratistas onVolver={() => setVista("inicio-sst")} />);
   }
   if (vista === "sst-charla-diaria") {
     return conMenuSST(<FormularioCharlaDiaria onVolver={() => setVista("inicio-sst")} />);

@@ -5,7 +5,7 @@ import { poner, escribirTabla, descubrirPorEtiquetas, fechaDDMMYYYY, textoRespon
 
 export const CODIGO_ACCIONES = "RYR-SS-012";
 export const HOJA_ACCIONES = "Acciones Correctivas";
-export const ORIGENES = ["Inspección", "Acto o condición insegura", "Accidente o incidente", "Matriz de peligros", "Auditoría", "Reunión COPASST o Vigía", "Otro"];
+export const ORIGENES = ["Inspección", "Acto o condición insegura", "Accidente o incidente", "Matriz de peligros", "Evaluación de contratistas", "Auditoría", "Reunión COPASST o Vigía", "Otro"];
 export const TIPOS_ACCION = ["Correctiva", "Preventiva", "Mejora"];
 export const ESTADOS_ACCION = ["Abierta", "En proceso", "Cerrada"];          // "Vencida" no se elige: la calcula la app según la fecha compromiso
 export const EFICACIAS = ["Eficaz", "No eficaz", "Pendiente"];

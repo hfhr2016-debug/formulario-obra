@@ -12,6 +12,7 @@ import {
   BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
 } from "./sstComunes";
 import { useFaltantes } from "./sstFaltantes";
+import { accionesDeContratistas } from "./contratistasDatos";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
@@ -23,6 +24,7 @@ const CLAVE_INSPECCIONES = "ryr_sst_inspecciones";      // de aquí se traen los
 const CLAVE_ACTOS = "ryr_sst_reportes_actos";           // de aquí, los reportes de actos y condiciones
 const CLAVE_INVESTIGACIONES = "ryr_sst_investigaciones"; // de aquí, el plan de acción de las investigaciones
 const CLAVE_MATRIZ = "ryr_sst_matriz";                  // de aquí, los riesgos no aceptables de la matriz de peligros
+const CLAVE_CONTRATISTAS = "ryr_sst_contratistas";      // de aquí, las acciones de mejora acordadas con los contratistas
 const MAX_ACCIONES = (CELDAS_ACCIONES.tablas && CELDAS_ACCIONES.tablas.acciones.n) || 10;
 const COLOR_ESTADO = { Abierta: "#C98A00", "En proceso": "#1F6FB5", Cerrada: "#2E7D4F" };
 
@@ -77,6 +79,7 @@ export default function FormularioAcciones({ onVolver }) {
     actos: () => accionesDeActos(leerJSON(CLAVE_ACTOS, [])),
     investigaciones: () => accionesDeInvestigaciones(leerJSON(CLAVE_INVESTIGACIONES, [])),
     matriz: () => accionesDeMatriz(leerJSON(CLAVE_MATRIZ, [])),
+    contratistas: () => accionesDeContratistas(leerJSON(CLAVE_CONTRATISTAS, [])),
     anteriores: () => pendientesDelRegistro(hojasAnteriores),
   };
   const disponibles = (fuente) => unirSinRepetir(d.acciones, fuente === "anteriores" ? desde.anteriores() : desde[fuente]().filter((n) => !yaEnHojas.has(claveAccion(n)))).agregadas;
@@ -93,8 +96,8 @@ export default function FormularioAcciones({ onVolver }) {
   // Las inspecciones guardadas ANTES de esta versión no guardaron el detalle de sus hallazgos: se avisa para que no parezca que "no está conectado"
   const inspSinDetalle = leerJSON(CLAVE_INSPECCIONES, []).filter((r) => !Array.isArray(r.detalle) && (r.hallazgosAbiertos || 0) > 0);
   const hallazgosSinDetalle = inspSinDetalle.reduce((s, r) => s + (r.hallazgosAbiertos || 0), 0);
-  const hayFuentes = leerJSON(CLAVE_INSPECCIONES, []).length + leerJSON(CLAVE_ACTOS, []).length + leerJSON(CLAVE_INVESTIGACIONES, []).length + leerJSON(CLAVE_MATRIZ, []).length + hojasAnteriores.length;
-  const botonesTraer = [["inspecciones", "de Inspecciones"], ["actos", "de Actos y Condiciones"], ["investigaciones", "de Investigaciones"], ["matriz", "de la Matriz de Peligros"], ["anteriores", "de hojas anteriores"]];
+  const hayFuentes = leerJSON(CLAVE_INSPECCIONES, []).length + leerJSON(CLAVE_ACTOS, []).length + leerJSON(CLAVE_INVESTIGACIONES, []).length + leerJSON(CLAVE_MATRIZ, []).length + leerJSON(CLAVE_CONTRATISTAS, []).length + hojasAnteriores.length;
+  const botonesTraer = [["inspecciones", "de Inspecciones"], ["actos", "de Actos y Condiciones"], ["investigaciones", "de Investigaciones"], ["matriz", "de la Matriz de Peligros"], ["contratistas", "de la Evaluación de Contratistas"], ["anteriores", "de hojas anteriores"]];
 
   const conDatos = accionesConDatos(d);
   const refFecha = d.fechaCorte || fechaHoyISO();
