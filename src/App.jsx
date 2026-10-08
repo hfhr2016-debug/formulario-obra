@@ -1520,7 +1520,7 @@ const MODULOS_SST = [
   { id: "sst-indicadores", nombre: "Indicadores", emoji: "📊", icono: "/icons/icon-sst-indicadores.png", activo: true },
   // --- Mensual / cuando ocurre un evento ---
   { id: "sst-mensual", nombre: "Informe Mensual SST", emoji: "🗓️", icono: "/icons/icon-sst-mensual.png", activo: true },
-  { id: "sst-accidentalidad", nombre: "Accidentalidad", emoji: "🚑", icono: "/icons/icon-sst-accidentalidad.png", activo: true },
+  { id: "sst-accidentalidad", nombre: "Accidente o Incidente", emoji: "🚑", icono: "/icons/icon-sst-accidentalidad.png", activo: true },
   { id: "sst-investigacion", nombre: "Investigación de Accidentes", emoji: "🔎", icono: "/icons/icon-sst-investigacion.png", activo: true },
   // --- Una vez por proyecto ---
   { id: "sst-ficha", nombre: "Ficha SST del Proyecto", emoji: "📋", icono: "/icons/icon-sst-ficha.png", activo: true },
@@ -1629,7 +1629,7 @@ function Inicio({ onSeleccionar, onVolverSelector }) {
               className="text-white font-bold text-[17px] tracking-wide"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              SAIEA OBRAS
+              GESTIÓN TÉCNICA
             </div>
             <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
               Sistema Automatizado de Ingeniería y Administración de Obras

@@ -4,12 +4,12 @@ import {
   CODIGO_INVESTIGACION, HOJA_INVESTIGACION, CELDAS_INVESTIGACION, TIPOS_EVENTO, TIPOS_CONTROL, ESTADOS_PLAN, SI_NO, PREGUNTAS_PORQUES, PLAZO_DIAS,
   ACTOS_SUBESTANDAR, CONDICIONES_SUBESTANDAR, FACTORES_PERSONALES, FACTORES_TRABAJO,
   descubrirInvestigacion, escribirInvestigacionEnHoja, validarInvestigacion, camposFaltantesInvestigacion, resumenInvestigacion,
-  miembroNuevo, hechoNuevo, accionPlanNueva, equipoConDatos, secuenciaConDatos, planConDatos, causasMarcadas, plazoMaximo, fueraDePlazo,
+  miembroNuevo, hechoNuevo, conHoraDelEvento, accionPlanNueva, equipoConDatos, secuenciaConDatos, planConDatos, causasMarcadas, plazoMaximo, fueraDePlazo,
 } from "./investigacionDatos";
 import {
   NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo,
   useMemoriaSST, useTrabajadores, useBorrador, siguienteConsecutivo, registrarConsecutivo,
-  BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista,
+  BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, AreaTexto, Lista, BuscadorLista, SelectorHora,
 } from "./sstComunes";
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion, fechaDDMMYYYY } from "./sstBase";
@@ -42,7 +42,7 @@ function datosIniciales() {
 
 function tieneContenido(d) {
   return !!(d.contratista || d.ubicacion || d.nInvestigacion || d.nReporte || d.fechaEvento || d.fechaInvestigacion || d.tipoEvento || d.trabajadorNombre || d.descripcion || d.causaRaiz || d.lecciones ||
-    d.elaboroNombre || d.equipo.some((m) => m.nombre) || d.secuencia.some((h) => h.hecho) || d.porques.some(Boolean) || d.plan.some((p) => p.accion) || causasMarcadas(d));
+    d.elaboroNombre || d.equipo.some((m) => m.nombre) || d.secuencia.some((h) => h.hecho || h.hora || h.momento) || d.porques.some(Boolean) || d.plan.some((p) => p.accion) || causasMarcadas(d));
 }
 
 export default function FormularioInvestigacion({ onVolver }) {
@@ -82,7 +82,15 @@ export default function FormularioInvestigacion({ onVolver }) {
       documento: r.documento || cur.documento, cargo: r.cargo || cur.cargo, incapacidad: r.incapacidad ? String(r.incapacidad) : cur.incapacidad, descripcion: cur.descripcion || r.queOcurrio || "",
       proyecto: cur.proyecto || r.proyecto || "", contratista: cur.contratista || r.contratista || "", ubicacion: cur.ubicacion || r.ubicacion || "",
     }));
-    setAvisoReporte(`Se trajeron los datos del reporte N° ${r.nReporte || "s/n"}.`);
+    if (r.horaEvento) setD((cur) => ({ ...cur, secuencia: conHoraDelEvento(cur.secuencia, r.horaEvento, MAX_HECHOS).secuencia }));
+    setAvisoReporte(`Se trajeron los datos del reporte N° ${r.nReporte || "s/n"}${r.horaEvento ? " (incluida la hora del evento, " + r.horaEvento + ")" : ""}.`);
+  }
+
+  const reporteVinculado = reportes.find((x) => d.nReporte && x.nReporte === d.nReporte && (!d.fechaEvento || x.fechaEvento === d.fechaEvento));
+  function usarHoraEvento() {
+    const r = conHoraDelEvento(d.secuencia, reporteVinculado.horaEvento, MAX_HECHOS);
+    if (r.estado === "ok") setD((cur) => ({ ...cur, secuencia: conHoraDelEvento(cur.secuencia, reporteVinculado.horaEvento, MAX_HECHOS).secuencia }));
+    setAvisoFilas(r.estado === "ya" ? "Esa hora ya está en la secuencia." : r.estado === "lleno" ? `La secuencia ya tiene los ${MAX_HECHOS} hechos que caben.` : "");
   }
 
   // ---- Filas de las tablas ----
@@ -172,7 +180,7 @@ export default function FormularioInvestigacion({ onVolver }) {
           <div className="space-y-2.5">
             {reportes.length === 0 && (
               <div className="text-[11.5px] p-2 rounded" style={{ background: "#F2F6FB", color: "#4B5563" }}>
-                Todavía no hay reportes de accidente guardados en este dispositivo. Cuando generes uno en <b>Accidentalidad</b>, podrás traer sus datos aquí.
+                Todavía no hay reportes de accidente guardados en este dispositivo. Cuando generes uno en <b>Accidente o Incidente</b>, podrás traer sus datos aquí.
               </div>
             )}
             {reportes.length > 0 && (
@@ -230,12 +238,18 @@ export default function FormularioInvestigacion({ onVolver }) {
         <Seccion id="descripcion" titulo="3. Descripción y secuencia del evento" subtitulo={`${secuenciaConDatos(d).length} hechos en orden`} abierta={abierta === "descripcion"} onToggle={alternar} contador={secuenciaConDatos(d).length}>
           <div className="space-y-2.5">
             <AreaTexto label="Descripción del evento" value={d.descripcion} onChange={(v) => set("descripcion", v)} filas={4} />
+            {reporteVinculado && reporteVinculado.horaEvento && (
+              <button type="button" onClick={usarHoraEvento} className="w-full text-[12px] font-semibold rounded-lg py-2 border" style={{ borderColor: GOLD, color: NAVY, background: PAPER }}>
+                🕒 Usar la hora del evento del reporte de accidente ({reporteVinculado.horaEvento})
+              </button>
+            )}
             <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>Secuencia: qué pasó, en orden</div>
             {d.secuencia.map((h, i) => (
               <div key={i} className="border rounded-lg p-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>
                 <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>#{i + 1}</div>
                 <div className="space-y-2">
-                  <Campo label="Hora o momento" value={h.hora} placeholder="Ej. 10:25 o antes del izaje" onChange={(v) => actualizarHecho(i, { hora: v })} />
+                  <SelectorHora label="Hora" value={h.hora} onChange={(v) => actualizarHecho(i, { hora: v })} />
+                  <Campo label="Momento (si no hay hora exacta)" value={h.momento || ""} placeholder="Ej. antes del izaje" onChange={(v) => actualizarHecho(i, { momento: v })} />
                   <AreaTexto label="Qué ocurrió" value={h.hecho} onChange={(v) => actualizarHecho(i, { hecho: v })} filas={2} />
                 </div>
                 {quitar(() => quitarFila("secuencia")(i), `Quitar hecho ${i + 1}`)}

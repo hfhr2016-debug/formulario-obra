@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {
   CODIGO_ACCIDENTE, HOJA_ACCIDENTE, CELDAS_ACCIDENTE, TIPOS_EVENTO, VINCULACIONES, SI_NO, PARTES_CUERPO, TIPOS_LESION, MECANISMOS, ENTIDADES_NOTIFICACION, REPORTADO,
-  descubrirAccidente, escribirAccidenteEnHoja, validarAccidente, camposFaltantesAccidente, resumenAccidente, testigoNuevo, testigosConDatos, notificacionNueva, esAccidente, esGraveOMortal,
+  descubrirAccidente, escribirAccidenteEnHoja, validarAccidente, camposFaltantesAccidente, resumenAccidente, testigoNuevo, testigosConDatos, notificacionNueva, esAccidente, esGraveOMortal, textoAntiguedad,
 } from "./accidenteDatos";
 import {
   NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo,
@@ -23,7 +23,7 @@ const MAX_TESTIGOS = (CELDAS_ACCIDENTE.tablas && CELDAS_ACCIDENTE.tablas.testigo
 function datosIniciales() {
   return {
     proyecto: "", contratista: "", ubicacion: "", nReporte: "", fechaEvento: "", horaEvento: "", fechaReporte: "", tipoEvento: "", lugar: "", actividad: "", enJornada: "",
-    trabajadorNombre: "", documento: "", cargo: "", empresa: "", edad: "", antiguedad: "", vinculacion: "", eps: "", arl: "",
+    trabajadorNombre: "", documento: "", cargo: "", empresa: "", edad: "", antiguedad: "", antigAnios: "", antigMeses: "", antigDias: "", vinculacion: "", eps: "", arl: "",
     queOcurrio: "", cuerpo: [], lesion: [], mecanismo: [], otros: {},
     primerosAuxilios: "", quienPresto: "", remitidoA: "", hospitalizado: "", incapacidad: "", danosMateriales: "", descripcionDanos: "",
     testigos: [testigoNuevo()], accionesInmediatas: "", notificaciones: ENTIDADES_NOTIFICACION.map(notificacionNueva),
@@ -32,7 +32,7 @@ function datosIniciales() {
 }
 
 function tieneContenido(d) {
-  return !!(d.contratista || d.ubicacion || d.nReporte || d.fechaEvento || d.horaEvento || d.tipoEvento || d.lugar || d.actividad || d.trabajadorNombre || d.queOcurrio || d.cuerpo.length || d.lesion.length ||
+  return !!(d.contratista || d.ubicacion || d.nReporte || d.fechaEvento || d.horaEvento || d.tipoEvento || d.lugar || d.actividad || d.trabajadorNombre || d.antigAnios || d.antigMeses || d.antigDias || d.queOcurrio || d.cuerpo.length || d.lesion.length ||
     d.mecanismo.length || d.accionesInmediatas || d.reportaNombre || d.testigos.some((t) => t.nombre || t.vio) || d.notificaciones.some((n) => n.reportado || n.radicado));
 }
 
@@ -185,7 +185,15 @@ export default function FormularioAccidente({ onVolver }) {
             </div>
             <BuscadorLista label="Cargo / oficio" value={d.cargo} onChange={(v) => set("cargo", v)} opciones={memoria.opcionesCargosObra} opcionesAlAbrir={memoria.opcionesCargosObra} maxResultados={10} placeholder="Cargo" />
             <Campo label="Empresa" value={d.empresa} onChange={(v) => set("empresa", v)} />
-            <Campo label="Antigüedad en el cargo" value={d.antiguedad} placeholder="Ej. 2 años" onChange={(v) => set("antiguedad", v)} />
+            <div>
+              <div className="text-xs font-semibold mb-1" style={{ color: NAVY }}>Antigüedad en el cargo</div>
+              <div className="grid grid-cols-3 gap-2.5">
+                <Campo label="Años" value={d.antigAnios} inputMode="numeric" placeholder="0" onChange={(v) => set("antigAnios", v.replace(/[^0-9]/g, ""))} />
+                <Campo label="Meses" value={d.antigMeses} inputMode="numeric" placeholder="0" onChange={(v) => set("antigMeses", v.replace(/[^0-9]/g, ""))} />
+                <Campo label="Días" value={d.antigDias} inputMode="numeric" placeholder="0" onChange={(v) => set("antigDias", v.replace(/[^0-9]/g, ""))} />
+              </div>
+              <div className="text-[11px] text-gray-500 mt-1">Llena solo lo que aplique. {textoAntiguedad(d) ? "Se escribirá: " + textoAntiguedad(d) : "Ej.: 8 meses, o 1 año y 3 meses, o 20 días."}</div>
+            </div>
             <Lista label="Tipo de vinculación" value={d.vinculacion} onChange={(v) => set("vinculacion", v)} opciones={VINCULACIONES} />
             <BuscadorLista label="EPS" value={d.eps} opciones={listaEps.opciones} opcionesAlAbrir={listaEps.opciones} maxResultados={10} placeholder="Elige la EPS o escribe otra" onChange={(v) => set("eps", v)} />
             <BuscadorLista label="ARL" value={d.arl} opciones={listaArl.opciones} opcionesAlAbrir={listaArl.opciones} maxResultados={10} placeholder="Elige la ARL o escribe otra" onChange={(v) => set("arl", v)} />
@@ -258,7 +266,7 @@ export default function FormularioAccidente({ onVolver }) {
                   <ChipsOpcion label="¿Reportado?" nombre={`Reportado ${i + 1}`} value={n.reportado} opciones={REPORTADO} pequeno onChange={(v) => actualizarNotificacion(i, { reportado: v })} />
                   <div className="grid grid-cols-2 gap-2">
                     <Campo label="Fecha" type="date" value={n.fecha} onChange={(v) => actualizarNotificacion(i, { fecha: v })} />
-                    <Campo label="Hora" type="time" value={n.hora} onChange={(v) => actualizarNotificacion(i, { hora: v })} />
+                    <SelectorHora label="Hora" value={n.hora} onChange={(v) => actualizarNotificacion(i, { hora: v })} />
                   </div>
                   <Campo label="N° de radicado o referencia" value={n.radicado} onChange={(v) => actualizarNotificacion(i, { radicado: v })} />
                 </div>

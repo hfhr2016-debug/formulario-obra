@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { fechaHoyISO } from "./sstBase";
 import {
-  CODIGO_ACCIONES, HOJA_ACCIONES, CELDAS_ACCIONES, ORIGENES, TIPOS_ACCION, ESTADOS_ACCION, EFICACIAS,
+  CODIGO_ACCIONES, HOJA_ACCIONES, MESES_PERIODO, textoPeriodo, CELDAS_ACCIONES, ORIGENES, TIPOS_ACCION, ESTADOS_ACCION, EFICACIAS,
   descubrirAcciones, escribirAccionesEnHoja, validarAcciones, camposFaltantesAcciones, resumenAcciones, accionNueva, accionVacia, accionesConDatos, estadoEfectivo,
   claveAccion, unirSinRepetir, accionesDeInspecciones, accionesDeActos, accionesDeInvestigaciones, accionesDeMatriz, registroMaestro, pendientesDelRegistro,
 } from "./accionesDatos";
@@ -174,7 +174,8 @@ export default function FormularioAcciones({ onVolver }) {
             <Campo label="Contratista / empresa" value={d.contratista} onChange={(v) => set("contratista", v)} />
             <BuscadorLista label="Ubicación" value={d.ubicacion} onChange={(v) => set("ubicacion", v)} opciones={OPCIONES_CIUDADES} opcionesAlAbrir={CIUDADES_AL_ABRIR} placeholder="Elige una ciudad o escribe otra" />
             <CampoFecha label="Fecha de corte" value={d.fechaCorte} onChange={(v) => set("fechaCorte", v)} />
-            <Campo label="Periodo evaluado" value={d.periodo} placeholder="Ej. Septiembre de 2026" onChange={(v) => set("periodo", v)} />
+            <Lista label="Periodo evaluado" value={d.periodo} onChange={(v) => set("periodo", v)} opciones={MESES_PERIODO} />
+            {d.periodo && <div className="text-[11px] text-gray-500 -mt-1.5">Se escribirá: {textoPeriodo(d)}</div>}
             <Campo label="Hoja N°" value={d.hoja} placeholder={`Automática (${siguienteConsecutivo(CLAVE_HOJA)})`} inputMode="numeric" onChange={(v) => set("hoja", v.replace(/[^0-9A-Za-z-]/g, ""))} />
           </div>
         </Seccion>

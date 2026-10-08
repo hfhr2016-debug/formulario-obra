@@ -46,9 +46,26 @@ export function estadoEfectivo(a, referenciaISO) {
   return a.estado || "Abierta";
 }
 
+export const MESES_PERIODO = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const sinTilde = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+// Número de mes (0-11) que nombra el texto del periodo, o -1
+export const mesDePeriodo = (p) => { const t = sinTilde(p); return MESES_PERIODO.findIndex((m) => t.includes(sinTilde(m))); };
+// Texto que se escribe: "Septiembre de 2026". El año sale de la fecha de corte; si el mes elegido es posterior al mes de corte, es del año anterior.
+export function textoPeriodo(d) {
+  const p = texto(d.periodo);
+  if (!p || /\d{4}/.test(p)) return p;
+  const i = mesDePeriodo(p);
+  if (i < 0) return p;
+  const m = /^(\d{4})-(\d{2})/.exec(d.fechaCorte || "");
+  if (!m) return MESES_PERIODO[i];
+  const anio = Number(m[1]) - (i > Number(m[2]) - 1 ? 1 : 0);
+  return `${MESES_PERIODO[i]} de ${anio}`;
+}
+
 export function escribirAccionesEnHoja(ws, d, celdas = CELDAS_ACCIONES, hoyISO = "") {
   const C = celdas;
-  for (const k of ["proyecto", "contratista", "ubicacion", "periodo", "hoja"]) poner(ws, C[k], d[k]);
+  for (const k of ["proyecto", "contratista", "ubicacion", "hoja"]) poner(ws, C[k], d[k]);
+  poner(ws, C.periodo, textoPeriodo(d));
   poner(ws, C.fechaCorte, fechaDDMMYYYY(d.fechaCorte));
   const ref = d.fechaCorte || hoyISO;
   const T = C.tablas || {};

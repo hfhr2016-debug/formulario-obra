@@ -74,10 +74,23 @@ export const notificacionNueva = () => ({ reportado: "", fecha: "", hora: "", ra
 export const esAccidente = (d) => /^Accidente/.test(d.tipoEvento || "");
 export const esGraveOMortal = (d) => d.tipoEvento === "Accidente grave" || d.tipoEvento === "Accidente mortal";
 
+// Antigüedad en años, meses y días (cada uno opcional). Si el borrador es viejo (texto libre), se conserva ese texto.
+export function textoAntiguedad(d) {
+  const n = (v) => { const x = parseInt(String(v == null ? "" : v).replace(/[^0-9]/g, ""), 10); return isNaN(x) ? 0 : x; };
+  const a = n(d.antigAnios), m = n(d.antigMeses), di = n(d.antigDias);
+  const partes = [];
+  if (a) partes.push(a + (a === 1 ? " año" : " años"));
+  if (m) partes.push(m + (m === 1 ? " mes" : " meses"));
+  if (di) partes.push(di + (di === 1 ? " día" : " días"));
+  if (!partes.length) return texto(d.antiguedad);
+  return partes.length === 1 ? partes[0] : partes.slice(0, -1).join(", ") + " y " + partes[partes.length - 1];
+}
+
 export function escribirAccidenteEnHoja(ws, d, celdas = CELDAS_ACCIDENTE) {
   const C = celdas;
-  for (const k of ["proyecto", "contratista", "ubicacion", "nReporte", "horaEvento", "tipoEvento", "lugar", "actividad", "enJornada", "trabajadorNombre", "documento", "cargo", "empresa", "edad", "antiguedad",
+  for (const k of ["proyecto", "contratista", "ubicacion", "nReporte", "horaEvento", "tipoEvento", "lugar", "actividad", "enJornada", "trabajadorNombre", "documento", "cargo", "empresa", "edad",
     "vinculacion", "eps", "arl", "queOcurrio", "primerosAuxilios", "quienPresto", "remitidoA", "hospitalizado", "danosMateriales", "descripcionDanos", "accionesInmediatas"]) poner(ws, C[k], d[k]);
+  poner(ws, C.antiguedad, textoAntiguedad(d));
   poner(ws, C.fechaEvento, fechaDDMMYYYY(d.fechaEvento));
   poner(ws, C.fechaReporte, fechaDDMMYYYY(d.fechaReporte));
   const dias = texto(d.incapacidad).replace(",", ".");

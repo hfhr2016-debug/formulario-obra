@@ -65,10 +65,23 @@ export const descubrirInvestigacion = (ws) => descubrirPorEtiquetas(ws, SPEC_INV
 const arr = (a) => (Array.isArray(a) ? a : []);
 const texto = (v) => String(v === undefined || v === null ? "" : v).trim();
 export const miembroNuevo = (b = {}) => ({ nombre: "", rol: "", documento: "", ...b });
-export const hechoNuevo = (b = {}) => ({ hora: "", hecho: "", ...b });
+export const hechoNuevo = (b = {}) => ({ hora: "", momento: "", hecho: "", ...b });
+// Texto de la columna "Hora o momento": "10:25", "al izar" o "10:25 — al izar"
+export const textoHora = (h) => [texto(h && h.hora), texto(h && h.momento)].filter(Boolean).join(" — ");
+// Agrega la hora del evento (del reporte de accidente) como primer hecho de la secuencia. Devuelve { secuencia, estado }.
+export function conHoraDelEvento(secuencia, hora, max = 6) {
+  const sec = Array.isArray(secuencia) ? secuencia : [];
+  if (!texto(hora)) return { secuencia: sec, estado: "sin-hora" };
+  if (sec.some((h) => texto(h.hora) === texto(hora))) return { secuencia: sec, estado: "ya" };
+  const vacio = sec.findIndex((h) => !(texto(h.hora) || texto(h.momento) || texto(h.hecho)));
+  const nuevo = hechoNuevo({ hora, hecho: "Ocurre el evento (hora del reporte del accidente)." });
+  if (vacio >= 0) return { secuencia: sec.map((h, i) => (i === vacio ? nuevo : h)), estado: "ok" };
+  if (sec.length >= max) return { secuencia: sec, estado: "lleno" };
+  return { secuencia: [nuevo, ...sec], estado: "ok" };
+}
 export const accionPlanNueva = (b = {}) => ({ accion: "", control: "", responsable: "", responsableCargo: "", fecha: "", estado: "Abierta", ...b });
 const miembroVacio = (m) => !(m && (texto(m.nombre) || texto(m.rol) || texto(m.documento)));
-const hechoVacio = (h) => !(h && (texto(h.hora) || texto(h.hecho)));
+const hechoVacio = (h) => !(h && (texto(h.hora) || texto(h.momento) || texto(h.hecho)));
 const planVacio = (p) => !(p && (texto(p.accion) || texto(p.responsable) || texto(p.responsableCargo) || p.fecha || texto(p.control)));
 export const equipoConDatos = (d) => arr(d.equipo).filter((m) => !miembroVacio(m));
 export const secuenciaConDatos = (d) => arr(d.secuencia).filter((h) => !hechoVacio(h));
@@ -106,7 +119,7 @@ export function escribirInvestigacionEnHoja(ws, d, celdas = CELDAS_INVESTIGACION
   ];
   const T = C.tablas || {};
   escribirTabla(ws, T.equipo, equipoConDatos(d).map((m) => ({ nombre: m.nombre, rol: m.rol, documento: m.documento })));
-  escribirTabla(ws, T.secuencia, secuenciaConDatos(d).map((h) => ({ hora: h.hora, hecho: h.hecho })));
+  escribirTabla(ws, T.secuencia, secuenciaConDatos(d).map((h) => ({ hora: textoHora(h), hecho: h.hecho })));
   escribirTabla(ws, T.porques, PREGUNTAS_PORQUES.map((_, i) => ({ respuesta: arr(d.porques)[i] || "" })));
   escribirTabla(ws, T.plan, planConDatos(d).map((p) => ({ accion: p.accion, control: p.control, responsable: textoResponsable(p.responsable, p.responsableCargo), fecha: fechaDDMMYYYY(p.fecha), estado: p.estado })));
   if (T.porques) saltoDePagina(ws, T.porques.fila0 + T.porques.n - 1 + 1);   // la hoja 2 empieza en "5. Causas" (la librería pierde el salto de la plantilla)
