@@ -112,8 +112,10 @@ export function guardarFacturasDeObra(obraId, lista) {
   const ahora = Date.now();
   guardarJSON(CLAVE_CP_FACTURAS, [...arr(lista).filter((f) => !facturaVacia(f)).map((f) => ({ ...f, obraId, actualizado: ahora })), ...otras]);
 }
-// Valor total de la factura: igual a la fórmula de la plantilla (valor antes de IVA + IVA − retenciones)
-export const totalFactura = (f) => (num(f.valorAntes) === null ? null : n0(f.valorAntes) + n0(f.iva) - n0(f.retenciones));
+// Costo de la factura (con IVA): valor antes de IVA + IVA. Las retenciones NO se restan: son un impuesto del proveedor que la obra consigna a la DIAN, así que siguen siendo costo de la obra.
+export const totalFactura = (f) => (num(f.valorAntes) === null ? null : n0(f.valorAntes) + n0(f.iva));
+// Neto a pagar al proveedor: costo menos las retenciones que se le descuentan.
+export const netoFactura = (f) => (totalFactura(f) === null ? null : totalFactura(f) - n0(f.retenciones));
 export function costoRealPorCapitulo(facturas, nombreCap, hastaISO) {
   const k = texto(nombreCap).toLowerCase();
   return arr(facturas).filter((f) => texto(f.capitulo).toLowerCase() === k && (!hastaISO || !f.fecha || f.fecha <= hastaISO)).reduce((t, f) => t + (totalFactura(f) || 0), 0);

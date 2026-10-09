@@ -1,7 +1,7 @@
 // Control Presupuestal · Lote 2 — datos y cálculos de Materiales, Subcontratos, Mano de obra, Maquinaria y Cuentas por pagar.
 // Igual que el Lote 1: cada registro lleva su `id`, su `obraId` y `actualizado` (listo para Firestore) y se guarda en el dispositivo.
 // Los cálculos repiten las fórmulas de las plantillas Excel (el Excel las calcula solo; aquí se usan para mostrarlas en pantalla).
-import { num, texto, nuevoId, totalFactura, listarFacturas } from "./cpBase";
+import { num, texto, nuevoId, netoFactura, listarFacturas } from "./cpBase";
 
 function leerJSON(clave, porDefecto) { try { const t = localStorage.getItem(clave); return t ? JSON.parse(t) : porDefecto; } catch (e) { return porDefecto; } }
 function guardarJSON(clave, valor) { try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) { /* sin memoria: no se rompe la pantalla */ } }
@@ -122,5 +122,5 @@ export function facturasPorPagar(obraId, cuentas) {
   return listarFacturas(obraId).filter((f) => (f.estado === "Pendiente" || f.estado === "Parcial") && !ya.has(f.id));
 }
 export function cuentaDesdeFactura(f, obraId) {
-  return cuentaNueva({ obraId, proveedor: f.proveedor, nit: f.nit, numero: f.numero, fEmision: f.fecha, valor: totalFactura(f) === null ? "" : String(Math.round(totalFactura(f))), capitulo: f.capitulo, obs: f.concepto, facturaId: f.id });
+  return cuentaNueva({ obraId, proveedor: f.proveedor, nit: f.nit, numero: f.numero, fEmision: f.fecha, valor: netoFactura(f) === null ? "" : String(Math.round(netoFactura(f))), capitulo: f.capitulo, obs: f.concepto, facturaId: f.id });
 }

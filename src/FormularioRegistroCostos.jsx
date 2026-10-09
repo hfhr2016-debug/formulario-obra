@@ -6,7 +6,7 @@ import {
   facturasDelPeriodo, facturasConDatos, resumenCostos, nombrePeriodo, primerDiaMes, ultimoDiaMes,
 } from "./registroCostosDatos";
 import {
-  TIPOS_COSTO, ESTADOS_PAGO, facturaNueva, listarFacturas, guardarFacturasDeObra, totalFactura, pesos, num, texto, nombreTipoProyecto, capitulosDePresupuesto, capituloNuevo,
+  TIPOS_COSTO, ESTADOS_PAGO, facturaNueva, listarFacturas, guardarFacturasDeObra, totalFactura, netoFactura, pesos, num, texto, nombreTipoProyecto, capitulosDePresupuesto, capituloNuevo,
 } from "./cpBase";
 import { useObra, PanelObra, CampoDinero, useFirmas, CifrasResumen } from "./cpComunes";
 import {
@@ -114,7 +114,7 @@ export default function FormularioRegistroCostos({ onVolver }) {
               )}
               {avisoCaps && <div className="text-[11px] mb-2" style={{ color: "#2E7D4F" }}>{avisoCaps}</div>}
               {enPantalla.map((f, i) => {
-                const total = totalFactura(f);
+                const total = totalFactura(f); const neto = netoFactura(f);
                 return (
                   <div key={f.id} className="border rounded-lg p-2.5 mb-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>
                     <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>#{i + 1}</div>
@@ -133,7 +133,8 @@ export default function FormularioRegistroCostos({ onVolver }) {
                         {num(f.valorAntes) !== null && <button type="button" onClick={() => actualizar(f.id, { iva: String(Math.round(num(f.valorAntes) * 0.19)) })} className="text-[11px] mt-1 underline" style={{ color: NAVY }}>Poner el IVA del 19 %</button>}
                       </div>
                       <CampoDinero label="Retenciones" value={f.retenciones} onChange={(v) => actualizar(f.id, { retenciones: v })} />
-                      {total !== null && <div className="text-[12.5px] font-bold px-3 py-1.5 rounded-md text-center" style={{ background: total < 0 ? "#FDEDEA" : "#EAF4EC", color: total < 0 ? "#B3401F" : "#1D6B3A" }}>Valor total: {pesos(total)}</div>}
+                      {total !== null && <div className="text-[12.5px] font-bold px-3 py-1.5 rounded-md text-center" style={{ background: total < 0 ? "#FDEDEA" : "#EAF4EC", color: total < 0 ? "#B3401F" : "#1D6B3A" }}>Costo (con IVA): {pesos(total)}</div>}
+                      {neto !== null && num(f.retenciones) !== null && num(f.retenciones) !== 0 && <div className="text-[11.5px] px-3 py-1 rounded-md text-center" style={{ background: "#F2F6FB", color: NAVY }}>Neto a pagar al proveedor: <b>{pesos(neto)}</b> <span style={{ color: "#8A8F99" }}>(costo − retenciones)</span></div>}
                       <ChipsOpcion label="Estado" nombre={`Estado ${i + 1}`} value={f.estado} opciones={ESTADOS_PAGO} pequeno onChange={(v) => actualizar(f.id, { estado: v })} />
                       {(f.estado === "Pagado" || f.estado === "Parcial") && <Campo label="Fecha de pago" type="date" value={f.fechaPago} onChange={(v) => actualizar(f.id, { fechaPago: v })} />}
                       <Campo label="Soporte (ruta o N°)" value={f.soporte} placeholder="Ej. Carpeta 3, folio 12" onChange={(v) => actualizar(f.id, { soporte: v })} />
@@ -150,7 +151,7 @@ export default function FormularioRegistroCostos({ onVolver }) {
         </Seccion>
 
         <Seccion id="resumen" titulo="3. Resumen del periodo" subtitulo={res.facturas ? `${pesos(res.total)} · ${pesos(res.pendiente)} por pagar` : "Se calcula con las facturas"} abierta={abierta === "resumen"} onToggle={alternar}>
-          <CifrasResumen cifras={[{ t: "Facturas", v: String(res.facturas) }, { t: "Total del periodo", v: pesos(res.total) || "$ 0" }, { t: "Pagado", v: pesos(res.pagado) || "$ 0", color: "#1D6B3A" }, { t: "Pendiente + parcial", v: pesos(res.pendiente + res.parcial) || "$ 0", color: "#B3401F" }]} />
+          <CifrasResumen cifras={[{ t: "Facturas", v: String(res.facturas) }, { t: "Costo del periodo", v: pesos(res.total) || "$ 0" }, { t: "Pagado", v: pesos(res.pagado) || "$ 0", color: "#1D6B3A" }, { t: "Pendiente + parcial", v: pesos(res.pendiente + res.parcial) || "$ 0", color: "#B3401F" }]} />
           <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>El Excel trae además el resumen por tipo de costo y por estado, calculado con fórmulas.</div>
         </Seccion>
 
