@@ -2,6 +2,7 @@
 // Sin pantallas. Los datos viven en el dispositivo (claves ryr_cat_*) y el motor de sincronización los espeja con Firestore.
 // Si todavía no hay catálogo guardado, se usa el que trae el código (catalogoPrecios.js): nada se rompe.
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
+import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -132,5 +133,146 @@ export function importarFilas(id, filas) {
     }
   });
   guardar(def.clave, m);
+  return { nuevos, actualizados, sinCambio, errores };
+}
+
+// =====================================================================================================================
+// ACTIVIDADES (Edificaciones, Vías e Hidrocarburos): las usan el Presupuesto, las Cantidades, el Cronograma y el APU.
+// Cada actividad es un documento; el orden del catálogo se guarda en `orden`.
+// =====================================================================================================================
+export const ACTIVIDADES = { id: "actividades", titulo: "Actividades", clave: "ryr_cat_actividades", col: "cat_actividades" };
+export const TIPOS_PROYECTO = [
+  { id: "edificacion", nombre: "Edificaciones" },
+  { id: "vias", nombre: "Vías y carreteras" },
+  { id: "hidrocarburos", nombre: "Hidrocarburos" },
+];
+const clavAct = (it) => `${it.tipo}|${clave(it.actividad)}|${clave(it.unidad)}`;
+let cacheAct = { raw: null, valor: null };
+
+function ordenarAct(lista) {
+  return lista.slice().sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0) || txt(a.actividad).localeCompare(txt(b.actividad), "es"));
+}
+// Actividades vigentes: las del dispositivo/nube si ya hay; si no, las del código. Sin `orden`, en el orden del catálogo base.
+export function actividadesVigentes() {
+  let raw = null;
+  try { raw = localStorage.getItem(ACTIVIDADES.clave); } catch (e) { raw = null; }
+  if (cacheAct.valor && cacheAct.raw === raw) return cacheAct.valor;
+  let valor = CATALOGO_ACTIVIDADES_BASE;
+  if (raw) {
+    try {
+      const m = JSON.parse(raw);
+      const items = Object.values(m && typeof m === "object" ? m : {}).filter((x) => x && txt(x.actividad) && x.tipo);
+      if (items.length) valor = ordenarAct(items);
+    } catch (e) { /* queda el del código */ }
+  }
+  cacheAct = { raw, valor };
+  return valor;
+}
+const mapaAct = () => leer(ACTIVIDADES.clave);
+export const hayActividadesPropias = () => Object.values(mapaAct()).some((x) => x && txt(x.actividad));
+// Llaves del catálogo base (únicas: si dos actividades quedan iguales, la segunda lleva ~2)
+let llavesBase = null;
+function llavesDeLaBase() {
+  if (llavesBase) return llavesBase;
+  const usadas = new Set();
+  llavesBase = CATALOGO_ACTIVIDADES_BASE.map((it) => { let k = clavAct(it); let n = 2; while (usadas.has(k)) k = `${clavAct(it)}~${n++}`; usadas.add(k); return k; });
+  return llavesBase;
+}
+export function sembrarActividades() {
+  const m = mapaAct();
+  if (Object.values(m).some((x) => x && txt(x.actividad))) return false;
+  const nuevo = {};
+  const llaves = llavesDeLaBase();
+  CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => { nuevo[llaves[i]] = { ...it, orden: (i + 1) * 10, actualizado: Date.now() }; });
+  guardar(ACTIVIDADES.clave, nuevo);
+  return true;
+}
+export function itemsActividades(tipo) {
+  const m = mapaAct();
+  const hay = Object.values(m).some((x) => x && txt(x.actividad));
+  const lista = hay
+    ? ordenarAct(Object.keys(m).filter((k) => m[k] && txt(m[k].actividad)).map((k) => ({ ...m[k], __llave: k })))
+    : CATALOGO_ACTIVIDADES_BASE.map((it, i) => ({ ...it, orden: (i + 1) * 10, __llave: llavesDeLaBase()[i] }));
+  return (tipo ? lista.filter((x) => x.tipo === tipo) : lista).map((x) => ({ llave: x.__llave, item: x }));
+}
+// Orden para una actividad nueva: justo después de la última de su mismo capítulo y subcapítulo (o capítulo; o del tipo)
+function ordenParaNueva(m, it) {
+  const todas = Object.values(m).filter((x) => x && x.tipo === it.tipo);
+  const mismas = (ks) => todas.filter((x) => ks.every((k) => txt(x[k]) === txt(it[k])));
+  for (const ks of [["capitulo", "subcapitulo"], ["capitulo"], []]) {
+    const g = mismas(ks);
+    if (g.length) return Math.max(...g.map((x) => Number(x.orden) || 0)) + 1;
+  }
+  return Math.max(0, ...Object.values(m).map((x) => Number(x && x.orden) || 0)) + 10;
+}
+export function guardarActividad(item, llave) {
+  const act = txt(item.actividad), uni = txt(item.unidad);
+  if (!TIPOS_PROYECTO.some((t) => t.id === item.tipo)) return { ok: false, error: "Elige el tipo de proyecto." };
+  if (!act) return { ok: false, error: "Escribe el nombre de la actividad." };
+  if (!uni) return { ok: false, error: "Escribe la unidad." };
+  if (!txt(item.capitulo)) return { ok: false, error: "Escribe el capítulo." };
+  sembrarActividades();
+  const m = mapaAct();
+  const nuevo = { ...(llave && m[llave] ? m[llave] : {}), tipo: item.tipo, codigo: txt(item.codigo), capitulo: txt(item.capitulo), subcapitulo: txt(item.subcapitulo), grupo: txt(item.grupo), actividad: act, unidad: uni, metodo: txt(item.metodo) };
+  ["codigo", "grupo", "metodo", "subcapitulo"].forEach((k) => { if (!nuevo[k]) delete nuevo[k]; });
+  const k = llave && m[llave] ? llave : clavAct(nuevo);
+  if (!llave && m[k]) return { ok: false, error: "Ya existe esa actividad con esa unidad en este tipo de proyecto." };
+  if (Object.keys(m).some((o) => o !== k && clavAct(m[o]) === clavAct(nuevo))) return { ok: false, error: "Ya existe esa actividad con esa unidad en este tipo de proyecto." };
+  if (!llave || !m[k]) nuevo.orden = ordenParaNueva(m, nuevo);
+  nuevo.actualizado = Date.now();
+  m[k] = nuevo;
+  guardar(ACTIVIDADES.clave, m);
+  return { ok: true, llave: k };
+}
+export function quitarActividad(llave) {
+  sembrarActividades();
+  const m = mapaAct();
+  if (!m[llave]) return false;
+  delete m[llave];
+  guardar(ACTIVIDADES.clave, m);
+  return true;
+}
+export const ENCABEZADOS_EXCEL_ACT = ["Tipo (edificacion / vias / hidrocarburos)", "Código", "Capítulo", "Subcapítulo", "Grupo", "Actividad", "Unidad", "Método sugerido"];
+export const filasActividadesParaExcel = () => itemsActividades().map(({ item }) => [item.tipo, txt(item.codigo), txt(item.capitulo), txt(item.subcapitulo), txt(item.grupo), txt(item.actividad), txt(item.unidad), txt(item.metodo)]);
+const tipoDeTexto = (t) => {
+  const k = clave(t).replace(/[áéíóú]/g, (c) => ({ á: "a", é: "e", í: "i", ó: "o", ú: "u" }[c]));
+  if (k.startsWith("edif") || k.startsWith("reform")) return "edificacion";
+  if (k.startsWith("via") || k.startsWith("carret")) return "vias";
+  if (k.startsWith("hidro")) return "hidrocarburos";
+  return "";
+};
+// Filas leídas de un Excel ([tipo, código, capítulo, subcapítulo, grupo, actividad, unidad, método]). Reconoce la actividad por tipo+nombre+unidad.
+export function importarActividades(filas) {
+  const limpias = []; const errores = [];
+  filas.forEach((f, i) => {
+    const [t, cod, cap, sub, gru, act, uni, met] = [f[0], txt(f[1]), txt(f[2]), txt(f[3]), txt(f[4]), txt(f[5]), txt(f[6]), txt(f[7])];
+    if (!txt(t) && !act && !cap) return;
+    if (/^tipo/i.test(txt(t)) && /^actividad/i.test(act)) return;
+    const tipo = tipoDeTexto(t);
+    if (!tipo) { errores.push(`Fila ${i + 1}: tipo de proyecto no reconocido («${txt(t)}»)`); return; }
+    if (!act || !uni || !cap) { errores.push(`Fila ${i + 1}: faltan actividad, unidad o capítulo`); return; }
+    limpias.push({ tipo, codigo: cod, capitulo: cap, subcapitulo: sub, grupo: gru, actividad: act, unidad: uni, metodo: met });
+  });
+  if (!limpias.length) return { nuevos: 0, actualizados: 0, sinCambio: 0, errores: errores.length ? errores : ["El archivo no tiene filas con datos."] };
+  sembrarActividades();
+  const m = mapaAct();
+  let nuevos = 0, actualizados = 0, sinCambio = 0;
+  limpias.forEach((it) => {
+    const k = Object.keys(m).find((o) => clavAct(m[o]) === clavAct(it));
+    if (k) {
+      const a = m[k];
+      const igual = ["codigo", "capitulo", "subcapitulo", "grupo", "metodo"].every((c) => txt(a[c]) === txt(it[c]) || (!txt(it[c]) && c !== "capitulo"));
+      if (igual) { sinCambio++; return; }
+      const mezcla = { ...a };
+      ["codigo", "capitulo", "subcapitulo", "grupo", "metodo"].forEach((c) => { if (txt(it[c])) mezcla[c] = it[c]; });
+      mezcla.actualizado = Date.now(); m[k] = mezcla; actualizados++;
+    } else {
+      const nuevo = { ...it }; ["codigo", "subcapitulo", "grupo", "metodo"].forEach((c) => { if (!nuevo[c]) delete nuevo[c]; });
+      nuevo.orden = ordenParaNueva(m, nuevo); nuevo.actualizado = Date.now();
+      let llave = clavAct(nuevo); let n = 2; while (m[llave]) llave = `${clavAct(nuevo)}~${n++}`;
+      m[llave] = nuevo; nuevos++;
+    }
+  });
+  guardar(ACTIVIDADES.clave, m);
   return { nuevos, actualizados, sinCambio, errores };
 }

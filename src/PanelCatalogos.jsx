@@ -3,7 +3,10 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 import { descargarLibro } from "./sstComunes";
-import { CATALOGOS, catalogoDef, itemsConLlave, hayCatalogoPropio, guardarItem, quitarItem, filasParaExcel, importarFilas, ENCABEZADOS_EXCEL } from "./catalogoVivo";
+import {
+  CATALOGOS, catalogoDef, itemsConLlave, hayCatalogoPropio, guardarItem, quitarItem, filasParaExcel, importarFilas, ENCABEZADOS_EXCEL,
+  TIPOS_PROYECTO, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT,
+} from "./catalogoVivo";
 
 const NAVY = "#1B2A45", GOLD = "#D9A233", PAPER = "#F7F7F5", LINE = "#D9DCE1";
 const pesos = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-CO");
@@ -12,13 +15,14 @@ const celdaTexto = (v) => (v && typeof v === "object" ? (v.result !== undefined 
 
 export default function PanelCatalogos({ onVolver }) {
   const [cat, setCat] = useState("materiales");
+  const esAct = cat === "actividades";
   const [busca, setBusca] = useState("");
   const [version, setVersion] = useState(0);
   const [edit, setEdit] = useState(null);           // { llave|null, item }
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
-  const def = catalogoDef(cat);
-  const todos = useMemo(() => itemsConLlave(cat), [cat, version]);          // eslint-disable-line
+  const def = catalogoDef(cat) || CATALOGOS[0];
+  const todos = useMemo(() => (catalogoDef(cat) ? itemsConLlave(cat) : []), [cat, version]);          // eslint-disable-line
   const q = busca.trim().toLowerCase();
   const filtrados = q ? todos.filter(({ item }) => `${item.descripcion} ${item.codigo}`.toLowerCase().includes(q)) : todos;
   const refrescar = () => setVersion((v) => v + 1);
@@ -75,7 +79,10 @@ export default function PanelCatalogos({ onVolver }) {
             <button key={c.id} type="button" onClick={() => { setCat(c.id); setBusca(""); setEdit(null); setAviso(""); setError(""); }} aria-pressed={cat === c.id}
               className="text-[12px] px-3 py-1.5 rounded-full border font-semibold" style={cat === c.id ? { background: NAVY, color: "white", borderColor: NAVY } : { background: "white", color: NAVY, borderColor: LINE }}>{c.titulo}</button>
           ))}
+          <button type="button" onClick={() => { setCat("actividades"); setBusca(""); setEdit(null); setAviso(""); setError(""); }} aria-pressed={esAct}
+            className="text-[12px] px-3 py-1.5 rounded-full border font-semibold" style={esAct ? { background: NAVY, color: "white", borderColor: NAVY } : { background: "white", color: NAVY, borderColor: LINE }}>Actividades</button>
         </div>
+        {esAct ? <PanelActividades /> : <>
         <div className="text-[11px] mb-2" style={{ color: "#8A8F99" }}>
           {todos.length} ítems · {hayCatalogoPropio(cat) ? "catálogo propio (sincronizado)" : "catálogo base: se guarda como propio al hacer el primer cambio"}
         </div>
@@ -124,7 +131,128 @@ export default function PanelCatalogos({ onVolver }) {
         </div>
         {filtrados.length > 80 && <div className="text-[11px] mt-2" style={{ color: "#8A8F99" }}>Se muestran 80 de {filtrados.length}. Usa la búsqueda para encontrar el resto.</div>}
         <div className="text-[10.5px] mt-3" style={{ color: "#8A8F99" }}>Los APU y presupuestos que ya elaboraste conservan los precios con los que se hicieron; el cambio vale para lo que elabores de ahora en adelante.</div>
+        </>}
       </div>
+    </div>
+  );
+}
+
+// ---------- Actividades (Presupuesto, Cantidades, Cronograma y APU) ----------
+const actVacia = (tipo) => ({ tipo, codigo: "", capitulo: "", subcapitulo: "", grupo: "", actividad: "", unidad: "", metodo: "" });
+function PanelActividades() {
+  const [tipo, setTipo] = useState("edificacion");
+  const [busca, setBusca] = useState("");
+  const [version, setVersion] = useState(0);
+  const [edit, setEdit] = useState(null);
+  const [aviso, setAviso] = useState("");
+  const [error, setError] = useState("");
+  const todos = useMemo(() => itemsActividades(tipo), [tipo, version]);          // eslint-disable-line
+  const q = busca.trim().toLowerCase();
+  const filtrados = q ? todos.filter(({ item }) => `${item.actividad} ${item.capitulo} ${item.codigo || ""}`.toLowerCase().includes(q)) : todos;
+  const capitulos = useMemo(() => Array.from(new Set(todos.map(({ item }) => item.capitulo).filter(Boolean))), [todos]);
+  const subcaps = useMemo(() => Array.from(new Set(todos.filter(({ item }) => !edit || item.capitulo === edit.item.capitulo).map(({ item }) => item.subcapitulo).filter(Boolean))), [todos, edit && edit.item.capitulo]);   // eslint-disable-line
+  const refrescar = () => setVersion((v) => v + 1);
+  const campo = "w-full border rounded-lg px-3 py-2 text-[13px]";
+  const cambia = (k) => (e) => setEdit({ ...edit, item: { ...edit.item, [k]: e.target.value } });
+
+  function guardarEdicion() {
+    const r = guardarActividad(edit.item, edit.llave);
+    if (!r.ok) { setError(r.error); return; }
+    setError(""); setAviso(edit.llave ? "Cambio guardado." : "Actividad agregada."); setEdit(null); refrescar();
+  }
+  function quitar() {
+    if (!window.confirm("¿Quitar esta actividad del catálogo? Los presupuestos ya hechos no se tocan.")) return;
+    quitarActividad(edit.llave); setEdit(null); setAviso("Actividad quitada."); refrescar();
+  }
+  async function descargar() {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Actividades");
+    ws.addRow(ENCABEZADOS_EXCEL_ACT);
+    filasActividadesParaExcel().forEach((f) => ws.addRow(f));
+    ws.getRow(1).font = { bold: true };
+    ws.columns = [{ width: 18 }, { width: 12 }, { width: 28 }, { width: 28 }, { width: 24 }, { width: 70 }, { width: 10 }, { width: 50 }];
+    await descargarLibro(wb, "Catalogo_actividades.xlsx");
+  }
+  async function subir(e) {
+    const archivo = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!archivo) return;
+    setError(""); setAviso("");
+    try {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(await archivo.arrayBuffer());
+      const ws = wb.worksheets[0];
+      const filas = [];
+      ws.eachRow((fila) => filas.push([1, 2, 3, 4, 5, 6, 7, 8].map((c) => celdaTexto(fila.getCell(c).value))));
+      const r = importarActividades(filas);
+      refrescar();
+      setAviso(`Excel leído: ${r.actualizados} actualizadas, ${r.nuevos} nuevas, ${r.sinCambio} sin cambios.${r.errores.length ? " Se omitieron: " + r.errores.slice(0, 3).join("; ") + (r.errores.length > 3 ? "…" : ".") : ""}`);
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo leer el Excel. Usa el que descargas aquí (columnas: Tipo, Código, Capítulo, Subcapítulo, Grupo, Actividad, Unidad, Método).");
+    }
+  }
+  const campoTxt = (etq, k, ph) => (
+    <label className="block text-[11px] font-semibold" style={{ color: "#8A8F99" }}>{etq}
+      <input value={edit.item[k] || ""} placeholder={ph} onChange={cambia(k)} className={campo + " mt-0.5"} style={{ borderColor: LINE }} aria-label={etq} list={k === "capitulo" ? "lista-capitulos" : k === "subcapitulo" ? "lista-subcapitulos" : undefined} /></label>
+  );
+
+  return (
+    <div>
+      <div className="flex gap-1.5 mb-2 flex-wrap">
+        {TIPOS_PROYECTO.map((t) => (
+          <button key={t.id} type="button" onClick={() => { setTipo(t.id); setBusca(""); setEdit(null); setAviso(""); setError(""); }} aria-pressed={tipo === t.id}
+            className="text-[11.5px] px-2.5 py-1 rounded-full border" style={tipo === t.id ? { background: GOLD, color: "white", borderColor: GOLD } : { background: "white", color: NAVY, borderColor: LINE }}>{t.nombre}</button>
+        ))}
+      </div>
+      <div className="text-[11px] mb-2" style={{ color: "#8A8F99" }}>
+        {todos.length} actividades · {hayActividadesPropias() ? "catálogo propio (sincronizado)" : "catálogo base: se guarda como propio al hacer el primer cambio"}
+      </div>
+      <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por actividad, capítulo o código" className={campo + " mb-2"} style={{ borderColor: LINE, background: "white" }} />
+      <div className="flex gap-2 mb-3">
+        <button type="button" onClick={() => { setEdit({ llave: null, item: actVacia(tipo) }); setError(""); setAviso(""); }} className="flex-1 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: GOLD }}>+ Agregar actividad</button>
+        <button type="button" onClick={descargar} className="px-3 py-2 rounded-lg border text-[12px] font-semibold" style={{ borderColor: LINE, color: NAVY, background: "white" }}>⬇ Excel</button>
+        <label className="px-3 py-2 rounded-lg border text-[12px] font-semibold cursor-pointer" style={{ borderColor: LINE, color: NAVY, background: "white" }}>
+          ⬆ Subir Excel<input type="file" accept=".xlsx" onChange={subir} className="hidden" data-subir-excel />
+        </label>
+      </div>
+      {aviso && <div className="text-[11.5px] mb-2 p-2 rounded" style={{ background: "#EAF4EC", color: "#1D6B3A" }}>{aviso}</div>}
+      {error && !edit && <div className="text-[11.5px] mb-2 p-2 rounded" style={{ background: "#FDEDEA", color: "#B3401F" }}>{error}</div>}
+      {edit && (
+        <div className="bg-white rounded-xl p-3 mb-3 space-y-2" style={{ border: `1px solid ${GOLD}` }} data-editor>
+          <div className="text-[12px] font-bold" style={{ color: NAVY }}>{edit.llave ? "Cambiar actividad" : "Nueva actividad"} · {TIPOS_PROYECTO.find((t) => t.id === edit.item.tipo).nombre}</div>
+          {campoTxt("Actividad", "actividad")}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">{campoTxt("Capítulo", "capitulo")}</div>
+            {campoTxt("Unidad", "unidad")}
+          </div>
+          <div className="grid grid-cols-2 gap-2">{campoTxt("Subcapítulo", "subcapitulo")}{campoTxt("Grupo", "grupo")}</div>
+          <div className="grid grid-cols-3 gap-2">
+            {campoTxt("Código", "codigo", "(opcional)")}
+            <div className="col-span-2">{campoTxt("Método sugerido", "metodo", "(opcional)")}</div>
+          </div>
+          <datalist id="lista-capitulos">{capitulos.map((c) => <option key={c} value={c} />)}</datalist>
+          <datalist id="lista-subcapitulos">{subcaps.map((c) => <option key={c} value={c} />)}</datalist>
+          {error && <div className="text-[11.5px]" style={{ color: "#B3401F" }}>{error}</div>}
+          <div className="flex gap-2">
+            <button type="button" onClick={guardarEdicion} className="flex-1 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: NAVY }}>Guardar</button>
+            <button type="button" onClick={() => { setEdit(null); setError(""); }} className="px-3 py-2 rounded-lg border text-[12.5px]" style={{ borderColor: LINE, color: NAVY }}>Cancelar</button>
+            {edit.llave && <button type="button" onClick={quitar} className="px-3 py-2 rounded-lg border text-[12.5px]" style={{ borderColor: LINE, color: "#B3401F" }}>Quitar</button>}
+          </div>
+        </div>
+      )}
+      <div className="bg-white rounded-xl overflow-hidden" style={{ border: `1px solid ${LINE}` }}>
+        {filtrados.slice(0, 80).map(({ llave, item }) => (
+          <button key={llave} type="button" onClick={() => { setEdit({ llave, item: { ...actVacia(item.tipo), ...item } }); setError(""); setAviso(""); }}
+            className="w-full text-left px-3 py-2 border-b last:border-b-0 flex items-center gap-2" style={{ borderColor: LINE }} data-item>
+            <span className="flex-1 min-w-0"><span className="block text-[12.5px]" style={{ color: NAVY }}>{item.actividad}</span><span className="block text-[10.5px]" style={{ color: "#8A8F99" }}>{item.capitulo}{item.subcapitulo ? " · " + item.subcapitulo : ""}{item.codigo ? " · " + item.codigo : ""}</span></span>
+            <span className="text-[11.5px] font-semibold shrink-0" style={{ color: NAVY }}>{item.unidad}</span>
+          </button>
+        ))}
+        {!filtrados.length && <div className="p-3 text-[12px]" style={{ color: "#8A8F99" }}>No hay actividades con esa búsqueda.</div>}
+      </div>
+      {filtrados.length > 80 && <div className="text-[11px] mt-2" style={{ color: "#8A8F99" }}>Se muestran 80 de {filtrados.length}. Usa la búsqueda para encontrar el resto.</div>}
+      <div className="text-[10.5px] mt-3" style={{ color: "#8A8F99" }}>Lo que cambies aparece en el Presupuesto, las Cantidades, el Cronograma y el APU de todos los dispositivos. Los presupuestos ya elaborados no cambian.</div>
     </div>
   );
 }

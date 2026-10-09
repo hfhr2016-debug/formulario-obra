@@ -40,6 +40,7 @@ export const FLUJOS = [
   { col: "cat_materiales", clave: "ryr_cat_materiales", tipo: "mapa", catalogo: true },
   { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
   { col: "cat_equipos",    clave: "ryr_cat_equipos",    tipo: "mapa", catalogo: true },
+  { col: "cat_actividades", clave: "ryr_cat_actividades", tipo: "mapa", catalogo: true },
 ];
 export const CLAVES_SINCRONIZADAS = Array.from(new Set(FLUJOS.map((f) => f.clave)));
 export const CLAVE_ESTADO_SYNC = "ryr_sync_estado";
