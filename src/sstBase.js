@@ -221,12 +221,19 @@ export function parseRango(texto) {
 //   firmas: { firma: "Firma:", nombre: "Nombre:", personas: [{ clave: "facilitador", col: "C" }, ...] }
 // Devuelve { celdas, problemas }. Si hay problemas, "celdas" es null y se debe usar el mapa por defecto del formato.
 
+// ExcelJS reparte UN MISMO objeto de estilo entre todas las celdas que tienen el mismo formato: cambiar celda.fill / .font / .alignment
+// por separado cambia a la vez todas esas celdas (p. ej. el semáforo salía del mismo color en toda la columna). Por eso el estilo se
+// reemplaza completo en la celda (celda.style = {...}), que sí queda aislado. Con la hoja simulada de las pruebas (sin "style") se asigna directo.
+export function estilar(c, cambios) {
+  if (c && c.style && typeof c.style === "object") c.style = { ...c.style, ...cambios };
+  else Object.assign(c, cambios);
+}
 export function poner(ws, ref, valor) {
   if (!ref || valor === undefined || valor === null || valor === "") return;
   const c = ws.getCell(ref);
   c.value = valor;
   // Un texto de varias líneas (p. ej. "Nombre" y debajo "Cargo") necesita que la celda ajuste el texto para verse completo
-  if (typeof valor === "string" && valor.includes("\n")) c.alignment = { ...(c.alignment || {}), wrapText: true, vertical: "middle" };
+  if (typeof valor === "string" && valor.includes("\n")) estilar(c, { alignment: { ...(c.alignment || {}), wrapText: true, vertical: "middle" } });
 }
 // "Luis Mora" + "Maestro de Obra" -> "Luis Mora\nMaestro de Obra" (el cargo va debajo del nombre; si falta alguno, solo el otro)
 export function textoResponsable(nombre, cargo) {
@@ -400,7 +407,7 @@ export function hacerLegible(ws, col, fila, texto) {
     }
     for (let c = desde; c <= hasta; c++) ancho += Number((ws.getColumn(c) || {}).width) || 8.43;
     const celda = ws.getCell(`${colLetra(desde)}${fila}`);
-    celda.alignment = { ...(celda.alignment || {}), wrapText: true, shrinkToFit: false, vertical: "middle", horizontal: "left" };
+    estilar(celda, { alignment: { ...(celda.alignment || {}), wrapText: true, shrinkToFit: false, vertical: "middle", horizontal: "left" } });
     const porLinea = Math.max(8, Math.floor(ancho * 1.15));       // letra de 9 pt
     const lineas = t.split(/\n/).reduce((n, p) => n + Math.max(1, Math.ceil(p.length / porLinea)), 0);
     const alto = Math.min(150, lineas * 12 + 5);
@@ -475,8 +482,7 @@ export function sumarMesesISO(iso, meses) {
 // Pinta una celda (relleno y letra) con colores ARGB ("FFC00000"). Sirve para la fila del tipo de permiso, que cambia de color según el tipo.
 export function pintarCelda(ws, ref, rellenoARGB, fuenteARGB) {
   const c = ws.getCell(ref);
-  c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rellenoARGB } };
-  c.font = { ...(c.font || {}), bold: true, color: { argb: fuenteARGB } };
+  estilar(c, { fill: { type: "pattern", pattern: "solid", fgColor: { argb: rellenoARGB } }, font: { ...(c.font || {}), bold: true, color: { argb: fuenteARGB } } });
 }
 
 // ¿Se puede usar la distribución de respaldo? Solo si lo que SÍ se encontró en la plantilla está exactamente donde el respaldo dice

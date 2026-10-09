@@ -334,6 +334,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
               unidad: f.unidad,
               cantidad: numES(f.cantidad),
               precio: numES(f.precio) || 0,
+              capitulo: f.capitulo || "",   // lo usa Control Presupuestal para agrupar por capítulo
             };
           }
         });

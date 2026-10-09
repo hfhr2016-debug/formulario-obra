@@ -59,6 +59,10 @@ import FormularioSemanalAmbiental from "./FormularioSemanalAmbiental";
 import FormularioMensualAmbiental from "./FormularioMensualAmbiental";
 import FormularioTrimestralAmbiental from "./FormularioTrimestralAmbiental";
 import FormularioIcaAmbiental from "./FormularioIcaAmbiental";
+import FormularioRegistroCostos from "./FormularioRegistroCostos";
+import FormularioControlPresupuestal from "./FormularioControlPresupuestal";
+import FormularioAdicionales from "./FormularioAdicionales";
+import FormularioAnticipo from "./FormularioAnticipo";
 import { ContextoSST } from "./sstNavegacion";
 import {
 
@@ -1558,11 +1562,27 @@ const MODULOS_AMBIENTAL = [
   { id: "amb-ica", nombre: "Resumen para ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: true },
 ];
 
+const MODULOS_PRESUPUESTO = [
+  // --- Seguimiento del presupuesto ---
+  { id: "cp-control", nombre: "Control Presupuestal", emoji: "📊", icono: "/icons/icon-cp-control.png", activo: true },
+  { id: "cp-costos", nombre: "Registro de Costos", emoji: "🧾", icono: "/icons/icon-cp-costos.png", activo: true },
+  { id: "cp-adicionales", nombre: "Adicionales y Obra no Prevista", emoji: "➕", icono: "/icons/icon-cp-adicionales.png", activo: true },
+  { id: "cp-anticipo", nombre: "Anticipo y Amortización", emoji: "💵", icono: "/icons/icon-cp-anticipo.png", activo: true },
+];
+
+// Imagen que, si todavía no está subida a /icons, muestra el emoji en su lugar (así el módulo se ve bien desde el primer día)
+function IconoConRespaldo({ src, emoji, alt, tamano, style }) {
+  const [falla, setFalla] = useState(false);
+  if (!src || falla) return <div className="flex items-center justify-center leading-none" style={{ width: tamano, height: tamano, fontSize: Math.round(tamano * 0.55), ...style }} role="img" aria-label={alt}>{emoji}</div>;
+  return <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFalla(true)} className="object-contain shrink-0" style={{ width: tamano, height: tamano, ...style }} />;
+}
+
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
     { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
+    { id: "presupuesto", nombre: "Control Presupuestal", icono: "/icons/icon-gestion-presupuesto.png", emoji: "💰", activo: true },
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
   return (
@@ -1612,7 +1632,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
                 opacity: habilitado ? 1 : 0.5,
               }}
             >
-              <img src={a.icono} alt={a.nombre} className="w-[82px] h-[82px] object-contain shrink-0" style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
+              <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt={a.nombre} tamano={82} style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
               <div className="text-left">
                 <div className="text-[15px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
                 {!habilitado && (
@@ -1811,6 +1831,58 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
   );
 }
 
+function InicioPresupuesto({ onSeleccionar, onVolverSelector }) {
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (Técnica / SST / Ambiental)
+          </button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              CONTROL PRESUPUESTAL
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Costos, presupuesto y rentabilidad de la obra
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-4">
+        {MODULOS_PRESUPUESTO.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
+            style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
+          >
+            <div className="h-[70px] flex items-center justify-center">
+              <IconoConRespaldo src={m.icono} emoji={m.emoji} alt={m.nombre} tamano={70} />
+            </div>
+            <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const [vista, setVista] = useState("selector-apps");
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
@@ -1837,6 +1909,19 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
     otrosSistemas: "Técnica / SST",
   };
   const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{nodo}</ContextoSST.Provider>;
+  // Menú lateral de Control Presupuestal (mismo componente, con sus 4 formatos)
+  const ctxPres = {
+    modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo),
+    vistaActual: vista,
+    ir: (id) => setVista(id),
+    irInicio: () => setVista("inicio-presupuesto"),
+    irSelector: () => setVista("selector-apps"),
+    nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
+    cerrarSesion: onCerrarSesion,
+    titulo: "Control Presupuestal",
+    otrosSistemas: "Técnica / SST / Ambiental",
+  };
+  const conMenuPres = (nodo) => <ContextoSST.Provider value={ctxPres}>{nodo}</ContextoSST.Provider>;
 
   if (vista === "inicio") {
     return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
@@ -1856,6 +1941,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
           if (id === "tecnica") setVista("inicio");
           else if (id === "sst") setVista("inicio-sst");
           else if (id === "ambiental") setVista("inicio-ambiental");
+          else if (id === "presupuesto") setVista("inicio-presupuesto");
           else setVista(`proximamente-${id}`);
         }}
       />
@@ -1929,6 +2015,21 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   }
   if (vista === "inicio-ambiental") {
     return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "inicio-presupuesto") {
+    return <InicioPresupuesto onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "cp-control") {
+    return conMenuPres(<FormularioControlPresupuestal onVolver={() => setVista("inicio-presupuesto")} />);
+  }
+  if (vista === "cp-costos") {
+    return conMenuPres(<FormularioRegistroCostos onVolver={() => setVista("inicio-presupuesto")} />);
+  }
+  if (vista === "cp-adicionales") {
+    return conMenuPres(<FormularioAdicionales onVolver={() => setVista("inicio-presupuesto")} />);
+  }
+  if (vista === "cp-anticipo") {
+    return conMenuPres(<FormularioAnticipo onVolver={() => setVista("inicio-presupuesto")} />);
   }
   if (vista === "amb-ficha") {
     return conMenuAmb(<FormularioFichaAmbiental onVolver={() => setVista("inicio-ambiental")} />);
