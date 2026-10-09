@@ -1628,7 +1628,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             )}
             {perfil.esAdmin && onIrCatalogos && (
               <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>
-                Catálogos de precios
+                Catálogos
               </button>
             )}
             <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">

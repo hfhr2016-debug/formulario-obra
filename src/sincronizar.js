@@ -36,7 +36,7 @@ export const FLUJOS = [
   { col: "cp_tecnica_acta",        clave: "ryr_acta_acumulado",         tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_actasvalor",  clave: "ryr_actas_valor_presente",   tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_proyectos",   clave: "ryr_proyectos_guardados",    tipo: "lista", idDe: (r) => r.nombreId, tecnica: true },
-  // Catálogos de precios (materiales, mano de obra, equipos): los lee todo usuario activo; solo el administrador los cambia.
+  // Catálogos (materiales, mano de obra, equipos): los lee todo usuario activo; solo el administrador los cambia.
   { col: "cat_materiales", clave: "ryr_cat_materiales", tipo: "mapa", catalogo: true },
   { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
   { col: "cat_equipos",    clave: "ryr_cat_equipos",    tipo: "mapa", catalogo: true },

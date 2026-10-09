@@ -70,7 +70,7 @@ export default function PanelCatalogos({ onVolver }) {
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
         <button onClick={onVolver} className="text-white/80 text-[12.5px] mb-2">← Volver</button>
-        <div className="text-white font-bold text-[16px]">Catálogos de precios</div>
+        <div className="text-white font-bold text-[16px]">Catálogos</div>
         <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>Lo que cambies se actualiza solo en todos los dispositivos</div>
       </div>
       <div className="p-4 max-w-xl mx-auto pb-24">
