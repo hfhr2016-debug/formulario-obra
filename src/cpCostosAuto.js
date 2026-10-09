@@ -1,6 +1,6 @@
 // cpCostosAuto.js — Registro de Costos: conceptos con precio de referencia (los mismos de los APU) y cálculo automático de IVA y retenciones.
 // Sin pantallas: solo datos y cálculos (así se pueden probar solos).
-import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
+import { catalogoVigente } from "./catalogoVivo";
 import { num, texto, pesos, TIPOS_COSTO } from "./cpBase";
 
 const leer = (clave, porDefecto) => { try { const t = localStorage.getItem(clave); return t ? JSON.parse(t) : porDefecto; } catch (e) { return porDefecto; } };
@@ -75,9 +75,9 @@ export function construirConceptos() {
     cur.capitulo = cur.capitulo || o.capitulo; cur.unidad = cur.unidad || o.unidad;
   };
   const cat = (lista, tipo, etiqueta) => lista.forEach((m) => poner({ texto: texto(m.descripcion), tipo, unidad: texto(m.unidad), capitulo: "", precios: [{ etq: etiqueta, valor: Number(m.precio) || 0 }] }));
-  cat(CATALOGO_MATERIALES, "Material", "Catálogo APU");
-  cat(CATALOGO_MANO_OBRA, "Mano de obra", "Catálogo APU");
-  cat(CATALOGO_EQUIPOS, "Maquinaria y equipo", "Catálogo APU");
+  cat(catalogoVigente("materiales"), "Material", "Catálogo APU");
+  cat(catalogoVigente("mano_obra"), "Mano de obra", "Catálogo APU");
+  cat(catalogoVigente("equipos"), "Maquinaria y equipo", "Catálogo APU");
   const pres = leer("ryr_presupuesto_cantidades", {}) || {};
   Object.keys(pres).forEach((k) => {
     const a = pres[k] || {};

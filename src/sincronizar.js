@@ -36,6 +36,10 @@ export const FLUJOS = [
   { col: "cp_tecnica_acta",        clave: "ryr_acta_acumulado",         tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_actasvalor",  clave: "ryr_actas_valor_presente",   tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_proyectos",   clave: "ryr_proyectos_guardados",    tipo: "lista", idDe: (r) => r.nombreId, tecnica: true },
+  // Catálogos de precios (materiales, mano de obra, equipos): los lee todo usuario activo; solo el administrador los cambia.
+  { col: "cat_materiales", clave: "ryr_cat_materiales", tipo: "mapa", catalogo: true },
+  { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
+  { col: "cat_equipos",    clave: "ryr_cat_equipos",    tipo: "mapa", catalogo: true },
 ];
 export const CLAVES_SINCRONIZADAS = Array.from(new Set(FLUJOS.map((f) => f.clave)));
 export const CLAVE_ESTADO_SYNC = "ryr_sync_estado";
@@ -45,6 +49,7 @@ export const CLAVE_UID_SYNC = "ryr_sync_uid";
 export function puede(perfil, f, modo) {
   if (!perfil) return false;
   if (perfil.esAdmin) return true;
+  if (f.catalogo) return modo === "leer";                       // los catálogos: todos leen, solo el administrador escribe
   const roles = perfil.roles || [];
   if (f.tecnica) return roles.includes("tecnica") || (modo === "leer" && roles.includes("presupuesto"));
   if (!roles.includes("presupuesto")) return false;

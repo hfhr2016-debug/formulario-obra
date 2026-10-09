@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { useCatalogo } from "./catalogos";
 import PantallaLogin from "./PantallaLogin";
 import PanelAdmin from "./PanelAdmin";
+import PanelCatalogos from "./PanelCatalogos";
 import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
 import { iniciarSync, detenerSync } from "./sincronizarFirestore";
 import FormularioAPU from "./FormularioAPU";
@@ -1590,7 +1591,7 @@ function IconoConRespaldo({ src, emoji, alt, tamano, style }) {
   return <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFalla(true)} className="object-contain shrink-0" style={{ width: tamano, height: tamano, ...style }} />;
 }
 
-function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
+function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
@@ -1623,6 +1624,11 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin }) {
             {perfil.esAdmin && (
               <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>
                 Administrar usuarios
+              </button>
+            )}
+            {perfil.esAdmin && onIrCatalogos && (
+              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>
+                Catálogos de precios
               </button>
             )}
             <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">
@@ -1896,7 +1902,7 @@ function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
   );
 }
 
-function AppInterno({ perfil, onCerrarSesion, onIrAdmin, versionDatos = 0 }) {
+function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionDatos = 0 }) {
   const [vista, setVista] = useState("selector-apps");
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
   const ctxSST = {
@@ -1949,6 +1955,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, versionDatos = 0 }) {
         perfil={perfil}
         onCerrarSesion={onCerrarSesion}
         onIrAdmin={onIrAdmin}
+        onIrCatalogos={onIrCatalogos}
         onSeleccionar={(id) => {
           const tieneAcceso = perfil?.esAdmin || (perfil?.roles || []).includes(id);
           if (!tieneAcceso) {
@@ -2242,9 +2249,13 @@ function AppConSesion() {
     );
   }
 
+  if (vistaExterna === "catalogos" && perfil.esAdmin) {
+    return <PanelCatalogos onVolver={() => setVistaExterna("apps")} />;
+  }
+
   return (
     <div>
-      <AppInterno perfil={perfil} onCerrarSesion={cerrarSesionSegura} onIrAdmin={() => setVistaExterna("admin")} versionDatos={sync.version} />
+      <AppInterno perfil={perfil} onCerrarSesion={cerrarSesionSegura} onIrAdmin={() => setVistaExterna("admin")} onIrCatalogos={() => setVistaExterna("catalogos")} versionDatos={sync.version} />
       {(sync.hayNuevos || !sync.enLinea) && (
         <div className="fixed right-2.5 z-40 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md" style={{ bottom: 96, background: sync.hayNuevos ? GOLD : "#FFF4DB", color: sync.hayNuevos ? "white" : "#8A5A00" }}>
           {sync.hayNuevos
