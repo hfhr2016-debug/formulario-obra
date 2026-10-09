@@ -6,7 +6,7 @@ import {
   descubrirFotografico, escribirFotograficoEnHoja, validarFotografico, camposFaltantesFotografico, resumenFotografico, fotosDatosIniciales, fechaHoraLocalISO, coordenadasTexto,
 } from "./fotograficoDatos";
 import {
-  NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo, siguienteConsecutivo, registrarConsecutivo,
+  NAVY, GOLD, PAPER, LINE, OPCIONES_CIUDADES, CIUDADES_AL_ABRIR, leerJSON, guardarJSON, cargarPlantilla, descargarLibro, textoParaArchivo, siguienteConsecutivo, registrarConsecutivo, fijarSiguienteConsecutivo,
   useMemoriaSST, useBorrador, BloqueProfesional, PantallaBorrador, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
 import { CasillaFoto, fotoVacia, agregarFotosARecuadros, lineasMarca, InterruptorMarca } from "./sstControles";
@@ -15,6 +15,7 @@ import { CLAVE_AMB_FOTOGRAFICO, TraerDeFichaAmb } from "./ambComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_fotografico";
 const CLAVE_CONSECUTIVO = "ryr_amb_fotografico_consecutivo";
+const CLAVE_HOJAS = "ryr_amb_fotografico_hojas";   // datos (sin las fotos) de cada hoja generada, para volver a abrirla o eliminarla
 const archivosVacios = () => Array.from({ length: N_FOTOS }, () => fotoVacia());
 
 function datosIniciales() {
@@ -43,6 +44,7 @@ export default function FormularioFotografico({ onVolver }) {
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
   const [avisoGeneracion, setAvisoGeneracion] = useState("");
+  const [hojas, setHojas] = useState(() => leerJSON(CLAVE_HOJAS, []));
   const [avisosGps, setAvisosGps] = useState(() => Array(N_FOTOS).fill(""));
   const [buscandoGps, setBuscandoGps] = useState(() => Array(N_FOTOS).fill(false));
 
@@ -97,7 +99,10 @@ export default function FormularioFotografico({ onVolver }) {
       registrarConsecutivo(CLAVE_CONSECUTIVO, numero);
       memoria.recordarUso({ personas: [[d.registro, d.registroCargo], [d.revisoNombre, d.revisoCargo]], empresasUsadas: [d.contratista] });
       const res = resumenFotografico(dd, archivos);
-      guardarJSON(CLAVE_AMB_FOTOGRAFICO, [res, ...leerJSON(CLAVE_AMB_FOTOGRAFICO, []).filter((x) => x.id !== res.id)].slice(0, 400));
+      guardarJSON(CLAVE_AMB_FOTOGRAFICO, [res, ...leerJSON(CLAVE_AMB_FOTOGRAFICO, []).filter((x) => x.id !== res.id && !(x.proyecto === res.proyecto && x.hoja === res.hoja))].slice(0, 400));
+      const entrada = { id: `${String(dd.proyecto).trim().toLowerCase()}|${numero}`, hoja: numero, proyecto: String(dd.proyecto).trim(), fecha: dd.fecha, fotos: nFotos - sin, d: { ...dd, fotos: dd.fotos.map((f) => ({ ...f })) } };
+      const nuevas = [entrada, ...leerJSON(CLAVE_HOJAS, []).filter((x) => x.id !== entrada.id)].slice(0, 200);
+      guardarJSON(CLAVE_HOJAS, nuevas); setHojas(nuevas);
       borrador.borrarBorrador(); borrador.omitirProximoGuardado();
       setGenerado(`✓ Excel descargado (hoja N° ${numero}: ${nFotos - sin} ${nFotos - sin === 1 ? "foto" : "fotos"}, ${nConGps} con coordenadas).`);
     } catch (err) {
@@ -105,6 +110,26 @@ export default function FormularioFotografico({ onVolver }) {
       setMensajeError("No se pudo generar el Excel: " + (err && err.message ? err.message : "error desconocido"));
     } finally { setGenerando(false); }
   }
+  // Volver a una hoja ya generada para corregirla (los datos vuelven; las fotos no se guardan en la app: se vuelven a elegir) o eliminarla
+  function abrirHoja(h) {
+    if (tieneContenido(d) && !window.confirm("Lo que tienes ahora en pantalla se reemplaza por la hoja " + h.hoja + ". ¿Continuar?")) return;
+    setD({ ...datosIniciales(), ...h.d, fotos: fotosDatosIniciales().map((f, i) => ({ ...f, ...((h.d.fotos || [])[i] || {}) })) });
+    setArchivos(archivosVacios()); setAvisosGps(Array(N_FOTOS).fill(""));
+    borrador.borrarBorrador(); setGenerado(""); setMensajeError("");
+    setAvisoGeneracion(`Se abrió la hoja N° ${h.hoja} con sus datos. Las fotos no se guardan en la app: vuelve a elegir las ${h.fotos || ""} fotos para generar el Excel de nuevo con la corrección.`);
+    setAbierta("datos"); window.scrollTo(0, 0);
+  }
+  function eliminarHoja(h) {
+    if (!window.confirm(`¿Eliminar la hoja N° ${h.hoja}${h.proyecto ? " de " + h.proyecto : ""}? Se borra de la lista y de lo que cuentan los informes. El Excel que ya descargaste no se toca.`)) return;
+    const quedan = leerJSON(CLAVE_HOJAS, []).filter((x) => x.id !== h.id);
+    guardarJSON(CLAVE_HOJAS, quedan); setHojas(quedan);
+    guardarJSON(CLAVE_AMB_FOTOGRAFICO, leerJSON(CLAVE_AMB_FOTOGRAFICO, []).filter((x) => !(x.proyecto === h.proyecto && x.hoja === h.hoja)));
+    const mayor = quedan.reduce((m, x) => Math.max(m, parseInt(x.hoja, 10) || 0), 0);
+    fijarSiguienteConsecutivo(CLAVE_CONSECUTIVO, mayor + 1);          // si eliminas la última, ese número vuelve a estar libre
+    setAvisoGeneracion(`Se eliminó la hoja N° ${h.hoja}.`);
+  }
+  const hojasDeLaObra = hojas.filter((h) => !d.proyecto.trim() || h.proyecto.toLowerCase() === d.proyecto.trim().toLowerCase()).sort((a, b) => (parseInt(a.hoja, 10) || 0) - (parseInt(b.hoja, 10) || 0));
+
   function nuevaHoja() {
     setD((cur) => ({ ...datosIniciales(), proyecto: cur.proyecto, contratista: cur.contratista, ubicacion: cur.ubicacion, tipoRegistro: cur.tipoRegistro, registro: cur.registro, registroCargo: cur.registroCargo, revisoNombre: cur.revisoNombre, revisoCargo: cur.revisoCargo }));
     setArchivos(archivosVacios()); setAvisosGps(Array(N_FOTOS).fill(""));
@@ -165,6 +190,22 @@ export default function FormularioFotografico({ onVolver }) {
             <div className="text-[11px]" style={{ color: NAVY }}>Firma quien registró ({d.registro || "sin nombre"}); su nombre viene de la sección 1.</div>
             <div className="text-[11px] font-semibold" style={{ color: NAVY }}>Revisó (residente de obra)</div>
             <BloqueProfesional memoria={memoria} etqNombre="Nombre de quien revisa" etqCargo="Cargo de quien revisa" nombre={d.revisoNombre} cargo={d.revisoCargo} onChange={cambiarPersona("revisoNombre", "revisoCargo")} />
+          </div>
+        </Seccion>
+
+        <Seccion id="hojas" titulo="3. Hojas generadas" subtitulo={hojasDeLaObra.length ? `${hojasDeLaObra.length} ${hojasDeLaObra.length === 1 ? "hoja" : "hojas"} · abrir para corregir o eliminar` : "Aquí aparecen las hojas que generes"} abierta={abierta === "hojas"} onToggle={alternar} contador={hojasDeLaObra.length}>
+          {hojasDeLaObra.length === 0 && <div className="text-[12px]" style={{ color: "#6B7280" }}>Todavía no hay hojas generadas{d.proyecto ? " de esta obra" : ""}.</div>}
+          <div className="space-y-2">
+            {hojasDeLaObra.map((h) => (
+              <div key={h.id} className="border rounded-lg p-2.5 flex items-center gap-2" style={{ borderColor: LINE, background: PAPER }}>
+                <div className="flex-1 text-[12px]" style={{ color: NAVY }}>
+                  <div className="font-semibold">Hoja N° {h.hoja}</div>
+                  <div className="text-[11px]" style={{ color: "#6B7280" }}>{h.proyecto} · {String(h.fecha || "").split("-").reverse().join("/")} · {h.fotos} {h.fotos === 1 ? "foto" : "fotos"}</div>
+                </div>
+                <button type="button" onClick={() => abrirHoja(h)} aria-label={`Abrir hoja ${h.hoja}`} className="text-[11.5px] font-semibold px-2.5 py-1.5 rounded-md border" style={{ borderColor: NAVY, color: NAVY }}>Abrir</button>
+                <button type="button" onClick={() => eliminarHoja(h)} aria-label={`Eliminar hoja ${h.hoja}`} className="text-[11.5px] font-semibold px-2.5 py-1.5 rounded-md border" style={{ borderColor: "#E8B4A6", color: "#B3401F" }}>Eliminar</button>
+              </div>
+            ))}
           </div>
         </Seccion>
 

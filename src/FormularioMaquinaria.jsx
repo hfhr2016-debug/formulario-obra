@@ -144,7 +144,7 @@ export default function FormularioMaquinaria({ onVolver }) {
           <div className="space-y-2.5">
             <ChipsOpcion label="Resultado de la inspección" nombre="Resultado" value={d.resultado} opciones={RESULTADOS} colores={COLORES_RESULTADO} onChange={(v) => set("resultado", v)} />
             {sugerido && !d.resultado && <button type="button" onClick={() => set("resultado", sugerido)} className="text-[11.5px] underline" style={{ color: NAVY }}>Según la verificación sugiero: {sugerido}. Usar esta.</button>}
-            {c.no > 0 && d.resultado === RESULTADOS[0] && <div className="text-[11.5px]" style={{ color: "#B3401F" }}>Hay {c.no} {c.no === 1 ? "punto" : "puntos"} en «No»; revisa si de verdad es «Apto para operar».</div>}
+            {c.no > 0 && d.resultado === RESULTADOS[0] && <div className="text-[11.5px] rounded-md p-2" style={{ color: "#B3401F", background: "#FBEFEA" }}>Ojo: elegiste «Apto para operar», pero en la verificación (sección 3) {c.no === 1 ? "hay 1 punto" : `hay ${c.no} puntos`} marcado{c.no === 1 ? "" : "s"} en «No». Si {c.no === 1 ? "ese punto es una falla" : "son fallas"} del equipo, elige «Apto con observaciones» o «No apto». Si está bien así, ignora este aviso.</div>}
             <div className="grid grid-cols-2 gap-2">
               <Campo label="Próxima inspección" type="date" value={d.proxima} onChange={(v) => set("proxima", v)} />
               <Campo label="Corrección antes del" type="date" value={d.correccion} onChange={(v) => set("correccion", v)} />

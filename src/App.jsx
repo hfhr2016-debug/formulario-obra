@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
+import { activarOrtografia } from "./ortografia";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { AuthProvider, useAuth } from "./AuthContext";
@@ -2038,6 +2039,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
 }
 
 export default function App() {
+  useEffect(() => activarOrtografia(), []);   // corrección ortográfica (español) en todos los campos de texto
   return (
     <AuthProvider>
       <AppConSesion />

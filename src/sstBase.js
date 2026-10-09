@@ -378,8 +378,35 @@ export function escribirTabla(ws, tabla, filas) {
   if (!tabla) return;
   (filas || []).slice(0, tabla.n).forEach((fila, i) => {
     const r = tabla.filas ? tabla.filas[i] : tabla.fila0 + i;
-    for (const [campo, col] of Object.entries(tabla.columnas)) poner(ws, `${col}${r}`, fila[campo]);
+    for (const [campo, col] of Object.entries(tabla.columnas)) {
+      poner(ws, `${col}${r}`, fila[campo]);
+      if (/^obs/i.test(campo)) hacerLegible(ws, col, r, fila[campo]);
+    }
   });
+}
+
+// Observaciones largas: la casilla de la plantilla puede estar en "reducir hasta ajustar" (la letra se encoge hasta no leerse).
+// Se cambia por "ajustar texto" y se sube el alto de la fila lo necesario para que se lea completo.
+export function hacerLegible(ws, col, fila, texto) {
+  try {
+    const t = String(texto === undefined || texto === null ? "" : texto).trim();
+    if (!t) return;
+    const c0 = colNum(col);
+    let ancho = 0;
+    let desde = c0, hasta = c0;
+    for (const m of ((ws.model && ws.model.merges) || [])) {
+      const g = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(m);
+      if (g && +g[2] <= fila && fila <= +g[4] && colNum(g[1]) <= c0 && c0 <= colNum(g[3])) { desde = colNum(g[1]); hasta = colNum(g[3]); break; }
+    }
+    for (let c = desde; c <= hasta; c++) ancho += Number((ws.getColumn(c) || {}).width) || 8.43;
+    const celda = ws.getCell(`${colLetra(desde)}${fila}`);
+    celda.alignment = { ...(celda.alignment || {}), wrapText: true, shrinkToFit: false, vertical: "middle", horizontal: "left" };
+    const porLinea = Math.max(8, Math.floor(ancho * 1.15));       // letra de 9 pt
+    const lineas = t.split(/\n/).reduce((n, p) => n + Math.max(1, Math.ceil(p.length / porLinea)), 0);
+    const alto = Math.min(150, lineas * 12 + 5);
+    const fi = ws.getRow(fila);
+    if (!fi.height || fi.height < alto) fi.height = alto;
+  } catch (e) { /* si algo no se puede ajustar, el texto se escribe igual */ }
 }
 
 // ---------- Casillas para marcar ("☐ Trabajo en alturas" -> "☑ Trabajo en alturas": el chulo va DENTRO del cuadro, el cuadro no se quita) ----------
