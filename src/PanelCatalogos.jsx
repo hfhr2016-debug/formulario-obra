@@ -74,14 +74,24 @@ export default function PanelCatalogos({ onVolver }) {
         <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>Lo que cambies se actualiza solo en todos los dispositivos</div>
       </div>
       <div className="p-4 max-w-xl mx-auto pb-24">
-        <div className="flex gap-1.5 mb-3 flex-wrap">
-          {CATALOGOS.map((c) => (
-            <button key={c.id} type="button" onClick={() => { setCat(c.id); setBusca(""); setEdit(null); setAviso(""); setError(""); }} aria-pressed={cat === c.id}
-              className="text-[12px] px-3 py-1.5 rounded-full border font-semibold" style={cat === c.id ? { background: NAVY, color: "white", borderColor: NAVY } : { background: "white", color: NAVY, borderColor: LINE }}>{c.titulo}</button>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {[{ id: "precios", t: "Catálogo de precios", d: "Materiales, mano de obra, equipos", on: !esAct }, { id: "actividades", t: "Catálogo de actividades", d: "Edificaciones, vías, hidrocarburos", on: esAct }].map((g) => (
+            <button key={g.id} type="button" aria-pressed={g.on} data-grupo={g.id}
+              onClick={() => { setCat(g.id === "actividades" ? "actividades" : (esAct ? CATALOGOS[0].id : cat)); setBusca(""); setEdit(null); setAviso(""); setError(""); }}
+              className="text-left px-3 py-2 rounded-xl border" style={g.on ? { background: NAVY, color: "white", borderColor: NAVY } : { background: "white", color: NAVY, borderColor: LINE }}>
+              <span className="block text-[12.5px] font-bold">{g.t}</span>
+              <span className="block text-[10.5px]" style={{ opacity: 0.75 }}>{g.d}</span>
+            </button>
           ))}
-          <button type="button" onClick={() => { setCat("actividades"); setBusca(""); setEdit(null); setAviso(""); setError(""); }} aria-pressed={esAct}
-            className="text-[12px] px-3 py-1.5 rounded-full border font-semibold" style={esAct ? { background: NAVY, color: "white", borderColor: NAVY } : { background: "white", color: NAVY, borderColor: LINE }}>Actividades</button>
         </div>
+        {!esAct && (
+          <div className="flex gap-1.5 mb-3 flex-wrap">
+            {CATALOGOS.map((c) => (
+              <button key={c.id} type="button" onClick={() => { setCat(c.id); setBusca(""); setEdit(null); setAviso(""); setError(""); }} aria-pressed={cat === c.id}
+                className="text-[12px] px-3 py-1.5 rounded-full border font-semibold" style={cat === c.id ? { background: GOLD, color: "white", borderColor: GOLD } : { background: "white", color: NAVY, borderColor: LINE }}>{c.titulo}</button>
+            ))}
+          </div>
+        )}
         {esAct ? <PanelActividades /> : <>
         <div className="text-[11px] mb-2" style={{ color: "#8A8F99" }}>
           {todos.length} ítems · {hayCatalogoPropio(cat) ? "catálogo propio (sincronizado)" : "catálogo base: se guarda como propio al hacer el primer cambio"}
