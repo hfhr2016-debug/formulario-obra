@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { useCatalogo } from "./catalogos";
 import PantallaLogin from "./PantallaLogin";
 import PanelAdmin from "./PanelAdmin";
+import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
@@ -1842,7 +1843,7 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
   );
 }
 
-function InicioPresupuesto({ onSeleccionar, onVolverSelector }) {
+function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1869,7 +1870,7 @@ function InicioPresupuesto({ onSeleccionar, onVolverSelector }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 p-4">
-        {MODULOS_PRESUPUESTO.map((m) => (
+        {MODULOS_PRESUPUESTO.filter((m) => nivelCP(perfil, m.id)).map((m) => (
           <button
             key={m.id}
             onClick={() => onSeleccionar(m.id)}
@@ -1922,7 +1923,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{nodo}</ContextoSST.Provider>;
   // Menú lateral de Control Presupuestal (mismo componente, con sus 4 formatos)
   const ctxPres = {
-    modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo),
+    modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo && nivelCP(perfil, m.id)),
     vistaActual: vista,
     ir: (id) => setVista(id),
     irInicio: () => setVista("inicio-presupuesto"),
@@ -1932,7 +1933,11 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
     titulo: "Control Presupuestal",
     otrosSistemas: "Técnica / SST / Ambiental",
   };
-  const conMenuPres = (nodo) => <ContextoSST.Provider value={ctxPres}>{nodo}</ContextoSST.Provider>;
+  const conMenuPres = (nodo) => {
+    const nivel = nivelCP(perfil, vista);
+    if (!nivel) return <SinAcceso onVolver={() => setVista("inicio-presupuesto")} />;
+    return <ContextoSST.Provider value={ctxPres}>{nivel === "V" ? <SoloLectura key={vista}>{nodo}</SoloLectura> : nodo}</ContextoSST.Provider>;
+  };
 
   if (vista === "inicio") {
     return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
@@ -2028,7 +2033,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
     return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
   if (vista === "inicio-presupuesto") {
-    return <InicioPresupuesto onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+    return <InicioPresupuesto perfil={perfil} onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
   if (vista === "cp-control") {
     return conMenuPres(<FormularioControlPresupuestal onVolver={() => setVista("inicio-presupuesto")} />);

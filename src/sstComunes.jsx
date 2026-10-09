@@ -274,7 +274,7 @@ export function EncabezadoFormulario({ titulo, subtitulo, onVolver }) {
   const nav = useNavegacionSST();
   const sistema = (nav && nav.titulo) || "Gestión SG – SST";      // en Gestión Ambiental el contexto trae su propio título
   return (
-    <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
+    <div data-libre className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-3 mb-3">
@@ -297,7 +297,7 @@ export function EncabezadoFormulario({ titulo, subtitulo, onVolver }) {
 
 export function BarraGenerar({ mensajeError, aviso, mensajeOk, generando, textoBoton, onGenerar }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 border-t px-3 pt-2 pb-3" style={{ background: "white", borderColor: LINE }}>
+    <div data-barra-generar className="fixed bottom-0 left-0 right-0 border-t px-3 pt-2 pb-3" style={{ background: "white", borderColor: LINE }}>
       <div className="max-w-md mx-auto">
         {mensajeError && (
           <div className="text-[11.5px] mb-2 px-2 py-1.5 rounded" style={{ background: "#FDECEC", color: "#B42318" }}>{mensajeError}</div>

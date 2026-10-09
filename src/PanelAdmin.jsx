@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { ROLES_CP } from "./cpPermisos";
 import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
@@ -35,6 +36,7 @@ export default function PanelAdmin({ onVolver }) {
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
+  const [rolCPNuevo, setRolCPNuevo] = useState("");
   const [rolesNuevo, setRolesNuevo] = useState({ tecnica: false, sst: false, ambiental: false, presupuesto: false });
   const [creando, setCreando] = useState(false);
   const [error, setError] = useState("");
@@ -79,6 +81,7 @@ export default function PanelAdmin({ onVolver }) {
         nombre,
         correo: correo.trim(),
         roles: rolesArray,
+        rolCP: rolesNuevo.presupuesto ? rolCPNuevo : "",
         esAdmin: false,
         activo: true,
         creadoEn: new Date().toISOString(),
@@ -103,6 +106,15 @@ export default function PanelAdmin({ onVolver }) {
   async function alternarActivo(u) {
     try {
       await updateDoc(doc(db, "usuarios", u.uid), { activo: !u.activo });
+      await cargarUsuarios();
+    } catch (e) {
+      alert("No se pudo actualizar. Intenta de nuevo.");
+    }
+  }
+
+  async function cambiarRolCP(u, rolCP) {
+    try {
+      await updateDoc(doc(db, "usuarios", u.uid), { rolCP });
       await cargarUsuarios();
     } catch (e) {
       alert("No se pudo actualizar. Intenta de nuevo.");
@@ -168,6 +180,15 @@ export default function PanelAdmin({ onVolver }) {
                 {r.nombre}
               </label>
             ))}
+            {rolesNuevo.presupuesto && (
+              <div className="mb-3 mt-1">
+                <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Cargo en Control Presupuestal</label>
+                <select value={rolCPNuevo} onChange={(e) => setRolCPNuevo(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px]" style={{ borderColor: LINE }}>
+                  <option value="">Elegir cargo…</option>
+                  {ROLES_CP.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                </select>
+              </div>
+            )}
 
             {error && (
               <div className="text-[11.5px] mt-2 px-2.5 py-2 rounded-lg" style={{ background: "#FDECEC", color: "#B42318" }}>
@@ -222,6 +243,15 @@ export default function PanelAdmin({ onVolver }) {
                       </button>
                     );
                   })}
+                </div>
+              )}
+              {!u.esAdmin && (u.roles || []).includes("presupuesto") && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[10.5px]" style={{ color: NAVY }}>Cargo en Control Presupuestal:</span>
+                  <select value={u.rolCP || ""} onChange={(e) => cambiarRolCP(u, e.target.value)} className="text-[11px] border rounded px-1.5 py-1" style={{ borderColor: u.rolCP ? LINE : "#B3401F" }}>
+                    <option value="">Sin asignar (sin acceso)</option>
+                    {ROLES_CP.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                  </select>
                 </div>
               )}
             </div>
