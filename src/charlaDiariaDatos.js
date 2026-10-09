@@ -191,6 +191,10 @@ export const CARGOS_PROFESIONALES = [
   "Ingeniero Residente", "Arquitecto Residente", "Director de Obra", "Coordinador SST", "Profesional SST",
   "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Maestro de Obra", "Supervisor de Obra",
   "Interventor de Obra", "Gerente de Proyecto",
+  // Administración, contabilidad y compras
+  "Administrador de Obra", "Administrador", "Auxiliar Administrativo", "Asistente Administrativo", "Coordinador Administrativo",
+  "Director Administrativo", "Gerente Administrativo", "Contador", "Auxiliar Contable", "Tesorero", "Analista de Costos",
+  "Analista de Presupuesto", "Jefe de Compras", "Comprador", "Auxiliar de Compras", "Secretaria", "Talento Humano"
 ];
 const MAX_PROFESIONALES = 40;
 

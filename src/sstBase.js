@@ -90,7 +90,12 @@ export const CARGOS_PROFESIONALES = [
   "Interventor de Obra", "Gerente de Proyecto", "Almacenista de Obra", "Auxiliar de SST",
   // Gestión ambiental y firmas de informes
   "Coordinador Ambiental", "Profesional Ambiental", "Responsable Ambiental", "Ingeniero Ambiental", "Tecnólogo Ambiental", "Inspector Ambiental", "Auxiliar Ambiental", "Residente Ambiental",
-  "Residente de Obra", "Representante Legal", "Gerente General"];
+  "Residente de Obra", "Representante Legal", "Gerente General",
+  // Administración, contabilidad y compras
+  "Administrador de Obra", "Administrador", "Auxiliar Administrativo", "Asistente Administrativo", "Coordinador Administrativo",
+  "Director Administrativo", "Gerente Administrativo", "Contador", "Auxiliar Contable", "Tesorero", "Analista de Costos",
+  "Analista de Presupuesto", "Jefe de Compras", "Comprador", "Auxiliar de Compras", "Secretaria", "Talento Humano"
+];
 
 export function normalizarNombre(n) {
   return String(n || "").trim().replace(/\s+/g, " ");
@@ -141,7 +146,7 @@ export const CARGOS_OBRA = [
   // Dirección, ingeniería y administración
   "Director de Obra", "Gerente de Proyecto", "Ingeniero Residente", "Arquitecto Residente", "Residente de Obra",
   "Ingeniero Auxiliar", "Ingeniero Supervisor", "Ingeniero Geotecnista", "Interventor de Obra", "Inspector de Obra",
-  "Calculista", "Dibujante", "Topógrafo", "Cadenero", "Almacenista de Obra", "Auxiliar Administrativo", "Secretaria de Obra",
+  "Calculista", "Dibujante", "Topógrafo", "Cadenero", "Almacenista de Obra", "Administrador de Obra", "Administrador", "Auxiliar Administrativo", "Asistente Administrativo", "Contador", "Auxiliar Contable", "Secretaria de Obra",
   // Seguridad, salud, ambiente y social
   "Coordinador SST", "Profesional SST", "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Coordinador Ambiental",
   "Profesional Ambiental", "Profesional Social", "Brigadista",

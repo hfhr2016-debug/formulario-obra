@@ -27,6 +27,7 @@ export function useObra() {
     if (nombre === NUEVA_OBRA) { setCreando(true); setAviso(""); return; }
     const o = listarObras().find((x) => x.proyecto === nombre);
     if (o) { guardarObra(o); setObra(o); setCreando(false); setAviso(""); }
+    else if (texto(nombre)) crear(nombre);          // una obra que la app conoce (Ficha Técnica, SST, Ambiental) pero que aún no se ha abierto aquí
   }
   function cambiar(patch) {
     setObra((cur) => {
@@ -43,7 +44,8 @@ export function useObra() {
 export function PanelObra({ h, campos = [] }) {
   const { obra } = h;
   const conocidos = proyectosConocidos();
-  const nombres = listarObras().map((o) => o.proyecto);
+  // Todas las obras que se pueden abrir: las ya creadas aquí y las que la app conoce por otras gestiones
+  const nombres = [...listarObras().map((o) => o.proyecto), ...conocidos.filter((p) => !listarObras().some((o) => claveObra(o.proyecto) === claveObra(p)))];
   const dinero = (k, label) => <CampoDinero key={k} label={label} value={obra[k]} onChange={(v) => h.cambiar({ [k]: v })} />;
   const porc = (k, label, ayuda) => <Campo key={k} label={label} value={obra[k]} inputMode="decimal" placeholder={ayuda} onChange={(v) => h.cambiar({ [k]: v.replace(/[^0-9.,]/g, "") })} />;
   const mapa = {
@@ -70,7 +72,10 @@ export function PanelObra({ h, campos = [] }) {
           {obra && <button type="button" onClick={() => h.elegir(obra.proyecto)} className="w-full text-center text-[11.5px]" style={{ color: NAVY }}>Cancelar</button>}
         </div>
       ) : (
-        <Lista label="Proyecto / obra" value={obra.proyecto} onChange={h.elegir} opciones={[...nombres, NUEVA_OBRA]} />
+        <div>
+          <Lista label="Proyecto / obra" value={obra.proyecto} onChange={h.elegir} opciones={[...nombres, NUEVA_OBRA]} />
+          {nombres.length > 1 && <div className="text-[10.5px] mt-1" style={{ color: "#8A8F99" }}>Para pasar a otra obra, elígela en esta lista; no hace falta salir del formato.</div>}
+        </div>
       )}
       {h.aviso && <div className="text-[11px]" style={{ color: "#2E7D4F" }}>{h.aviso}</div>}
       {obra && !h.creando && (
