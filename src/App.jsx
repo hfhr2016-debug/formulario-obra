@@ -64,6 +64,7 @@ import FormularioControlPresupuestal from "./FormularioControlPresupuestal";
 import FormularioAdicionales from "./FormularioAdicionales";
 import FormularioAnticipo from "./FormularioAnticipo";
 import FormularioCostosLibro from "./FormularioCostosLibro";
+import FormularioCostosFicha from "./FormularioCostosFicha";
 import { ContextoSST } from "./sstNavegacion";
 import {
 
@@ -1574,6 +1575,10 @@ const MODULOS_PRESUPUESTO = [
   { id: "cp-mano-obra", nombre: "Mano de Obra y Subcontratos", emoji: "👷", icono: "/icons/icon-cp-mano-obra.png", activo: true },
   { id: "cp-equipos", nombre: "Maquinaria y Equipos", emoji: "🚜", icono: "/icons/icon-cp-equipos.png", activo: true },
   { id: "cp-cuentas", nombre: "Cuentas por Pagar", emoji: "📅", icono: "/icons/icon-cp-cuentas.png", activo: true },
+  // --- Resultados y cierre ---
+  { id: "cp-flujo", nombre: "Flujo de Caja", emoji: "💸", icono: "/icons/icon-cp-flujo.png", activo: true },
+  { id: "cp-rentabilidad", nombre: "Costos y Rentabilidad", emoji: "📈", icono: "/icons/icon-cp-rentabilidad.png", activo: true },
+  { id: "cp-cierre", nombre: "Cierre Financiero", emoji: "🏁", icono: "/icons/icon-cp-cierre.png", activo: true },
 ];
 
 // Imagen que, si todavía no está subida a /icons, muestra el emoji en su lugar (así el módulo se ve bien desde el primer día)
@@ -2041,6 +2046,9 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   if (vista === "cp-mano-obra") return conMenuPres(<FormularioCostosLibro formato="manoObra" onVolver={() => setVista("inicio-presupuesto")} />);
   if (vista === "cp-equipos") return conMenuPres(<FormularioCostosLibro formato="equipos" onVolver={() => setVista("inicio-presupuesto")} />);
   if (vista === "cp-cuentas") return conMenuPres(<FormularioCostosLibro formato="cuentas" onVolver={() => setVista("inicio-presupuesto")} />);
+  if (vista === "cp-flujo") return conMenuPres(<FormularioCostosLibro formato="flujo" onVolver={() => setVista("inicio-presupuesto")} />);
+  if (vista === "cp-rentabilidad") return conMenuPres(<FormularioCostosFicha formato="costos" onVolver={() => setVista("inicio-presupuesto")} />);
+  if (vista === "cp-cierre") return conMenuPres(<FormularioCostosFicha formato="cierre" onVolver={() => setVista("inicio-presupuesto")} />);
   if (vista === "amb-ficha") {
     return conMenuAmb(<FormularioFichaAmbiental onVolver={() => setVista("inicio-ambiental")} />);
   }

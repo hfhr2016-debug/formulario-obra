@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { decidirDistribucion } from "./sstBase";
 import { FORMATOS, escribirEnHoja, faltantes, validar } from "./costosLote2Datos";
+import { FORMATOS3, escribirFlujoEnHoja, faltantes3, validar3 } from "./costosLote3Datos";
 import { listarRegistros, guardarRegistrosDeObra, leerCabecera, guardarCabecera, facturasPorPagar, cuentaDesdeFactura } from "./cpLibros";
 import { num, texto, nombreTipoProyecto } from "./cpBase";
 import { useObra, PanelObra, CampoDinero, useFirmas, CifrasResumen } from "./cpComunes";
@@ -18,7 +19,10 @@ const cargarListas = (F, id) => { const r = {}; F.listas.forEach((l) => { r[l.id
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
 export default function FormularioCostosLibro({ formato, onVolver }) {
-  const F = FORMATOS[formato];
+  const F = FORMATOS[formato] || FORMATOS3[formato];
+  const esLote3 = !FORMATOS[formato];
+  const validarF = (d) => (esLote3 ? validar3(F.id, d) : validar(F.id, d));
+  const faltantesF = (d) => (esLote3 ? faltantes3(F.id, d) : faltantes(F.id, d));
   const h = useObra();
   const [libro, setLibro] = useState(() => ({ id: h.id, datos: cargarListas(F, h.id) }));
   const [cab, setCab] = useState(() => ({ ...(F.cabecera.some((c) => c.k === "corte") ? { corte: hoyISO() } : {}), ...(h.id ? leerCabecera(F.id, h.id) : {}) }));
@@ -52,7 +56,7 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
     if (conDatos(l).length >= l.capacidad) { aviso(l.id, `Esta hoja tiene espacio para ${l.capacidad} ${l.singular === "material" ? "materiales" : "registros"}.`); return; }
     aviso(l.id, "");
     const ult = (libro.datos[l.id] || []).slice(-1)[0] || {};
-    setLista(l.id, (xs) => [...xs, l.nuevo({ obraId: h.id, ...(l.id === "mano" ? { periodo: ult.periodo || "", prest: ult.prest || "" } : {}), ...(l.id === "equipos" ? {} : {}) })]);
+    setLista(l.id, (xs) => [...xs, l.nuevo({ obraId: h.id, ...(l.id === "mano" ? { periodo: ult.periodo || "", prest: ult.prest || "" } : {}), ...(l.alAgregar ? l.alAgregar(libro.datos[l.id] || []) : {}) })]);
   }
   function traerFacturas(l) {
     const hay = facturasPorPagar(h.id, libro.datos[l.id]);
@@ -63,14 +67,19 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
     setLista(l.id, (xs) => [...xs.filter((r) => !l.vacio(r)), ...tomar.map((f) => cuentaDesdeFactura(f, h.id))]);
     aviso(l.id, `Se trajeron ${tomar.length} ${tomar.length === 1 ? "factura pendiente" : "facturas pendientes"} del Registro de Costos${tomar.length < hay.length ? ` (faltaron ${hay.length - tomar.length}: no caben en la hoja)` : ""}.`);
   }
+  function correrBoton(l, b) {
+    const r = b.accion({ obraId: h.id, obra: o, filas: libro.datos[l.id] || [], cab });
+    if (r.filas) setLista(l.id, () => r.filas);
+    aviso(l.id, r.aviso || "");
+  }
   const datosHoja = () => ({ obra: o, tipo: nombreTipoProyecto(), cab, ...libro.datos, firmas: { elabora: firmas.f.elabora, revisa: firmas.f.revisa } });
   const datosPantalla = { ...libro.datos, cab };
 
   async function generarExcel() {
     setMensajeError(""); setAvisoGeneracion("");
     const dat = h.obra ? datosHoja() : { obra: {}, cab, ...cargarListas(F, ""), firmas: {} };
-    const fal = validar(F.id, dat);
-    if (fal.length) { setMensajeError("Falta completar: " + fal.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(faltantes(F.id, dat)); return; }
+    const fal = validarF(dat);
+    if (fal.length) { setMensajeError("Falta completar: " + fal.join(", ") + ". Las casillas que faltan están marcadas en rojo."); resaltarFaltantes(faltantesF(dat)); return; }
     limpiarFaltantes();
     setGenerando(true);
     try {
@@ -79,7 +88,7 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
       const decision = decidirDistribucion(F.descubrir(ws), F.celdas());
       if (decision.aviso) avs.push(decision.aviso);
       F.listas.forEach((l) => { const capac = (decision.celdas.tablas && decision.celdas.tablas[l.id] && decision.celdas.tablas[l.id].n) || l.capacidad; if (conDatos(l).length > capac) throw new Error(`la plantilla tiene espacio para ${capac} filas de «${l.titulo}» y hay ${conDatos(l).length}`); });
-      escribirEnHoja(F.id, ws, dat, decision.celdas);
+      if (esLote3) escribirFlujoEnHoja(ws, dat, decision.celdas); else escribirEnHoja(F.id, ws, dat, decision.celdas);
       setAvisoGeneracion(avs.join(" "));
       await descargarLibro(workbook, `${F.archivo}_${textoParaArchivo(o.proyecto, 24)}_${hoyISO()}.xlsx`);
       memoria.recordarUso({ personas: [[firmas.f.elabora.nombre, firmas.f.elabora.cargo], [firmas.f.revisa.nombre, firmas.f.revisa.cargo]] });
@@ -95,6 +104,7 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
     const valor = r[c.k] === undefined || r[c.k] === null ? "" : r[c.k];
     if (c.tipo === "dinero") return <CampoDinero key={c.k} label={c.label} value={valor} onChange={act} />;
     if (c.tipo === "num" || c.tipo === "pct") return <Campo key={c.k} label={c.label} value={valor} inputMode="decimal" placeholder={c.ph} onChange={(v) => act(soloNumero(v))} />;
+    if (c.tipo === "mes") return <Campo key={c.k} label={c.label} type="month" value={valor} onChange={act} />;
     if (c.tipo === "fecha") return <Campo key={c.k} label={c.label} type="date" value={valor} onChange={act} />;
     if (c.tipo === "chips") return <ChipsOpcion key={c.k} label={c.label} nombre={c.label} value={valor} opciones={c.opciones} pequeno onChange={act} />;
     if (c.tipo === "capitulo") {
@@ -119,6 +129,7 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
 
   const ctx = { cab };
   const fechaCab = (c) => <Campo key={c.k} label={c.label} type="date" value={cab[c.k] || ""} onChange={(v) => setCab((x) => ({ ...x, [c.k]: v }))} />;
+  const dineroCab = (c) => <CampoDinero key={c.k} label={c.label} value={cab[c.k] || ""} onChange={(v) => setCab((x) => ({ ...x, [c.k]: v }))} />;
   const textoCab = (c) => <Campo key={c.k} label={c.label} value={cab[c.k] || ""} placeholder={c.ph} onChange={(v) => setCab((x) => ({ ...x, [c.k]: v }))} />;
   const subtituloLista = (l) => `${conDatos(l).length} de ${l.capacidad}`;
 
@@ -130,7 +141,7 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={h.obra ? `${h.obra.proyecto}${h.obra.contrato ? " · Contrato " + h.obra.contrato : ""}` : "Obra y contrato"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">
             <PanelObra h={h} campos={["contrato", "contratante"]} />
-            {!sinObra && F.cabecera.map((c) => (c.tipo === "fecha" ? fechaCab(c) : textoCab(c)))}
+            {!sinObra && F.cabecera.map((c) => (c.tipo === "fecha" ? fechaCab(c) : c.tipo === "dinero" ? dineroCab(c) : textoCab(c)))}
           </div>
         </Seccion>
 
@@ -139,8 +150,9 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
             {sinObra ? <div className="text-[12px]" style={{ color: "#8A8F99" }}>Primero elige o crea la obra en la sección 1.</div> : (
               <>
                 {l.traerFacturas && <button type="button" onClick={() => traerFacturas(l)} className="w-full text-left text-[12px] font-semibold p-2 rounded-lg mb-3" style={{ background: "#F2F6FB", border: `1px solid ${LINE}`, color: NAVY }}>📥 Traer las facturas pendientes del Registro de Costos</button>}
-                {(libro.datos[l.id] || []).map((r, i) => {
-                  const c = l.calculo(r, ctx);
+                {(l.botones || []).map((b) => <button key={b.texto} type="button" onClick={() => correrBoton(l, b)} className="w-full text-left text-[12px] font-semibold p-2 rounded-lg mb-2" style={{ background: "#F2F6FB", border: `1px solid ${LINE}`, color: NAVY }}>{b.texto}</button>)}
+                {(libro.datos[l.id] || []).map((r, i, todas) => {
+                  const c = l.calculo(r, ctx, i, todas);
                   return (
                     <div key={r.id} className="border rounded-lg p-2.5 mb-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>
                       <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>#{i + 1}</div>
@@ -157,7 +169,7 @@ export default function FormularioCostosLibro({ formato, onVolver }) {
                   );
                 })}
                 <button type="button" onClick={() => agregar(l)} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-md w-full justify-center border border-dashed" style={{ borderColor: GOLD, color: NAVY }}><Plus size={14} /> Agregar {l.singular}</button>
-                {avisos[l.id] && <div className="text-[11.5px] mt-2" style={{ color: avisos[l.id].startsWith("Se trajeron") ? "#2E7D4F" : "#B3401F" }}>{avisos[l.id]}</div>}
+                {avisos[l.id] && <div className="text-[11.5px] mt-2" style={{ color: /^Se trajeron/.test(avisos[l.id]) ? "#2E7D4F" : "#B3401F" }}>{avisos[l.id]}</div>}
                 <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>Cada registro se guarda solo. En el Excel, los totales y los cálculos se hacen con fórmulas.</div>
               </>
             )}
