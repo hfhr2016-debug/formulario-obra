@@ -9,8 +9,9 @@ export const NUEVA_OBRA = "➕ Nueva obra…";
 
 // Obra con la que se está trabajando. Cada cambio se guarda al instante (la obra es el "maestro" que comparten los cuatro formatos).
 export function useObra() {
-  const [obra, setObra] = useState(() => obtenerObra(obraActivaId()) || listarObras()[0] || null);
-  const [creando, setCreando] = useState(() => listarObras().length === 0);
+  // Al abrir un formato NO se carga ninguna obra: el proyecto, el contrato y el contratante empiezan vacíos y se escriben (o se elige una obra ya conocida).
+  const [obra, setObra] = useState(null);
+  const [creando, setCreando] = useState(true);
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [aviso, setAviso] = useState("");
   function crear(nombre) {
@@ -41,7 +42,7 @@ export function useObra() {
 // Sección «Datos generales»: elegir o crear la obra y completar los datos del contrato que pida cada formato.
 export function PanelObra({ h, campos = [] }) {
   const { obra } = h;
-  const conocidos = proyectosConocidos().filter((p) => !listarObras().some((o) => o.id === claveObra(p)));
+  const conocidos = proyectosConocidos();
   const nombres = listarObras().map((o) => o.proyecto);
   const dinero = (k, label) => <CampoDinero key={k} label={label} value={obra[k]} onChange={(v) => h.cambiar({ [k]: v })} />;
   const porc = (k, label, ayuda) => <Campo key={k} label={label} value={obra[k]} inputMode="decimal" placeholder={ayuda} onChange={(v) => h.cambiar({ [k]: v.replace(/[^0-9.,]/g, "") })} />;
