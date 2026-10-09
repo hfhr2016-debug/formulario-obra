@@ -40,7 +40,7 @@ const arr = (a) => (Array.isArray(a) ? a : []);
 const texto = (v) => String(v === undefined || v === null ? "" : v).trim();
 export const num = (v) => { const t = texto(v).replace(",", "."); return t !== "" && !isNaN(Number(t)) ? Number(t) : null; };
 const redondear = (n) => Math.round(n * 1000) / 1000;
-export const diaNuevo = (base = {}) => ({ fecha: "", aguaLect: "", aguaFuente: "", enLect: "", enFuente: "", obs: "", comb: [], ...base });
+export const diaNuevo = (base = {}) => ({ fecha: "", aguaLect: "", aguaFuente: "", enLect: "", enFuente: "", obsLista: [], comb: [], ...base });
 export const combNuevo = (base = {}) => ({ equipo: "", tipo: TIPOS_COMBUSTIBLE[0], galones: "", ...base });
 // Combustible del día: lista [{ equipo, tipo, galones }]. Los borradores antiguos (diésel / gasolina / otro + equipo en el mismo día) se convierten solos.
 export function entradasComb(x) {
@@ -60,7 +60,10 @@ export function combDelDia(x) {
     : nombres.map((e) => { const g = num(e.galones); const k = claveTipo(e.tipo); const t = k === "diesel" ? "diésel" : k === "gasolina" ? "gasolina" : "otro"; return `${texto(e.equipo) || "Sin equipo"}${g !== null ? ` (${fmtN(g)} gal ${t})` : ""}`; }).join("; ");
   return { ...tot, equipo };
 }
-const vacio = (x) => !(texto(x.aguaLect) || texto(x.enLect) || texto(x.obs) || entradasComb(x).some((e) => texto(e.equipo) || texto(e.galones) !== ""));
+// Observaciones de agua y energía: varias actividades o equipos por día (lista). Los borradores antiguos tenían un solo texto en «obs».
+export const actividadesDia = (x) => (Array.isArray(x.obsLista) ? x.obsLista : texto(x.obs) ? [texto(x.obs)] : []).map(texto).filter(Boolean);
+export const obsDelDia = (x) => actividadesDia(x).join("; ");
+const vacio = (x) => !(texto(x.aguaLect) || texto(x.enLect) || actividadesDia(x).length || entradasComb(x).some((e) => texto(e.equipo) || texto(e.galones) !== ""));
 export const diasConDatos = (d) => arr(d.dias).filter((x) => !vacio(x)).sort((a, b) => (a.fecha || "9999").localeCompare(b.fecha || "9999"));
 export const mesDe = (iso) => { const m = /^(\d{4})-(\d{2})/.exec(texto(iso)); return m ? { anio: Number(m[1]), mes: Number(m[2]) } : null; };
 export const nombreMes = (ym) => { const m = mesDe(ym); return m ? MESES_NOMBRE[m.mes - 1] : ""; };
@@ -106,7 +109,7 @@ export function problemasConsumos(d) {
   ds.forEach((x, i) => {
     if (x.fecha && ym && x.fecha.slice(0, 7) !== ym) p.push({ i, tipo: "fecha", texto: `la fecha del día ${i + 1} no es del mes ${nombreMes(ym)} ${mesDe(ym).anio}` });
     if (x.fecha && i > 0 && ds[i - 1].fecha === x.fecha) p.push({ i, tipo: "fecha", texto: `la fecha ${x.fecha.split("-").reverse().join("/")} está repetida` });
-    const cambio = /medidor/i.test(`${x.obs || ""} ${combDelDia(x).equipo}`);
+    const cambio = /medidor/i.test(`${obsDelDia(x)} ${combDelDia(x).equipo}`);
     const a = num(x.aguaLect), e = num(x.enLect);
     const porConsumo = modoConsumo(d);
     const ini = (v) => { const n = num(v); return n === null ? null : n; };
@@ -138,7 +141,7 @@ export function escribirConsumosEnHoja(ws, d, celdas = CELDAS_CONSUMOS) {
   const lc = lecturasYConsumos(d), ds = diasConDatos(d);
   const filas = ds.map((x, i) => {
     const cb = combDelDia(x);
-    const f = { equipo: cb.equipo, obs: x.obs, aguaFuente: x.aguaFuente, enFuente: x.enFuente };
+    const f = { equipo: cb.equipo, obs: obsDelDia(x), aguaFuente: x.aguaFuente, enFuente: x.enFuente };
     const [dd, mm, aa] = (x.fecha || "").split("-").reverse(); f.fecha = x.fecha ? `${dd}/${mm}/${aa}` : "";
     f.aguaLect = lc.agua.lecturas[i] === null ? "" : lc.agua.lecturas[i]; f.enLect = lc.energia.lecturas[i] === null ? "" : lc.energia.lecturas[i];
     for (const k of ["diesel", "gasolina", "otro"]) f[k] = cb[k] === null ? "" : cb[k];

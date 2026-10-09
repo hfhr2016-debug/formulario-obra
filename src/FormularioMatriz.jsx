@@ -120,7 +120,7 @@ export default function FormularioMatriz({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="MATRIZ DE PELIGROS" subtitulo={`${CODIGO_MATRIZ} · Identificación de peligros y valoración de riesgos (GTC 45)`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="Matriz de Peligros" subtitulo={`${CODIGO_MATRIZ} · Identificación de peligros y valoración de riesgos (GTC 45)`} onVolver={onVolver} />
 
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         {/* 1. DATOS */}

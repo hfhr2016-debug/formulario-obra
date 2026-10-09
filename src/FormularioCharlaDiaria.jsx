@@ -757,7 +757,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
                 </button>
               )}
             </div>
-            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>CHARLA DIARIA DE SEGURIDAD</div>
+            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Charla Diaria de Seguridad</div>
             <div className="text-[11px]" style={{ color: GOLD }}>{CODIGO_FORMATO} · Charla de 5 minutos</div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />

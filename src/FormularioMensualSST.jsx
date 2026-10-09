@@ -123,7 +123,7 @@ export default function FormularioMensualSST({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="INFORME MENSUAL SST" subtitulo={`${CODIGO_MENSUAL} · Resultados de seguridad y salud del mes`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="Informe Mensual SST" subtitulo={`${CODIGO_MENSUAL} · Resultados de seguridad y salud del mes`} onVolver={onVolver} />
 
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         {/* 1. DATOS */}

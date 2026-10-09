@@ -407,8 +407,8 @@ export default function FormularioMemoria({ onVolver, onNavegar }) {
               Menú SAIEA OBRAS
             </button>
             </div>
-            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>MEMORIA DE CÁLCULO</div>
-            <IndicadorTipoProyecto claveBorrador="ryr_borrador_memoria" />
+            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Memorias de Cálculo</div>
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_memoria" onVolver={onVolver} />
             <div className="text-[11px]" style={{ color: GOLD }}>Reformas y Remodelaciones</div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />

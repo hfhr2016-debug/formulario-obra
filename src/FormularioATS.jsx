@@ -189,7 +189,7 @@ export default function FormularioATS({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="ANÁLISIS DE TRABAJO SEGURO" subtitulo={`${CODIGO_ATS} · ATS: pasos, peligros, riesgos y controles`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="Análisis de Trabajo Seguro" subtitulo={`${CODIGO_ATS} · ATS: pasos, peligros, riesgos y controles`} onVolver={onVolver} />
 
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         {/* 1. DATOS */}

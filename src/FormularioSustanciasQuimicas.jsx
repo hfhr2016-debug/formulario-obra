@@ -105,7 +105,7 @@ export default function FormularioSustanciasQuimicas({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="SUSTANCIAS QUÍMICAS Y COMBUSTIBLES" subtitulo={`${CODIGO_QUIMICOS} · Inventario y almacenamiento seguro`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="Control de Sustancias Químicas y Combustibles" subtitulo={`${CODIGO_QUIMICOS} · Inventario y almacenamiento seguro`} onVolver={onVolver} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={d.proyecto ? `${d.proyecto} · ${d.fecha.split("-").reverse().join("/")}` : "Obra, fecha y almacén"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">

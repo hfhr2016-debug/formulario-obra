@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { fechaHoyISO, decidirDistribucion } from "./sstBase";
 import {
-  CODIGO_CONSUMOS, HOJA_CONSUMOS, CELDAS_CONSUMOS, FUENTES_AGUA, FUENTES_ENERGIA, MODOS_REGISTRO, EQUIPOS_AGUA_ENERGIA, EQUIPOS_COMBUSTIBLE, TIPOS_COMBUSTIBLE, comoOpciones, entradasComb, combNuevo, modoConsumo, nombreMes, mesDe,
+  CODIGO_CONSUMOS, HOJA_CONSUMOS, CELDAS_CONSUMOS, FUENTES_AGUA, FUENTES_ENERGIA, MODOS_REGISTRO, EQUIPOS_AGUA_ENERGIA, EQUIPOS_COMBUSTIBLE, TIPOS_COMBUSTIBLE, comoOpciones, entradasComb, combNuevo, actividadesDia, modoConsumo, nombreMes, mesDe,
   descubrirConsumos, escribirConsumosEnHoja, validarConsumos, camposFaltantesConsumos, resumenConsumos, diaNuevo, diasConDatos, consumosCalculados, totalesConsumos, avisosConsumos, num,
 } from "./consumosDatos";
 import {
@@ -26,6 +26,33 @@ function datosIniciales() {
   };
 }
 const tieneContenido = (d) => !!(d.proyecto || d.contratista || d.trabajadores || d.medidorAgua || d.medidorEnergia || d.iniAgua || d.iniEnergia || d.dias.length || d.observaciones || d.elaboroNombre);
+
+// Observaciones de agua y energía: se pueden anotar VARIAS actividades o equipos (se elige de la lista o se escribe; cada una queda como etiqueta que se puede quitar)
+function ActividadesAgua({ lista, dia, onChange }) {
+  const [borrador, setBorrador] = useState("");
+  const agregar = (t) => {
+    const v = String(t || "").trim();
+    if (v && !lista.some((a) => a.toLowerCase() === v.toLowerCase())) onChange([...lista, v]);
+    setBorrador("");
+  };
+  return (
+    <div data-campo={`Actividades de agua y energía del día ${dia}`}>
+      {lista.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-1.5">
+          {lista.map((a) => (
+            <span key={a} className="inline-flex items-center gap-1 text-[11.5px] pl-2.5 pr-1 py-1 rounded-full" style={{ background: "white", border: `1px solid ${LINE}`, color: NAVY }}>
+              {a}
+              <button type="button" aria-label={`Quitar ${a} del día ${dia}`} onClick={() => onChange(lista.filter((z) => z !== a))} className="w-5 h-5 leading-none text-[15px]" style={{ color: "#8A8F99" }}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <BuscadorLista label={`Equipo o actividad que usó agua o energía (día ${dia})`} value={borrador} onChange={setBorrador} onElegir={(o) => agregar(o.texto)} onBlurValor={agregar}
+        opciones={comoOpciones(EQUIPOS_AGUA_ENERGIA)} opcionesAlAbrir={comoOpciones(EQUIPOS_AGUA_ENERGIA)} placeholder={lista.length ? "Agrega otra actividad o equipo…" : "Ej. Mezcladora de concreto, riego, cambio de medidor…"} />
+      <div className="text-[10px] mt-0.5" style={{ color: "#8A8F99" }}>Puedes agregar varias: elige de la lista o escribe y toca fuera de la casilla.</div>
+    </div>
+  );
+}
 
 export default function FormularioConsumos({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
@@ -109,7 +136,7 @@ export default function FormularioConsumos({ onVolver }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-      <EncabezadoFormulario titulo="CONTROL DE CONSUMOS" subtitulo={`${CODIGO_CONSUMOS} · Agua, energía y combustibles`} onVolver={onVolver} />
+      <EncabezadoFormulario titulo="Control de Consumo de Recursos" subtitulo={`${CODIGO_CONSUMOS} · Agua, energía y combustibles`} onVolver={onVolver} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={d.proyecto ? `${d.proyecto} · ${nombreMes(d.mes)}` : "Obra, mes y medidores"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">
@@ -162,7 +189,7 @@ export default function FormularioConsumos({ onVolver }) {
                   )}
                   <ChipsOpcion label="Fuente del agua" nombre={`Fuente del agua ${i + 1}`} value={x.aguaFuente} opciones={FUENTES_AGUA} pequeno onChange={(v) => actualizar(i, { aguaFuente: v })} />
                   <ChipsOpcion label="Fuente de la energía" nombre={`Fuente de la energía ${i + 1}`} value={x.enFuente} opciones={FUENTES_ENERGIA} pequeno onChange={(v) => actualizar(i, { enFuente: v })} />
-                  <BuscadorLista label="Observaciones de agua y energía (equipo o actividad)" value={x.obs || ""} onChange={(v) => actualizar(i, { obs: v })} opciones={comoOpciones(EQUIPOS_AGUA_ENERGIA)} opcionesAlAbrir={comoOpciones(EQUIPOS_AGUA_ENERGIA)} placeholder="Ej. Mezcladora de concreto, riego, cambio de medidor…" />
+                  <ActividadesAgua lista={actividadesDia(x)} dia={i + 1} onChange={(l) => actualizar(i, { obsLista: l, obs: undefined })} />
                   <div className="text-[10px] uppercase tracking-wide font-medium pt-1" style={{ color: "#8A8F99" }}>Combustibles (vehículos y equipos)</div>
                   {entradasComb(x).map((e, k) => (
                     <div key={k} className="border rounded-md p-2 relative" style={{ borderColor: LINE, background: "white" }}>

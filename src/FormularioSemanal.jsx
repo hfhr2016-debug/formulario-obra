@@ -565,9 +565,9 @@ export default function FormularioSemanal({ onVolver, onNavegar }) {
               Menú SAIEA OBRAS
             </button>
             </div>
-            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>INFORME SEMANAL</div>
-            <IndicadorTipoProyecto claveBorrador="ryr_borrador_semanal" />
-            <div className="text-[11px]" style={{ color: GOLD }}>Incluye Ficha Técnica y Presupuesto conectados</div>
+            <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Informe Semanal</div>
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_semanal" onVolver={onVolver} />
+            <div className="text-[11px]" style={{ color: GOLD }}>Trae datos automáticamente de Ficha Técnica y Presupuesto</div>
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>

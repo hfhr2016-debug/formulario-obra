@@ -479,7 +479,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
               🔄 Nuevo / Actualizar proyecto
             </button>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              FICHA TÉCNICA DEL PROYECTO
+              Ficha Técnica
             </div>
             <div className="text-[11px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones

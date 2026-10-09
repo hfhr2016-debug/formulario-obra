@@ -1084,7 +1084,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
               className="text-white font-bold text-[15px] tracking-wide"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              INFORME DIARIO DE OBRA
+              Informe Diario
             </div>
             <div className="text-[10.5px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones · RYR-FT-01

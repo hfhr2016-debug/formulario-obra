@@ -963,12 +963,12 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              ANÁLISIS DE PRECIOS UNITARIOS
+              APU's
             </div>
             <div className="text-[11px] mb-1" style={{ color: GOLD }}>
               Reformas y Remodelaciones
             </div>
-            <IndicadorTipoProyecto claveBorrador="ryr_borrador_apu" />
+            <IndicadorTipoProyecto claveBorrador="ryr_borrador_apu" onVolver={onVolver} />
           </div>
           <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
         </div>
