@@ -7,6 +7,24 @@ export const HOJA_QUIMICOS = "Sustancias Químicas";
 export const TIPOS_SUSTANCIA = ["Combustible", "Lubricante / aceite", "Pintura / solvente", "Cemento / aditivo", "Producto de limpieza", "Gas", "Otro"];
 export const UNIDADES = ["gal", "L", "kg", "m³", "Unidad", "Bulto"];
 export const SI_NO = ["Sí", "No"];
+// Sustancias que se usan en una obra (se elige de la lista desplegable; también se puede escribir otra). [nombre, tipo, unidad habitual]
+const C = "Combustible", L = "Lubricante / aceite", P = "Pintura / solvente", A = "Cemento / aditivo", Q = "Producto de limpieza", G = "Gas";
+export const CATALOGO_SUSTANCIAS = [
+  ["ACPM (diésel)", C, "gal"], ["Gasolina corriente", C, "gal"], ["Gasolina extra", C, "gal"], ["Mezcla de gasolina y aceite (2 tiempos)", C, "gal"], ["Kerosene", C, "gal"],
+  ["Aceite de motor", L, "gal"], ["Aceite hidráulico", L, "gal"], ["Aceite de transmisión / caja", L, "gal"], ["Aceite usado (almacenado para entrega)", L, "gal"], ["Grasa lubricante", L, "kg"],
+  ["Líquido de frenos", L, "L"], ["Refrigerante / anticongelante", L, "gal"], ["Desmoldante para formaleta", L, "gal"], ["WD-40 / lubricante en aerosol", L, "Unidad"],
+  ["Pintura vinilo / látex", P, "gal"], ["Pintura esmalte", P, "gal"], ["Pintura anticorrosiva", P, "gal"], ["Pintura epóxica", P, "gal"], ["Pintura en aerosol", P, "Unidad"],
+  ["Thinner", P, "gal"], ["Varsol / disolvente", P, "gal"], ["Aguarrás", P, "gal"], ["Barniz / laca", P, "gal"], ["Sellador", P, "gal"], ["Removedor de pintura", P, "gal"],
+  ["Masilla / estuco", P, "kg"], ["Pegante PVC (soldadura líquida)", P, "gal"], ["Limpiador PVC", P, "gal"], ["Pegante de contacto", P, "gal"], ["Silicona / sellante", P, "Unidad"],
+  ["Espuma de poliuretano", P, "Unidad"], ["Resina epóxica", P, "kg"], ["Impermeabilizante asfáltico", P, "gal"], ["Emulsión asfáltica", P, "gal"], ["Asfalto", P, "kg"],
+  ["Cemento gris", A, "Bulto"], ["Cemento blanco", A, "Bulto"], ["Cal hidratada", A, "Bulto"], ["Yeso", A, "Bulto"], ["Mortero seco / pega de cerámica", A, "Bulto"],
+  ["Aditivo plastificante", A, "gal"], ["Aditivo acelerante o retardante", A, "gal"], ["Curador de concreto", A, "gal"], ["Aditivo impermeabilizante", A, "gal"], ["Fibra o aditivo para concreto", A, "kg"],
+  ["Ácido muriático", Q, "gal"], ["Soda cáustica", Q, "kg"], ["Hipoclorito / cloro", Q, "gal"], ["Desengrasante", Q, "gal"], ["Detergente", Q, "kg"], ["Jabón desinfectante", Q, "gal"], ["Insecticida / fumigante", Q, "L"],
+  ["Gas propano (GLP)", G, "kg"], ["Acetileno", G, "Unidad"], ["Oxígeno industrial", G, "Unidad"], ["Argón / mezcla de soldadura", G, "Unidad"],
+  ["Batería (plomo-ácido)", "Otro", "Unidad"], ["Pilas", "Otro", "Unidad"], ["Aerosoles", "Otro", "Unidad"],
+];
+export const OPCIONES_SUSTANCIAS = CATALOGO_SUSTANCIAS.map(([texto, tipo, unidad]) => ({ texto, detalle: tipo, tipo, unidad }));
+
 // Los 13 puntos vienen escritos en la plantilla, en este orden
 export const ITEMS_QUIMICOS = [
   "Zona de almacenamiento señalizada, ventilada y techada", "Piso impermeable con contención o dique para el 110 % del recipiente mayor",

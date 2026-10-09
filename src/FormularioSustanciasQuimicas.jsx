@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { fechaHoyISO, decidirDistribucion } from "./sstBase";
 import {
-  CODIGO_QUIMICOS, HOJA_QUIMICOS, CELDAS_QUIMICOS, TIPOS_SUSTANCIA, UNIDADES, SI_NO, ITEMS_QUIMICOS,
+  CODIGO_QUIMICOS, HOJA_QUIMICOS, CELDAS_QUIMICOS, TIPOS_SUSTANCIA, OPCIONES_SUSTANCIAS, UNIDADES, SI_NO, ITEMS_QUIMICOS,
   descubrirQuimicos, escribirQuimicosEnHoja, validarQuimicos, camposFaltantesQuimicos, resumenQuimicos, sustanciaNueva, sustanciasConDatos, sinHojaDeSeguridad,
 } from "./sustanciasQuimicasDatos";
 import { contarRespuestas, hallazgosConDatos, RESPUESTAS_AMB } from "./ambBase";
@@ -124,7 +124,7 @@ export default function FormularioSustanciasQuimicas({ onVolver }) {
             <div key={i} className="border rounded-lg p-2.5 mb-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>
               <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>#{i + 1}</div>
               <div className="space-y-2">
-                <Campo label="Sustancia o producto" value={s.sustancia} placeholder="Ej. ACPM, thinner, aceite hidráulico" onChange={(v) => actualizar(i, { sustancia: v })} />
+                <BuscadorLista label="Sustancia o producto" value={s.sustancia} placeholder="Elige de la lista o escribe otra (ACPM, thinner, aceite…)" onChange={(v) => actualizar(i, { sustancia: v })} onElegir={(o) => actualizar(i, { sustancia: o.texto, tipo: s.tipo || o.tipo, unidad: s.unidad || o.unidad })} opciones={OPCIONES_SUSTANCIAS} opcionesAlAbrir={OPCIONES_SUSTANCIAS.slice(0, 14)} maxResultados={12} />
                 <Lista label="Tipo de sustancia" value={s.tipo} onChange={(v) => actualizar(i, { tipo: v })} opciones={TIPOS_SUSTANCIA} />
                 <div className="grid grid-cols-2 gap-2">
                   <Campo label="Cantidad" value={s.cantidad} inputMode="decimal" onChange={(v) => actualizar(i, { cantidad: v.replace(/[^0-9.,]/g, "") })} />

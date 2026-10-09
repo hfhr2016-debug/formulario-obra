@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { fechaHoyISO, decidirDistribucion } from "./sstBase";
 import {
-  CODIGO_CONSUMOS, HOJA_CONSUMOS, CELDAS_CONSUMOS, FUENTES_AGUA, FUENTES_ENERGIA, MODOS_REGISTRO, EQUIPOS_CONSUMO, modoConsumo, nombreMes, mesDe,
+  CODIGO_CONSUMOS, HOJA_CONSUMOS, CELDAS_CONSUMOS, FUENTES_AGUA, FUENTES_ENERGIA, MODOS_REGISTRO, EQUIPOS_AGUA_ENERGIA, EQUIPOS_COMBUSTIBLE, TIPOS_COMBUSTIBLE, comoOpciones, entradasComb, combNuevo, modoConsumo, nombreMes, mesDe,
   descubrirConsumos, escribirConsumosEnHoja, validarConsumos, camposFaltantesConsumos, resumenConsumos, diaNuevo, diasConDatos, consumosCalculados, totalesConsumos, avisosConsumos, num,
 } from "./consumosDatos";
 import {
@@ -50,6 +50,11 @@ export default function FormularioConsumos({ onVolver }) {
   const dias = d.dias;
   const setDias = (nuevos) => setD((cur) => ({ ...cur, dias: nuevos }));
   const actualizar = (i, patch) => setDias(dias.map((x, k) => (k === i ? { ...x, ...patch } : x)));
+  // Combustible del día: lista de equipos (los borradores antiguos se convierten al editar)
+  const guardarComb = (i, lista) => actualizar(i, { comb: lista, diesel: undefined, gasolina: undefined, otro: undefined, equipo: undefined });
+  const cambiarComb = (i, k, patch) => guardarComb(i, entradasComb(dias[i]).map((e, n) => (n === k ? { ...e, ...patch } : e)));
+  const agregarComb = (i) => guardarComb(i, [...entradasComb(dias[i]), combNuevo()]);
+  const quitarComb = (i, k) => guardarComb(i, entradasComb(dias[i]).filter((_, n) => n !== k));
   const quitar = (i) => { setDias(dias.filter((_, k) => k !== i)); setAvisoDias(""); };
   function agregarDia() {
     if (dias.length >= MAX_DIAS) { setAvisoDias(`Un mes tiene espacio para ${MAX_DIAS} días.`); return; }
@@ -157,13 +162,23 @@ export default function FormularioConsumos({ onVolver }) {
                   )}
                   <ChipsOpcion label="Fuente del agua" nombre={`Fuente del agua ${i + 1}`} value={x.aguaFuente} opciones={FUENTES_AGUA} pequeno onChange={(v) => actualizar(i, { aguaFuente: v })} />
                   <ChipsOpcion label="Fuente de la energía" nombre={`Fuente de la energía ${i + 1}`} value={x.enFuente} opciones={FUENTES_ENERGIA} pequeno onChange={(v) => actualizar(i, { enFuente: v })} />
-                  <div className="text-[10px] uppercase tracking-wide font-medium" style={{ color: "#8A8F99" }}>Combustibles</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Campo label="Diésel (gal)" value={x.diesel} inputMode="decimal" onChange={(v) => actualizar(i, { diesel: soloNumero(v) })} />
-                    <Campo label="Gasolina (gal)" value={x.gasolina} inputMode="decimal" onChange={(v) => actualizar(i, { gasolina: soloNumero(v) })} />
-                    <Campo label="Otro (gal)" value={x.otro} inputMode="decimal" onChange={(v) => actualizar(i, { otro: soloNumero(v) })} />
-                  </div>
-                  <BuscadorLista label="Equipo o actividad" value={x.equipo} onChange={(v) => actualizar(i, { equipo: v })} opciones={EQUIPOS_CONSUMO} opcionesAlAbrir={EQUIPOS_CONSUMO} placeholder="Elige el equipo o actividad, o escribe otro" />
+                  <BuscadorLista label="Observaciones de agua y energía (equipo o actividad)" value={x.obs || ""} onChange={(v) => actualizar(i, { obs: v })} opciones={comoOpciones(EQUIPOS_AGUA_ENERGIA)} opcionesAlAbrir={comoOpciones(EQUIPOS_AGUA_ENERGIA)} placeholder="Ej. Mezcladora de concreto, riego, cambio de medidor…" />
+                  <div className="text-[10px] uppercase tracking-wide font-medium pt-1" style={{ color: "#8A8F99" }}>Combustibles (vehículos y equipos)</div>
+                  {entradasComb(x).map((e, k) => (
+                    <div key={k} className="border rounded-md p-2 relative" style={{ borderColor: LINE, background: "white" }}>
+                      <div className="space-y-2">
+                        <BuscadorLista label={`Equipo o vehículo ${k + 1} del día ${i + 1}`} value={e.equipo} onChange={(v) => cambiarComb(i, k, { equipo: v })} opciones={comoOpciones(EQUIPOS_COMBUSTIBLE)} opcionesAlAbrir={comoOpciones(EQUIPOS_COMBUSTIBLE)} placeholder="Elige el vehículo o equipo, o escribe otro" />
+                        <ChipsOpcion label="Combustible" nombre={`Combustible ${k + 1} del día ${i + 1}`} value={e.tipo} opciones={TIPOS_COMBUSTIBLE} pequeno onChange={(v) => cambiarComb(i, k, { tipo: v })} />
+                        <Campo label={`Galones ${k + 1} del día ${i + 1}`} value={e.galones} inputMode="decimal" onChange={(v) => cambiarComb(i, k, { galones: soloNumero(v) })} />
+                      </div>
+                      <button type="button" onClick={() => quitarComb(i, k)} aria-label={`Quitar combustible ${k + 1} del día ${i + 1}`} className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{ color: "#B3401F" }}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => agregarComb(i)} className="flex items-center gap-1.5 text-[11.5px] font-medium px-3 py-1.5 rounded-md w-full justify-center border border-dashed" style={{ borderColor: LINE, color: NAVY }}>
+                    <Plus size={12} /> Agregar combustible de un vehículo o equipo
+                  </button>
                 </div>
                 <button type="button" onClick={() => quitar(i)} aria-label={`Quitar día ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}>
                   <Trash2 size={12} />

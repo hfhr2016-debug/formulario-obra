@@ -380,7 +380,7 @@ export function escribirTabla(ws, tabla, filas) {
     const r = tabla.filas ? tabla.filas[i] : tabla.fila0 + i;
     for (const [campo, col] of Object.entries(tabla.columnas)) {
       poner(ws, `${col}${r}`, fila[campo]);
-      if (/^obs/i.test(campo)) hacerLegible(ws, col, r, fila[campo]);
+      if (/^(obs|equipo)/i.test(campo)) hacerLegible(ws, col, r, fila[campo]);
     }
   });
 }
