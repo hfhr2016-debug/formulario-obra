@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import * as FS from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA44nrJMcN6zew_2XhhTgWdszcZdsH7SJs",
@@ -14,5 +14,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Con memoria local de Firestore: la app sigue funcionando sin señal y lo registrado se envía al volver la conexión.
+let _db;
+try { _db = FS.initializeFirestore(app, { localCache: FS.persistentLocalCache({ tabManager: FS.persistentMultipleTabManager() }) }); }
+catch (e) { _db = FS.getFirestore(app); }   // navegador sin soporte (p. ej. modo privado): funciona igual, solo en línea
+export const db = _db;
 export default app;

@@ -8,6 +8,7 @@ import { useCatalogo } from "./catalogos";
 import PantallaLogin from "./PantallaLogin";
 import PanelAdmin from "./PanelAdmin";
 import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
+import { iniciarSync, detenerSync } from "./sincronizarFirestore";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
@@ -1895,7 +1896,7 @@ function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
   );
 }
 
-function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
+function AppInterno({ perfil, onCerrarSesion, onIrAdmin, versionDatos = 0 }) {
   const [vista, setVista] = useState("selector-apps");
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
   const ctxSST = {
@@ -1936,7 +1937,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin }) {
   const conMenuPres = (nodo) => {
     const nivel = nivelCP(perfil, vista);
     if (!nivel) return <SinAcceso onVolver={() => setVista("inicio-presupuesto")} />;
-    return <ContextoSST.Provider value={ctxPres}>{nivel === "V" ? <SoloLectura key={vista}>{nodo}</SoloLectura> : nodo}</ContextoSST.Provider>;
+    return <ContextoSST.Provider key={versionDatos} value={ctxPres}>{nivel === "V" ? <SoloLectura key={vista}>{nodo}</SoloLectura> : nodo}</ContextoSST.Provider>;
   };
 
   if (vista === "inicio") {
@@ -2171,9 +2172,51 @@ export default function App() {
   );
 }
 
+// Sincronización con el servidor: arranca al iniciar sesión y se detiene (borrando la copia del equipo) al cerrarla.
+function useSincronizacion(usuario, perfil) {
+  const [listo, setListo] = useState(false);
+  const [hayNuevos, setHayNuevos] = useState(false);
+  const [version, setVersion] = useState(0);
+  const [enLinea, setEnLinea] = useState(typeof navigator === "undefined" ? true : navigator.onLine !== false);
+  const uid = usuario && usuario.uid;
+  const huella = perfil ? JSON.stringify([perfil.esAdmin || false, perfil.roles || [], perfil.rolCP || ""]) : "";
+  useEffect(() => {
+    if (!uid || !perfil) { setListo(false); return undefined; }
+    let vivo = true;
+    setListo(false);
+    iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) setHayNuevos(true); if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })
+      .catch((e) => console.warn("No se pudo iniciar la sincronización", e))
+      .finally(() => { if (vivo) setListo(true); });
+    return () => { vivo = false; detenerSync({ limpiar: true }); };
+  }, [uid, huella]);   // eslint-disable-line
+  useEffect(() => {
+    const a = () => setEnLinea(true), b = () => setEnLinea(false);
+    window.addEventListener("online", a); window.addEventListener("offline", b);
+    return () => { window.removeEventListener("online", a); window.removeEventListener("offline", b); };
+  }, []);
+  const actualizar = () => { setHayNuevos(false); setVersion((v) => v + 1); };
+  // Si llegaron datos de otro dispositivo, la pantalla se actualiza sola en cuanto la persona deja de escribir (2,5 s),
+  // porque un formulario con datos viejos podría pisar lo nuevo al guardarse. Mientras tanto queda el aviso para hacerlo a mano.
+  const ultimaAccion = useRef(Date.now());
+  useEffect(() => {
+    const marcar = () => { ultimaAccion.current = Date.now(); };
+    ["keydown", "input", "pointerdown"].forEach((ev) => window.addEventListener(ev, marcar, true));
+    return () => ["keydown", "input", "pointerdown"].forEach((ev) => window.removeEventListener(ev, marcar, true));
+  }, []);
+  useEffect(() => {
+    if (!hayNuevos) return undefined;
+    const t = setInterval(() => { if (Date.now() - ultimaAccion.current > 2500) { setHayNuevos(false); setVersion((v) => v + 1); } }, 1000);
+    return () => clearInterval(t);
+  }, [hayNuevos]);
+  return { listo, hayNuevos, version, actualizar, enLinea };
+}
+
 function AppConSesion() {
   const { usuario, perfil, cargando, cerrarSesion } = useAuth();
   const [vistaExterna, setVistaExterna] = useState("apps");
+  const sync = useSincronizacion(usuario, perfil);
+  // Antes de cerrar sesión se sube lo pendiente y se borra la copia del equipo (otra persona podría usarlo)
+  const cerrarSesionSegura = async () => { try { await detenerSync({ limpiar: true }); } catch (e) { /* se cierra igual */ } await cerrarSesion(); };
 
   if (cargando) {
     return (
@@ -2191,9 +2234,24 @@ function AppConSesion() {
     return <PanelAdmin onVolver={() => setVistaExterna("apps")} />;
   }
 
+  if (!sync.listo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: PAPER }}>
+        <div className="text-[13px]" style={{ color: NAVY }}>Sincronizando datos...</div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <AppInterno perfil={perfil} onCerrarSesion={cerrarSesion} onIrAdmin={() => setVistaExterna("admin")} />
+      <AppInterno perfil={perfil} onCerrarSesion={cerrarSesionSegura} onIrAdmin={() => setVistaExterna("admin")} versionDatos={sync.version} />
+      {(sync.hayNuevos || !sync.enLinea) && (
+        <div className="fixed right-2.5 z-40 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md" style={{ bottom: 96, background: sync.hayNuevos ? GOLD : "#FFF4DB", color: sync.hayNuevos ? "white" : "#8A5A00" }}>
+          {sync.hayNuevos
+            ? <button type="button" onClick={sync.actualizar}>🔄 Hay datos nuevos de otro dispositivo · Actualizar</button>
+            : "Sin conexión: se guardará aquí y se enviará al volver"}
+        </div>
+      )}
     </div>
   );
 }
