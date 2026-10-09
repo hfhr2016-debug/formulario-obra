@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { faceIdDisponible, faceIdActivado, faceIdRegistrar, faceIdGuardar, faceIdIngresar, faceIdDesactivar, faceIdCorreoGuardado } from "./faceId";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -17,11 +18,55 @@ export default function PantallaLogin() {
   const [mensajeRecuperar, setMensajeRecuperar] = useState("");
   const [enviandoRecuperar, setEnviandoRecuperar] = useState(false);
 
+  const [faceDisp, setFaceDisp] = useState(false);
+  const [faceAct, setFaceAct] = useState(false);
+  const [activarFace, setActivarFace] = useState(false);
+  const [avisoFace, setAvisoFace] = useState("");
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      const d = await faceIdDisponible();
+      const a = d ? await faceIdActivado() : false;
+      if (vivo) { setFaceDisp(d); setFaceAct(a); }
+    })();
+    return () => { vivo = false; };
+  }, []);
+
   async function manejarSubmit(e) {
     e.preventDefault();
     if (!correo || !contrasena) return;
     setCargando(true);
-    await iniciarSesion(correo.trim(), contrasena);
+    setAvisoFace("");
+    // Si pidió activar Face ID, se registra primero (necesita el gesto del usuario)
+    let idCred = null;
+    if (faceDisp && activarFace) {
+      try { idCred = await faceIdRegistrar(correo.trim()); }
+      catch { setAvisoFace("No se activó Face ID (se canceló). Puedes volver a intentarlo."); }
+    }
+    const r = await iniciarSesion(correo.trim(), contrasena);
+    if (r && r.ok && idCred) {
+      try { await faceIdGuardar(idCred, correo.trim(), contrasena); } catch { /* el ingreso ya se hizo */ }
+    }
+    setCargando(false);
+  }
+
+  async function manejarFaceId() {
+    setCargando(true);
+    setAvisoFace("");
+    try {
+      const { correo: c, contrasena: p } = await faceIdIngresar();
+      const r = await iniciarSesion(c, p);
+      if (r && !r.ok) {
+        // La contraseña cambió o la cuenta ya no es válida: se borra lo guardado
+        await faceIdDesactivar();
+        setFaceAct(false);
+        setCorreo(c);
+        setAvisoFace("Face ID ya no es válido para esta cuenta (cambió la contraseña). Ingresa con tu contraseña y vuelve a activarlo.");
+      }
+    } catch {
+      setAvisoFace("No se pudo verificar con Face ID. Puedes ingresar con tu correo y contraseña.");
+    }
     setCargando(false);
   }
 
@@ -123,6 +168,44 @@ export default function PantallaLogin() {
           >
             {cargando ? "Ingresando..." : "Ingresar"}
           </button>
+
+          {faceDisp && !faceAct && (
+            <label className="flex items-start gap-2 mt-3 text-[11.5px]" style={{ color: NAVY }}>
+              <input type="checkbox" checked={activarFace} onChange={(e) => setActivarFace(e.target.checked)} className="mt-0.5" />
+              <span>Activar Face ID / huella en este dispositivo para ingresar más rápido la próxima vez</span>
+            </label>
+          )}
+
+          {faceDisp && faceAct && (
+            <>
+              <div className="flex items-center gap-2 my-3 text-[10.5px]" style={{ color: "#8A93A0" }}>
+                <div className="flex-1 h-px" style={{ background: LINE }} /> o <div className="flex-1 h-px" style={{ background: LINE }} />
+              </div>
+              <button
+                type="button"
+                onClick={manejarFaceId}
+                disabled={cargando}
+                className="w-full py-3 rounded-xl font-bold text-[13.5px] border"
+                style={{ borderColor: NAVY, color: NAVY, background: "white" }}
+              >
+                Entrar con Face ID / huella
+              </button>
+              <button
+                type="button"
+                onClick={async () => { await faceIdDesactivar(); setFaceAct(false); setAvisoFace("Face ID desactivado en este dispositivo."); }}
+                className="w-full text-center mt-2 text-[10.5px]"
+                style={{ color: "#8A93A0" }}
+              >
+                Desactivar Face ID en este dispositivo
+              </button>
+            </>
+          )}
+
+          {avisoFace && (
+            <div className="text-[11.5px] mt-3 px-2.5 py-2 rounded-lg" style={{ background: "#FFF6E0", color: "#7A5A00" }}>
+              {avisoFace}
+            </div>
+          )}
         </form>
         ) : (
         <form onSubmit={manejarRecuperar} className="bg-white rounded-2xl p-5" style={{ border: `1px solid ${LINE}` }}>
