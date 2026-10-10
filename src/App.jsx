@@ -1624,6 +1624,11 @@ function saludoUsuario(perfil) {
 // Datos de contacto que se muestran en el pie del portal. Se escriben aquí; lo que se deje en "" no aparece.
 const EMPRESA = { nombre: "Reformas y Remodelaciones", nit: "", direccion: "", telefonos: "", correo: "", web: "" };
 
+const MARCO_DORADO = {
+  background: "linear-gradient(135deg, #FFE98F 0%, #FBBA12 22%, #E39A00 48%, #FFD54A 68%, #FBBA12 82%, #C98500 100%)",
+  padding: 7, borderRadius: 23,
+  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85), inset 0 -1px 1px rgba(120,70,0,0.55), 0 0 14px rgba(251,186,18,0.55), 0 6px 18px rgba(0,0,0,0.35)",
+};
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
@@ -1699,9 +1704,10 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         </div>
 
         <div className="flex items-center justify-center min-h-0">
+          <div className="w-full max-w-[360px] max-h-full flex" style={MARCO_DORADO}>
           <div
-            className="w-full max-w-[360px] rounded-2xl text-white text-center flex flex-col items-center px-5 py-4 max-h-full overflow-y-auto"
-            style={{ background: AZUL_MARINO, border: "1.5px solid #FFFFFF", boxShadow: "0 6px 18px rgba(0,0,0,0.35)" }}
+            className="w-full rounded-2xl text-white text-center flex flex-col items-center px-5 py-4 max-h-full overflow-y-auto"
+            style={{ background: AZUL_MARINO, border: "1.5px solid #FFFFFF" }}
           >
             <div className="text-[20px] font-bold tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
             <div className="text-[11px] mt-0.5 mb-3" style={{ color: "#F2D58A" }}>Tu obra, ordenada en un solo lugar</div>
@@ -1717,6 +1723,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             <div className="flex items-center justify-center" style={{ width: 105 }}>
               <img src="/logo-portal.png" alt="Reformas y Remodelaciones" className="object-contain w-full h-auto" />
             </div>
+          </div>
           </div>
         </div>
       </div>
