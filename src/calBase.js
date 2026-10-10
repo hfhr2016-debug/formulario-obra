@@ -44,17 +44,23 @@ export function guardarObraCal(obra) {
 export const seccionesDe = (fmt, tipo) => arr(fmt.secciones).filter((s) => !tipo || s.tipo === tipo);
 export const camposDe = (fmt) => seccionesDe(fmt, "campos").flatMap((s) => arr(s.campos).map((c) => ({ ...c, seccion: s.id })));
 export const etiquetaUI = (c) => c.label || c.etq || c.enc;
+// Casillas que solo viven en la app: «calculado» (la plantilla las calcula con su fórmula o no las trae) y «soloApp» (datos internos, p. ej. las edades de ensayo de los cilindros)
+export const enPlantilla = (c) => c.tipo !== "calculado" && !c.soloApp;
+export const colsPlantilla = (s) => arr(s.cols).filter(enPlantilla);
+// Una sección puede mostrarse solo según lo elegido (p. ej. el grupo de la actividad inspeccionada en el protocolo)
+export const esVisible = (s, datos) => !s.visibleSi || !!s.visibleSi(datos || {});
 
 export function datosIniciales(fmt) {
   const d = {};
   for (const s of arr(fmt.secciones)) {
     if (s.tipo === "campos") for (const c of arr(s.campos)) d[c.k] = c.inicial !== undefined ? c.inicial : "";
-    else if (s.tipo === "tabla") d[s.k] = [];
+    else if (s.tipo === "tabla") d[s.k] = arr(s.inicial).map((f) => ({ ...filaNuevaBase(s), ...(Array.isArray(f) ? Object.fromEntries(arr(s.cols).map((c, i) => [c.k, f[i] === undefined ? "" : f[i]])) : f) }));
     else if (s.tipo === "lista") d[s.k] = arr(s.items).map(() => ({ resp: "", obs: "" }));
   }
   for (const f of arr(fmt.firmas && fmt.firmas.personas)) { d[`${f.k}Nombre`] = ""; d[`${f.k}Cargo`] = ""; }
   return d;
 }
+function filaNuevaBase(tabla, base = {}) { const f = {}; for (const c of arr(tabla.cols)) f[c.k] = ""; return { ...f, ...base }; }
 export const filaNueva = (tabla, base = {}) => { const f = {}; for (const c of arr(tabla.cols)) f[c.k] = ""; return { ...f, ...base }; };
 const filaVacia = (tabla, f) => !arr(tabla.cols).some((c) => texto(f && f[c.k]) !== "");
 export const filasConDatos = (tabla, datos) => arr(datos[tabla.k]).filter((f) => !filaVacia(tabla, f));
@@ -74,8 +80,8 @@ export function eliminarRegistro(fmt, id) { guardarJSON(fmt.clave, arr(leerJSON(
 export function tieneContenido(fmt, datos) {
   for (const s of arr(fmt.secciones)) {
     if (s.tipo === "campos") { if (arr(s.campos).some((c) => !c.obra && texto(datos[c.k]) !== "" && texto(datos[c.k]) !== texto(c.inicial))) return true; }
-    else if (s.tipo === "tabla") { if (filasConDatos(s, datos).length) return true; }
-    else if (s.tipo === "lista") { if (arr(datos[s.k]).some((x) => texto(x.resp) || texto(x.obs))) return true; }
+    else if (s.tipo === "tabla") { if (s.inicial && JSON.stringify(arr(datos[s.k])) === JSON.stringify(datosIniciales({ secciones: [s] })[s.k])) continue; if (filasConDatos(s, datos).length) return true; }
+    else if (s.tipo === "lista") { if (esVisible(s, datos) && arr(datos[s.k]).some((x) => texto(x.resp) || texto(x.obs))) return true; }
   }
   return false;
 }
@@ -110,6 +116,7 @@ const faltaCampo = (c, d) => texto(d[c.k]) === "";
 export function faltantes(fmt, datos) {
   const f = [];
   for (const s of arr(fmt.secciones)) {
+    if (!esVisible(s, datos)) continue;
     if (s.tipo === "campos") {
       for (const c of arr(s.campos)) if (c.req && !c.obra && faltaCampo(c, datos)) f.push({ etiqueta: etiquetaUI(c), seccion: s.id });
       for (const c of arr(s.campos)) if (c.req && c.obra && faltaCampo(c, datos)) f.push({ etiqueta: etiquetaUI(c), seccion: "datos" });
@@ -118,7 +125,7 @@ export function faltantes(fmt, datos) {
       if (s.req && !con.length) f.push({ etiqueta: etiquetaUI(arr(s.cols).find((c) => c.req) || s.cols[0]), indice: 0, seccion: s.id });
       todas.forEach((fila, i) => {
         if (!con.includes(fila)) return;
-        for (const c of arr(s.cols)) if (c.req && texto(fila[c.k]) === "") f.push({ etiqueta: etiquetaUI(c), indice: i, seccion: s.id });
+        for (const c of colsPlantilla(s)) if (c.req && texto(fila[c.k]) === "") f.push({ etiqueta: etiquetaUI(c), indice: i, seccion: s.id });
       });
     } else if (s.tipo === "lista" && s.req) {
       arr(datos[s.k]).forEach((x, i) => { if (texto(x.resp) === "") f.push({ etiqueta: `Respuesta ${i + 1}`, seccion: s.id }); });
@@ -141,10 +148,10 @@ export function validar(fmt, datos) {
 // ---------- Lectura de la plantilla por etiquetas ----------
 export function specDescubrir(fmt) {
   const campos = []; const tablas = [];
-  for (const c of camposDe(fmt)) campos.push([c.k, c.etq, c.colEtq || "A", c.colEtq === "Z" ? "Y" : "Z", c.despues || null, c.filasDebajo || 0]);
+  for (const c of camposDe(fmt).filter((x) => !x.soloApp)) campos.push([c.k, c.etq, c.colEtq || "A", c.colEtq === "Z" ? "Y" : "Z", c.despues || null, c.filasDebajo || 0]);
   for (const s of arr(fmt.secciones)) {
     if (s.tipo === "tabla") {
-      tablas.push({ clave: s.k, cabecera: s.cabecera || "No.", fin: s.fin, finEmpieza: !!s.finEmpieza, despuesDe: s.despuesDe, columnas: {}, encabezados: Object.fromEntries(arr(s.cols).map((c) => [c.k, c.enc])) });
+      tablas.push({ clave: s.k, cabecera: s.cabecera || "No.", fin: s.fin, finEmpieza: !!s.finEmpieza, despuesDe: s.despuesDe, columnas: {}, encabezados: Object.fromEntries(colsPlantilla(s).map((c) => [c.k, c.enc])) });
     } else if (s.tipo === "lista") {
       const enc = { resp: s.resp.enc }; if (s.obs) enc.obs = s.obs.enc;
       tablas.push({ clave: s.k, cabecera: s.cabecera || "No.", fin: s.fin, finEmpieza: !!s.finEmpieza, despuesDe: s.despuesDe, numerada: true, columnas: {}, encabezados: enc });
@@ -163,7 +170,7 @@ export function descubrirCal(ws, fmt) {
     if (s.tipo !== "tabla" && s.tipo !== "lista") continue;
     const T = (celdas.tablas || {})[s.k];
     if (!T) { problemas.push(`No encontré la tabla «${s.titulo}»`); continue; }
-    const esperadas = s.tipo === "tabla" ? arr(s.cols).map((c) => [c.k, c.enc]) : [["resp", s.resp.enc], ...(s.obs ? [["obs", s.obs.enc]] : [])];
+    const esperadas = s.tipo === "tabla" ? colsPlantilla(s).map((c) => [c.k, c.enc]) : [["resp", s.resp.enc], ...(s.obs ? [["obs", s.obs.enc]] : [])];
     for (const [k, enc] of esperadas) if (!T.columnas[k]) problemas.push(`No encontré la columna «${enc}»`);
   }
   if (problemas.length) {
@@ -177,7 +184,7 @@ const COLOR_RES = {
   bueno: ["FFC6EFCE", "FF006100"], malo: ["FFFFC7CE", "FF9C0006"], medio: ["FFFFEB9C", "FF7A4F00"],
 };
 export const COLORES_ESTADO = {
-  Cumple: "bueno", Conforme: "bueno", Sí: null, Aprobado: "bueno", Aceptado: "bueno", Vigente: "bueno", "Para construcción": "bueno", Cerrada: "bueno", Cerrado: "bueno",
+  Cumple: "bueno", Conforme: "bueno", Sí: "bueno", No: "malo", "Sí, con observaciones": "medio", "Aprobado para vaciar": "bueno", "Aprobado con observaciones": "medio", Aprobada: "bueno", Rechazada: "malo", "Aprobada con observaciones": "medio", Seguimiento: "medio", Aprobado: "bueno", Aceptado: "bueno", Vigente: "bueno", "Para construcción": "bueno", Cerrada: "bueno", Cerrado: "bueno",
   "No cumple": "malo", "No conforme": "malo", Rechazado: "malo", Obsoleto: "malo", Crítica: "malo", Abierta: "malo", Vencida: "malo",
   Pendiente: "medio", "En cuarentena": "medio", "En cuarentena (espera ensayo)": "medio", "Aceptado con observaciones": "medio", "En revisión": "medio", Mayor: "medio",
 };
@@ -194,26 +201,34 @@ function valorExcel(def, v) {
   const t = texto(v);
   if (t === "") return "";
   if (def.tipo === "fecha") return fechaDDMMYYYY(t);
-  if (def.tipo === "numero") { const n = numero(t); return n === null ? t : n; }
+  if (def.tipo === "numero" || def.numerica || def.tipo === "calculado") { const n = numero(t); return n === null ? t : n; }
+  if (def.tipo === "porcentaje") { const n = numero(t); return n === null ? t : Math.round(n * 100) / 10000; }      // «95» -> 0,95 (la casilla de Excel está en formato %)
+  if (def.tipo === "horaExcel") { const m = /^(\d{1,2}):(\d{2})/.exec(t); return m ? (Number(m[1]) * 60 + Number(m[2])) / 1440 : t; }   // hora como fracción del día, para las fórmulas
+  if (def.tipo === "fechahora") { const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(t); return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : (fechaDDMMYYYY(t) || t); }
   return typeof v === "string" ? v : t;
 }
 export function escribirEnHoja(ws, fmt, datos, celdas) {
   for (const c of camposDe(fmt)) {
+    if (c.soloApp) continue;
     const ref = celdas[c.k]; if (!ref) continue;
-    const v = valorExcel(c, datos[c.k]);
+    const v = valorExcel(c, c.tipo === "calculado" && c.calc ? c.calc(datos) : datos[c.k]);
     poner(ws, ref, v);
     ajustarFormato(ws, ref, v);
     if (c.semaforo) pintarSemaforo(ws, ref, v);
   }
   for (const s of arr(fmt.secciones)) {
     const T = (celdas.tablas || {})[s.k]; if (!T) continue;
+    if (!esVisible(s, datos)) continue;
     if (s.tipo === "tabla") {
-      const filas = filasConDatos(s, datos).map((f) => { const o = {}; for (const c of s.cols) o[c.k] = valorExcel(c, f[c.k]); return o; });
+      const filas = filasConDatos(s, datos).map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = valorExcel(c, f[c.k]); return o; });
+      if (s.limpiar) {   // las filas que la plantilla trae escritas (p. ej. las actividades del plan) se vacían primero: lo que se quitó o se dejó en blanco no debe quedar con el texto de la plantilla
+        for (let i = 0; i < T.n; i++) { const r = T.filas ? T.filas[i] : T.fila0 + i; for (const col of Object.values(T.columnas)) { try { ws.getCell(`${col}${r}`).value = null; } catch (e) { /* celda sin acceso */ } } }
+      }
       escribirTabla(ws, T, filas);
       filas.forEach((f, i) => {
         const r = T.filas ? T.filas[i] : T.fila0 + i;
-        for (const c of s.cols) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
-        for (const c of s.cols) if (c.semaforo && T.columnas[c.k]) pintarSemaforo(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
+        for (const c of colsPlantilla(s)) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
+        for (const c of colsPlantilla(s)) if (c.semaforo && T.columnas[c.k]) pintarSemaforo(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
       });
     } else if (s.tipo === "lista") {
       const filas = arr(datos[s.k]).map((x) => ({ resp: s.resp.numerica ? (numero(x.resp) === null ? "" : numero(x.resp)) : x.resp, obs: x.obs }));
