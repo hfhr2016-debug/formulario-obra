@@ -65,6 +65,8 @@ import FormularioIcaAmbiental from "./FormularioIcaAmbiental";
 import FormularioRegistroCostos from "./FormularioRegistroCostos";
 import FormularioControlPresupuestal from "./FormularioControlPresupuestal";
 import FormularioAdicionales from "./FormularioAdicionales";
+import FormularioCalidad from "./FormularioCalidad";
+import { FORMATOS_CAL } from "./calFormatos";
 import FormularioAnticipo from "./FormularioAnticipo";
 import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
@@ -2177,6 +2179,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     return <InicioCalidad onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
   if (vista.startsWith("cal-")) {
+    if (FORMATOS_CAL[vista]) return conMenuCal(<FormularioCalidad key={vista} fmt={FORMATOS_CAL[vista]} onVolver={() => setVista("inicio-calidad")} />);
     return conMenuCal(<Proximamente nombre={(MODULOS_CALIDAD.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-calidad")} />);
   }
   if (vista === "inicio-presupuesto") {
