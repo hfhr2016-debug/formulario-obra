@@ -1639,7 +1639,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
   const AZUL_MARINO = "#17365D";   // el mismo azul de los formatos de Gestión Técnica
-  const sombraTexto = "0 1px 3px rgba(0,0,0,0.85), 0 0 8px rgba(0,0,0,0.55)";
+  const sombraTexto = "0 1px 3px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.75)";
   return (
     <div
       className="min-h-screen md:h-screen flex flex-col bg-cover bg-center md:overflow-hidden"
@@ -1693,7 +1693,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
                   <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt="" tamano={62} style={{ filter: habilitado ? "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" : "grayscale(100%)" }} />
                   <span
                     className="flex-1 flex items-center justify-center text-center rounded-full text-white font-semibold text-[15px] px-3"
-                    style={{ height: 54, border: "2px solid #FFFFFF", background: "transparent", WebkitTextStroke: `0.7px ${AZUL_MARINO}`, paintOrder: "stroke fill", textShadow: sombraTexto, fontFamily: "'Space Grotesk', sans-serif" }}
+                    style={{ height: 54, border: "2px solid #FFFFFF", background: "transparent", WebkitTextStroke: `0.9px ${AZUL_MARINO}`, paintOrder: "stroke fill", textShadow: sombraTexto, fontFamily: "'Space Grotesk', sans-serif" }}
                   >
                     {a.nombre}{!habilitado && <span className="ml-1.5 text-[11px]">🔒</span>}
                   </span>
