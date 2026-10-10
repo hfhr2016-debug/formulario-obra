@@ -1627,7 +1627,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
     <div
       className="min-h-screen flex flex-col bg-cover bg-center"
       style={{
-        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.35), rgba(247,247,245,0.50)), url('/fondo-selector.jpg')`,
+        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.04), rgba(247,247,245,0.10)), url('/fondo-selector.jpg')`,
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       }}
     >
@@ -1670,8 +1670,9 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
               onClick={() => onSeleccionar(a.id)}
               className="flex flex-col items-center justify-center gap-1 rounded-2xl px-4 py-3 w-full max-w-[260px]"
               style={{
-                background: habilitado ? "white" : "#F0F0EE",
-                border: `1px solid ${LINE}`,
+                background: habilitado ? "rgba(255,246,224,0.95)" : "#F0F0EE",
+                border: `2px solid ${habilitado ? GOLD : LINE}`,
+                boxShadow: habilitado ? "0 4px 12px rgba(27,42,69,0.28)" : "none",
                 opacity: habilitado ? 1 : 0.5,
               }}
             >
