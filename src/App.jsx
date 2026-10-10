@@ -68,6 +68,7 @@ import FormularioAdicionales from "./FormularioAdicionales";
 import FormularioCalidad from "./FormularioCalidad";
 import FormularioNC from "./FormularioNC";
 import PanelVencimientos from "./PanelVencimientos";
+import FormularioInformeCal from "./FormularioInformeCal";
 import { vencimientos, resumenVenc } from "./calVencimientos";
 import { FORMATOS_CAL } from "./calFormatos";
 import FormularioAnticipo from "./FormularioAnticipo";
@@ -1552,6 +1553,7 @@ const MODULOS_CALIDAD = [
   { id: "cal-terminada", nombre: "Actividad Terminada", emoji: "🏁", icono: "/icons/icon-cal-terminada.png", activo: true },
   { id: "cal-pendientes", nombre: "Pendientes de Entrega", emoji: "⏳", icono: "/icons/icon-cal-pendientes.png", activo: true },
   { id: "cal-acta", nombre: "Acta de Entrega", emoji: "📝", icono: "/icons/icon-cal-acta.png", activo: true },
+  { id: "cal-informe", nombre: "Informe Mensual de Calidad", emoji: "📈", icono: "/icons/icon-cal-informe.png", activo: true },
 ];
 
 const MODULOS_PRESUPUESTO = [
@@ -2164,6 +2166,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   }
   if (vista.startsWith("cal-")) {
     if (vista === "cal-vencimientos") return conMenuCal(<PanelVencimientos key={vista} onVolver={() => setVista("inicio-calidad")} onIr={setVista} />);
+    if (vista === "cal-informe") return conMenuCal(<FormularioInformeCal key={vista} onVolver={() => setVista("inicio-calidad")} />);
     if (vista === "cal-nc") return conMenuCal(<FormularioNC key={vista} onVolver={() => setVista("inicio-calidad")} />);
     if (FORMATOS_CAL[vista]) return conMenuCal(<FormularioCalidad key={vista} fmt={FORMATOS_CAL[vista]} onVolver={() => setVista("inicio-calidad")} />);
     return conMenuCal(<Proximamente nombre={(MODULOS_CALIDAD.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-calidad")} />);

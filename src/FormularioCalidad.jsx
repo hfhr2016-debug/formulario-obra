@@ -14,6 +14,7 @@ import {
 } from "./sstComunes";
 import { ChipsOpcion, FilaVerificacion } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
+import { SeccionFotosAnexo, agregarHojaFotos } from "./fotosAnexo";
 
 const COLOR_ESTADO = {
   Cumple: "#2E7D4F", Conforme: "#2E7D4F", Aprobado: "#2E7D4F", Aceptado: "#2E7D4F", Vigente: "#2E7D4F", "Para construcción": "#2E7D4F", Sí: "#2E7D4F",
@@ -47,6 +48,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   const [avisoTabla, setAvisoTabla] = useState({});
   const [creadasNC, setCreadasNC] = useState([]);
   const [filaAbierta, setFilaAbierta] = useState({});
+  const [fotos, setFotos] = useState([]);              // fotos del Excel que se va a generar (no se guardan)
   const memoria = useMemoriaSST();
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
   const previo = useRef("");
@@ -57,7 +59,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   const materiales = useMemo(() => catalogoVigente("materiales").map((m) => ({ texto: String(m.descripcion || ""), detalle: String(m.unidad || ""), unidad: String(m.unidad || "") })), []);
 
   // Al cambiar de obra se cierra el registro abierto
-  useEffect(() => { setReg(null); setCreadasNC([]); }, [h.id]);
+  useEffect(() => { setReg(null); setCreadasNC([]); setFotos([]); }, [h.id]);
   // Lo que viene de la obra (proyecto, contrato, ubicación…) se mantiene al día en el registro abierto
   useEffect(() => {
     if (!reg || !h.obra) return;
@@ -85,12 +87,12 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     if (ultimo && fmt.copiarTablas) for (const t of seccionesDe(fmt, "tabla")) r.datos[t.k] = JSON.parse(JSON.stringify((ultimo.datos || {})[t.k] || r.datos[t.k]));   // p. ej. el plan: la versión nueva parte de la anterior
     if (fmt.alCrear) fmt.alCrear(r.datos, r.obraId, h.obra);
     previo.current = JSON.stringify(r.datos);
-    setReg(r); setAbierta("datos"); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setCreadasNC([]); window.scrollTo(0, 0);
+    setReg(r); setFotos([]); setAbierta("datos"); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setCreadasNC([]); window.scrollTo(0, 0);
   }
   function abrir(id) {
     const r = obtenerRegistro(fmt, id); if (!r) return;
     previo.current = JSON.stringify(r.datos);
-    setReg(r); setAbierta("datos"); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setCreadasNC([]); window.scrollTo(0, 0);
+    setReg(r); setFotos([]); setAbierta("datos"); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setCreadasNC([]); window.scrollTo(0, 0);
   }
   function eliminar(id) { if (window.confirm("¿Eliminar este registro? No se puede deshacer.")) { eliminarRegistro(fmt, id); setVersion((v) => v + 1); } }
 
@@ -132,10 +134,11 @@ export default function FormularioCalidad({ fmt, onVolver }) {
         if (filasConDatos(s, datos).length > T.n) throw new Error(`la plantilla tiene espacio para ${T.n} filas en «${s.titulo}» y hay ${filasConDatos(s, datos).length}`);
       }
       escribirEnHoja(ws, fmt, datos, celdas);
+      const nFotos = fmt.fotos === false ? 0 : await agregarHojaFotos(workbook, { titulo: fmt.titulo, proyecto: h.obra.proyecto, fecha: String(datos.fecha || "").split("-").reverse().join("/"), fotos });
       await descargarLibro(workbook, `${fmt.archivo}_${textoParaArchivo(h.obra.proyecto, 24)}_${datos.fecha || "sin-fecha"}${texto(datos.hoja) ? "_Hoja-" + textoParaArchivo(datos.hoja, 12) : ""}.xlsx`);
       memoria.recordarUso({ personas: fmt.firmas.personas.map((p) => [datos[`${p.k}Nombre`], datos[`${p.k}Cargo`]]) });
       const nuevas = guardarFinal();
-      setGenerado(`✓ Excel descargado y registro guardado.${nuevas.length ? ` Se ${nuevas.length === 1 ? "creó 1 no conformidad" : `crearon ${nuevas.length} no conformidades`}.` : ""}`);
+      setGenerado(`✓ Excel descargado y registro guardado${nFotos ? ` (con ${nFotos} ${nFotos === 1 ? "foto" : "fotos"})` : ""}.${nuevas.length ? ` Se ${nuevas.length === 1 ? "creó 1 no conformidad" : `crearon ${nuevas.length} no conformidades`}.` : ""}`);
     } catch (err) {
       console.error(err);
       setMensajeError("No se pudo generar el Excel: " + (err && err.message ? err.message : "error desconocido"));
@@ -329,6 +332,11 @@ export default function FormularioCalidad({ fmt, onVolver }) {
               <Seccion id="resumen" titulo="Resumen" subtitulo="Se calcula con lo registrado" abierta={abierta === "resumen"} onToggle={alternar}>
                 <CifrasResumen cifras={cifras} />
                 <div className="text-[10.5px] mt-2" style={{ color: "#8A8F99" }}>Así queda también en la hoja de Excel: estos totales se calculan solos con las fórmulas de la plantilla.</div>
+              </Seccion>
+            )}
+            {fmt.fotos !== false && (
+              <Seccion id="fotos" titulo="Fotos (opcional)" subtitulo={fotos.length ? `${fotos.length} ${fotos.length === 1 ? "foto" : "fotos"} para el Excel` : "Salen en una hoja «Fotos» del Excel"} abierta={abierta === "fotos"} onToggle={alternar} contador={fotos.length}>
+                <SeccionFotosAnexo fotos={fotos} setFotos={setFotos} />
               </Seccion>
             )}
             <Seccion id="firmas" titulo="Firmas" subtitulo="Se adelantan con las del último registro" abierta={abierta === "firmas"} onToggle={alternar}>

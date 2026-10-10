@@ -573,3 +573,6 @@ export function TraerDeFicha({ onTraer }) {
     </div>
   );
 }
+
+// Libro de Excel vacío (para los informes que no parten de una plantilla)
+export const nuevoLibro = () => new ExcelJS.Workbook();

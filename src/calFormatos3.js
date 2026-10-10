@@ -407,7 +407,7 @@ export const ACTA = {
 
 // ================================================================= CA-003 Listado maestro de registros de calidad
 export const MAESTRO = {
-  id: "cal-maestro", col: "cal_maestro", clave: "ryr_cal_maestro", codigo: "RYR-CA-003", hoja: "Listado Maestro", plantilla: "/plantilla-cal-maestro.xlsx", archivo: "Listado_Maestro",
+  id: "cal-maestro", fotos: false, col: "cal_maestro", clave: "ryr_cal_maestro", codigo: "RYR-CA-003", hoja: "Listado Maestro", plantilla: "/plantilla-cal-maestro.xlsx", archivo: "Listado_Maestro",
   titulo: "Listado Maestro de Registros", subtitulo: "RYR-CA-003 · Qué registros existen, quién los llena y cuánto se conservan", panelObra: ["contrato", "contratista"], copiarTablas: true,
   secciones: [
     { id: "datos", titulo: "1. Datos generales", tipo: "campos", campos: [

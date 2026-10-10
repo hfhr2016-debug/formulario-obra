@@ -7,6 +7,7 @@ import { useObraCal, PanelObraCal } from "./calComunes";
 import { NC_FMT, ORIGENES_NC, filaNC } from "./calFormatos3";
 import { NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista } from "./sstComunes";
 import { ChipsOpcion } from "./sstControles";
+import { SeccionFotosAnexo, agregarHojaFotos } from "./fotosAnexo";
 
 const COLOR_G = { Leve: "#2E7D4F", Mayor: "#B8860B", "Crítica": "#B3401F" };
 const COLOR_E = { Abierta: "#B3401F", "En proceso": "#B8860B", Cerrada: "#2E7D4F" };
@@ -26,6 +27,7 @@ export default function FormularioNC({ onVolver }) {
   const [aviso, setAviso] = useState("");
   const [excel, setExcel] = useState({ responsable: "", periodo: "" });
   const [firmas, setFirmas] = useState({});
+  const [fotos, setFotos] = useState([]);
   const [generando, setGenerando] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
   const [generado, setGenerado] = useState("");
@@ -98,10 +100,11 @@ export default function FormularioNC({ onVolver }) {
       const { workbook, ws } = await cargarPlantilla(NC_FMT.plantilla, NC_FMT.hoja);
       const celdas = descubrirCal(ws, NC_FMT);
       escribirEnHoja(ws, NC_FMT, datos, celdas);
+      const nFotos = await agregarHojaFotos(workbook, { titulo: "No conformidades", proyecto: h.obra.proyecto, fecha: hoy.split("-").reverse().join("/"), fotos });
       await descargarLibro(workbook, `${NC_FMT.archivo}_${textoParaArchivo(h.obra.proyecto, 24)}_${hoy}_Hoja-${k + 1}.xlsx`);
       guardarExcelLocal(excel, firmas);
       memoria.recordarUso({ personas: NC_FMT.firmas.personas.map((p) => [datos[`${p.k}Nombre`], datos[`${p.k}Cargo`]]) });
-      setGenerado(`✓ Excel de la hoja ${k + 1} de ${hojas} descargado.`);
+      setGenerado(`✓ Excel de la hoja ${k + 1} de ${hojas} descargado${nFotos ? ` (con ${nFotos} ${nFotos === 1 ? "foto" : "fotos"})` : ""}.`);
     } catch (err) { console.error(err); setMensajeError("No se pudo generar el Excel: " + (err && err.message ? err.message : "error desconocido")); }
     finally { setGenerando(false); }
   }
@@ -157,6 +160,7 @@ export default function FormularioNC({ onVolver }) {
                 <div className="space-y-2">
                   <BuscadorLista label="Responsable del seguimiento" value={excel.responsable} onChange={(v) => setExcel((e) => ({ ...e, responsable: v }))} opciones={memoria.opcionesNombres} opcionesAlAbrir={memoria.nombresAlAbrir} placeholder="Elige un profesional o escribe el nombre" />
                   <Campo label="Periodo" value={excel.periodo} placeholder="Ej. Octubre de 2026" onChange={(v) => setExcel((e) => ({ ...e, periodo: v }))} />
+                  <div className="pt-1"><div className="text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Fotos para el Excel (opcional)</div><SeccionFotosAnexo fotos={fotos} setFotos={setFotos} /></div>
                   {NC_FMT.firmas.personas.map((p) => (
                     <div key={p.k}>
                       <div className="text-[11px] font-semibold pt-1" style={{ color: NAVY }}>{p.titulo}</div>

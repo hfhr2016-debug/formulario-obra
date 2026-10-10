@@ -321,7 +321,7 @@ const PLAN_FILAS = [
 // ================================================================= CA-001 Plan de inspección y ensayos
 const REGISTROS_ASOCIADOS = ["RYR-CA-004", "RYR-CA-006", "RYR-CA-007", "RYR-CA-008", "RYR-CA-009", "RYR-CA-010", "RYR-CA-011", "RYR-CA-012", "RYR-CA-014"];
 export const PLAN = {
-  id: "cal-plan", col: "cal_plan", clave: "ryr_cal_plan", codigo: "RYR-CA-001", hoja: "Plan Inspección y Ensayos", plantilla: "/plantilla-cal-plan.xlsx", archivo: "Plan_Inspeccion_Ensayos",
+  id: "cal-plan", fotos: false, col: "cal_plan", clave: "ryr_cal_plan", codigo: "RYR-CA-001", hoja: "Plan Inspección y Ensayos", plantilla: "/plantilla-cal-plan.xlsx", archivo: "Plan_Inspeccion_Ensayos",
   titulo: "Plan de Inspección y Ensayos", subtitulo: "RYR-CA-001 · Qué se controla, con qué criterio, cómo, cuándo y quién", panelObra: ["contrato", "ubicacion", "contratista"], copiarTablas: true,
   secciones: [
     { id: "datos", titulo: "1. Datos generales", tipo: "campos", campos: [
