@@ -233,10 +233,64 @@ export function estilar(c, cambios) {
   if (c && c.style && typeof c.style === "object") c.style = { ...c.style, ...cambios };
   else Object.assign(c, cambios);
 }
+// ---------- Orden tipográfico de lo que cargan los formularios (igual en todos los formatos) ----------
+// Calibri 10 · nombres, actividades y textos a la izquierda · valores en pesos a la derecha · unidades, cantidades, %, fechas, horas
+// y respuestas Sí/No al centro · negrilla solo en resultados/estados relevantes · los textos largos ajustan y la fila crece.
+const RE_NUMERICO = /^[-+]?\$?\s?[\d.,]+\s?%?$/;
+const RE_FECHA_HORA = /^(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}:\d{2}(:\d{2})?(\s?[ap]\.?m\.?)?)$/i;
+const RE_ESTADO = /^(s[ií]|no|n\/?a|ok|cumple|no cumple|cumple parcial(mente)?|abierta?|cerrada?|vencid[oa]|vigente|pendiente|en proceso|aprobad[oa]|rechazad[oa]|conforme|no conforme|cr[ií]tic[oa]|alt[oa]|medi[oa]|baj[oa]|bueno|regular|malo|[xX✓✔☑☐])$/i;
+const RE_NEGRILLA = /^(cumple|no cumple|cumple parcial(mente)?|no conforme|vencid[oa]|cr[ií]tic[oa]|abierta?|cerrada?|rechazad[oa]|aprobad[oa])$/i;
+const RE_UNIDAD = /^(m|m2|m²|m3|m³|ml|kg|g|t|ton|l|lt|gal|und?|u|glb|gl|jornal|d[ií]as?|h|hr|hrs|kwh|mwh|\$|%|cm|mm|km|und\.)$/i;
+function alineacionPara(valor, numFmt) {
+  if (valor instanceof Date) return "center";
+  if (typeof valor === "number") return /\$/.test(String(numFmt || "")) ? "right" : "center";
+  if (typeof valor !== "string") return null;
+  const t = valor.trim();
+  if (!t || t.includes("\n")) return "left";
+  if (/^\$/.test(t)) return "right";
+  if (RE_NUMERICO.test(t) || RE_FECHA_HORA.test(t) || RE_ESTADO.test(t) || RE_UNIDAD.test(t)) return "center";
+  return "left";
+}
+function anchoDeCelda(ws, fila, col) {
+  let desde = col, hasta = col;
+  for (const m of ((ws.model && ws.model.merges) || [])) {
+    const g = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(m);
+    if (g && +g[2] <= fila && fila <= +g[4] && colNum(g[1]) <= col && col <= colNum(g[3])) { desde = colNum(g[1]); hasta = colNum(g[3]); break; }
+  }
+  let ancho = 0;
+  for (let c = desde; c <= hasta; c++) ancho += Number((ws.getColumn(c) || {}).width) || 8.43;
+  return ancho;
+}
+function aplicarEstilo(ws, c, valor) {
+  const fila = Number(c.row) || 0;
+  if (fila && fila <= 8) return;                       // encabezado y CONTROL DOCUMENTAL no se tocan
+  const f = c.font || {};
+  const t = typeof valor === "string" ? valor.trim() : "";
+  const negrilla = !!f.bold || (t && RE_NEGRILLA.test(t));
+  const al = c.alignment || {};
+  const nuevo = {
+    font: { ...f, name: "Calibri", size: 10, bold: !!negrilla },
+    alignment: { ...al, horizontal: alineacionPara(valor, c.numFmt) || al.horizontal || "left", vertical: "middle" },
+  };
+  // Texto largo: ajustar texto y subir el alto de la fila para que se lea completo (nunca se reduce una fila)
+  if (typeof valor === "string" && t.length > 6) {
+    const col = Number(c.col) || colNum(String(c.address).replace(/\d+/g, ""));
+    const porLinea = Math.max(6, Math.floor(anchoDeCelda(ws, fila, col) * 1.05));
+    const lineas = valor.split(/\n/).reduce((n, p) => n + Math.max(1, Math.ceil(p.length / porLinea)), 0);
+    if (lineas > 1) {
+      nuevo.alignment = { ...nuevo.alignment, wrapText: true, shrinkToFit: false };
+      const alto = Math.min(300, lineas * 13 + 3);
+      const fi = ws.getRow(fila);
+      if (!fi.height || fi.height < alto) fi.height = alto;
+    }
+  }
+  estilar(c, nuevo);
+}
 export function poner(ws, ref, valor) {
   if (!ref || valor === undefined || valor === null || valor === "") return;
   const c = ws.getCell(ref);
   c.value = valor;
+  try { aplicarEstilo(ws, c, valor); } catch (e) { /* si no se puede dar formato, el dato se escribe igual */ }
   // Un texto de varias líneas (p. ej. "Nombre" y debajo "Cargo") necesita que la celda ajuste el texto para verse completo
   if (typeof valor === "string" && valor.includes("\n")) estilar(c, { alignment: { ...(c.alignment || {}), wrapText: true, vertical: "middle" } });
 }
