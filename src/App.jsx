@@ -1661,22 +1661,22 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
           </div>
         )}
       </div>
-      <div className="flex-1 flex flex-col justify-center gap-4 p-6">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
         {apps.map((a) => {
           const habilitado = tieneAcceso(a.id);
           return (
             <button
               key={a.id}
               onClick={() => onSeleccionar(a.id)}
-              className="flex items-center gap-4 rounded-2xl p-4"
+              className="flex flex-col items-center justify-center gap-1 rounded-2xl px-4 py-3 w-full max-w-[260px]"
               style={{
                 background: habilitado ? "white" : "#F0F0EE",
                 border: `1px solid ${LINE}`,
                 opacity: habilitado ? 1 : 0.5,
               }}
             >
-              <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt={a.nombre} tamano={82} style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
-              <div className="text-left">
+              <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt={a.nombre} tamano={72} style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
+              <div className="text-center">
                 <div className="text-[15px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
                 {!habilitado && (
                   <div className="text-[10.5px] mt-0.5" style={{ color: "#9AA0A8" }}>🔒 Sin acceso</div>
