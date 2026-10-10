@@ -1614,6 +1614,13 @@ function IconoConRespaldo({ src, emoji, alt, tamano, style }) {
   return <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFalla(true)} className="object-contain shrink-0" style={{ width: tamano, height: tamano, ...style }} />;
 }
 
+function saludoUsuario(perfil) {
+  const h = new Date().getHours();
+  const saludo = h < 12 ? "Buenos días" : h < 18 ? "Buenas tardes" : "Buenas noches";
+  const primero = String((perfil && perfil.nombre) || "").trim().split(/\s+/)[0] || "";
+  return primero ? `${saludo}, ${primero}` : saludo;
+}
+
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
@@ -1639,8 +1646,13 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         <div className="text-white font-bold text-[19px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           REFORMAS Y REMODELACIONES
         </div>
+        {perfil && (
+          <div className="text-white text-[17px] font-semibold mt-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            {saludoUsuario(perfil)}
+          </div>
+        )}
         <div className="text-[11.5px] mt-1" style={{ color: GOLD }}>
-          Elige el sistema de gestión que quieres usar
+          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} · Elige el sistema de gestión que quieres usar
         </div>
         {perfil && (
           <div className="flex items-center justify-center gap-3 mt-3">
