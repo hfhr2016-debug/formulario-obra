@@ -1678,7 +1678,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             >
               <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt={a.nombre} tamano={72} style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
               <div className="text-center">
-                <div className="text-[15px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
+                <div className="text-[13px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
                 {!habilitado && (
                   <div className="text-[10.5px] mt-0.5" style={{ color: "#9AA0A8" }}>🔒 Sin acceso</div>
                 )}
