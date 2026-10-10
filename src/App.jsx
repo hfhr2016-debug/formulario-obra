@@ -1628,80 +1628,89 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
     { id: "presupuesto", nombre: "Control Presupuestal", icono: "/icons/icon-gestion-presupuesto.png", emoji: "💰", activo: true },
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
+  const AZUL_MARINO = "#17365D";   // el mismo azul de los formatos de Gestión Técnica
+  const sombraTexto = "0 1px 3px rgba(0,0,0,0.85), 0 0 8px rgba(0,0,0,0.55)";
   return (
     <div
-      className="min-h-screen flex flex-col bg-cover bg-center"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.04), rgba(247,247,245,0.10)), url('/fondo-selector.jpg')`,
-        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-      }}
+      className="min-h-screen md:h-screen flex flex-col bg-cover bg-center md:overflow-hidden"
+      style={{ backgroundImage: `url('/fondo-selector.jpg')`, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}
     >
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      <div className="px-4 pt-5 pb-4 text-center" style={{ background: NAVY }}>
-        <div className="text-white font-bold text-[19px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          REFORMAS Y REMODELACIONES
-        </div>
+      {/* Franja superior: saludo y accesos del usuario, sobre la imagen */}
+      <div className="px-4 pt-3 pb-5 text-center shrink-0" style={{ background: "linear-gradient(180deg, rgba(10,20,38,0.75), rgba(10,20,38,0))" }}>
         {perfil && (
-          <div className="text-[24px] font-bold mt-3" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
+          <div className="text-[22px] font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
             {saludoUsuario(perfil)}
           </div>
         )}
-        <div className="text-[11.5px] mt-1" style={{ color: GOLD }}>
+        <div className="text-[11.5px] mt-0.5 text-white" style={{ textShadow: sombraTexto }}>
           {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} · Elige el sistema de gestión que quieres usar
         </div>
         {perfil && (
-          <div className="flex items-center justify-center gap-3 mt-3">
-            <span className="text-[10.5px] text-white/70">{perfil.nombre || perfil.correo}</span>
+          <div className="flex items-center justify-center gap-3 mt-1.5 flex-wrap">
+            <span className="text-[10.5px] text-white/85" style={{ textShadow: sombraTexto }}>{perfil.nombre || perfil.correo}</span>
             {perfil.esAdmin && (
-              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>
-                Administrar usuarios
-              </button>
+              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: "#FFE9B0", textShadow: sombraTexto }}>Administrar usuarios</button>
             )}
             {perfil.esAdmin && onIrCatalogos && (
-              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>
-                Catálogos
-              </button>
+              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: "#FFE9B0", textShadow: sombraTexto }}>Catálogos</button>
             )}
-            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">
-              Cerrar sesión
-            </button>
+            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/85" style={{ textShadow: sombraTexto }}>Cerrar sesión</button>
           </div>
         )}
       </div>
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
-       <div className="flex gap-3 w-full max-w-5xl sm:grid sm:grid-cols-3 lg:grid-cols-5">
-        {[apps.slice(0, 3), apps.slice(3)].map((grupo, gi) => (
-         <div key={gi} className="flex-1 flex flex-col justify-center gap-3 sm:contents">
-        {grupo.map((a) => {
-          const habilitado = tieneAcceso(a.id);
-          return (
-            <button
-              key={a.id}
-              onClick={() => onSeleccionar(a.id)}
-              className="flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 w-full"
-              style={{
-                background: habilitado ? "rgba(255,246,224,0.95)" : "#F0F0EE",
-                border: `2px solid ${habilitado ? GOLD : LINE}`,
-                boxShadow: habilitado ? "0 4px 12px rgba(27,42,69,0.28)" : "none",
-                opacity: habilitado ? 1 : 0.5,
-              }}
-            >
-              <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt={a.nombre} tamano={72} style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
-              <div className="text-center">
-                <div className="text-[13px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
-                {!habilitado && (
-                  <div className="text-[10.5px] mt-0.5" style={{ color: "#9AA0A8" }}>🔒 Sin acceso</div>
-                )}
-              </div>
-            </button>
-          );
-        })}
-         </div>
-        ))}
-       </div>
+
+      {/* Pantalla dividida en dos mitades: izquierda = aplicaciones, derecha = reseña. Cada contenido va centrado en su mitad */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 px-4 pb-6 md:pb-4">
+        <div className="flex items-center justify-center min-h-0">
+          <div className="flex flex-col gap-3 w-full max-w-[340px]">
+            {apps.map((a) => {
+              const habilitado = tieneAcceso(a.id);
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => onSeleccionar(a.id)}
+                  className="flex items-center gap-3 w-full text-left"
+                  style={{ opacity: habilitado ? 1 : 0.55 }}
+                  aria-label={a.nombre}
+                >
+                  <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt="" tamano={52} style={{ filter: habilitado ? "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" : "grayscale(100%)" }} />
+                  <span
+                    className="flex-1 flex items-center justify-center text-center rounded-full text-white font-semibold text-[15px] px-3"
+                    style={{ height: 52, border: "2px solid #FFFFFF", background: "transparent", textShadow: sombraTexto, fontFamily: "'Space Grotesk', sans-serif" }}
+                  >
+                    {a.nombre}{!habilitado && <span className="ml-1.5 text-[11px]">🔒</span>}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center min-h-0">
+          <div
+            className="w-full max-w-[360px] rounded-2xl text-white text-center flex flex-col items-center px-5 py-5 max-h-full overflow-y-auto"
+            style={{ background: AZUL_MARINO, border: "1.5px solid #FFFFFF", boxShadow: "0 6px 18px rgba(0,0,0,0.35)" }}
+          >
+            <div className="text-[20px] font-bold tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
+            <div className="text-[11px] mt-0.5 mb-3" style={{ color: "#F2D58A" }}>Tu obra, ordenada en un solo lugar</div>
+            <p className="text-[12.5px] leading-relaxed mb-2">
+              Es la plataforma de Reformas y Remodelaciones para gestionar la obra desde el campo y la oficina, incluso sin internet.
+            </p>
+            <p className="text-[12.5px] leading-relaxed mb-2">
+              Diligencias formularios digitales que se convierten en los formatos oficiales de Excel, y la información se sincroniza sola cuando hay conexión.
+            </p>
+            <p className="text-[12.5px] leading-relaxed mb-4">
+              Reúne en un solo lugar la gestión técnica, SG-SST, ambiental, calidad y el control presupuestal, para tener datos ordenados, trazables y listos para decidir.
+            </p>
+            <div className="rounded-xl bg-white flex items-center justify-center p-1.5" style={{ width: 120, height: 112 }}>
+              <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="object-contain" style={{ maxWidth: "100%", maxHeight: "100%" }} />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
