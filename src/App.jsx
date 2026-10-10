@@ -1643,17 +1643,17 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
       {/* Franja superior (azul): nombre de la empresa, saludo y accesos del usuario */}
-      <div className="px-4 pt-3 pb-3 text-center shrink-0" style={{ background: NAVY }}>
+      <div className="px-4 pt-2 pb-2 md:pt-3 md:pb-3 text-center shrink-0" style={{ background: NAVY }}>
         <div className="text-white font-bold text-[18px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           REFORMAS Y REMODELACIONES
         </div>
         {perfil && (
-          <div className="text-[22px] font-bold mt-1.5" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
+          <div className="text-[20px] md:text-[22px] font-bold mt-0.5 md:mt-1.5" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
             {saludoUsuario(perfil)}
           </div>
         )}
         <div className="text-[11.5px] mt-0.5" style={{ color: GOLD }}>
-          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} · Elige el sistema de gestión que quieres usar
+          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} <span className="hidden md:inline">· Elige el sistema de gestión que quieres usar</span>
         </div>
         {perfil && (
           <div className="flex items-center justify-center gap-3 mt-1.5 flex-wrap">
@@ -1670,7 +1670,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
       </div>
 
       {/* Pantalla dividida en dos mitades: izquierda = aplicaciones, derecha = reseña. Cada contenido va centrado en su mitad */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 px-4 pb-6 md:pb-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 px-4 pt-6 pb-6 md:pt-0 md:pb-4">
         <div className="flex items-center justify-center min-h-0">
           <div className="flex flex-col gap-2.5 w-full max-w-[360px]">
             {apps.map((a) => {
