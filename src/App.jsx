@@ -1714,8 +1714,8 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             <p className="text-[12.5px] leading-relaxed mb-4">
               Reúne en un solo lugar la gestión técnica, SG-SST, ambiental, calidad y el control presupuestal, para tener datos ordenados, trazables y listos para decidir.
             </p>
-            <div className="rounded-xl bg-white flex items-center justify-center p-1.5" style={{ width: 92, height: 86 }}>
-              <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="object-contain" style={{ maxWidth: "100%", maxHeight: "100%" }} />
+            <div className="flex items-center justify-center" style={{ width: 150 }}>
+              <img src="/logo-portal.png" alt="Reformas y Remodelaciones" className="object-contain w-full h-auto" />
             </div>
           </div>
         </div>
