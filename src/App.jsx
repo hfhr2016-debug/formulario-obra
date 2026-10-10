@@ -1640,7 +1640,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      <div className="px-4 pt-8 pb-6 text-center" style={{ background: NAVY }}>
+      <div className="px-4 pt-5 pb-4 text-center" style={{ background: NAVY }}>
         <div className="text-white font-bold text-[19px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           REFORMAS Y REMODELACIONES
         </div>
@@ -1671,14 +1671,15 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
           </div>
         )}
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 w-full max-w-5xl">
         {apps.map((a) => {
           const habilitado = tieneAcceso(a.id);
           return (
             <button
               key={a.id}
               onClick={() => onSeleccionar(a.id)}
-              className="flex flex-col items-center justify-center gap-1 rounded-2xl px-4 py-3 w-full max-w-[260px]"
+              className="flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 w-full"
               style={{
                 background: habilitado ? "rgba(255,246,224,0.95)" : "#F0F0EE",
                 border: `2px solid ${habilitado ? GOLD : LINE}`,
@@ -1696,6 +1697,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             </button>
           );
         })}
+       </div>
       </div>
     </div>
   );
