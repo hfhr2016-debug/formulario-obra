@@ -185,6 +185,11 @@ function pintarSemaforo(ws, ref, valor) {
   const k = COLORES_ESTADO[texto(valor)];
   if (k && ref) { const [fondo, letra] = COLOR_RES[k]; pintarCelda(ws, ref, fondo, letra); }
 }
+// Formatos como "#,##0.##" muestran "10." en Excel cuando el número es entero: se cambia a "#,##0".
+function ajustarFormato(ws, ref, v) {
+  if (!ref || typeof v !== "number" || !Number.isInteger(v)) return;
+  try { const c = ws.getCell(ref); if (c && /\.#+$/.test(String(c.numFmt || ""))) c.numFmt = String(c.numFmt).replace(/\.#+/g, ""); } catch (e) { /* sin formato */ }
+}
 function valorExcel(def, v) {
   const t = texto(v);
   if (t === "") return "";
@@ -197,6 +202,7 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
     const ref = celdas[c.k]; if (!ref) continue;
     const v = valorExcel(c, datos[c.k]);
     poner(ws, ref, v);
+    ajustarFormato(ws, ref, v);
     if (c.semaforo) pintarSemaforo(ws, ref, v);
   }
   for (const s of arr(fmt.secciones)) {
@@ -206,6 +212,7 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
       escribirTabla(ws, T, filas);
       filas.forEach((f, i) => {
         const r = T.filas ? T.filas[i] : T.fila0 + i;
+        for (const c of s.cols) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
         for (const c of s.cols) if (c.semaforo && T.columnas[c.k]) pintarSemaforo(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
       });
     } else if (s.tipo === "lista") {
