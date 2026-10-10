@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 
@@ -409,6 +410,7 @@ export default function FormularioSemanal({ onVolver, onNavegar }) {
       else { const resp = await fetch("/plantilla-semanal.xlsx?v=" + Date.now(), { cache: "no-store" }); buffer = await resp.arrayBuffer(); }
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+      const fotoEstilo = fotoLibro(workbook);
       const wsFicha = workbook.getWorksheet("Ficha Técnica del Proyecto");
       const wsPres = workbook.getWorksheet("Presupuesto ");
       const wsSem = workbook.getWorksheet("Informe Semanal");
@@ -514,6 +516,7 @@ export default function FormularioSemanal({ onVolver, onNavegar }) {
 
       const idxSem = workbook.worksheets.indexOf(wsSem);
       workbook.views = [{ activeTab: idxSem, firstSheet: idxSem }];
+      estilarEscritos(workbook, fotoEstilo);
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const nombreArchivo = `Informe_Semanal_${(proyecto || "proyecto").slice(0, 25).replace(/[^a-zA-Z0-9]/g, "_")}_${fechaLocalHoy()}.xlsx`;

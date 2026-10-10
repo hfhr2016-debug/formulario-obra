@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 
@@ -434,6 +435,7 @@ export default function FormularioMensual({ onVolver, onNavegar }) {
       else { const resp = await fetch("/plantilla-mensual.xlsx?v=" + Date.now(), { cache: "no-store" }); buffer = await resp.arrayBuffer(); }
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+      const fotoEstilo = fotoLibro(workbook);
       const wsFicha = workbook.getWorksheet("Ficha Técnica del Proyecto");
       const wsPres = workbook.getWorksheet("Presupuesto ");
       const wsMen = workbook.getWorksheet("Informe Mensual");
@@ -555,6 +557,7 @@ export default function FormularioMensual({ onVolver, onNavegar }) {
 
       const idxMen = workbook.worksheets.indexOf(wsMen);
       workbook.views = [{ activeTab: idxMen, firstSheet: idxMen }];
+      estilarEscritos(workbook, fotoEstilo);
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const nombreArchivo = `Informe_Mensual_${(proyecto || "proyecto").slice(0, 25).replace(/[^a-zA-Z0-9]/g, "_")}_${fechaLocalHoy()}.xlsx`;

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 
@@ -310,6 +311,8 @@ export default function FormularioMemoria({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Memoria de Cálculo");
 
       ws.getCell("C10").value = proyecto;
@@ -355,6 +358,8 @@ export default function FormularioMemoria({ onVolver, onNavegar }) {
       ws.getCell("B98").value = elabCargo ? `${elabNombre} - ${elabCargo}` : elabNombre;
       ws.getCell("E98").value = revCargo ? `${revNombre} - ${revCargo}` : revNombre;
       ws.getCell("I98").value = aprCargo ? `${aprNombre} - ${aprCargo}` : aprNombre;
+
+      estilarEscritos(workbook, fotoEstilo);
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });

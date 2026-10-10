@@ -290,6 +290,39 @@ function aplicarEstilo(ws, c, valor) {
   }
   estilar(c, nuevo);
 }
+
+// ---------- Formatos que se llenan sobre una plantilla (Gestión Técnica) ----------
+// Esos formularios escriben directamente en las celdas. Para que lo que cargan quede con el mismo orden tipográfico que los demás formatos,
+// se toma una «foto» de la plantilla recién abierta y, antes de guardar, se da formato SOLO a las celdas que el formulario cambió o llenó
+// (el diseño propio de la plantilla —títulos, encabezados, colores— no se toca).
+const claveValor = (v) => { if (v === null || v === undefined) return ""; if (v instanceof Date) return "d" + v.getTime(); if (typeof v === "object") { try { return "o" + JSON.stringify(v); } catch (e) { return "o?"; } } return typeof v[0] + String(v); };
+const recorrerCeldas = (libro, f) => {
+  for (const ws of (libro && libro.worksheets) || []) {
+    if (!ws || typeof ws.eachRow !== "function") continue;
+    ws.eachRow({ includeEmpty: false }, (fila) => fila.eachCell({ includeEmpty: false }, (c) => f(ws, c)));
+  }
+};
+export function fotoLibro(libro) {
+  const foto = new Map();
+  try { recorrerCeldas(libro, (ws, c) => { if (!foto.has(ws)) foto.set(ws, new Map()); foto.get(ws).set(c.address, claveValor(c.value)); }); } catch (e) { /* sin foto: no se da formato, el archivo sale igual */ }
+  return foto;
+}
+export function estilarEscritos(libro, foto) {
+  if (!foto) return 0;
+  let n = 0;
+  try {
+    recorrerCeldas(libro, (ws, c) => {
+      if (c.master && c.master !== c) return;                                  // celdas combinadas: solo la principal
+      const antes = foto.get(ws);
+      if (antes && antes.get(c.address) === claveValor(c.value)) return;      // no la tocó el formulario
+      let v = c.value;
+      if (v && typeof v === "object" && !(v instanceof Date)) v = ("formula" in v || "sharedFormula" in v) ? (typeof v.result === "string" ? v.result : 0) : null;   // fórmula: se alinea por su formato numérico
+      if (v === null || v === undefined || v === "") return;
+      try { aplicarEstilo(ws, c, v); n++; } catch (e) { /* si no se puede dar formato, el dato queda igual */ }
+    });
+  } catch (e) { /* idem */ }
+  return n;
+}
 export function poner(ws, ref, valor) {
   if (!ref || valor === undefined || valor === null || valor === "") return;
   const c = ws.getCell(ref);

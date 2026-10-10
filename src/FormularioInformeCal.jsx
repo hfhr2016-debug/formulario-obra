@@ -4,10 +4,9 @@ import { hoyISO } from "./calBase";
 import { useObraCal, PanelObraCal } from "./calComunes";
 import { informeMensual, mesActual, MESES, nombreMes } from "./calInforme";
 import { escribirInforme } from "./informeExcel";
-import { LOGO_MARCA_AGUA } from "./marcaLogo";
 import { CifrasResumen } from "./cpComunes";
 import { SeccionFotosAnexo, agregarHojaFotos } from "./fotosAnexo";
-import { NAVY, PAPER, LINE, nuevoLibro, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Lista, AreaTexto } from "./sstComunes";
+import { NAVY, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Lista, AreaTexto } from "./sstComunes";
 
 const CLAVE = (obraId, ym) => `ryr_cal_informe_${obraId}_${ym}`;
 const leer = (obraId, ym) => { try { return JSON.parse(localStorage.getItem(CLAVE(obraId, ym)) || "null") || {}; } catch (e) { return {}; } };
@@ -39,8 +38,8 @@ export default function FormularioInformeCal({ onVolver }) {
   async function generar() {
     setMensajeError(""); setGenerado(""); setGenerando(true);
     try {
-      const wb = nuevoLibro();
-      escribirInforme(wb, inf, { obraDatos: h.obra, observaciones: obs, firmas, logoBase64: String(LOGO_MARCA_AGUA).split(",")[1] || null });
+      const { workbook: wb, ws } = await cargarPlantilla("/plantilla-cal-informe.xlsx", "Informe Mensual");
+      escribirInforme(ws, inf, { obraDatos: h.obra, observaciones: obs, firmas });
       const nFotos = await agregarHojaFotos(wb, { titulo: "Informe mensual de calidad", proyecto: h.obra.proyecto, fecha: nombreMes(ym), fotos });
       await descargarLibro(wb, `Informe_Calidad_${textoParaArchivo(h.obra.proyecto, 24)}_${ym}.xlsx`);
       memoria.recordarUso({ personas: [[(firmas.elaboro || {}).nombre, (firmas.elaboro || {}).cargo], [(firmas.reviso || {}).nombre, (firmas.reviso || {}).cargo]] });

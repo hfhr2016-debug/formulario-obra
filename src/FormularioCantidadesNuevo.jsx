@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { actividadesVigentes } from "./catalogoVivo";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 
 function numES(v) {
@@ -406,6 +407,8 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Cantidades de Obra");
 
       let fila = 9;
@@ -442,6 +445,8 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
       if (ocultarSinUsar) {
         for (let r = fila; r <= 508; r++) ws.getRow(r).hidden = true;
       }
+
+      estilarEscritos(workbook, fotoEstilo);
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });

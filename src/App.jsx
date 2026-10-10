@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import { activarOrtografia } from "./ortografia";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
@@ -779,6 +780,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Informe Diario");
       if (!ws) throw new Error("No se encontró la hoja \"Informe Diario\" en la plantilla");
 
@@ -961,6 +963,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       }
 
       const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
+      estilarEscritos(workbook, fotoEstilo);
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2369,7 +2372,7 @@ function AppConSesion() {
   }
 
   if (vistaExterna === "admin") {
-    return <PanelAdmin onVolver={() => setVistaExterna("apps")} />;
+    return <PanelAdmin onVolver={() => setVistaExterna("apps")} modulosPorArea={{ tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, presupuesto: MODULOS_PRESUPUESTO }} />;
   }
 
   if (!sync.listo) {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 
 function numES(v) {
@@ -215,6 +216,8 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Ficha Técnica del Proyecto");
 
       ws.getCell("B2").value = proyecto;
@@ -290,6 +293,8 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
       ws.getCell(`B${filaAIU+1}`).value = numES(imprevistos) / 100;
       ws.getCell(`B${filaAIU+2}`).value = numES(utilidad) / 100;
       ws.getCell(`B${filaAIU+3}`).value = numES(ivaUtilidad) / 100;
+
+      estilarEscritos(workbook, fotoEstilo);
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {

@@ -5,6 +5,7 @@ import { ROLES_CP } from "./cpPermisos";
 import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
+import ResumenRoles from "./ResumenRoles";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -28,11 +29,12 @@ const ROLES_DISPONIBLES = [
   { id: "presupuesto", nombre: "Control Presupuestal" },
 ];
 
-export default function PanelAdmin({ onVolver }) {
+export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
   const { perfil } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [verRoles, setVerRoles] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
@@ -147,6 +149,8 @@ export default function PanelAdmin({ onVolver }) {
     );
   }
 
+  if (verRoles) return <ResumenRoles usuarios={usuarios} modulosPorArea={modulosPorArea} onVolver={() => setVerRoles(false)} />;
+
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <div className="px-4 pt-5 pb-4" style={{ background: NAVY }}>
@@ -155,6 +159,9 @@ export default function PanelAdmin({ onVolver }) {
       </div>
 
       <div className="p-4 max-w-xl mx-auto">
+        <button type="button" data-ver-roles onClick={() => setVerRoles(true)} className="w-full py-3 rounded-xl font-bold text-[13.5px] mb-3 border" style={{ borderColor: NAVY, color: NAVY, background: "white" }}>
+          🔐 Resumen de roles y permisos
+        </button>
         <button
           onClick={() => setMostrarForm(!mostrarForm)}
           className="w-full py-3 rounded-xl text-white font-bold text-[13.5px] mb-4"
