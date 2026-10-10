@@ -62,7 +62,7 @@ export function datosIniciales(fmt) {
 }
 function filaNuevaBase(tabla, base = {}) { const f = {}; for (const c of arr(tabla.cols)) f[c.k] = ""; return { ...f, ...base }; }
 export const filaNueva = (tabla, base = {}) => { const f = {}; for (const c of arr(tabla.cols)) f[c.k] = ""; return { ...f, ...base }; };
-const filaVacia = (tabla, f) => !arr(tabla.cols).some((c) => texto(f && f[c.k]) !== "");
+const filaVacia = (tabla, f) => !arr(tabla.cols).filter((c) => c.tipo !== "calculado").some((c) => texto(f && f[c.k]) !== "");
 export const filasConDatos = (tabla, datos) => arr(datos[tabla.k]).filter((f) => !filaVacia(tabla, f));
 
 // ---------- Registros guardados ----------
@@ -186,20 +186,22 @@ const COLOR_RES = {
 export const COLORES_ESTADO = {
   Cumple: "bueno", Conforme: "bueno", Sí: "bueno", No: "malo", "Sí, con observaciones": "medio", "Aprobado para vaciar": "bueno", "Aprobado con observaciones": "medio", Aprobada: "bueno", Rechazada: "malo", "Aprobada con observaciones": "medio", Seguimiento: "medio", Aprobado: "bueno", Aceptado: "bueno", Vigente: "bueno", "Para construcción": "bueno", Cerrada: "bueno", Cerrado: "bueno",
   "No cumple": "malo", "No conforme": "malo", Rechazado: "malo", Obsoleto: "malo", Crítica: "malo", Abierta: "malo", Vencida: "malo",
-  Pendiente: "medio", "En cuarentena": "medio", "En cuarentena (espera ensayo)": "medio", "Aceptado con observaciones": "medio", "En revisión": "medio", Mayor: "medio",
+  Pendiente: "medio", "En proceso": "medio", "En corrección": "medio", Corregido: "bueno", Verificado: "bueno", "Recibida a satisfacción": "bueno", "Recibida con pendientes": "medio", "No recibida": "malo", Recibida: "bueno", "En cuarentena": "medio", "En cuarentena (espera ensayo)": "medio", "Aceptado con observaciones": "medio", "En revisión": "medio", Mayor: "medio",
 };
 function pintarSemaforo(ws, ref, valor) {
   const k = COLORES_ESTADO[texto(valor)];
   if (k && ref) { const [fondo, letra] = COLOR_RES[k]; pintarCelda(ws, ref, fondo, letra); }
 }
 // Formatos como "#,##0.##" muestran "10." en Excel cuando el número es entero: se cambia a "#,##0".
-function ajustarFormato(ws, ref, v) {
+function ajustarFormato(ws, ref, v, def) {
+  if (ref && def && def.real && def.tipo === "fecha" && typeof v === "number") { try { ws.getCell(ref).numFmt = "dd/mm/yyyy"; } catch (e) { /* sin formato */ } return; }
   if (!ref || typeof v !== "number" || !Number.isInteger(v)) return;
   try { const c = ws.getCell(ref); if (c && /\.#+$/.test(String(c.numFmt || ""))) c.numFmt = String(c.numFmt).replace(/\.#+/g, ""); } catch (e) { /* sin formato */ }
 }
 function valorExcel(def, v) {
   const t = texto(v);
   if (t === "") return "";
+  if (def.tipo === "fecha" && def.real) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t); if (m) return Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000) + 25569; }   // fecha de verdad (número de serie): las fórmulas de la plantilla la comparan con HOY()
   if (def.tipo === "fecha") return fechaDDMMYYYY(t);
   if (def.tipo === "numero" || def.numerica || def.tipo === "calculado") { const n = numero(t); return n === null ? t : n; }
   if (def.tipo === "porcentaje") { const n = numero(t); return n === null ? t : Math.round(n * 100) / 10000; }      // «95» -> 0,95 (la casilla de Excel está en formato %)
@@ -220,14 +222,14 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
     const T = (celdas.tablas || {})[s.k]; if (!T) continue;
     if (!esVisible(s, datos)) continue;
     if (s.tipo === "tabla") {
-      const filas = filasConDatos(s, datos).map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = valorExcel(c, f[c.k]); return o; });
+      const filas = (s.fija ? arr(datos[s.k]).slice(0, s.max) : filasConDatos(s, datos)).map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = valorExcel(c, f[c.k]); return o; });
       if (s.limpiar) {   // las filas que la plantilla trae escritas (p. ej. las actividades del plan) se vacían primero: lo que se quitó o se dejó en blanco no debe quedar con el texto de la plantilla
         for (let i = 0; i < T.n; i++) { const r = T.filas ? T.filas[i] : T.fila0 + i; for (const col of Object.values(T.columnas)) { try { ws.getCell(`${col}${r}`).value = null; } catch (e) { /* celda sin acceso */ } } }
       }
       escribirTabla(ws, T, filas);
       filas.forEach((f, i) => {
         const r = T.filas ? T.filas[i] : T.fila0 + i;
-        for (const c of colsPlantilla(s)) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
+        for (const c of colsPlantilla(s)) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k], c);
         for (const c of colsPlantilla(s)) if (c.semaforo && T.columnas[c.k]) pintarSemaforo(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
       });
     } else if (s.tipo === "lista") {
@@ -266,6 +268,18 @@ export const proveedorNoAprobado = (nombre) => { const p = obtenerProveedor(nomb
 
 // ---------- No conformidades (las crea la persona al confirmar la sugerencia; el formato CA-013 las gestiona) ----------
 export const listarNC = (obraId) => arr(leerJSON(CLAVE_CAL_NC, [])).filter((n) => n && n.id && (!obraId || n.obraId === obraId));
+export const listarNCActivas = (obraId) => listarNC(obraId).filter((n) => !n.descartada);      // las descartadas siguen guardadas (para no volver a crearlas) pero no cuentan
+export const ncAbiertas = (obraId) => listarNCActivas(obraId).filter((n) => n.estado !== "Cerrada");
+export const ncVencida = (n, hoy = hoyISO()) => !!(n && !n.descartada && n.fechaLimite && n.estado !== "Cerrada" && n.fechaLimite < hoy);
+export function actualizarNC(id, patch) {
+  const todas = arr(leerJSON(CLAVE_CAL_NC, []));
+  const i = todas.findIndex((n) => n && n.id === id);
+  if (i < 0) return null;
+  const n = { ...todas[i], ...patch, actualizado: Date.now() };
+  todas[i] = n;
+  guardarJSON(CLAVE_CAL_NC, todas);
+  return n;
+}
 export function ncDeOrigen(obraId, origenId, clave) { return listarNC(obraId).find((n) => n.origenId === origenId && n.origenClave === clave) || null; }
 export function crearNC(obraId, datos) {
   const todas = arr(leerJSON(CLAVE_CAL_NC, []));
@@ -283,7 +297,8 @@ export function crearNCsAutomaticas(fmt, reg) {
   const creadas = [];
   for (const s of arr(fmt.ncSugerida(reg.datos || {}))) {
     if (ncDeOrigen(reg.obraId, reg.id, s.clave)) continue;
-    creadas.push(crearNC(reg.obraId, { origen: s.origen, origenId: reg.id, origenClave: s.clave, origenFormato: fmt.id, titulo: s.titulo, descripcion: s.descripcion, ubicacion: texto((reg.datos || {}).ubicacion), automatica: true }));
+    creadas.push(crearNC(reg.obraId, { origen: s.origen, origenId: reg.id, origenClave: s.clave, origenFormato: fmt.id, titulo: s.titulo, descripcion: s.descripcion, gravedad: s.gravedad || "Mayor",
+      ubicacion: texto(s.ubicacion) || [(reg.datos || {}).elemento, (reg.datos || {}).torre, (reg.datos || {}).frente].map(texto).find(Boolean) || texto((reg.datos || {}).ubicacion), automatica: true }));
   }
   return creadas;
 }

@@ -2,6 +2,7 @@
 // (la app ubica las celdas por esas etiquetas, así que si ajustas anchos o filas no se desalinea nada).
 import { texto, numero, filasConDatos, proveedorNoAprobado, registrarProveedor, registrarEvaluacion, obtenerProveedor } from "./calBase";
 import { FORMATOS_ETAPA2 } from "./calFormatos2";
+import { FORMATOS_ETAPA3 } from "./calFormatos3";
 
 const arr = (a) => (Array.isArray(a) ? a : []);
 const SI_NO = ["Sí", "No"];
@@ -259,5 +260,5 @@ export const PLANOS = {
   },
 };
 
-export const FORMATOS_CAL = { "cal-planos": PLANOS, "cal-recepcion": RECEPCION, "cal-proveedores": PROVEEDORES, "cal-ensayos": ENSAYOS, ...FORMATOS_ETAPA2 };
+export const FORMATOS_CAL = { "cal-planos": PLANOS, "cal-recepcion": RECEPCION, "cal-proveedores": PROVEEDORES, "cal-ensayos": ENSAYOS, ...FORMATOS_ETAPA2, ...FORMATOS_ETAPA3 };
 export { obtenerProveedor };

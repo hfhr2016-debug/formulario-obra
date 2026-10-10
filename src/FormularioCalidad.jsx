@@ -83,6 +83,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     const ultimo = registros[0];                            // las firmas se adelantan con las del último registro
     if (ultimo) for (const p of fmt.firmas.personas) { r.datos[`${p.k}Nombre`] = (ultimo.datos || {})[`${p.k}Nombre`] || ""; r.datos[`${p.k}Cargo`] = (ultimo.datos || {})[`${p.k}Cargo`] || ""; }
     if (ultimo && fmt.copiarTablas) for (const t of seccionesDe(fmt, "tabla")) r.datos[t.k] = JSON.parse(JSON.stringify((ultimo.datos || {})[t.k] || r.datos[t.k]));   // p. ej. el plan: la versión nueva parte de la anterior
+    if (fmt.alCrear) fmt.alCrear(r.datos, r.obraId, h.obra);
     previo.current = JSON.stringify(r.datos);
     setReg(r); setAbierta("datos"); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setCreadasNC([]); window.scrollTo(0, 0);
   }
@@ -96,8 +97,14 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   // Guardar de verdad: guarda, actualiza las listas comunes (proveedores…) y crea las no conformidades que corresponden
   function guardarFinal() {
     if (!reg) return [];
-    const guardado = tieneContenido(fmt, reg.datos) ? guardarRegistro(fmt, reg) : reg;
-    if (fmt.alGuardar) fmt.alGuardar(guardado.datos, guardado);
+    let guardado = tieneContenido(fmt, reg.datos) ? guardarRegistro(fmt, reg) : reg;
+    const parche = fmt.alGuardar ? fmt.alGuardar(guardado.datos, guardado) : null;
+    if (parche && typeof parche === "object") {
+      guardado = { ...guardado, datos: { ...guardado.datos, ...parche } };
+      if (tieneContenido(fmt, guardado.datos)) guardado = guardarRegistro(fmt, guardado);
+      previo.current = JSON.stringify(guardado.datos);
+      setReg(guardado);
+    }
     const nuevas = crearNCsAutomaticas(fmt, guardado);
     setCreadasNC(nuevas); setVersion((v) => v + 1);
     return nuevas;
@@ -204,14 +211,14 @@ export default function FormularioCalidad({ fmt, onVolver }) {
               </button>
             ) : <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>{s.nombreFila || "Fila"} #{i + 1}</div>}
             {!plegada && <div className="space-y-2 mt-1.5">{s.cols.map((c) => celdaTabla(s, fila, i, c))}</div>}
-            <button type="button" onClick={() => quitar(i)} aria-label={`Quitar ${s.nombreFila || "fila"} ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}><Trash2 size={12} /></button>
+            {!s.fija && <button type="button" onClick={() => quitar(i)} aria-label={`Quitar ${s.nombreFila || "fila"} ${i + 1}`} className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "white", border: `1px solid ${LINE}`, color: "#B3401F" }}><Trash2 size={12} /></button>}
           </div>
           );
         })}
-        <div className="space-y-2">
+        {!s.fija && <div className="space-y-2">
           {ultima && <button type="button" onClick={() => agregar(Object.fromEntries(s.cols.filter((c) => c.repetir !== false && c.tipo !== "calculado" && !["obs", "informe", "resultado", "obtenido", "lote", "recibida", "pedida", "codigo", "estado", "cilindro", "carga", "resistencia", "fechaEnsayo", "remision"].includes(c.k)).map((c) => [c.k, ultima[c.k]])))} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY }}>➕ Otro con los mismos datos del anterior</button>}
           <button type="button" onClick={() => agregar()} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-md w-full justify-center border border-dashed" style={{ borderColor: GOLD, color: NAVY }}><Plus size={14} /> Agregar {String(s.nombreFila || "fila").toLowerCase()}</button>
-        </div>
+        </div>}
         {avisoTabla[s.k] && <div className="text-[11.5px] mt-2" style={{ color: "#B3401F" }}>{avisoTabla[s.k]}</div>}
       </Seccion>
     );

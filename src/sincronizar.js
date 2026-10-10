@@ -51,6 +51,10 @@ export const FLUJOS = [
   { col: "cal_vaciado", clave: "ryr_cal_vaciado", tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_resultados", clave: "ryr_cal_resultados", tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_protocolo", clave: "ryr_cal_protocolo", tipo: "lista", idDe: (r) => r.id, calidad: true },
+  { col: "cal_terminada", clave: "ryr_cal_terminada", tipo: "lista", idDe: (r) => r.id, calidad: true },
+  { col: "cal_pendientes", clave: "ryr_cal_pendientes", tipo: "lista", idDe: (r) => r.id, calidad: true },
+  { col: "cal_acta", clave: "ryr_cal_acta", tipo: "lista", idDe: (r) => r.id, calidad: true },
+  { col: "cal_maestro", clave: "ryr_cal_maestro", tipo: "lista", idDe: (r) => r.id, calidad: true },
   // Catálogos (materiales, mano de obra, equipos): los lee todo usuario activo; solo el administrador los cambia.
   { col: "cat_materiales", clave: "ryr_cat_materiales", tipo: "mapa", catalogo: true },
   { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
