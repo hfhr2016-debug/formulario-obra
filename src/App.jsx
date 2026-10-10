@@ -1567,6 +1567,29 @@ const MODULOS_AMBIENTAL = [
   { id: "amb-ica", nombre: "Resumen para ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: true },
 ];
 
+const MODULOS_CALIDAD = [
+  // --- Antes de construir: qué se controla y con qué documentos ---
+  { id: "cal-plan", nombre: "Plan de Inspección y Ensayos", emoji: "📋", icono: "/icons/icon-cal-plan.png", activo: true },
+  { id: "cal-planos", nombre: "Control de Planos", emoji: "📐", icono: "/icons/icon-cal-planos.png", activo: true },
+  { id: "cal-maestro", nombre: "Listado Maestro de Documentos", emoji: "🗂️", icono: "/icons/icon-cal-maestro.png", activo: true },
+  // --- Materiales y proveedores ---
+  { id: "cal-recepcion", nombre: "Recepción de Materiales", emoji: "📦", icono: "/icons/icon-cal-recepcion.png", activo: true },
+  { id: "cal-proveedores", nombre: "Evaluación de Proveedores", emoji: "🤝", icono: "/icons/icon-cal-proveedores.png", activo: true },
+  { id: "cal-ensayos", nombre: "Control de Ensayos", emoji: "🧪", icono: "/icons/icon-cal-ensayos.png", activo: true },
+  // --- Inspección en ejecución ---
+  { id: "cal-excavacion", nombre: "Excavación y Rellenos", emoji: "⛏️", icono: "/icons/icon-cal-excavacion.png", activo: true },
+  { id: "cal-acero", nombre: "Acero de Refuerzo", emoji: "🏗️", icono: "/icons/icon-cal-acero.png", activo: true },
+  { id: "cal-formaleta", nombre: "Formaleta y Encofrado", emoji: "🧱", icono: "/icons/icon-cal-formaleta.png", activo: true },
+  { id: "cal-vaciado", nombre: "Vaciado de Concreto", emoji: "🚚", icono: "/icons/icon-cal-vaciado.png", activo: true },
+  { id: "cal-resultados", nombre: "Resultados de Concreto y Suelos", emoji: "📊", icono: "/icons/icon-cal-resultados.png", activo: true },
+  { id: "cal-protocolo", nombre: "Protocolo por Actividad", emoji: "✅", icono: "/icons/icon-cal-protocolo.png", activo: true },
+  // --- Cierre y entrega ---
+  { id: "cal-nc", nombre: "No Conformidades", emoji: "🚫", icono: "/icons/icon-cal-nc.png", activo: true },
+  { id: "cal-terminada", nombre: "Actividad Terminada", emoji: "🏁", icono: "/icons/icon-cal-terminada.png", activo: true },
+  { id: "cal-pendientes", nombre: "Pendientes de Entrega", emoji: "⏳", icono: "/icons/icon-cal-pendientes.png", activo: true },
+  { id: "cal-acta", nombre: "Acta de Entrega", emoji: "📝", icono: "/icons/icon-cal-acta.png", activo: true },
+];
+
 const MODULOS_PRESUPUESTO = [
   // --- Seguimiento del presupuesto ---
   { id: "cp-control", nombre: "Control Presupuestal", emoji: "📊", icono: "/icons/icon-cp-control.png", activo: true },
@@ -1596,6 +1619,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
     { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
+    { id: "calidad", nombre: "Gestión de Calidad", icono: "/icons/icon-gestion-calidad.png", emoji: "🏅", activo: true },
     { id: "presupuesto", nombre: "Control Presupuestal", icono: "/icons/icon-gestion-presupuesto.png", emoji: "💰", activo: true },
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
@@ -1850,6 +1874,58 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
   );
 }
 
+function InicioCalidad({ onSeleccionar, onVolverSelector }) {
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (Técnica / SST / Ambiental)
+          </button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              GESTIÓN DE CALIDAD
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Calidad en obra (QC)
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 p-4">
+        {MODULOS_CALIDAD.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
+            style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
+          >
+            <div className="h-[70px] flex items-center justify-center">
+              <IconoConRespaldo src={m.icono} emoji={m.emoji} alt={m.nombre} tamano={70} />
+            </div>
+            <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
@@ -1928,6 +2004,19 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     otrosSistemas: "Técnica / SST",
   };
   const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{nodo}</ContextoSST.Provider>;
+  // Menú lateral de Gestión de Calidad
+  const ctxCal = {
+    modulos: MODULOS_CALIDAD.filter((m) => m.activo),
+    vistaActual: vista,
+    ir: (id) => setVista(id),
+    irInicio: () => setVista("inicio-calidad"),
+    irSelector: () => setVista("selector-apps"),
+    nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
+    cerrarSesion: onCerrarSesion,
+    titulo: "Gestión de Calidad",
+    otrosSistemas: "Técnica / SST / Ambiental",
+  };
+  const conMenuCal = (nodo) => <ContextoSST.Provider value={ctxCal}>{nodo}</ContextoSST.Provider>;
   // Menú lateral de Control Presupuestal (mismo componente, con sus 4 formatos)
   const ctxPres = {
     modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo && nivelCP(perfil, m.id)),
@@ -1965,6 +2054,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
           if (id === "tecnica") setVista("inicio");
           else if (id === "sst") setVista("inicio-sst");
           else if (id === "ambiental") setVista("inicio-ambiental");
+          else if (id === "calidad") setVista("inicio-calidad");
           else if (id === "presupuesto") setVista("inicio-presupuesto");
           else setVista(`proximamente-${id}`);
         }}
@@ -2039,6 +2129,12 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   }
   if (vista === "inicio-ambiental") {
     return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "inicio-calidad") {
+    return <InicioCalidad onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista.startsWith("cal-")) {
+    return conMenuCal(<Proximamente nombre={(MODULOS_CALIDAD.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-calidad")} />);
   }
   if (vista === "inicio-presupuesto") {
     return <InicioPresupuesto perfil={perfil} onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;

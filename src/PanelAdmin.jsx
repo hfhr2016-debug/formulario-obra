@@ -24,6 +24,7 @@ const ROLES_DISPONIBLES = [
   { id: "tecnica", nombre: "Gestión Técnica" },
   { id: "sst", nombre: "Gestión SST" },
   { id: "ambiental", nombre: "Gestión Ambiental" },
+  { id: "calidad", nombre: "Gestión de Calidad" },
   { id: "presupuesto", nombre: "Control Presupuestal" },
 ];
 
@@ -37,7 +38,7 @@ export default function PanelAdmin({ onVolver }) {
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [rolCPNuevo, setRolCPNuevo] = useState("");
-  const [rolesNuevo, setRolesNuevo] = useState({ tecnica: false, sst: false, ambiental: false, presupuesto: false });
+  const [rolesNuevo, setRolesNuevo] = useState({ tecnica: false, sst: false, ambiental: false, calidad: false, presupuesto: false });
   const [creando, setCreando] = useState(false);
   const [error, setError] = useState("");
 
@@ -88,7 +89,7 @@ export default function PanelAdmin({ onVolver }) {
       });
       await authSecundaria.signOut();
       setNombre(""); setCorreo(""); setContrasena("");
-      setRolesNuevo({ tecnica: false, sst: false, ambiental: false, presupuesto: false });
+      setRolesNuevo({ tecnica: false, sst: false, ambiental: false, calidad: false, presupuesto: false });
       setMostrarForm(false);
       await cargarUsuarios();
     } catch (err) {
