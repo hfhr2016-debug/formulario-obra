@@ -10,7 +10,7 @@ import { CifrasResumen } from "./cpComunes";
 import { useObraCal, PanelObraCal } from "./calComunes";
 import { catalogoVigente } from "./catalogoVivo";
 import {
-  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista,
+  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista, CampoCargo,
 } from "./sstComunes";
 import { ChipsOpcion, FilaVerificacion } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
@@ -126,6 +126,13 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     if (c.fuente === "proveedores") {
       return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={opcionesProveedor} opcionesAlAbrir={opcionesProveedor.slice(0, 8)} placeholder="Elige uno guardado o escribe uno nuevo"
         onElegir={(o) => setVarios({ [c.k]: o.texto, ...(o.nit && !texto(datos.nit) ? { nit: o.nit } : {}), ...(o.tipo && "tipoTercero" in datos && !texto(datos.tipoTercero) ? { tipoTercero: o.tipo } : {}) })} />;
+    }
+    if (c.tipo === "listaOtro") {
+      let extras = [];
+      try { extras = c.guardarOtros ? JSON.parse(localStorage.getItem(c.guardarOtros) || "[]") : []; } catch (e) { extras = []; }
+      const opciones = [...c.opciones, ...extras.filter((x) => !c.opciones.includes(x))];
+      const recordar = (x) => { const t = texto(x); if (!t || !c.guardarOtros || opciones.includes(t)) return; try { localStorage.setItem(c.guardarOtros, JSON.stringify([...extras, t])); } catch (e) { /* sin almacenamiento */ } };
+      return <CampoCargo key={c.k} label={etq} value={v} opciones={opciones} placeholder={c.otroTexto} onChange={(x) => set(c.k, x)} onGuardar={recordar} />;
     }
     if (c.tipo === "area") return <AreaTexto key={c.k} label={etq} value={v} filas={2} onChange={(x) => set(c.k, x)} />;
     if (c.tipo === "fecha") return <Campo key={c.k} label={etq} type="date" value={v} onChange={(x) => set(c.k, x)} />;

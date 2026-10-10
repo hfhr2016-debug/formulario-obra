@@ -480,7 +480,7 @@ export function Lista({ label, value, onChange, opciones }) {
 }
 
 // Cargo: lista desplegable + opción "Otro (escribir)". onGuardar se llama al elegir de la lista o al terminar de escribir.
-export function CampoCargo({ label, value, onChange, onGuardar, opciones }) {
+export function CampoCargo({ label, value, onChange, onGuardar, opciones, placeholder = "Escribe el cargo" }) {
   const [modoOtro, setModoOtro] = useState(false);
   // Si el cargo cambia desde afuera (p. ej. al elegir un nombre guardado) y es uno de la lista, se muestra la lista.
   useEffect(() => {
@@ -510,7 +510,7 @@ export function CampoCargo({ label, value, onChange, onGuardar, opciones }) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={(e) => { if (onGuardar && e.target.value.trim()) onGuardar(e.target.value); }}
-          placeholder="Escribe el cargo"
+          placeholder={placeholder}
           className={claseInput + " mt-1.5"}
           style={estiloInput}
         />

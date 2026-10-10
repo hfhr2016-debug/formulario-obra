@@ -191,6 +191,9 @@ export const CARGOS_PROFESIONALES = [
   "Ingeniero Residente", "Arquitecto Residente", "Director de Obra", "Coordinador SST", "Profesional SST",
   "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Maestro de Obra", "Supervisor de Obra",
   "Interventor de Obra", "Gerente de Proyecto",
+  // Gestión de calidad, laboratorio y transporte
+  "Coordinador de Calidad", "Director de Calidad", "Ingeniero de Calidad", "Profesional de Calidad", "Inspector de Calidad", "Técnico de Calidad", "Analista de Calidad", "Auxiliar de Calidad", "Residente de Calidad", "Laboratorista", "Técnico de Laboratorio",
+  "Conductor", "Conductor de Volqueta", "Conductor de Camabaja",
   // Administración, contabilidad y compras
   "Administrador de Obra", "Administrador", "Auxiliar Administrativo", "Asistente Administrativo", "Coordinador Administrativo",
   "Director Administrativo", "Gerente Administrativo", "Contador", "Auxiliar Contable", "Tesorero", "Analista de Costos",
@@ -249,7 +252,8 @@ export const CARGOS_OBRA = [
   "Ingeniero Auxiliar", "Ingeniero Supervisor", "Ingeniero Geotecnista", "Interventor de Obra", "Inspector de Obra",
   "Calculista", "Dibujante", "Topógrafo", "Cadenero", "Almacenista de Obra", "Auxiliar Administrativo", "Secretaria de Obra",
   // Seguridad, salud, ambiente y social
-  "Coordinador SST", "Profesional SST", "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Coordinador Ambiental",
+  "Coordinador SST", "Profesional SST", "Tecnólogo SST", "Inspector SST", "Coordinador HSEQ", "Coordinador de Calidad", "Director de Calidad", "Ingeniero de Calidad", "Profesional de Calidad", "Inspector de Calidad", "Técnico de Calidad", "Analista de Calidad", "Auxiliar de Calidad", "Residente de Calidad", "Laboratorista", "Técnico de Laboratorio",
+  "Coordinador Ambiental",
   "Profesional Ambiental", "Profesional Social", "Brigadista",
   // Oficios de construcción
   "Maestro de Obra", "Capataz", "Oficial", "Ayudante", "Obrero", "Armador", "Carpintero", "Formaletero", "Albañil",

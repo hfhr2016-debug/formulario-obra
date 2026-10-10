@@ -105,6 +105,16 @@ export function puntajeProveedor(d) {
   return Math.round(cal.reduce((t, n, i) => t + (CRITERIOS_PROVEEDOR[i].peso * n) / 5, 0) * 10) / 10;
 }
 export const resultadoProveedor = (p) => (p === null ? "Falta calificar" : p >= 80 ? "APROBADO" : p >= 60 ? "APROBADO CONDICIONADO" : "NO APROBADO");
+const SUMINISTROS_EVALUADOS = [
+  // Materiales
+  "Concreto premezclado", "Acero de refuerzo", "Cemento", "Agregados (arena, gravilla, triturado)", "Mampostería (ladrillo, bloque)", "Madera y formaleta",
+  "Tubería y accesorios hidrosanitarios", "Material eléctrico", "Pinturas y acabados", "Cerámica y enchapes", "Carpintería metálica y aluminio", "Vidrios",
+  "Impermeabilizantes", "Cubiertas y cielos rasos", "Drywall y perfilería", "Estructura metálica", "Prefabricados",
+  // Servicios y subcontratos
+  "Mano de obra: estructura", "Mano de obra: mampostería y pañetes", "Mano de obra: acabados", "Mano de obra: instalaciones",
+  "Alquiler de maquinaria", "Alquiler de equipos y andamios", "Transporte de materiales", "Transporte y disposición de escombros (RCD)",
+  "Laboratorio de ensayos", "Topografía", "Asesoría o diseño técnico", "Suministro de EPP y dotación",
+];
 export const PROVEEDORES = {
   id: "cal-proveedores", col: "cal_proveedores_eval", clave: "ryr_cal_proveedores_eval", codigo: "RYR-CA-005", hoja: "Evaluación Proveedores", plantilla: "/plantilla-cal-proveedores.xlsx", archivo: "Evaluacion_Proveedor",
   titulo: "Evaluación de Proveedores", subtitulo: "RYR-CA-005 · Proveedores y subcontratistas", panelObra: [],
@@ -115,7 +125,7 @@ export const PROVEEDORES = {
       { k: "nit", etq: "NIT", colEtq: "H", tipo: "texto" },
       { k: "tipoTercero", etq: "Tipo de tercero", colEtq: "A", tipo: "lista", opciones: ["Proveedor de materiales", "Subcontratista de mano de obra", "Subcontratista de obra", "Alquiler de equipos", "Laboratorio / servicios", "Otro"], req: true },
       { k: "tipoEval", etq: "Tipo de evaluación", colEtq: "H", tipo: "lista", opciones: ["Selección inicial", "Reevaluación periódica", "Cierre de contrato u orden", "Por incumplimiento"], req: true },
-      { k: "suministro", etq: "Suministro o trabajo evaluado", colEtq: "A", tipo: "texto", req: true },
+      { k: "suministro", etq: "Suministro o trabajo evaluado", colEtq: "A", tipo: "listaOtro", opciones: SUMINISTROS_EVALUADOS, otroTexto: "Escribe otro suministro o trabajo", guardarOtros: "ryr_cal_suministros", req: true },
       { k: "contratoOrden", etq: "Contrato u orden N°", colEtq: "H", tipo: "texto" },
       { k: "desde", etq: "Periodo evaluado desde", colEtq: "A", tipo: "fecha" },
       { k: "hasta", etq: "Hasta", colEtq: "E", tipo: "fecha" },
