@@ -1615,10 +1615,8 @@ function IconoConRespaldo({ src, emoji, alt, tamano, style }) {
 }
 
 function saludoUsuario(perfil) {
-  const h = new Date().getHours();
-  const saludo = h < 12 ? "Buenos días" : h < 18 ? "Buenas tardes" : "Buenas noches";
   const primero = String((perfil && perfil.nombre) || "").trim().split(/\s+/)[0] || "";
-  return primero ? `${saludo}, ${primero}` : saludo;
+  return primero ? `Hola, ${primero}` : "Hola";
 }
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
@@ -1647,7 +1645,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
           REFORMAS Y REMODELACIONES
         </div>
         {perfil && (
-          <div className="text-white text-[17px] font-semibold mt-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <div className="text-[24px] font-bold mt-3" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
             {saludoUsuario(perfil)}
           </div>
         )}
