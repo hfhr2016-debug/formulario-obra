@@ -10,7 +10,7 @@ import { CifrasResumen } from "./cpComunes";
 import { useObraCal, PanelObraCal } from "./calComunes";
 import { catalogoVigente } from "./catalogoVivo";
 import {
-  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista, CampoCargo,
+  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista, CampoCargo, SelectorHora,
 } from "./sstComunes";
 import { ChipsOpcion, FilaVerificacion } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
@@ -106,6 +106,8 @@ export default function FormularioCalidad({ fmt, onVolver }) {
       setReg(guardado);
     }
     const nuevas = crearNCsAutomaticas(fmt, guardado);
+    // los nombres escritos (responsable y firmas) quedan guardados para ofrecerlos la próxima vez
+    memoria.recordarUso({ personas: [...fmt.firmas.personas.map((p) => [guardado.datos[`${p.k}Nombre`], guardado.datos[`${p.k}Cargo`]]), ...camposDe(fmt).filter((c) => c.tipo === "persona").map((c) => [guardado.datos[c.k], c.cargo || ""])] });
     setCreadasNC(nuevas); setVersion((v) => v + 1);
     return nuevas;
   }
@@ -160,9 +162,12 @@ export default function FormularioCalidad({ fmt, onVolver }) {
       const recordar = (x) => { const t = texto(x); if (!t || !c.guardarOtros || opciones.includes(t)) return; try { localStorage.setItem(c.guardarOtros, JSON.stringify([...extras, t])); } catch (e) { /* sin almacenamiento */ } };
       return <CampoCargo key={c.k} label={etq} value={v} opciones={opciones} placeholder={c.otroTexto} onChange={(x) => set(c.k, x)} onGuardar={recordar} />;
     }
+    if (c.tipo === "persona") {
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={memoria.opcionesNombres} opcionesAlAbrir={memoria.nombresAlAbrir} placeholder="Elige un profesional guardado o escribe el nombre" />;
+    }
     if (c.tipo === "area") return <AreaTexto key={c.k} label={etq} value={v} filas={2} onChange={(x) => set(c.k, x)} />;
     if (c.tipo === "fecha") return <Campo key={c.k} label={etq} type="date" value={v} onChange={(x) => set(c.k, x)} />;
-    if (c.tipo === "hora") return <Campo key={c.k} label={etq} type="time" value={v} onChange={(x) => set(c.k, x)} />;
+    if (c.tipo === "hora") return <SelectorHora key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} />;
     if (c.tipo === "fechahora") return <Campo key={c.k} label={etq} type="datetime-local" value={v} onChange={(x) => set(c.k, x)} />;
     if (c.tipo === "lista") return <Lista key={c.k} label={etq} value={v} opciones={c.opciones} onChange={(x) => set(c.k, x)} />;
     if (c.tipo === "chips") return <ChipsOpcion key={c.k} label={etq} value={v} opciones={c.opciones} colores={COLOR_ESTADO} pequeno onChange={(x) => set(c.k, x)} />;
@@ -171,9 +176,9 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   }
   function celdaTabla(s, fila, i, c) {
     const act = (patch) => setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: cur.datos[s.k].map((f, k) => { if (k !== i) return f; const n = { ...f, ...patch }; const extra = s.autoFila ? s.autoFila(n, f) : null; return extra ? { ...n, ...extra } : n; }) } }));
-    const etq = etiquetaUI({ etq: c.enc, label: c.label }); const v = fila[c.k];
+    const etq = etiquetaUI({ etq: c.enc, label: c.label }) + (c.etqUnidad && texto(fila[c.etqUnidad]) ? ` (${texto(fila[c.etqUnidad])})` : ""); const v = fila[c.k];
     if (c.tipo === "calculado") return <Calculado key={c.k} label={etq} valor={c.calc ? c.calc(fila, datos) : ""} semaforo={c.semaforo} />;
-    if (c.tipo === "hora" || c.tipo === "horaExcel") return <Campo key={c.k} label={etq} type="time" value={v} onChange={(x) => act({ [c.k]: x })} />;
+    if (c.tipo === "hora" || c.tipo === "horaExcel") return <SelectorHora key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} />;
     if (c.tipo === "fechahora") return <Campo key={c.k} label={etq} type="datetime-local" value={v} onChange={(x) => act({ [c.k]: x })} />;
     if (c.fuente === "materiales") {
       return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={materiales} opcionesAlAbrir={materiales.slice(0, 8)} placeholder="Elige del catálogo o escribe"
@@ -184,7 +189,8 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     if (c.tipo === "lista") return <Lista key={c.k} label={etq} value={v} opciones={c.opciones} onChange={(x) => act({ [c.k]: x })} />;
     if (c.tipo === "chips") return <ChipsOpcion key={c.k} label={etq} nombre={etq} value={v} opciones={c.opciones} colores={COLOR_ESTADO} pequeno onChange={(x) => act({ [c.k]: x })} />;
     if (c.tipo === "numero" || c.tipo === "porcentaje") return <Campo key={c.k} label={etq} value={v} inputMode="decimal" placeholder={c.ayuda || ""} onChange={(x) => act({ [c.k]: x.replace(/[^0-9.,]/g, "") })} />;
-    return <Campo key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} />;
+    if (c.sugerencias) { const ops = c.sugerencias.map((t) => ({ texto: t, detalle: "" })); return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={ops} opcionesAlAbrir={ops} placeholder="Elige o escribe la unidad" />; }
+    return <Campo key={c.k} label={etq} value={v} placeholder={c.ayuda || ""} onChange={(x) => act({ [c.k]: x })} />;
   }
   // Agrega una fila a una tabla (respeta el máximo de filas de la plantilla); devuelve false si ya no cabe
   function agregarFila(s, base = {}) {

@@ -519,22 +519,37 @@ export function CampoCargo({ label, value, onChange, onGuardar, opciones, placeh
   );
 }
 
-export function SelectorHora({ label, value, onChange }) {
-  const [h, m] = (value || "").split(":");
-  const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+// Hora en formato de 12 horas con a. m. / p. m. El valor que se guarda sigue siendo «HH:MM» de 24 horas (así lo leen los Excel y los cálculos).
+export function SelectorHora({ label, value, onChange, half }) {
+  const m24 = /^(\d{1,2}):(\d{2})/.exec(value || "");
+  const h24 = m24 ? Number(m24[1]) : null;
+  const min = m24 ? m24[2] : "";
+  const ampm = h24 === null ? "" : h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 === null ? "" : String(h24 % 12 === 0 ? 12 : h24 % 12).padStart(2, "0");
+  const horas = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
   const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+  const componer = (h, mm, ap) => {
+    const hh = Number(h || 12) % 12 + ((ap || "AM") === "PM" ? 12 : 0);
+    onChange(`${String(hh).padStart(2, "0")}:${mm || "00"}`);
+  };
+  const cls = "flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white";
   return (
-    <div className="flex-1 min-w-0" data-campo={label}>
+    <div className={half ? "flex-1 min-w-0" : "w-full"} data-campo={label}>
       <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
       <div className="flex items-center gap-1">
-        <select value={h || ""} onChange={(e) => onChange(`${e.target.value}:${m || "00"}`)} className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white" style={{ borderColor: LINE }}>
+        <select aria-label={`${label}: hora`} value={h12} onChange={(e) => componer(e.target.value, min, ampm)} className={cls} style={{ borderColor: LINE }}>
           <option value="" disabled>Hora</option>
           {horas.map((v) => (<option key={v} value={v}>{v}</option>))}
         </select>
         <span className="text-[13.5px] font-semibold" style={{ color: "#8A8F99" }}>:</span>
-        <select value={m || ""} onChange={(e) => onChange(`${h || "00"}:${e.target.value}`)} className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white" style={{ borderColor: LINE }}>
+        <select aria-label={`${label}: minutos`} value={min} onChange={(e) => componer(h12, e.target.value, ampm)} className={cls} style={{ borderColor: LINE }}>
           <option value="" disabled>Min</option>
           {minutos.map((v) => (<option key={v} value={v}>{v}</option>))}
+        </select>
+        <select aria-label={`${label}: a. m. o p. m.`} value={ampm} onChange={(e) => componer(h12, min, e.target.value)} className={cls} style={{ borderColor: LINE, maxWidth: 76 }}>
+          <option value="" disabled>--</option>
+          <option value="AM">a. m.</option>
+          <option value="PM">p. m.</option>
         </select>
       </div>
     </div>

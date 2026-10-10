@@ -11,7 +11,7 @@ import {
 import { BotonMenuSST } from "./sstNavegacion";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
-import { TraerDeFicha } from "./sstComunes";
+import { TraerDeFicha, SelectorHora } from "./sstComunes";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -296,27 +296,6 @@ function CampoCargo({ label, value, onChange, onGuardar, opciones }) {
   );
 }
 
-function SelectorHora({ label, value, onChange }) {
-  const [h, m] = (value || "").split(":");
-  const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-  const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
-  return (
-    <div className="flex-1 min-w-0" data-campo={label}>
-      <label className={etiquetaCls} style={{ color: "#8A8F99" }}>{label}</label>
-      <div className="flex items-center gap-1">
-        <select value={h || ""} onChange={(e) => onChange(`${e.target.value}:${m || "00"}`)} className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white" style={{ borderColor: LINE }}>
-          <option value="" disabled>Hora</option>
-          {horas.map((v) => (<option key={v} value={v}>{v}</option>))}
-        </select>
-        <span className="text-[13.5px] font-semibold" style={{ color: "#8A8F99" }}>:</span>
-        <select value={m || ""} onChange={(e) => onChange(`${h || "00"}:${e.target.value}`)} className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white" style={{ borderColor: LINE }}>
-          <option value="" disabled>Min</option>
-          {minutos.map((v) => (<option key={v} value={v}>{v}</option>))}
-        </select>
-      </div>
-    </div>
-  );
-}
 
 function Chips({ opciones, elegidas, onChange }) {
   return (

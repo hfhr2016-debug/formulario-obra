@@ -67,11 +67,14 @@ import FormularioControlPresupuestal from "./FormularioControlPresupuestal";
 import FormularioAdicionales from "./FormularioAdicionales";
 import FormularioCalidad from "./FormularioCalidad";
 import FormularioNC from "./FormularioNC";
+import PanelVencimientos from "./PanelVencimientos";
+import { vencimientos, resumenVenc } from "./calVencimientos";
 import { FORMATOS_CAL } from "./calFormatos";
 import FormularioAnticipo from "./FormularioAnticipo";
 import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
 import { ContextoSST } from "./sstNavegacion";
+import { SelectorHora } from "./sstComunes";
 import {
 
   ChevronDown,
@@ -262,48 +265,6 @@ function Field({ label, value, onChange, placeholder, type = "text", half }) {
   );
 }
 
-function SelectorHora({ label, value, onChange, half }) {
-  const [h, m] = (value || "").split(":");
-  const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-  const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
-  const cambiarHora = (nuevaH) => onChange(`${nuevaH}:${m || "00"}`);
-  const cambiarMinuto = (nuevoM) => onChange(`${h || "00"}:${nuevoM}`);
-  return (
-    <div className={half ? "flex-1 min-w-0" : "w-full"}>
-      <label
-        className="block text-[10px] uppercase tracking-wide mb-1 font-medium"
-        style={{ color: "#8A8F99" }}
-      >
-        {label}
-      </label>
-      <div className="flex items-center gap-1">
-        <select
-          value={h || ""}
-          onChange={(e) => cambiarHora(e.target.value)}
-          className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white"
-          style={{ borderColor: LINE }}
-        >
-          <option value="" disabled>Hora</option>
-          {horas.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
-        </select>
-        <span className="text-[13.5px] font-semibold" style={{ color: "#8A8F99" }}>:</span>
-        <select
-          value={m || ""}
-          onChange={(e) => cambiarMinuto(e.target.value)}
-          className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white"
-          style={{ borderColor: LINE }}
-        >
-          <option value="" disabled>Min</option>
-          {minutos.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
 
 function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
   return (
@@ -1927,6 +1888,20 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
   );
 }
 
+function BannerVencimientos({ onVer }) {
+  let r = { vencidos: 0, hoy: 0, pronto: 0, total: 0 };
+  try { r = resumenVenc(vencimientos()); } catch (e) { /* sin datos */ }
+  const alerta = r.vencidos + r.hoy > 0;
+  return (
+    <button type="button" onClick={onVer} data-banner-venc className="mx-4 mt-4 w-[calc(100%-2rem)] text-left rounded-xl px-3 py-2.5 border flex items-center gap-2"
+      style={{ background: alerta ? "#FDEDEA" : r.total ? "#FFF8E8" : "#EAF4EC", borderColor: alerta ? "#B3401F" : r.total ? "#D9A233" : "#2E7D4F", color: alerta ? "#B3401F" : r.total ? "#7A5A00" : "#1D6B3A" }}>
+      <span className="text-[18px]">{alerta ? "⚠️" : r.total ? "🕒" : "✓"}</span>
+      <span className="flex-1 text-[12px] font-semibold">{r.total === 0 ? "Sin vencimientos" : `${r.vencidos} vencidos · ${r.hoy} vencen hoy · ${r.pronto} por vencer`}</span>
+      <span className="text-[11px] underline">Ver</span>
+    </button>
+  );
+}
+
 function InicioCalidad({ onSeleccionar, onVolverSelector }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
@@ -1953,7 +1928,8 @@ function InicioCalidad({ onSeleccionar, onVolverSelector }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 p-4">
+      <BannerVencimientos onVer={() => onSeleccionar("cal-vencimientos")} />
+      <div className="grid grid-cols-2 gap-3 px-4 pb-4 pt-2">
         {MODULOS_CALIDAD.map((m) => (
           <button
             key={m.id}
@@ -2187,6 +2163,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     return <InicioCalidad onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
   if (vista.startsWith("cal-")) {
+    if (vista === "cal-vencimientos") return conMenuCal(<PanelVencimientos key={vista} onVolver={() => setVista("inicio-calidad")} onIr={setVista} />);
     if (vista === "cal-nc") return conMenuCal(<FormularioNC key={vista} onVolver={() => setVista("inicio-calidad")} />);
     if (FORMATOS_CAL[vista]) return conMenuCal(<FormularioCalidad key={vista} fmt={FORMATOS_CAL[vista]} onVolver={() => setVista("inicio-calidad")} />);
     return conMenuCal(<Proximamente nombre={(MODULOS_CALIDAD.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-calidad")} />);

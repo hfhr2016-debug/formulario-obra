@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import { texto, listarNC, crearNC, actualizarNC, ncVencida, hoyISO, descubrirCal, escribirEnHoja } from "./calBase";
 import { useObraCal, PanelObraCal } from "./calComunes";
 import { NC_FMT, ORIGENES_NC, filaNC } from "./calFormatos3";
-import { NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto } from "./sstComunes";
+import { NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista } from "./sstComunes";
 import { ChipsOpcion } from "./sstControles";
 
 const COLOR_G = { Leve: "#2E7D4F", Mayor: "#B8860B", "Crítica": "#B3401F" };
@@ -69,6 +69,7 @@ export default function FormularioNC({ onVolver }) {
     if (n.estado === "Cerrada" && !texto(n.fechaCierre)) n.fechaCierre = hoy;
     if (n.estado !== "Cerrada") n.fechaCierre = "";
     if (esNueva) { const { id, numero, ...resto } = n; crearNC(h.id, { ...resto, manual: true }); } else actualizarNC(n.id, n);
+    if (texto(n.responsable)) memoria.recordarUso({ personas: [[n.responsable, ""]] });
     setVersion((v) => v + 1);
     if (otra) { nueva({ origen: n.origen, ubicacion: n.ubicacion, responsable: n.responsable, fechaLimite: n.fechaLimite }); setAviso("Guardada. Puedes registrar la siguiente."); }
     else { setEdit(null); window.scrollTo(0, 0); }
@@ -154,7 +155,7 @@ export default function FormularioNC({ onVolver }) {
                 <div className="text-[12px] font-semibold mb-1" style={{ color: NAVY }}>Excel (RYR-CA-013)</div>
                 <div className="text-[11px] mb-2" style={{ color: "#6B7280" }}>Entran las {paraExcel.length} no conformidades vigentes, {POR_HOJA} por hoja.</div>
                 <div className="space-y-2">
-                  <Campo label="Responsable del seguimiento" value={excel.responsable} onChange={(v) => setExcel((e) => ({ ...e, responsable: v }))} />
+                  <BuscadorLista label="Responsable del seguimiento" value={excel.responsable} onChange={(v) => setExcel((e) => ({ ...e, responsable: v }))} opciones={memoria.opcionesNombres} opcionesAlAbrir={memoria.nombresAlAbrir} placeholder="Elige un profesional o escribe el nombre" />
                   <Campo label="Periodo" value={excel.periodo} placeholder="Ej. Octubre de 2026" onChange={(v) => setExcel((e) => ({ ...e, periodo: v }))} />
                   {NC_FMT.firmas.personas.map((p) => (
                     <div key={p.k}>
@@ -187,7 +188,7 @@ export default function FormularioNC({ onVolver }) {
               <AreaTexto label="Causa identificada" value={edit.causa} filas={2} onChange={(v) => set({ causa: v })} />
               <AreaTexto label="Acción a ejecutar" value={edit.accion} filas={2} onChange={(v) => set({ accion: v })} />
               <Lista label="Tipo de acción" value={edit.tipoAccion} opciones={TIPOS_ACCION} onChange={(v) => set({ tipoAccion: v })} />
-              <Campo label="Responsable" value={edit.responsable} onChange={(v) => set({ responsable: v })} />
+              <BuscadorLista label="Responsable" value={edit.responsable} onChange={(v) => set({ responsable: v })} opciones={memoria.opcionesNombres} opcionesAlAbrir={memoria.nombresAlAbrir} placeholder="Elige un profesional o escribe el nombre" />
               <Campo label="Fecha límite" type="date" value={edit.fechaLimite} onChange={(v) => set({ fechaLimite: v })} />
               <ChipsOpcion label="Estado" value={edit.estado} opciones={["Abierta", "En proceso", "Cerrada"]} colores={COLOR_E} pequeno nombre="Estado" onChange={(v) => set({ estado: v, ...(v === "Cerrada" && !texto(edit.fechaCierre) ? { fechaCierre: hoy } : {}) })} />
               {edit.estado === "Cerrada" && <Campo label="Fecha de cierre" type="date" value={edit.fechaCierre} onChange={(v) => set({ fechaCierre: v })} />}
