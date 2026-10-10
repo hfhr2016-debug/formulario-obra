@@ -1619,6 +1619,9 @@ function saludoUsuario(perfil) {
   return primero ? `Hola, ${primero}` : "Hola";
 }
 
+// Datos de contacto que se muestran en el pie del portal. Se escriben aquí; lo que se deje en "" no aparece.
+const EMPRESA = { nombre: "Reformas y Remodelaciones", nit: "", direccion: "", telefonos: "", correo: "", web: "" };
+
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
@@ -1639,26 +1642,29 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      {/* Franja superior: saludo y accesos del usuario, sobre la imagen */}
-      <div className="px-4 pt-3 pb-5 text-center shrink-0" style={{ background: "linear-gradient(180deg, rgba(10,20,38,0.75), rgba(10,20,38,0))" }}>
+      {/* Franja superior (azul): nombre de la empresa, saludo y accesos del usuario */}
+      <div className="px-4 pt-3 pb-3 text-center shrink-0" style={{ background: NAVY }}>
+        <div className="text-white font-bold text-[18px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          REFORMAS Y REMODELACIONES
+        </div>
         {perfil && (
-          <div className="text-[22px] font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
+          <div className="text-[22px] font-bold mt-1.5" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
             {saludoUsuario(perfil)}
           </div>
         )}
-        <div className="text-[11.5px] mt-0.5 text-white" style={{ textShadow: sombraTexto }}>
+        <div className="text-[11.5px] mt-0.5" style={{ color: GOLD }}>
           {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} · Elige el sistema de gestión que quieres usar
         </div>
         {perfil && (
           <div className="flex items-center justify-center gap-3 mt-1.5 flex-wrap">
-            <span className="text-[10.5px] text-white/85" style={{ textShadow: sombraTexto }}>{perfil.nombre || perfil.correo}</span>
+            <span className="text-[10.5px] text-white/70">{perfil.nombre || perfil.correo}</span>
             {perfil.esAdmin && (
-              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: "#FFE9B0", textShadow: sombraTexto }}>Administrar usuarios</button>
+              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>Administrar usuarios</button>
             )}
             {perfil.esAdmin && onIrCatalogos && (
-              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: "#FFE9B0", textShadow: sombraTexto }}>Catálogos</button>
+              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
             )}
-            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/85" style={{ textShadow: sombraTexto }}>Cerrar sesión</button>
+            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
           </div>
         )}
       </div>
@@ -1666,7 +1672,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
       {/* Pantalla dividida en dos mitades: izquierda = aplicaciones, derecha = reseña. Cada contenido va centrado en su mitad */}
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 px-4 pb-6 md:pb-4">
         <div className="flex items-center justify-center min-h-0">
-          <div className="flex flex-col gap-3 w-full max-w-[340px]">
+          <div className="flex flex-col gap-2.5 w-full max-w-[360px]">
             {apps.map((a) => {
               const habilitado = tieneAcceso(a.id);
               return (
@@ -1677,10 +1683,10 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
                   style={{ opacity: habilitado ? 1 : 0.55 }}
                   aria-label={a.nombre}
                 >
-                  <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt="" tamano={52} style={{ filter: habilitado ? "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" : "grayscale(100%)" }} />
+                  <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt="" tamano={62} style={{ filter: habilitado ? "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" : "grayscale(100%)" }} />
                   <span
                     className="flex-1 flex items-center justify-center text-center rounded-full text-white font-semibold text-[15px] px-3"
-                    style={{ height: 52, border: "2px solid #FFFFFF", background: "transparent", textShadow: sombraTexto, fontFamily: "'Space Grotesk', sans-serif" }}
+                    style={{ height: 54, border: "2px solid #FFFFFF", background: "transparent", WebkitTextStroke: `0.7px ${AZUL_MARINO}`, paintOrder: "stroke fill", textShadow: sombraTexto, fontFamily: "'Space Grotesk', sans-serif" }}
                   >
                     {a.nombre}{!habilitado && <span className="ml-1.5 text-[11px]">🔒</span>}
                   </span>
@@ -1692,7 +1698,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
 
         <div className="flex items-center justify-center min-h-0">
           <div
-            className="w-full max-w-[360px] rounded-2xl text-white text-center flex flex-col items-center px-5 py-5 max-h-full overflow-y-auto"
+            className="w-full max-w-[360px] rounded-2xl text-white text-center flex flex-col items-center px-5 py-4 max-h-full overflow-y-auto"
             style={{ background: AZUL_MARINO, border: "1.5px solid #FFFFFF", boxShadow: "0 6px 18px rgba(0,0,0,0.35)" }}
           >
             <div className="text-[20px] font-bold tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
@@ -1706,11 +1712,22 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             <p className="text-[12.5px] leading-relaxed mb-4">
               Reúne en un solo lugar la gestión técnica, SG-SST, ambiental, calidad y el control presupuestal, para tener datos ordenados, trazables y listos para decidir.
             </p>
-            <div className="rounded-xl bg-white flex items-center justify-center p-1.5" style={{ width: 120, height: 112 }}>
+            <div className="rounded-xl bg-white flex items-center justify-center p-1.5" style={{ width: 92, height: 86 }}>
               <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="object-contain" style={{ maxWidth: "100%", maxHeight: "100%" }} />
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Pie de página (azul): datos de contacto de la empresa. Los campos vacíos no se muestran. */}
+      <div className="shrink-0 px-4 pb-3 pt-0 text-center" style={{ background: NAVY }}>
+        <div style={{ borderTop: "2px solid #FFFFFF" }} />
+        <div style={{ borderTop: `1px solid ${AZUL_MARINO}` }} />
+        <div className="text-white font-bold text-[13px] mt-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{EMPRESA.nombre}</div>
+        <div className="text-[11px] text-white/80 mt-0.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-0.5">
+          {[EMPRESA.nit && `NIT ${EMPRESA.nit}`, EMPRESA.direccion && `📍 ${EMPRESA.direccion}`, EMPRESA.telefonos && `📞 ${EMPRESA.telefonos}`, EMPRESA.correo && `✉️ ${EMPRESA.correo}`, EMPRESA.web].filter(Boolean).map((t) => <span key={t}>{t}</span>)}
+        </div>
+        <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
       </div>
     </div>
   );
