@@ -1672,8 +1672,10 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         )}
       </div>
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
-       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 w-full max-w-5xl">
-        {apps.map((a) => {
+       <div className="flex gap-3 w-full max-w-5xl sm:grid sm:grid-cols-3 lg:grid-cols-5">
+        {[apps.slice(0, 3), apps.slice(3)].map((grupo, gi) => (
+         <div key={gi} className="flex-1 flex flex-col justify-center gap-3 sm:contents">
+        {grupo.map((a) => {
           const habilitado = tieneAcceso(a.id);
           return (
             <button
@@ -1697,6 +1699,8 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             </button>
           );
         })}
+         </div>
+        ))}
        </div>
       </div>
     </div>
