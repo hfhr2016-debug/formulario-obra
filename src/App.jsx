@@ -1647,6 +1647,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             {perfil.esAdmin && onIrCatalogos && (
               <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
             )}
+            <a href="/manual-saiea-obras.pdf" target="_blank" rel="noopener noreferrer" data-manual className="text-[10.5px] underline" style={{ color: GOLD }}>📖 Manual de usuario</a>
             <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="text-[10.5px] underline text-white/70" />
             <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
           </div>
