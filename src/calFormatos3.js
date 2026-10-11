@@ -204,6 +204,26 @@ const MAESTRO_FILAS = [
   "Cierre del contrato + 5 años",
   "1",
   "Vigente"
+ ],
+ [
+  "RYR-CA-017",
+  "Informe Mensual de Calidad",
+  "Ingeniero de calidad",
+  "Mensual",
+  "Carpeta de calidad y app",
+  "Cierre del contrato + 5 años",
+  "1",
+  "Vigente"
+ ],
+ [
+  "RYR-CA-018",
+  "Equipos de Medición y Laboratorio",
+  "Ingeniero de calidad",
+  "Al calibrar o ingresar cada equipo",
+  "Carpeta de calidad y app",
+  "Cierre del contrato + 5 años",
+  "1",
+  "Vigente"
  ]
 ];
 
@@ -417,7 +437,7 @@ export const MAESTRO = {
       { k: "contratista", etq: "Contratista / Empresa", colEtq: "A", obra: "contratista" },
       { k: "responsable", etq: "Responsable del listado", colEtq: "E", tipo: "persona", cargo: "Ingeniero de calidad" },
     ] },
-    { id: "registros", titulo: "2. Registros de calidad", tipo: "tabla", k: "registros", fin: "Registros vigentes", max: 17, req: true, nombreFila: "Registro", plegable: true, tituloFila: "nombre", limpiar: true,
+    { id: "registros", titulo: "2. Registros de calidad", tipo: "tabla", k: "registros", fin: "Registros vigentes", max: 19, req: true, nombreFila: "Registro", plegable: true, tituloFila: "nombre", limpiar: true,
       inicial: MAESTRO_FILAS.map((f) => ({ codigo: f[0], nombre: f[1], responsable: f[2], frecuencia: f[3], archivo: f[4], conservacion: f[5], version: f[6], estado: f[7] })),
       cols: [
         { k: "codigo", enc: "Código", tipo: "texto", req: true },
@@ -436,6 +456,8 @@ export const MAESTRO = {
   avisos: (d) => {
     const a = []; const f = filasConDatos(MAESTRO.secciones[1], d); const cods = f.map((x) => norm(x.codigo));
     const rep = cods.filter((c, i) => cods.indexOf(c) !== i); if (rep.length) a.push({ tipo: "aviso", texto: `El código ${rep[0].toUpperCase()} está repetido en el listado.` });
+    const faltan = MAESTRO_FILAS.filter((m) => !cods.includes(norm(m[0])));
+    if (faltan.length) a.push({ tipo: "aviso", texto: `Faltan en el listado: ${faltan.map((m) => m[0] + " " + m[1]).join("; ")}. Agrégalos como filas nuevas del listado.` });
     return a;
   },
 };
