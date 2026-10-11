@@ -1508,8 +1508,8 @@ const MODULOS_SST = [
 const MODULOS_AMBIENTAL = [
   // --- Datos generales del proyecto (primero) ---
   { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", icono: "/icons/icon-amb-ficha.png", activo: true },
-  { id: "amb-permisos", nombre: "Registro de Permisos Ambientales", emoji: "📜", activo: true },
-  { id: "amb-plan-emergencias", nombre: "Plan de Emergencias Ambientales", emoji: "🚨", activo: true },
+  { id: "amb-permisos", nombre: "Registro de Permisos Ambientales", emoji: "📜", icono: "/icons/icon-amb-permisos.png", activo: true },
+  { id: "amb-plan-emergencias", nombre: "Plan de Emergencias Ambientales", emoji: "🚨", icono: "/icons/icon-amb-plan-emergencias.png", activo: true },
   // --- Uso diario ---
   { id: "amb-residuos", nombre: "Registro de Residuos", emoji: "♻️", icono: "/icons/icon-amb-residuos.png", activo: true },
   { id: "amb-manifiesto", nombre: "Manifiesto de Transporte de RCD", emoji: "🚛", icono: "/icons/icon-amb-manifiesto.png", activo: true },
