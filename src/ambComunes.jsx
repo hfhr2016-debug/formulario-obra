@@ -28,6 +28,10 @@ export const CLAVE_AMB_INDICADORES = "ryr_amb_indicadores";         // resultado
 export const CLAVE_AMB_SEMANALES = "ryr_amb_semanales";             // resumen de cada informe semanal
 export const CLAVE_AMB_MENSUALES = "ryr_amb_mensuales";             // resumen de cada informe mensual
 export const CLAVE_AMB_TRIMESTRALES = "ryr_amb_trimestrales";       // resumen de cada informe trimestral
+export const CLAVE_AMB_PLAN_EMERG = "ryr_amb_plan_emergencias";         // resumen del plan de emergencias de cada obra (uno por obra)
+export const CLAVE_AMB_PLAN_EMERG_DATOS = "ryr_amb_plan_emergencias_datos"; // datos completos, para volver a editarlo
+export const CLAVE_AMB_PERMISOS = "ryr_amb_permisos";                 // resumen del registro de permisos de cada obra (uno por obra)
+export const CLAVE_AMB_PERMISOS_DATOS = "ryr_amb_permisos_datos";   // datos completos, para volver a editarlo
 export const CLAVE_AMB_ICA = "ryr_amb_ica";                         // resumen de cada resumen para el ICA
 
 // Obras conocidas: primero las de la Ficha Ambiental y luego las de la Ficha SST (sin repetir el nombre)
