@@ -1606,6 +1606,7 @@ const MARCO_DORADO = {
   boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85), inset 0 -1px 1px rgba(120,70,0,0.55), 0 0 14px rgba(251,186,18,0.55), 0 6px 18px rgba(0,0,0,0.35)",
 };
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
+  const [verManual, setVerManual] = useState(false);
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
@@ -1647,7 +1648,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             {perfil.esAdmin && onIrCatalogos && (
               <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
             )}
-            <a href="/manual.html" data-manual className="text-[10.5px] underline" style={{ color: GOLD }}>📖 Manual de usuario</a>
+            <button type="button" onClick={() => setVerManual(true)} data-manual className="text-[10.5px] underline" style={{ color: GOLD }}>📖 Manual de usuario</button>
             <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="text-[10.5px] underline text-white/70" />
             <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
           </div>
@@ -1716,6 +1717,16 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         </div>
         <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
       </div>
+      {verManual && (
+        <div data-manual-visor style={{ position: "fixed", inset: 0, zIndex: 60, background: "#E8E6E1", display: "flex", flexDirection: "column" }}>
+          <div style={{ background: "#1B2A45", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", paddingTop: "calc(10px + env(safe-area-inset-top))" }}>
+            <button type="button" data-manual-volver onClick={() => setVerManual(false)} style={{ background: GOLD, color: "#1B2A45", fontWeight: 700, fontSize: 14, padding: "9px 14px", borderRadius: 8, minHeight: 40 }}>← Volver a la app</button>
+            <div style={{ flex: 1, color: "#fff", fontSize: 13, fontWeight: 600 }}>📖 Manual de usuario</div>
+            <a href="/manual-saiea-obras.pdf" download style={{ color: "#fff", opacity: 0.8, fontSize: 12, textDecoration: "underline" }}>Descargar PDF</a>
+          </div>
+          <iframe title="Manual de usuario" src="/manual.html?embebido=1" style={{ flex: 1, width: "100%", border: 0, background: "#E8E6E1" }} />
+        </div>
+      )}
     </div>
   );
 }
