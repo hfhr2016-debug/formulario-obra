@@ -11,6 +11,8 @@ import PanelAdmin from "./PanelAdmin";
 import PanelCatalogos from "./PanelCatalogos";
 import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
 import { iniciarSync, detenerSync } from "./sincronizarFirestore";
+import { aplicarReinicioGeneral } from "./reinicioApp";
+import { leerMarcaReinicio } from "./reinicioNube";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
@@ -2326,6 +2328,17 @@ export default function App() {
   );
 }
 
+// Orden de «reiniciar todos los equipos» dada por el Administrador: cada equipo la cumple una sola vez, ANTES de sincronizar
+// (así no vuelve a subir datos viejos). Si limpió, recarga la app.
+async function revisarReinicioGeneral() {
+  try {
+    const marca = await leerMarcaReinicio();
+    if (!marca || !aplicarReinicioGeneral(window.localStorage, marca)) return false;
+    window.location.reload();
+    return true;
+  } catch (e) { return false; }
+}
+
 // Sincronización con el servidor: arranca al iniciar sesión y se detiene (borrando la copia del equipo) al cerrarla.
 function useSincronizacion(usuario, perfil) {
   const [listo, setListo] = useState(false);
@@ -2338,7 +2351,7 @@ function useSincronizacion(usuario, perfil) {
     if (!uid || !perfil) { setListo(false); return undefined; }
     let vivo = true;
     setListo(false);
-    iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) setHayNuevos(true); if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })
+    revisarReinicioGeneral().then((reinicio) => (reinicio ? null : iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) setHayNuevos(true); if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })))
       .catch((e) => console.warn("No se pudo iniciar la sincronización", e))
       .finally(() => { if (vivo) setListo(true); });
     return () => { vivo = false; detenerSync({ limpiar: true }); };

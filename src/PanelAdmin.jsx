@@ -6,6 +6,10 @@ import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore"
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
 import ResumenRoles from "./ResumenRoles";
+import ReinicioApp from "./ReinicioApp";
+import { limpiarEquipo, marcarVisto } from "./reinicioApp";
+import { publicarReinicio } from "./reinicioNube";
+import { detenerSync } from "./sincronizarFirestore";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -266,6 +270,10 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
           ))
         )}
       </div>
+      <ReinicioApp
+        onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }}
+        onLimpiarTodos={async () => { const marca = await publicarReinicio((perfil && perfil.email) || ""); await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); marcarVisto(window.localStorage, marca); }}
+      />
     </div>
   );
 }

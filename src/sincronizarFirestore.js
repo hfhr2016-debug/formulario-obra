@@ -42,9 +42,9 @@ export async function iniciarSync({ uid, perfil, onEvento }) {
 }
 
 // Con `limpiar`, borra la copia del dispositivo si ya está todo subido (al cerrar sesión).
-export async function detenerSync({ limpiar = false } = {}) {
+export async function detenerSync({ limpiar = false, sinSubir = false } = {}) {
   const m = motor; motor = null;
   if (!m) return { limpio: false, confirmado: true };
-  return m.detener({ limpiar });
+  return m.detener({ limpiar, sinSubir });
 }
 export const sincronizacionActiva = () => !!motor;

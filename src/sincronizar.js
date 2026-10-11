@@ -235,9 +235,9 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
       });
     },
     // Termina. Con `limpiar` borra la copia del dispositivo, SOLO si todo quedó subido.
-    async detener({ limpiar = false, esperarMs = 3000 } = {}) {
+    async detener({ limpiar = false, esperarMs = 3000, sinSubir = false } = {}) {
       clearTimeout(temporizador);
-      if (!detenido) { try { await subir(); } catch (x) { /* sigue */ } }
+      if (!detenido && !sinSubir) { try { await subir(); } catch (x) { /* sigue */ } }
       let confirmado = true;
       try { if (adaptador.esperarEscrituras) confirmado = await adaptador.esperarEscrituras(esperarMs); } catch (x) { confirmado = false; }
       detenido = true;
