@@ -39,7 +39,7 @@ export default function FormularioAnticipo({ onVolver }) {
     if (actasConDatos(actas).length >= CAPACIDAD_ANTICIPO) { setAvisoActas(`Esta hoja tiene espacio para ${CAPACIDAD_ANTICIPO} actas.`); return; }
     setAvisoActas("");
     const siguiente = actas.reduce((m, a) => Math.max(m, parseInt(a.acta, 10) || 0), 0) + 1;
-    setLista((l) => [...l, actaNueva({ obraId: h.id, acta: String(siguiente), fecha: new Date().toISOString().slice(0, 10) })]);
+    setLista((l) => [...l, actaNueva({ obraId: h.id, acta: String(siguiente), fecha: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })() })]);
   }
   function traerActas() {
     const hay = new Set(actas.map((a) => texto(a.acta)));
@@ -73,7 +73,7 @@ export default function FormularioAnticipo({ onVolver }) {
       if (conDatos.length > capac) throw new Error(`la plantilla tiene espacio para ${capac} actas y hay ${conDatos.length}`);
       escribirAnticipoEnHoja(ws, dat, decision.celdas);
       setAvisoGeneracion(avs.join(" "));
-      await descargarLibro(workbook, `Anticipo_${textoParaArchivo(o.proyecto, 24)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      await descargarLibro(workbook, `Anticipo_${textoParaArchivo(o.proyecto, 24)}_${(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })()}.xlsx`);
       memoria.recordarUso({ personas: [[firmas.f.registro.nombre, firmas.f.registro.cargo], [firmas.f.revisa.nombre, firmas.f.revisa.cargo]] });
       setGenerado(`✓ Excel descargado (${conDatos.length} ${conDatos.length === 1 ? "acta" : "actas"}; saldo del anticipo ${pesos(calcDatos.totales.saldo) || "—"}).`);
     } catch (err) {

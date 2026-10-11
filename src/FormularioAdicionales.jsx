@@ -45,7 +45,7 @@ export default function FormularioAdicionales({ onVolver }) {
   function agregar() {
     if (adicionalesConDatos(items).length >= CAPACIDAD_ADICIONALES) { setAvisoItems(`Esta hoja tiene espacio para ${CAPACIDAD_ADICIONALES} ítems. Para más, genera otra hoja con el resto (quita de aquí los que ya presentaste).`); return; }
     setAvisoItems("");
-    setLista((l) => [...l, adicionalNuevo({ obraId: h.id, fecha: new Date().toISOString().slice(0, 10), aiu: (h.obra && h.obra.aiu) || "", estado: "Pendiente" })]);
+    setLista((l) => [...l, adicionalNuevo({ obraId: h.id, fecha: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })(), aiu: (h.obra && h.obra.aiu) || "", estado: "Pendiente" })]);
   }
   function traerCapitulos() {
     const r = capitulosDePresupuesto();
@@ -76,7 +76,7 @@ export default function FormularioAdicionales({ onVolver }) {
       if (n > capac) throw new Error(`la plantilla tiene espacio para ${capac} ítems y hay ${n}`);
       escribirAdicionalesEnHoja(ws, dat, decision.celdas);
       setAvisoGeneracion(avs.join(" "));
-      await descargarLibro(workbook, `Adicionales_${textoParaArchivo(h.obra.proyecto, 24)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      await descargarLibro(workbook, `Adicionales_${textoParaArchivo(h.obra.proyecto, 24)}_${(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })()}.xlsx`);
       memoria.recordarUso({ personas: [[firmas.f.registro.nombre, firmas.f.registro.cargo], [firmas.f.aprueba.nombre, firmas.f.aprueba.cargo]] });
       setGenerado(`✓ Excel descargado (${n} ${n === 1 ? "ítem" : "ítems"}, ${pesos(t.aprobado) || "$ 0"} aprobados).`);
     } catch (err) {

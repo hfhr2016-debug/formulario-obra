@@ -99,6 +99,6 @@ export function resumenFichaAmb(d) {
     ubicacion: texto(d.municipio), tipoObra: d.tipoObra || "", instrumentos: arr(d.instrumentos), condiciones: arr(d.condiciones),
     permisos: permisosQueAplican(d).map((p) => ({ nombre: p.nombre, resolucion: texto(p.resolucion), vigencia: p.vigencia || "" })),
     gestores: GESTORES.map((tipo, i) => ({ tipo, ...gestorNuevo(), ...(arr(d.gestores)[i] || {}) })).filter((g) => texto(g.empresa)),
-    responsable: { nombre: texto(d.respNombre), cargo: texto(d.respCargo), telefono: texto(d.respTelefono) }, actualizado: new Date().toISOString().slice(0, 10),
+    responsable: { nombre: texto(d.respNombre), cargo: texto(d.respCargo), telefono: texto(d.respTelefono) }, actualizado: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })(),
   };
 }

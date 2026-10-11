@@ -12,7 +12,7 @@ import {
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { EPS, ARL } from "./sstListas";
-import { ChipsOpcion, CampoFecha, GrillaOpciones, CasillaFoto, fotoVacia, agregarFotosARecuadros } from "./sstControles";
+import { ChipsOpcion, CampoFecha, GrillaOpciones, CasillaFoto, fotoVacia, agregarFotosARecuadros, lineasMarca, InterruptorMarca } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
 
 const CLAVE_BORRADOR = "ryr_borrador_accidente";
@@ -98,7 +98,7 @@ export default function FormularioAccidente({ onVolver }) {
       const nUsar = d.nReporte && String(d.nReporte).trim() ? String(d.nReporte).trim() : String(siguienteConsecutivo(CLAVE_CONSECUTIVO));
       const sinMarcar = escribirAccidenteEnHoja(ws, { ...d, nReporte: nUsar, fechaReporte: d.fechaReporte || d.fechaEvento }, celdas);
       if (sinMarcar.length) avisos.push(`No encontré en la plantilla: ${sinMarcar.join(", ")}. No se marcaron.`);
-      const sinRecuadro = await agregarFotosARecuadros(workbook, ws, fotos, celdas.fotos && celdas.fotos.fotos);
+      const sinRecuadro = await agregarFotosARecuadros(workbook, ws, fotos, celdas.fotos && celdas.fotos.fotos, "#F2F2F2", fotos.map((x) => lineasMarca(d.proyecto, {}, x && x.file)));
       if (sinRecuadro) avisos.push(`La plantilla no tiene recuadro para ${sinRecuadro} de las fotos y no se incluyó${sinRecuadro > 1 ? "eron" : ""}.`);
       setAvisoGeneracion(avisos.join(" "));
       const nFotos = fotos.filter((f) => f.file).length - sinRecuadro;
@@ -278,6 +278,7 @@ export default function FormularioAccidente({ onVolver }) {
         {/* 8. FOTOS */}
         <Seccion id="fotos" titulo="8. Evidencia fotográfica" subtitulo="Opcional · lugar y elemento involucrado" abierta={abierta === "fotos"} onToggle={alternar} contador={fotos.filter((f) => f.file).length}>
           <div className="space-y-3">
+            <InterruptorMarca />
             <div>
               <div className="text-[11px] font-semibold mb-1" style={{ color: NAVY }}>LUGAR DEL EVENTO</div>
               <CasillaFoto foto={fotos[0]} titulo="Foto del lugar del evento" onChange={(n) => actualizarFoto(0, n)} onRemove={() => actualizarFoto(0, fotoVacia())} />

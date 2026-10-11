@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
+import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 
@@ -41,35 +42,6 @@ function formatoMoneda(n) {
   return "$ " + Math.round(n || 0).toLocaleString("es-CO");
 }
 
-function comprimirFoto(file, maxAncho = 1000, calidad = 0.75) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      let { width, height } = img;
-      if (width > maxAncho) {
-        height = Math.round((height * maxAncho) / width);
-        width = maxAncho;
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          URL.revokeObjectURL(url);
-          if (!blob) return reject(new Error("No se pudo procesar la foto"));
-          blob.arrayBuffer().then(resolve).catch(reject);
-        },
-        "image/jpeg",
-        calidad
-      );
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
 function CasillaFoto({ foto, onChange, onRemove, numero }) {
   const inputRef = useRef(null);
   function manejarArchivo(e) {
@@ -545,7 +517,7 @@ export default function FormularioMensual({ onVolver, onNavegar }) {
       for (let i = 0; i < fotos.length; i++) {
         const foto = fotos[i];
         if (!foto.file) continue;
-        const bufferFoto = await comprimirFoto(foto.file);
+        const bufferFoto = await comprimirFoto(foto.file, 1000, 0.75, null, "#F2F2F2", lineasMarca(proyecto, {}, foto.file));
         const imageId = workbook.addImage({ buffer: bufferFoto, extension: "jpeg" });
         wsMen.addImage(imageId, posicionesFotos[i]);
         wsMen.getCell(celdasCaption[i]).value = foto.caption || "";
@@ -861,6 +833,7 @@ export default function FormularioMensual({ onVolver, onNavegar }) {
         <div className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg" style={{ background: NAVY }}>REGISTRO FOTOGRÁFICO</div>
         <div className="p-3 border border-t-0 rounded-b-lg mb-4" style={{ borderColor: LINE, background: "white" }}>
           <div className="text-[11px] text-gray-500 mb-2">Hasta 6 fotos, opcional.</div>
+          <div className="mb-2"><InterruptorMarca /></div>
           <div className="grid grid-cols-2 gap-2">
             {fotos.map((foto, i) => (
               <CasillaFoto key={i} foto={foto} numero={i + 1} onChange={(f) => actualizarFoto(i, f)} onRemove={() => quitarFoto(i)} />

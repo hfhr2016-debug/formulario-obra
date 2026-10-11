@@ -13,7 +13,7 @@ import {
 import { useFaltantes } from "./sstFaltantes";
 
 const soloNumero = (v) => v.replace(/[^0-9.,]/g, "");
-const hoyISO = () => new Date().toISOString().slice(0, 10);
+const hoyISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const cargar = (F, id) => ({ corte: hoyISO(), ...fichaInicial(F.id), ...(id ? leerCabecera(F.id, id) : {}) });
 
 export default function FormularioCostosFicha({ formato, onVolver }) {

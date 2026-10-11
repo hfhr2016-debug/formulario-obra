@@ -16,7 +16,7 @@ import { useFaltantes } from "./sstFaltantes";
 
 const soloNumero = (v) => v.replace(/[^0-9.,]/g, "");
 const cargarListas = (F, id) => { const r = {}; F.listas.forEach((l) => { r[l.id] = id ? listarRegistros(l.clave, id) : []; }); return r; };
-const hoyISO = () => new Date().toISOString().slice(0, 10);
+const hoyISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
 export default function FormularioCostosLibro({ formato, onVolver }) {
   const F = FORMATOS[formato] || FORMATOS3[formato];

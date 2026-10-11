@@ -55,7 +55,7 @@ export const descubrirCierre = (ws) => descubrirPorEtiquetas(ws, SPEC_CIERRE);
 
 // ===================== Configuración de cada formato =====================
 const T = { texto: "texto", dinero: "dinero", num: "num", pct: "pct", fecha: "fecha", chips: "chips", mes: "mes", area: "area" };
-const siguienteMes = (ym) => { const m = /^(\d{4})-(\d{2})$/.exec(texto(ym)); if (!m) return new Date().toISOString().slice(0, 7); const y = Number(m[1]), mm = Number(m[2]); return mm === 12 ? `${y + 1}-01` : `${y}-${String(mm + 1).padStart(2, "0")}`; };
+const siguienteMes = (ym) => { const m = /^(\d{4})-(\d{2})$/.exec(texto(ym)); if (!m) { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; } const y = Number(m[1]), mm = Number(m[2]); return mm === 12 ? `${y + 1}-01` : `${y}-${String(mm + 1).padStart(2, "0")}`; };
 const ordenar = (xs) => [...xs].sort((a, b) => texto(a.mes).localeCompare(texto(b.mes)));
 
 export const FORMATOS3 = {

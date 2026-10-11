@@ -95,5 +95,5 @@ export function resumenFicha(d) {
   return { id: texto(d.proyecto).toLowerCase(), formato: "ficha", proyecto: d.proyecto || "", contratista: d.contratista || "", ubicacion: d.ubicacion || "", contratante: d.contratante || "", interventoria: d.interventoria || "",
     tipoObra: d.tipoObra || "", arl: d.arl || "", claseRiesgo: d.claseRiesgo || "", respNombre: d.respNombre || "", respCargo: d.respCargo || "", respDocumento: d.respDocumento || "", respTelefono: d.respTelefono || "",
     licencia: d.licencia || "", residenteNombre: d.residenteNombre || "", residenteTelefono: d.residenteTelefono || "", trabajadoresPrev: d.trabajadoresPrev || "", fechaInicio: d.fechaInicio || "", terminacion: d.terminacion || "",
-    riesgos: arr(d.riesgos), documentosSi: arr(d.documentos).filter((x) => x && x.existe === "Sí").length, actualizada: new Date().toISOString().slice(0, 10) };
+    riesgos: arr(d.riesgos), documentosSi: arr(d.documentos).filter((x) => x && x.existe === "Sí").length, actualizada: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })() };
 }
