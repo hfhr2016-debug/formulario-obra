@@ -485,4 +485,83 @@ export const verificacionNC = (n) => {
 export const filaNC = (n) => ({ fecha: texto(n.fecha), origen: texto(n.origen), ubicacion: texto(n.ubicacion), descripcion: [texto(n.titulo), texto(n.descripcion)].filter(Boolean).join(". "), causa: causaNC(n), accion: accionNC(n),
   gravedad: texto(n.gravedad), tipoAccion: texto(n.tipoAccion), responsable: texto(n.responsable), fechaLimite: texto(n.fechaLimite), estado: texto(n.estado), fechaCierre: texto(n.fechaCierre), verificacion: verificacionNC(n) });
 
-export const FORMATOS_ETAPA3 = { "cal-terminada": TERMINADA, "cal-pendientes": PENDIENTES, "cal-acta": ACTA, "cal-maestro": MAESTRO };
+// ================================================================= CA-018 Control de equipos de medición y laboratorio (calibración)
+// ISO 9001, 7.1.5: los equipos que miden o ensayan deben estar calibrados, identificados y con su vencimiento a la vista. Cada registro es un «corte»
+// del inventario de la obra; al crear uno nuevo se copia la tabla del anterior para no volver a escribir los equipos.
+export const EQUIPOS_COMUNES = ["Cono de Abrams (asentamiento)", "Prensa de compresión de cilindros", "Moldes de cilindros", "Termómetro de concreto", "Balanza", "Báscula", "Flexómetro / cinta métrica", "Nivel láser", "Nivel óptico", "Estación total", "Teodolito",
+  "Esclerómetro", "Pachómetro (detector de varillas)", "Equipo de densidad nuclear", "Cono de arena", "Horno de secado", "Juego de tamices", "Medidor de humedad", "Manómetro", "Torquímetro", "Multímetro / pinza amperimétrica", "Medidor de espesores de pintura", "Dinamómetro", "Sonómetro"];
+export const DIAS_AVISO_EQUIPO = 30;       // se avisa desde 30 días antes de que venza la calibración
+const masMesesIso = (iso, m) => { const d = aFecha(iso); if (!d || !(m > 0)) return ""; const dia = d.getDate(); d.setMonth(d.getMonth() + Math.round(m)); if (d.getDate() !== dia) d.setDate(0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+export const proximaCalibracionISO = (f) => masMesesIso(f.fechaCal, numero(f.frecuencia));
+export const proximaCalibracion = (f) => proximaCalibracionISO(f).split("-").reverse().join("/");
+export function estadoEquipo(f, hoy = hoyISO()) {
+  if (!f || !texto(f.equipo)) return "";
+  if (f.enServicio === "No") return "Fuera de servicio";
+  if (!texto(f.fechaCal)) return "";
+  const prox = proximaCalibracionISO(f); if (!prox) return "Sin frecuencia";
+  const faltan = diasEntre(hoy, prox); return faltan < 0 ? "Vencido" : faltan <= DIAS_AVISO_EQUIPO ? "Por vencer" : "Vigente";
+}
+const COLOR_EQ = { Vigente: "#2E7D4F", "Por vencer": "#B8860B", Vencido: "#B3401F", "Fuera de servicio": "#6B7280", "Sin frecuencia": "#B8860B" };
+// Equipos con calibración vencida o por vencer (se toma el corte más reciente de la obra)
+export function equiposPorVencer(obraId, hoy = hoyISO()) {
+  const regs = listarRegistros({ clave: "ryr_cal_equipos" }, obraId).filter((r) => texto((r.datos || {}).fecha)); if (!regs.length) return [];
+  const ult = regs.slice().sort((a, b) => String(b.datos.fecha).localeCompare(String(a.datos.fecha)))[0]; const out = [];
+  for (const [i, f] of arr(ult.datos.equipos).entries()) {
+    if (!texto(f.equipo) || f.enServicio === "No" || !texto(f.fechaCal)) continue;
+    const prox = proximaCalibracionISO(f); if (!prox) continue; const faltan = diasEntre(hoy, prox); if (faltan === null || faltan > DIAS_AVISO_EQUIPO) continue;
+    out.push({ id: `${ult.id}|${i}`, faltan, estado: faltan < 0 ? "vencido" : faltan === 0 ? "hoy" : "pronto", titulo: `${texto(f.equipo)}${texto(f.codigo) ? " · " + texto(f.codigo) : ""}`,
+      detalle: `Calibración ${faltan < 0 ? "vencida el" : "vence el"} ${prox.split("-").reverse().join("/")}${faltan < 0 ? ` (hace ${-faltan} ${faltan === -1 ? "día" : "días"})` : faltan === 0 ? " (hoy)" : ` (en ${faltan} ${faltan === 1 ? "día" : "días"})`}${texto(f.ente) ? " · " + texto(f.ente) : ""}` });
+  }
+  return out.sort((a, b) => a.faltan - b.faltan);
+}
+export const EQUIPOS = {
+  id: "cal-equipos", col: "cal_equipos", clave: "ryr_cal_equipos", codigo: "RYR-CA-018", hoja: "Equipos de Medición", plantilla: "/plantilla-cal-equipos.xlsx", archivo: "Equipos_Medicion", fotos: false,
+  titulo: "Equipos de Medición y Laboratorio", subtitulo: "RYR-CA-018 · Calibración de los equipos que miden y ensayan", panelObra: ["contrato", "contratista"], copiarTablas: true,
+  pendientesTitulo: "Calibraciones por vencer o vencidas",
+  pendientes: (obraId) => equiposPorVencer(obraId),
+  secciones: [
+    { id: "datos", titulo: "1. Datos generales", tipo: "campos", campos: [
+      { k: "proyecto", etq: "Proyecto / Obra", colEtq: "A", obra: "proyecto" },
+      { k: "contrato", etq: "Contrato N°", colEtq: "G", obra: "contrato" },
+      { k: "fecha", etq: "Fecha de corte", colEtq: "L", tipo: "fecha", req: true },
+      { k: "contratista", etq: "Contratista", colEtq: "A", obra: "contratista" },
+      { k: "responsable", etq: "Responsable de los equipos", colEtq: "G", tipo: "persona", cargo: "Ingeniero de calidad" },
+      { k: "hoja", etq: "Hoja N°", colEtq: "L", tipo: "texto" },
+    ] },
+    { id: "equipos", titulo: "2. Equipos e instrumentos", tipo: "tabla", k: "equipos", fin: "Total de equipos", max: 20, req: true, nombreFila: "Equipo", plegable: true, tituloFila: "equipo", cols: [
+      { k: "codigo", enc: "Código", tipo: "texto", repetir: false, ayuda: "El de la etiqueta pegada al equipo, p. ej. EQ-001" },
+      { k: "equipo", enc: "Equipo o instrumento", tipo: "texto", req: true, repetir: false, sugerencias: EQUIPOS_COMUNES },
+      { k: "marca", enc: "Marca / modelo", tipo: "texto", repetir: false },
+      { k: "serie", enc: "Serie", tipo: "texto", repetir: false },
+      { k: "rango", enc: "Rango o capacidad", tipo: "texto", repetir: false, ayuda: "Ej. 0-300 kN, 0-5 kg, 0,1 mm" },
+      { k: "propietario", enc: "Propietario", tipo: "chips", opciones: ["Propio", "Alquilado", "Del laboratorio"], repetir: false },
+      { k: "ubicacion", enc: "Ubicación o responsable", tipo: "texto" },
+      { k: "fechaCal", enc: "Fecha de calibración", tipo: "fecha", real: true, req: true, repetir: false },
+      { k: "frecuencia", enc: "Frecuencia (meses)", tipo: "numero", numerica: true, repetir: false, ayuda: "Cada cuántos meses se calibra (lo suele fijar el fabricante o el laboratorio; 12 es lo más común)" },
+      { k: "proxima", enc: "Próxima calibración", tipo: "calculado", calc: (f) => proximaCalibracion(f) },
+      { k: "ente", enc: "Ente calibrador", tipo: "texto", repetir: false, sugerencias: ["Laboratorio acreditado ONAC", "Fabricante", "Laboratorio de la universidad"] },
+      { k: "certificado", enc: "N° de certificado", tipo: "texto", repetir: false },
+      { k: "enServicio", enc: "¿En servicio?", tipo: "chips", opciones: ["Sí", "No"], inicial: "Sí", repetir: false },
+      { k: "estado", enc: "Estado", tipo: "calculado", calc: (f) => estadoEquipo(f), semaforo: true },
+      { k: "obs", enc: "Observaciones", tipo: "area", repetir: false },
+    ] },
+  ],
+  firmas: { ...FIRMAS3("3. FIRMAS", "Elaboró — inspector / ingeniero de calidad", "Revisó — residente de obra", "Vo.Bo. — gerencia / interventoría", ["elaboro", "reviso", "vobo"]), req: false },
+  etiquetaExtra: (d) => `${filasConDatos(EQUIPOS.secciones[1], d).length} equipos`,
+  resumen: (d) => {
+    const f = filasConDatos(EQUIPOS.secciones[1], d); const e = f.map((x) => estadoEquipo(x)); const n = (t) => e.filter((x) => x === t).length;
+    return [{ t: "Equipos", v: f.length }, { t: "Vigentes", v: n("Vigente"), color: "#1D6B3A" }, { t: "Por vencer (30 días)", v: n("Por vencer"), color: "#B8860B" }, { t: "Vencidos", v: n("Vencido"), color: "#B3401F" }, { t: "Fuera de servicio", v: n("Fuera de servicio"), color: "#6B7280" }];
+  },
+  avisos: (d) => {
+    const a = []; const f = filasConDatos(EQUIPOS.secciones[1], d); const nom = (x) => texto(x.equipo) + (texto(x.codigo) ? " (" + texto(x.codigo) + ")" : "");
+    const venc = f.filter((x) => estadoEquipo(x) === "Vencido"); if (venc.length) a.push({ tipo: "alerta", texto: `Calibración vencida: ${venc.map(nom).join(", ")}. No lo uses para aceptar o rechazar trabajo hasta recalibrarlo o verificarlo con un patrón.` });
+    const por = f.filter((x) => estadoEquipo(x) === "Por vencer"); if (por.length) a.push({ tipo: "aviso", texto: `Calibración por vencer en menos de ${DIAS_AVISO_EQUIPO} días: ${por.map(nom).join(", ")}. Pide ya la calibración para no quedarte sin equipo.` });
+    const sf = f.filter((x) => texto(x.fechaCal) && !numero(x.frecuencia) && x.enServicio !== "No"); if (sf.length) a.push({ tipo: "aviso", texto: `Falta la frecuencia de calibración (en meses) de: ${sf.map(nom).join(", ")}. Sin ella no se puede calcular cuándo vence.` });
+    const sc = f.filter((x) => texto(x.fechaCal) && !texto(x.certificado) && x.enServicio !== "No"); if (sc.length) a.push({ tipo: "aviso", texto: `Sin número de certificado de calibración: ${sc.map(nom).join(", ")}. El certificado es la prueba de que está calibrado.` });
+    const sfe = f.filter((x) => !texto(x.fechaCal) && x.enServicio !== "No"); if (sfe.length) a.push({ tipo: "aviso", texto: `Sin fecha de calibración: ${sfe.map(nom).join(", ")}.` });
+    const cods = f.map((x) => texto(x.codigo).toLowerCase()).filter(Boolean); const rep = cods.filter((c, i) => cods.indexOf(c) !== i); if (rep.length) a.push({ tipo: "aviso", texto: `El código ${rep[0].toUpperCase()} está en más de un equipo: cada equipo debe tener el suyo.` });
+    return a;
+  },
+};
+
+export const FORMATOS_ETAPA3 = { "cal-terminada": TERMINADA, "cal-pendientes": PENDIENTES, "cal-acta": ACTA, "cal-maestro": MAESTRO, "cal-equipos": EQUIPOS };

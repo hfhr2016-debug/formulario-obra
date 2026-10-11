@@ -1540,6 +1540,7 @@ const MODULOS_CALIDAD = [
   { id: "cal-plan", nombre: "Plan de Inspección y Ensayos", emoji: "📋", icono: "/icons/icon-cal-plan.png", activo: true },
   { id: "cal-planos", nombre: "Control de Planos", emoji: "📐", icono: "/icons/icon-cal-planos.png", activo: true },
   { id: "cal-maestro", nombre: "Listado Maestro de Documentos", emoji: "🗂️", icono: "/icons/icon-cal-maestro.png", activo: true },
+  { id: "cal-equipos", nombre: "Equipos de Medición y Laboratorio", emoji: "📏", icono: "/icons/icon-cal-equipos.png", activo: true },
   // --- Materiales y proveedores ---
   { id: "cal-recepcion", nombre: "Recepción de Materiales", emoji: "📦", icono: "/icons/icon-cal-recepcion.png", activo: true },
   { id: "cal-proveedores", nombre: "Evaluación de Proveedores", emoji: "🤝", icono: "/icons/icon-cal-proveedores.png", activo: true },

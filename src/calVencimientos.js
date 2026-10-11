@@ -1,7 +1,7 @@
 // calVencimientos.js — junta en un solo lugar todo lo de Calidad que vence o ya venció (sin guardar nada propio: lo calcula de los registros).
 import { texto, numero, hoyISO, listarRegistros, listarObrasCal, listarNCActivas } from "./calBase";
 import { cilindrosPorEnsayar, diasEntre, sumarDias } from "./calFormatos2";
-import { PENDIENTES, ACTA, MAESTRO } from "./calFormatos3";
+import { PENDIENTES, ACTA, MAESTRO, EQUIPOS } from "./calFormatos3";
 import { PROVEEDORES, proximaSugerida } from "./calFormatos";
 
 export const TIPOS_VENC = {
@@ -11,6 +11,7 @@ export const TIPOS_VENC = {
   garantia: { titulo: "Garantías por vencer", vista: "cal-acta", emoji: "📝" },
   maestro: { titulo: "Listado maestro", vista: "cal-maestro", emoji: "🗂️" },
   proveedor: { titulo: "Reevaluación de proveedores", vista: "cal-proveedores", emoji: "🤝" },
+  equipos: { titulo: "Calibración de equipos", vista: "cal-equipos", emoji: "📏" },
 };
 const DIAS_AVISO = 3;          // se avisa desde 3 días antes
 const DIAS_GARANTIA = 30;      // la garantía se avisa desde 30 días antes
@@ -31,6 +32,7 @@ export function vencimientosDeObra(obra, hoy = hoyISO()) {
   const out = []; const base = { obraId: obra.id, obra: obra.proyecto };
   const poner = (tipo, e) => out.push({ ...base, tipo, vista: TIPOS_VENC[tipo].vista, ...e });
   for (const c of cilindrosPorEnsayar(obra.id, hoy)) if (c.estado !== "proximo") poner("cilindros", { estado: c.estado, faltan: c.faltan, titulo: c.titulo, detalle: c.detalle });
+  for (const e of EQUIPOS.pendientes(obra.id)) poner("equipos", { estado: e.estado, faltan: e.faltan, titulo: e.titulo, detalle: e.detalle });
   for (const p of PENDIENTES.pendientes(obra.id)) poner("pendientes", { estado: p.estado, faltan: p.faltan, titulo: p.titulo, detalle: p.detalle });
   for (const n of listarNCActivas(obra.id)) {
     const nombre = `N° ${n.numero} · ${texto(n.titulo) || texto(n.descripcion).slice(0, 50) || "sin título"}`;

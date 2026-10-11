@@ -94,6 +94,7 @@ export function informeMensual(obra, ym, hoy = hoyISO()) {
   { const pv = delMes("cal-proveedores", id, ym).map((r) => resultadoProveedor(puntajeProveedor(r.datos))); const ac = delMes("cal-acta", id, ym);
     sec("8. Proveedores y entregas", [["Evaluaciones de proveedores", pv.length, `Aprobados ${cuenta(pv, (x) => x === "APROBADO")} · condicionados ${cuenta(pv, (x) => x === "APROBADO CONDICIONADO")} · no aprobados ${cuenta(pv, (x) => x === "NO APROBADO")}`],
       ["Reevaluaciones de proveedores vencidas", vencimientosDeObra(obra, corte).filter((x) => x.tipo === "proveedor" && x.estado === "vencido").length, "Proveedores cuya fecha de reevaluación ya pasó"],
+      ["Equipos de medición con calibración vencida o por vencer", vencimientosDeObra(obra, corte).filter((x) => x.tipo === "equipos").length, `Vencidos: ${vencimientosDeObra(obra, corte).filter((x) => x.tipo === "equipos" && x.estado === "vencido").length}`],
       ["Actas de entrega", ac.length, `A satisfacción: ${cuenta(ac, (r) => r.datos.resultado === "Recibida a satisfacción")} · con pendientes: ${cuenta(ac, (r) => r.datos.resultado === "Recibida con pendientes")}`]]); }
 
   // 9. Vencimientos
