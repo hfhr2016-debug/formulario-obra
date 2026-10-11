@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
-import { fotoLibro, estilarEscritos } from "./sstBase";
 import { catalogoVigente, actividadesVigentes } from "./catalogoVivo";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 
@@ -847,8 +846,6 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
-
-      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Apu's");
 
       ws.getCell("A9").value = (actividad.actividad || "").toUpperCase();
@@ -903,8 +900,6 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       ws.getCell("C54").value = elaboradoCargo;
       ws.getCell("H53").value = interventoriaNombre;
       ws.getCell("H54").value = interventoriaCargo;
-
-      estilarEscritos(workbook, fotoEstilo);
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {

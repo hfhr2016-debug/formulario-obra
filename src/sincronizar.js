@@ -36,26 +36,6 @@ export const FLUJOS = [
   { col: "cp_tecnica_acta",        clave: "ryr_acta_acumulado",         tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_actasvalor",  clave: "ryr_actas_valor_presente",   tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_proyectos",   clave: "ryr_proyectos_guardados",    tipo: "lista", idDe: (r) => r.nombreId, tecnica: true },
-  // Gestión de Calidad: cada formato es una colección; leen y escriben el administrador y quien tenga la gestión «calidad».
-  { col: "cal_obras",             clave: "ryr_cal_obras",             tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_planos",            clave: "ryr_cal_planos",            tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_recepcion",         clave: "ryr_cal_recepcion",         tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_proveedores_eval",  clave: "ryr_cal_proveedores_eval",  tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_ensayos",           clave: "ryr_cal_ensayos",           tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_proveedores",       clave: "ryr_cal_proveedores",       tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_nc",                clave: "ryr_cal_nc",                tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_plan", clave: "ryr_cal_plan", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_excavacion", clave: "ryr_cal_excavacion", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_acero", clave: "ryr_cal_acero", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_formaleta", clave: "ryr_cal_formaleta", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_vaciado", clave: "ryr_cal_vaciado", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_resultados", clave: "ryr_cal_resultados", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_protocolo", clave: "ryr_cal_protocolo", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_terminada", clave: "ryr_cal_terminada", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_pendientes", clave: "ryr_cal_pendientes", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_acta", clave: "ryr_cal_acta", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_maestro", clave: "ryr_cal_maestro", tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_equipos", clave: "ryr_cal_equipos", tipo: "lista", idDe: (r) => r.id, calidad: true },
   // Catálogos (materiales, mano de obra, equipos): los lee todo usuario activo; solo el administrador los cambia.
   { col: "cat_materiales", clave: "ryr_cat_materiales", tipo: "mapa", catalogo: true },
   { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
@@ -72,7 +52,6 @@ export function puede(perfil, f, modo) {
   if (perfil.esAdmin) return true;
   if (f.catalogo) return modo === "leer";                       // los catálogos: todos leen, solo el administrador escribe
   const roles = perfil.roles || [];
-  if (f.calidad) return roles.includes("calidad");
   if (f.tecnica) return roles.includes("tecnica") || (modo === "leer" && roles.includes("presupuesto"));
   if (!roles.includes("presupuesto")) return false;
   return (f[modo] || []).includes(perfil.rolCP);
@@ -235,9 +214,9 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
       });
     },
     // Termina. Con `limpiar` borra la copia del dispositivo, SOLO si todo quedó subido.
-    async detener({ limpiar = false, esperarMs = 3000, sinSubir = false } = {}) {
+    async detener({ limpiar = false, esperarMs = 3000 } = {}) {
       clearTimeout(temporizador);
-      if (!detenido && !sinSubir) { try { await subir(); } catch (x) { /* sigue */ } }
+      if (!detenido) { try { await subir(); } catch (x) { /* sigue */ } }
       let confirmado = true;
       try { if (adaptador.esperarEscrituras) confirmado = await adaptador.esperarEscrituras(esperarMs); } catch (x) { confirmado = false; }
       detenido = true;
