@@ -11,7 +11,8 @@ import PanelAdmin from "./PanelAdmin";
 import PanelCatalogos from "./PanelCatalogos";
 import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
 import { iniciarSync, detenerSync } from "./sincronizarFirestore";
-import { aplicarReinicioGeneral } from "./reinicioApp";
+import { aplicarReinicioGeneral, limpiarEquipo } from "./reinicioApp";
+import { LimpiarEquipoEnlace } from "./ReinicioApp";
 import { leerMarcaReinicio } from "./reinicioNube";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
@@ -1646,6 +1647,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             {perfil.esAdmin && onIrCatalogos && (
               <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
             )}
+            <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="text-[10.5px] underline text-white/70" />
             <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
           </div>
         )}

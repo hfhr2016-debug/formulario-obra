@@ -59,3 +59,35 @@ export default function ReinicioApp({ onLimpiarEquipo, onLimpiarTodos, recargar 
     </div>
   );
 }
+
+// Enlace pequeño para CUALQUIER usuario: limpia solo el equipo en el que está. Pide Confirmar o Cancelar antes de borrar.
+export function LimpiarEquipoEnlace({ onLimpiarEquipo, recargar = () => window.location.reload(), className = "", style }) {
+  const [abierto, setAbierto] = useState(false);
+  const [trabajando, setTrabajando] = useState(false);
+  const [error, setError] = useState("");
+  const confirmar = async () => {
+    setTrabajando(true); setError("");
+    try { await onLimpiarEquipo(); setAbierto(false); recargar(); } catch (e) { setError("No se pudo borrar. No se cambió nada."); }
+    setTrabajando(false);
+  };
+  return (
+    <>
+      <button type="button" data-limpiar-equipo-enlace onClick={() => { setAbierto(true); setError(""); }} className={className} style={style}>Limpiar este equipo</button>
+      {abierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.5)" }} role="dialog" aria-modal="true" aria-label="Confirmar borrado">
+          <div className="bg-white rounded-xl p-4 max-w-sm w-full text-left">
+            <div className="text-[14px] font-bold" style={{ color: ROJO }}>¿Limpiar este equipo?</div>
+            <div className="text-[12.5px] mt-2" style={{ color: NAVY }}>
+              Se borrarán los borradores, consecutivos e historial guardados en este equipo, incluido lo que aún no se haya sincronizado. Lo que ya está en la nube volverá a bajar. No cierra tu sesión y no afecta a los demás equipos. Esto no se puede deshacer.
+            </div>
+            {error && <div className="mt-2 text-[12px]" style={{ color: ROJO }} role="alert">{error}</div>}
+            <div className="flex gap-2 mt-4">
+              <button type="button" data-cancelar onClick={() => setAbierto(false)} disabled={trabajando} className="flex-1 py-2 rounded-lg border text-[13px]" style={{ borderColor: LINE, color: NAVY }}>Cancelar</button>
+              <button type="button" data-confirmar onClick={confirmar} disabled={trabajando} className="flex-1 py-2 rounded-lg text-white font-bold text-[13px]" style={{ background: ROJO }}>{trabajando ? "Borrando…" : "Confirmar y borrar"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
