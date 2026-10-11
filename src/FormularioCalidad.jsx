@@ -205,7 +205,12 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   }
   function seccionTabla(s) {
     const filas = datos[s.k];
-    const quitar = (i) => { setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: cur.datos[s.k].filter((_, k) => k !== i) } })); setAvisoTabla((a) => ({ ...a, [s.k]: "" })); };
+    const quitar = (i) => {
+      const fila = (reg && reg.datos && Array.isArray(reg.datos[s.k]) ? reg.datos[s.k][i] : null) || {};
+      const conDatos = s.cols.some((c) => { const v = fila[c.k]; return v !== undefined && v !== null && v !== false && String(v).trim() !== ""; });
+      const nombre = String(s.tituloFila ? fila[s.tituloFila] || "" : "").trim() || `${s.nombreFila || "fila"} ${i + 1}`;
+      if (conDatos && !window.confirm(`¿Quitar «${nombre}» de la lista? No se puede deshacer.`)) return;
+      setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: cur.datos[s.k].filter((_, k) => k !== i) } })); setAvisoTabla((a) => ({ ...a, [s.k]: "" })); };
     const agregar = (base = {}) => agregarFila(s, base);
     const ultima = filas[filas.length - 1];
     return (
