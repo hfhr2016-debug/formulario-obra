@@ -75,7 +75,12 @@ export function informeMensual(obra, ym, hoy = hoyISO()) {
     const venc = abiertas.filter((n) => texto(n.fechaLimite) && n.fechaLimite < corte); const crit = abiertas.filter((n) => n.gravedad === "Crítica");
     const g = (t) => cuenta(nuevas, (n) => n.gravedad === t);
     sec("6. No conformidades", [["Nuevas en el mes", nuevas.length, `Leves ${g("Leve")} · Mayores ${g("Mayor")} · Críticas ${g("Crítica")}`], ["Cerradas en el mes", cerradas.length], ["Abiertas al corte", abiertas.length], ["Vencidas al corte", venc.length], ["Críticas abiertas", crit.length],
-      ["% de cierre acumulado", pct(todas.filter((n) => n.estado === "Cerrada").length, todas.length)]]);
+      ["% de cierre acumulado", pct(todas.filter((n) => n.estado === "Cerrada").length, todas.length)],
+      ["Cerradas con eficacia verificada", cuenta(todas, (n) => n.estado === "Cerrada" && n.verifResultado === "Eficaz")],
+      ["Cerradas pendientes de verificar eficacia", cuenta(todas, (n) => n.estado === "Cerrada" && n.verifResultado !== "Eficaz" && n.verifResultado !== "No eficaz")],
+      ["Acciones no eficaces", cuenta(todas, (n) => n.verifResultado === "No eficaz"), "Hay que reabrirlas y definir una acción nueva"],
+      ["Reabiertas (acumulado)", cuenta(todas, (n) => Number(n.reaperturas) > 0)]]);
+    for (const n of todas.filter((x) => x.estado === "Cerrada" && x.verifResultado === "No eficaz")) detalle.push(["No conformidad", `N° ${n.numero} · ${texto(n.titulo) || texto(n.descripcion).slice(0, 60)}`, "Acción no eficaz", "Reabrir y definir una acción nueva"]);
     for (const n of abiertas) detalle.push(["No conformidad", `N° ${n.numero} · ${texto(n.titulo) || texto(n.descripcion).slice(0, 60)}`, `${n.estado || "Abierta"}${venc.includes(n) ? " · vencida" : ""}`, `${n.gravedad || ""}${n.fechaLimite ? " · límite " + n.fechaLimite : ""}${texto(n.responsable) ? " · " + texto(n.responsable) : ""}`.replace(/^ · /, "")]); }
 
   // 7. Pendientes de entrega
@@ -88,6 +93,7 @@ export function informeMensual(obra, ym, hoy = hoyISO()) {
   // 8. Proveedores y entregas
   { const pv = delMes("cal-proveedores", id, ym).map((r) => resultadoProveedor(puntajeProveedor(r.datos))); const ac = delMes("cal-acta", id, ym);
     sec("8. Proveedores y entregas", [["Evaluaciones de proveedores", pv.length, `Aprobados ${cuenta(pv, (x) => x === "APROBADO")} · condicionados ${cuenta(pv, (x) => x === "APROBADO CONDICIONADO")} · no aprobados ${cuenta(pv, (x) => x === "NO APROBADO")}`],
+      ["Reevaluaciones de proveedores vencidas", vencimientosDeObra(obra, corte).filter((x) => x.tipo === "proveedor" && x.estado === "vencido").length, "Proveedores cuya fecha de reevaluación ya pasó"],
       ["Actas de entrega", ac.length, `A satisfacción: ${cuenta(ac, (r) => r.datos.resultado === "Recibida a satisfacción")} · con pendientes: ${cuenta(ac, (r) => r.datos.resultado === "Recibida con pendientes")}`]]); }
 
   // 9. Vencimientos

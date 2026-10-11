@@ -1,6 +1,6 @@
 // calFormatos.js — especificación de cada formato de Calidad (ver calBase.js). Las etiquetas «etq» y los encabezados «enc» son EXACTAMENTE los de la plantilla de Excel
 // (la app ubica las celdas por esas etiquetas, así que si ajustas anchos o filas no se desalinea nada).
-import { texto, numero, filasConDatos, proveedorNoAprobado, registrarProveedor, registrarEvaluacion, obtenerProveedor } from "./calBase";
+import { texto, numero, filasConDatos, proveedorNoAprobado, registrarProveedor, registrarEvaluacion, obtenerProveedor, listarRegistros } from "./calBase";
 import { FORMATOS_ETAPA2 } from "./calFormatos2";
 import { FORMATOS_ETAPA3 } from "./calFormatos3";
 
@@ -117,6 +117,26 @@ const SUMINISTROS_EVALUADOS = [
   "Alquiler de maquinaria", "Alquiler de equipos y andamios", "Transporte de materiales", "Transporte y disposición de escombros (RCD)",
   "Laboratorio de ensayos", "Topografía", "Asesoría o diseño técnico", "Suministro de EPP y dotación",
 ];
+// ---- Reevaluación periódica (ISO 9001, 8.4): cada evaluación deja fijada cuándo toca la siguiente ----
+export const MESES_REEVALUACION = { "APROBADO": 6, "APROBADO CONDICIONADO": 3, "NO APROBADO": 1 };
+export function masMesesISO(iso, m) {
+  const x = /^(\d{4})-(\d{2})-(\d{2})/.exec(texto(iso)); if (!x || !(m > 0)) return "";
+  const d = new Date(Number(x[1]), Number(x[2]) - 1, Number(x[3])); const dia = d.getDate(); d.setMonth(d.getMonth() + m); if (d.getDate() !== dia) d.setDate(0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const normProv = (t) => texto(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+// Fecha sugerida de la próxima evaluación según el resultado ("" si ya no se contratará o falta calificar)
+export function proximaSugerida(d) {
+  if (d.decision === "No volver a contratar") return "";
+  const m = MESES_REEVALUACION[resultadoProveedor(puntajeProveedor(d))]; return m ? masMesesISO(d.fecha, m) : "";
+}
+// Evaluaciones anteriores del mismo proveedor en la obra, de la más reciente a la más antigua
+export function evaluacionesPrevias(obraId, d, idActual) {
+  const nombre = normProv(d.proveedor); if (!nombre || !obraId) return [];
+  return listarRegistros(PROVEEDORES, obraId).filter((r) => r.id !== idActual && normProv((r.datos || {}).proveedor) === nombre && texto((r.datos || {}).fecha) && (!d.fecha || r.datos.fecha <= d.fecha));
+}
+const fmtP = (n) => String(n).replace(".", ",");
+const ddmmP = (iso) => texto(iso).split("-").reverse().join("/");
 export const PROVEEDORES = {
   id: "cal-proveedores", col: "cal_proveedores_eval", clave: "ryr_cal_proveedores_eval", codigo: "RYR-CA-005", hoja: "Evaluación Proveedores", plantilla: "/plantilla-cal-proveedores.xlsx", archivo: "Evaluacion_Proveedor",
   titulo: "Evaluación de Proveedores", subtitulo: "RYR-CA-005 · Proveedores y subcontratistas", panelObra: [],
@@ -145,10 +165,18 @@ export const PROVEEDORES = {
   firmas: { desdeEtiqueta: "4. FIRMAS", personas: [{ k: "evalua", titulo: "Evalúa — inspector / ingeniero de calidad" }, { k: "reviso", titulo: "Revisó — residente de obra" }, { k: "vobo", titulo: "Vo.Bo. — gerencia / compras" }] },
   etiquetaExtra: (d) => texto(d.proveedor),
   resumen: (d) => { const p = puntajeProveedor(d); const r = resultadoProveedor(p); return [{ t: "Puntaje (sobre 100)", v: p === null ? "" : String(p).replace(".", ",") }, { t: "Resultado", v: r, color: r === "APROBADO" ? "#1D6B3A" : r === "NO APROBADO" ? "#B3401F" : r === "APROBADO CONDICIONADO" ? "#B8860B" : "#8A8F99" }]; },
-  avisos: (d) => {
-    const a = []; const r = resultadoProveedor(puntajeProveedor(d));
+  avisos: (d, reg) => {
+    const a = []; const p = puntajeProveedor(d); const r = resultadoProveedor(p);
     if (r === "NO APROBADO" && d.decision === "Continuar contratando") a.push({ tipo: "aviso", texto: "El resultado es «NO APROBADO» pero la decisión es «Continuar contratando». Revisa que sea lo que quieres." });
     if (r === "APROBADO" && d.decision === "No volver a contratar") a.push({ tipo: "aviso", texto: "El resultado es «APROBADO» pero la decisión es «No volver a contratar». Revisa que sea lo que quieres." });
+    if ((r === "APROBADO CONDICIONADO" || r === "NO APROBADO") && !texto(d.mejorar)) a.push({ tipo: "aviso", texto: `El resultado es «${r}»: anota en «Aspectos a mejorar y acciones acordadas» qué debe corregir el proveedor y para cuándo.` });
+    if (r !== "Falta calificar" && d.decision !== "No volver a contratar" && !texto(d.proxima)) a.push({ tipo: "aviso", texto: `No hay fecha de próxima evaluación: al guardar se propondrá el ${ddmmP(proximaSugerida(d))} (${MESES_REEVALUACION[r]} ${MESES_REEVALUACION[r] === 1 ? "mes" : "meses"}).` });
+    const previas = evaluacionesPrevias(reg && reg.obraId, d, reg && reg.id);
+    if (previas.length) {
+      const u = previas[0].datos; const pu = puntajeProveedor(u);
+      a.push({ tipo: "info", texto: `Evaluación anterior de este proveedor: ${pu === null ? "sin puntaje" : fmtP(pu) + " puntos"} (${ddmmP(u.fecha)})${p !== null && pu !== null ? ` · ahora ${p > pu ? "mejoró" : p < pu ? "bajó" : "igual"} (${fmtP(p)})` : ""}.` });
+      if (d.tipoEval === "Selección inicial") a.push({ tipo: "aviso", texto: "Este proveedor ya fue evaluado antes en esta obra; ¿es una «Reevaluación periódica»?" });
+    }
     return a;
   },
   alGuardar: (d, reg) => {
@@ -156,6 +184,7 @@ export const PROVEEDORES = {
     registrarProveedor({ nombre: d.proveedor, nit: d.nit, tipo: d.tipoTercero });
     const p = puntajeProveedor(d);
     if (p !== null) registrarEvaluacion(d.proveedor, { fecha: d.fecha, puntaje: p, resultado: resultadoProveedor(p), decision: d.decision, obraId: reg && reg.obraId });
+    if (!texto(d.proxima)) { const sug = proximaSugerida(d); if (sug) return { proxima: sug }; }     // deja fijada la reevaluación (se puede cambiar)
   },
 };
 

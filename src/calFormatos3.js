@@ -474,7 +474,15 @@ export const NC_FMT = {
   firmas: FIRMAS3("3. FIRMAS", "Elaboró — inspector / ingeniero de calidad", "Revisó — residente de obra", "Vo.Bo. — interventoría / gerencia", ["elaboro", "reviso", "vobo"]),
 };
 // Una no conformidad guardada -> fila de la hoja
-export const filaNC = (n) => ({ fecha: texto(n.fecha), origen: texto(n.origen), ubicacion: texto(n.ubicacion), descripcion: [texto(n.titulo), texto(n.descripcion)].filter(Boolean).join(". "), causa: texto(n.causa), accion: texto(n.accion),
-  gravedad: texto(n.gravedad), tipoAccion: texto(n.tipoAccion), responsable: texto(n.responsable), fechaLimite: texto(n.fechaLimite), estado: texto(n.estado), fechaCierre: texto(n.fechaCierre), verificacion: texto(n.verificacion) });
+const ddmm = (iso) => texto(iso).split("-").reverse().join("/");
+// Una no conformidad guardada -> fila de la hoja. Causa, acción y verificación juntan lo que la pantalla pide por separado (ISO 9001, 10.2)
+export const causaNC = (n) => (texto(n.causaRaiz) ? [texto(n.causa) && `Inmediata: ${texto(n.causa)}`, `Raíz${texto(n.metodoCausa) ? " (" + texto(n.metodoCausa) + ")" : ""}: ${texto(n.causaRaiz)}`].filter(Boolean).join("\n") : texto(n.causa));
+export const accionNC = (n) => (texto(n.correccion) ? [`Corrección: ${texto(n.correccion)}`, texto(n.accion) && `Correctiva: ${texto(n.accion)}`].filter(Boolean).join("\n") : texto(n.accion));
+export const verificacionNC = (n) => {
+  const r = texto(n.verifResultado); if (!r || r === "Pendiente") return texto(n.verificacion) || (r === "Pendiente" && texto(n.verifPlan) ? `Pendiente: verificar el ${ddmm(n.verifPlan)}` : "");
+  return `${r}${texto(n.verifFecha) ? " — " + ddmm(n.verifFecha) : ""}${texto(n.verifPor) ? " — " + texto(n.verifPor) : ""}${texto(n.verificacion) ? ": " + texto(n.verificacion) : ""}`;
+};
+export const filaNC = (n) => ({ fecha: texto(n.fecha), origen: texto(n.origen), ubicacion: texto(n.ubicacion), descripcion: [texto(n.titulo), texto(n.descripcion)].filter(Boolean).join(". "), causa: causaNC(n), accion: accionNC(n),
+  gravedad: texto(n.gravedad), tipoAccion: texto(n.tipoAccion), responsable: texto(n.responsable), fechaLimite: texto(n.fechaLimite), estado: texto(n.estado), fechaCierre: texto(n.fechaCierre), verificacion: verificacionNC(n) });
 
 export const FORMATOS_ETAPA3 = { "cal-terminada": TERMINADA, "cal-pendientes": PENDIENTES, "cal-acta": ACTA, "cal-maestro": MAESTRO };

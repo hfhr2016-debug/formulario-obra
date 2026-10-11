@@ -33,7 +33,7 @@ function Calculado({ label, valor, semaforo }) {
     </div>
   );
 }
-const colorAviso = { alerta: ["#FDEDEA", "#B3401F"], aviso: ["#FFF8E8", "#7A5A00"], ok: ["#EAF4EC", "#1D6B3A"] };
+const colorAviso = { alerta: ["#FDEDEA", "#B3401F"], aviso: ["#FFF8E8", "#7A5A00"], ok: ["#EAF4EC", "#1D6B3A"], info: ["#EEF3FA", "#1B2A45"] };
 
 export default function FormularioCalidad({ fmt, onVolver }) {
   const h = useObraCal();
