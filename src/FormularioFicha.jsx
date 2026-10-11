@@ -545,7 +545,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
               </button>
             ))}
           </div>
-          <div className="text-[10.5px] text-gray-500">Puedes elegir más de uno si el proyecto combina varios frentes.</div>
+          <div className="text-[10.5px] text-gray-500">Elige un solo tipo por proyecto. Si lo cambias con la Ficha ya empezada, los datos escritos se limpian.</div>
 
           {modulos.vias && (
             <div className="mt-3 pt-3 border-t" style={{ borderColor: LINE }}>
