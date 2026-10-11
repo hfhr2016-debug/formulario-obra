@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { actividadesVigentes } from "./catalogoVivo";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 
 function numES(v) {
@@ -339,6 +340,8 @@ export default function FormularioCronograma({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Cronograma ");
 
       ws.getCell("B11").value = proyecto;
@@ -365,6 +368,8 @@ export default function FormularioCronograma({ onVolver, onNavegar }) {
         if (t.predecesora) partesH.push(`Depende de tarea #${t.predecesora}`);
         ws.getCell(`H${r}`).value = partesH.join(" | ");
       });
+
+      estilarEscritos(workbook, fotoEstilo);
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {

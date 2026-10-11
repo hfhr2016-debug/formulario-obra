@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { actividadesVigentes } from "./catalogoVivo";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 
 function numES(v) {
@@ -291,6 +292,8 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Presupuesto");
 
       ws.getCell("G6").value = aFechaDDMMYYYY(fechaLocalHoy());
@@ -312,6 +315,8 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
           ws.getRow(r).hidden = true;
         }
       }
+
+      estilarEscritos(workbook, fotoEstilo);
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
+import { fotoLibro, estilarEscritos } from "./sstBase";
 import { activarOrtografia } from "./ortografia";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
@@ -10,6 +11,9 @@ import PanelAdmin from "./PanelAdmin";
 import PanelCatalogos from "./PanelCatalogos";
 import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
 import { iniciarSync, detenerSync } from "./sincronizarFirestore";
+import { aplicarReinicioGeneral, limpiarEquipo } from "./reinicioApp";
+import { LimpiarEquipoEnlace } from "./ReinicioApp";
+import { leerMarcaReinicio } from "./reinicioNube";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
@@ -54,6 +58,9 @@ import FormularioMatrizAmbiental from "./FormularioMatrizAmbiental";
 import FormularioSustanciasQuimicas from "./FormularioSustanciasQuimicas";
 import FormularioControlHidrocarburos from "./FormularioControlHidrocarburos";
 import FormularioAprovechamientoForestal from "./FormularioAprovechamientoForestal";
+import FormularioPlanEmergenciasAmb from "./FormularioPlanEmergenciasAmb";
+import FormularioPermisosAmb from "./FormularioPermisosAmb";
+import AlertasAmbientales from "./AlertasAmbientales";
 import FormularioContratistasAmbiental from "./FormularioContratistasAmbiental";
 import FormularioEmisiones from "./FormularioEmisiones";
 import FormularioAccionesAmbiental from "./FormularioAccionesAmbiental";
@@ -65,10 +72,17 @@ import FormularioIcaAmbiental from "./FormularioIcaAmbiental";
 import FormularioRegistroCostos from "./FormularioRegistroCostos";
 import FormularioControlPresupuestal from "./FormularioControlPresupuestal";
 import FormularioAdicionales from "./FormularioAdicionales";
+import FormularioCalidad from "./FormularioCalidad";
+import FormularioNC from "./FormularioNC";
+import PanelVencimientos from "./PanelVencimientos";
+import FormularioInformeCal from "./FormularioInformeCal";
+import { vencimientos, resumenVenc } from "./calVencimientos";
+import { FORMATOS_CAL } from "./calFormatos";
 import FormularioAnticipo from "./FormularioAnticipo";
 import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
 import { ContextoSST } from "./sstNavegacion";
+import { SelectorHora } from "./sstComunes";
 import {
 
   ChevronDown,
@@ -259,48 +273,6 @@ function Field({ label, value, onChange, placeholder, type = "text", half }) {
   );
 }
 
-function SelectorHora({ label, value, onChange, half }) {
-  const [h, m] = (value || "").split(":");
-  const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-  const minutos = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
-  const cambiarHora = (nuevaH) => onChange(`${nuevaH}:${m || "00"}`);
-  const cambiarMinuto = (nuevoM) => onChange(`${h || "00"}:${nuevoM}`);
-  return (
-    <div className={half ? "flex-1 min-w-0" : "w-full"}>
-      <label
-        className="block text-[10px] uppercase tracking-wide mb-1 font-medium"
-        style={{ color: "#8A8F99" }}
-      >
-        {label}
-      </label>
-      <div className="flex items-center gap-1">
-        <select
-          value={h || ""}
-          onChange={(e) => cambiarHora(e.target.value)}
-          className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white"
-          style={{ borderColor: LINE }}
-        >
-          <option value="" disabled>Hora</option>
-          {horas.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
-        </select>
-        <span className="text-[13.5px] font-semibold" style={{ color: "#8A8F99" }}>:</span>
-        <select
-          value={m || ""}
-          onChange={(e) => cambiarMinuto(e.target.value)}
-          className="flex-1 min-w-0 text-[13.5px] px-2 py-2 rounded-md border outline-none bg-white"
-          style={{ borderColor: LINE }}
-        >
-          <option value="" disabled>Min</option>
-          {minutos.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
 
 function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
   return (
@@ -814,6 +786,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
+      const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Informe Diario");
       if (!ws) throw new Error("No se encontró la hoja \"Informe Diario\" en la plantilla");
 
@@ -996,6 +969,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
       }
 
       const nombreArchivo = `Informe_${general.fecha || "obra"}.xlsx`;
+      estilarEscritos(workbook, fotoEstilo);
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1537,6 +1511,8 @@ const MODULOS_SST = [
 const MODULOS_AMBIENTAL = [
   // --- Datos generales del proyecto (primero) ---
   { id: "amb-ficha", nombre: "Ficha Ambiental del Proyecto", emoji: "📋", icono: "/icons/icon-amb-ficha.png", activo: true },
+  { id: "amb-permisos", nombre: "Registro de Permisos Ambientales", emoji: "📜", icono: "/icons/icon-amb-permisos.png", activo: true },
+  { id: "amb-plan-emergencias", nombre: "Plan de Emergencias Ambientales", emoji: "🚨", icono: "/icons/icon-amb-plan-emergencias.png", activo: true },
   // --- Uso diario ---
   { id: "amb-residuos", nombre: "Registro de Residuos", emoji: "♻️", icono: "/icons/icon-amb-residuos.png", activo: true },
   { id: "amb-manifiesto", nombre: "Manifiesto de Transporte de RCD", emoji: "🚛", icono: "/icons/icon-amb-manifiesto.png", activo: true },
@@ -1567,6 +1543,31 @@ const MODULOS_AMBIENTAL = [
   { id: "amb-ica", nombre: "Resumen para ICA", emoji: "🏛️", icono: "/icons/icon-amb-ica.png", activo: true },
 ];
 
+const MODULOS_CALIDAD = [
+  // --- Antes de construir: qué se controla y con qué documentos ---
+  { id: "cal-plan", nombre: "Plan de Inspección y Ensayos", emoji: "📋", icono: "/icons/icon-cal-plan.png", activo: true },
+  { id: "cal-planos", nombre: "Control de Planos", emoji: "📐", icono: "/icons/icon-cal-planos.png", activo: true },
+  { id: "cal-maestro", nombre: "Listado Maestro de Documentos", emoji: "🗂️", icono: "/icons/icon-cal-maestro.png", activo: true },
+  { id: "cal-equipos", nombre: "Equipos de Medición y Laboratorio", emoji: "📏", icono: "/icons/icon-cal-equipos.png", activo: true },
+  // --- Materiales y proveedores ---
+  { id: "cal-recepcion", nombre: "Recepción de Materiales", emoji: "📦", icono: "/icons/icon-cal-recepcion.png", activo: true },
+  { id: "cal-proveedores", nombre: "Evaluación de Proveedores", emoji: "🤝", icono: "/icons/icon-cal-proveedores.png", activo: true },
+  { id: "cal-ensayos", nombre: "Control de Ensayos", emoji: "🧪", icono: "/icons/icon-cal-ensayos.png", activo: true },
+  // --- Inspección en ejecución ---
+  { id: "cal-excavacion", nombre: "Excavación y Rellenos", emoji: "⛏️", icono: "/icons/icon-cal-excavacion.png", activo: true },
+  { id: "cal-acero", nombre: "Acero de Refuerzo", emoji: "🏗️", icono: "/icons/icon-cal-acero.png", activo: true },
+  { id: "cal-formaleta", nombre: "Formaleta y Encofrado", emoji: "🧱", icono: "/icons/icon-cal-formaleta.png", activo: true },
+  { id: "cal-vaciado", nombre: "Vaciado de Concreto", emoji: "🚚", icono: "/icons/icon-cal-vaciado.png", activo: true },
+  { id: "cal-resultados", nombre: "Resultados de Concreto y Suelos", emoji: "📊", icono: "/icons/icon-cal-resultados.png", activo: true },
+  { id: "cal-protocolo", nombre: "Protocolo por Actividad", emoji: "✅", icono: "/icons/icon-cal-protocolo.png", activo: true },
+  // --- Cierre y entrega ---
+  { id: "cal-nc", nombre: "No Conformidades", emoji: "🚫", icono: "/icons/icon-cal-nc.png", activo: true },
+  { id: "cal-terminada", nombre: "Actividad Terminada", emoji: "🏁", icono: "/icons/icon-cal-terminada.png", activo: true },
+  { id: "cal-pendientes", nombre: "Pendientes de Entrega", emoji: "⏳", icono: "/icons/icon-cal-pendientes.png", activo: true },
+  { id: "cal-acta", nombre: "Acta de Entrega", emoji: "📝", icono: "/icons/icon-cal-acta.png", activo: true },
+  { id: "cal-informe", nombre: "Informe Mensual de Calidad", emoji: "📈", icono: "/icons/icon-cal-informe.png", activo: true },
+];
+
 const MODULOS_PRESUPUESTO = [
   // --- Seguimiento del presupuesto ---
   { id: "cp-control", nombre: "Control Presupuestal", emoji: "📊", icono: "/icons/icon-cp-control.png", activo: true },
@@ -1591,77 +1592,141 @@ function IconoConRespaldo({ src, emoji, alt, tamano, style }) {
   return <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFalla(true)} className="object-contain shrink-0" style={{ width: tamano, height: tamano, ...style }} />;
 }
 
+function saludoUsuario(perfil) {
+  const primero = String((perfil && perfil.nombre) || "").trim().split(/\s+/)[0] || "";
+  return primero ? `Hola, ${primero}` : "Hola";
+}
+
+// Datos de contacto que se muestran en el pie del portal. Se escriben aquí; lo que se deje en "" no aparece.
+const EMPRESA = { nombre: "Reformas y Remodelaciones", nit: "", direccion: "", telefonos: "", correo: "", web: "" };
+
+const MARCO_DORADO = {
+  background: "linear-gradient(135deg, #FFE98F 0%, #FBBA12 22%, #E39A00 48%, #FFD54A 68%, #FBBA12 82%, #C98500 100%)",
+  padding: 7, borderRadius: 23,
+  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85), inset 0 -1px 1px rgba(120,70,0,0.55), 0 0 14px rgba(251,186,18,0.55), 0 6px 18px rgba(0,0,0,0.35)",
+};
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
+  const [verManual, setVerManual] = useState(false);
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
     { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
+    { id: "calidad", nombre: "Gestión de Calidad", icono: "/icons/icon-gestion-calidad.png", emoji: "🏅", activo: true },
     { id: "presupuesto", nombre: "Control Presupuestal", icono: "/icons/icon-gestion-presupuesto.png", emoji: "💰", activo: true },
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
+  const AZUL_MARINO = "#17365D";   // el mismo azul de los formatos de Gestión Técnica
+  const sombraTexto = "0 1px 3px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.75)";
   return (
     <div
-      className="min-h-screen flex flex-col bg-cover bg-center"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(247,247,245,0.35), rgba(247,247,245,0.50)), url('/fondo-selector.jpg')`,
-        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-      }}
+      className="min-h-screen md:h-screen flex flex-col bg-cover bg-center md:overflow-hidden"
+      style={{ backgroundImage: `url('/fondo-selector.jpg')`, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}
     >
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      <div className="px-4 pt-8 pb-6 text-center" style={{ background: NAVY }}>
-        <div className="text-white font-bold text-[19px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+      {/* Franja superior (azul): nombre de la empresa, saludo y accesos del usuario */}
+      <div className="px-4 pt-2 pb-2 md:pt-3 md:pb-3 text-center shrink-0" style={{ background: NAVY }}>
+        <div className="text-white font-bold text-[18px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           REFORMAS Y REMODELACIONES
         </div>
-        <div className="text-[11.5px] mt-1" style={{ color: GOLD }}>
-          Elige el sistema de gestión que quieres usar
+        {perfil && (
+          <div className="text-[20px] md:text-[22px] font-bold mt-0.5 md:mt-1.5" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
+            {saludoUsuario(perfil)}
+          </div>
+        )}
+        <div className="text-[11.5px] mt-0.5" style={{ color: GOLD }}>
+          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} <span className="hidden md:inline">· Elige el sistema de gestión que quieres usar</span>
         </div>
         {perfil && (
-          <div className="flex items-center justify-center gap-3 mt-3">
+          <div className="flex items-center justify-center gap-3 mt-1.5 flex-wrap">
             <span className="text-[10.5px] text-white/70">{perfil.nombre || perfil.correo}</span>
             {perfil.esAdmin && (
-              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>
-                Administrar usuarios
-              </button>
+              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>Administrar usuarios</button>
             )}
             {perfil.esAdmin && onIrCatalogos && (
-              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>
-                Catálogos
-              </button>
+              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
             )}
-            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">
-              Cerrar sesión
-            </button>
+            <button type="button" onClick={() => setVerManual(true)} data-manual className="text-[10.5px] underline" style={{ color: GOLD }}>📖 Manual de usuario</button>
+            <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="text-[10.5px] underline text-white/70" />
+            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
           </div>
         )}
       </div>
-      <div className="flex-1 flex flex-col justify-center gap-4 p-6">
-        {apps.map((a) => {
-          const habilitado = tieneAcceso(a.id);
-          return (
-            <button
-              key={a.id}
-              onClick={() => onSeleccionar(a.id)}
-              className="flex items-center gap-4 rounded-2xl p-4"
-              style={{
-                background: habilitado ? "white" : "#F0F0EE",
-                border: `1px solid ${LINE}`,
-                opacity: habilitado ? 1 : 0.5,
-              }}
-            >
-              <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt={a.nombre} tamano={82} style={{ filter: habilitado ? "none" : "grayscale(100%)" }} />
-              <div className="text-left">
-                <div className="text-[15px] font-bold" style={{ color: habilitado ? NAVY : "#9AA0A8" }}>{a.nombre}</div>
-                {!habilitado && (
-                  <div className="text-[10.5px] mt-0.5" style={{ color: "#9AA0A8" }}>🔒 Sin acceso</div>
-                )}
-              </div>
-            </button>
-          );
-        })}
+
+      {/* Pantalla dividida en dos mitades: izquierda = aplicaciones, derecha = reseña. Cada contenido va centrado en su mitad */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 px-4 pt-6 pb-6 md:pt-0 md:pb-4">
+        <div className="flex items-center justify-center min-h-0">
+          <div className="flex flex-col gap-2.5 w-full max-w-[360px]">
+            {apps.map((a) => {
+              const habilitado = tieneAcceso(a.id);
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => onSeleccionar(a.id)}
+                  className="flex items-center gap-3 w-full text-left"
+                  style={{ opacity: habilitado ? 1 : 0.55 }}
+                  aria-label={a.nombre}
+                >
+                  <IconoConRespaldo src={a.icono} emoji={a.emoji || "📁"} alt="" tamano={62} style={{ filter: habilitado ? "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" : "grayscale(100%)" }} />
+                  <span
+                    className="flex-1 flex items-center justify-center text-center rounded-full text-white font-semibold text-[15px] px-3"
+                    style={{ height: 54, border: "2px solid #FFFFFF", background: "transparent", WebkitTextStroke: `0.9px ${AZUL_MARINO}`, paintOrder: "stroke fill", textShadow: sombraTexto, fontFamily: "'Space Grotesk', sans-serif" }}
+                  >
+                    {a.nombre}{!habilitado && <span className="ml-1.5 text-[11px]">🔒</span>}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center min-h-0">
+          <div className="w-full max-w-[360px] max-h-full flex" style={MARCO_DORADO}>
+          <div
+            className="w-full rounded-2xl text-white text-center flex flex-col items-center px-5 py-4 max-h-full overflow-y-auto"
+            style={{ background: AZUL_MARINO, border: "1.5px solid #FFFFFF" }}
+          >
+            <div className="text-[20px] font-bold tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
+            <div className="text-[11px] mt-0.5 mb-3" style={{ color: "#F2D58A" }}>Tu obra, ordenada en un solo lugar</div>
+            <p className="text-[12.5px] leading-relaxed mb-2">
+              Es la plataforma de Reformas y Remodelaciones para gestionar la obra desde el campo y la oficina, incluso sin internet.
+            </p>
+            <p className="text-[12.5px] leading-relaxed mb-2">
+              Diligencias formularios digitales que se convierten en los formatos oficiales de Excel, y la información se sincroniza sola cuando hay conexión.
+            </p>
+            <p className="text-[12.5px] leading-relaxed mb-4">
+              Reúne en un solo lugar la gestión técnica, SG-SST, ambiental, calidad y el control presupuestal, para tener datos ordenados, trazables y listos para decidir.
+            </p>
+            <div className="flex items-center justify-center" style={{ width: 105 }}>
+              <img src="/logo-portal.png" alt="Reformas y Remodelaciones" className="object-contain w-full h-auto" />
+            </div>
+          </div>
+          </div>
+        </div>
       </div>
+
+      {/* Pie de página (azul): datos de contacto de la empresa. Los campos vacíos no se muestran. */}
+      <div className="shrink-0 px-4 pb-3 pt-0 text-center" style={{ background: NAVY }}>
+        <div style={{ borderTop: "2px solid #FFFFFF" }} />
+        <div style={{ borderTop: `1px solid ${AZUL_MARINO}` }} />
+        <div className="text-white font-bold text-[13px] mt-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{EMPRESA.nombre}</div>
+        <div className="text-[11px] text-white/80 mt-0.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-0.5">
+          {[EMPRESA.nit && `NIT ${EMPRESA.nit}`, EMPRESA.direccion && `📍 ${EMPRESA.direccion}`, EMPRESA.telefonos && `📞 ${EMPRESA.telefonos}`, EMPRESA.correo && `✉️ ${EMPRESA.correo}`, EMPRESA.web].filter(Boolean).map((t) => <span key={t}>{t}</span>)}
+        </div>
+        <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
+      </div>
+      {verManual && (
+        <div data-manual-visor style={{ position: "fixed", inset: 0, zIndex: 60, background: "#E8E6E1", display: "flex", flexDirection: "column" }}>
+          <div style={{ background: "#1B2A45", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", paddingTop: "calc(10px + env(safe-area-inset-top))" }}>
+            <button type="button" data-manual-volver onClick={() => setVerManual(false)} style={{ background: GOLD, color: "#1B2A45", fontWeight: 700, fontSize: 14, padding: "9px 14px", borderRadius: 8, minHeight: 40 }}>← Volver a la app</button>
+            <div style={{ flex: 1, color: "#fff", fontSize: 13, fontWeight: 600 }}>📖 Manual de usuario</div>
+            <a href="/manual-saiea-obras.pdf" download style={{ color: "#fff", opacity: 0.8, fontSize: 12, textDecoration: "underline" }}>Descargar PDF</a>
+          </div>
+          <iframe title="Manual de usuario" src="/manual.html?embebido=1" style={{ flex: 1, width: "100%", border: 0, background: "#E8E6E1" }} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1820,6 +1885,7 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
         </div>
       </div>
 
+      <AlertasAmbientales onIr={onSeleccionar} />
       <div className="grid grid-cols-2 gap-3 p-4">
         {MODULOS_AMBIENTAL.map((m) => (
           <button
@@ -1834,6 +1900,73 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
               ) : (
                 <div className="text-[34px] leading-none">{m.emoji}</div>
               )}
+            </div>
+            <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BannerVencimientos({ onVer }) {
+  let r = { vencidos: 0, hoy: 0, pronto: 0, total: 0 };
+  try { r = resumenVenc(vencimientos()); } catch (e) { /* sin datos */ }
+  const alerta = r.vencidos + r.hoy > 0;
+  return (
+    <button type="button" onClick={onVer} data-banner-venc className="mx-4 mt-4 w-[calc(100%-2rem)] text-left rounded-xl px-3 py-2.5 border flex items-center gap-2"
+      style={{ background: alerta ? "#FDEDEA" : r.total ? "#FFF8E8" : "#EAF4EC", borderColor: alerta ? "#B3401F" : r.total ? "#D9A233" : "#2E7D4F", color: alerta ? "#B3401F" : r.total ? "#7A5A00" : "#1D6B3A" }}>
+      <span className="text-[18px]">{alerta ? "⚠️" : r.total ? "🕒" : "✓"}</span>
+      <span className="flex-1 text-[12px] font-semibold">{r.total === 0 ? "Sin vencimientos" : `${r.vencidos} vencidos · ${r.hoy} vencen hoy · ${r.pronto} por vencer`}</span>
+      <span className="text-[11px] underline">Ver</span>
+    </button>
+  );
+}
+
+function InicioCalidad({ onSeleccionar, onVolverSelector }) {
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (Técnica / SST / Ambiental)
+          </button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              GESTIÓN DE CALIDAD
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Calidad en obra (QC)
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <BannerVencimientos onVer={() => onSeleccionar("cal-vencimientos")} />
+      <div className="grid grid-cols-2 gap-3 px-4 pb-4 pt-2">
+        {MODULOS_CALIDAD.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
+            style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
+          >
+            <div className="h-[70px] flex items-center justify-center">
+              <IconoConRespaldo src={m.icono} emoji={m.emoji} alt={m.nombre} tamano={70} />
             </div>
             <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
               {m.nombre}
@@ -1928,6 +2061,19 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     otrosSistemas: "Técnica / SST",
   };
   const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{nodo}</ContextoSST.Provider>;
+  // Menú lateral de Gestión de Calidad
+  const ctxCal = {
+    modulos: MODULOS_CALIDAD.filter((m) => m.activo),
+    vistaActual: vista,
+    ir: (id) => setVista(id),
+    irInicio: () => setVista("inicio-calidad"),
+    irSelector: () => setVista("selector-apps"),
+    nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
+    cerrarSesion: onCerrarSesion,
+    titulo: "Gestión de Calidad",
+    otrosSistemas: "Técnica / SST / Ambiental",
+  };
+  const conMenuCal = (nodo) => <ContextoSST.Provider value={ctxCal}>{nodo}</ContextoSST.Provider>;
   // Menú lateral de Control Presupuestal (mismo componente, con sus 4 formatos)
   const ctxPres = {
     modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo && nivelCP(perfil, m.id)),
@@ -1965,6 +2111,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
           if (id === "tecnica") setVista("inicio");
           else if (id === "sst") setVista("inicio-sst");
           else if (id === "ambiental") setVista("inicio-ambiental");
+          else if (id === "calidad") setVista("inicio-calidad");
           else if (id === "presupuesto") setVista("inicio-presupuesto");
           else setVista(`proximamente-${id}`);
         }}
@@ -2040,6 +2187,16 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   if (vista === "inicio-ambiental") {
     return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
+  if (vista === "inicio-calidad") {
+    return <InicioCalidad onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista.startsWith("cal-")) {
+    if (vista === "cal-vencimientos") return conMenuCal(<PanelVencimientos key={vista} onVolver={() => setVista("inicio-calidad")} onIr={setVista} />);
+    if (vista === "cal-informe") return conMenuCal(<FormularioInformeCal key={vista} onVolver={() => setVista("inicio-calidad")} />);
+    if (vista === "cal-nc") return conMenuCal(<FormularioNC key={vista} onVolver={() => setVista("inicio-calidad")} />);
+    if (FORMATOS_CAL[vista]) return conMenuCal(<FormularioCalidad key={vista} fmt={FORMATOS_CAL[vista]} onVolver={() => setVista("inicio-calidad")} />);
+    return conMenuCal(<Proximamente nombre={(MODULOS_CALIDAD.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-calidad")} />);
+  }
   if (vista === "inicio-presupuesto") {
     return <InicioPresupuesto perfil={perfil} onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
   }
@@ -2103,6 +2260,12 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   }
   if (vista === "amb-forestal") {
     return conMenuAmb(<FormularioAprovechamientoForestal onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-permisos") {
+    return conMenuAmb(<FormularioPermisosAmb onVolver={() => setVista("inicio-ambiental")} />);
+  }
+  if (vista === "amb-plan-emergencias") {
+    return conMenuAmb(<FormularioPlanEmergenciasAmb onVolver={() => setVista("inicio-ambiental")} />);
   }
   if (vista === "amb-contratistas") {
     return conMenuAmb(<FormularioContratistasAmbiental onVolver={() => setVista("inicio-ambiental")} />);
@@ -2179,6 +2342,17 @@ export default function App() {
   );
 }
 
+// Orden de «reiniciar todos los equipos» dada por el Administrador: cada equipo la cumple una sola vez, ANTES de sincronizar
+// (así no vuelve a subir datos viejos). Si limpió, recarga la app.
+async function revisarReinicioGeneral() {
+  try {
+    const marca = await leerMarcaReinicio();
+    if (!marca || !aplicarReinicioGeneral(window.localStorage, marca)) return false;
+    window.location.reload();
+    return true;
+  } catch (e) { return false; }
+}
+
 // Sincronización con el servidor: arranca al iniciar sesión y se detiene (borrando la copia del equipo) al cerrarla.
 function useSincronizacion(usuario, perfil) {
   const [listo, setListo] = useState(false);
@@ -2191,7 +2365,7 @@ function useSincronizacion(usuario, perfil) {
     if (!uid || !perfil) { setListo(false); return undefined; }
     let vivo = true;
     setListo(false);
-    iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) setHayNuevos(true); if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })
+    revisarReinicioGeneral().then((reinicio) => (reinicio ? null : iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) setHayNuevos(true); if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })))
       .catch((e) => console.warn("No se pudo iniciar la sincronización", e))
       .finally(() => { if (vivo) setListo(true); });
     return () => { vivo = false; detenerSync({ limpiar: true }); };
@@ -2238,7 +2412,7 @@ function AppConSesion() {
   }
 
   if (vistaExterna === "admin") {
-    return <PanelAdmin onVolver={() => setVistaExterna("apps")} />;
+    return <PanelAdmin onVolver={() => setVistaExterna("apps")} modulosPorArea={{ tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, presupuesto: MODULOS_PRESUPUESTO }} />;
   }
 
   if (!sync.listo) {
