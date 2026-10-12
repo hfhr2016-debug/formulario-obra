@@ -18,9 +18,11 @@ camion:camión botiquin:botiquín hormigon:hormigón valvula:válvula vehiculo:v
 lampara:lámpara kilometro:kilómetro kilometros:kilómetros centimetro:centímetro centimetros:centímetros milimetro:milímetro milimetros:milímetros
 diametro:diámetro perimetro:perímetro cubico:cúbico cubica:cúbica cuadratico:cuadrático
 diseno:diseño disenos:diseños senal:señal senales:señales senalizacion:señalización senalizar:señalizar tamano:tamaño tamanos:tamaños
+boyaca:boyacá narino:nariño bogota:bogotá medellin:medellín cucuta:cúcuta choco:chocó quindio:quindío guainia:guainía vaupes:vaupés caqueta:caquetá ibague:ibagué popayan:popayán quibdo:quibdó orinoquia:orinoquía amazonia:amazonía monteria:montería atlantico:atlántico
 pequeno:pequeño pequena:pequeña contrasena:contraseña panete:pañete panetes:pañetes ensenanza:enseñanza
 `.trim().split(/\s+/).reduce((m, p) => { const [a, b] = p.split(":"); m[a] = b; return m; }, {});
 
+import { VOCABULARIO } from "./vocabulario.js";
 const TERMINACIONES = [["cion", "ción"], ["sion", "sión"], ["gion", "gión"]];   // singular: accion→acción (el plural «acciones» ya va sin tilde)
 const LETRAS = "A-Za-zÁÉÍÓÚÜÑáéíóúüñ";
 export const RE_PALABRA = new RegExp(`[${LETRAS}]+`, "g");
@@ -30,11 +32,65 @@ function conMayusculas(orig, nueva) {
   if (orig[0] !== orig[0].toLowerCase()) return nueva[0].toUpperCase() + nueva.slice(1);
   return nueva;
 }
+
+// ---------- Errores de letras que suenan igual (Pasifico → Pacífico) ----------
+// Se compara con el vocabulario de la app. Solo se corrige si la palabra NO existe y al cambiar UNA letra por otra que suena igual
+// (s/c/z, b/v, ll/y, g/j, h, rr, n/m antes de b/p) aparece UNA sola palabra del vocabulario. Si hay duda, no se toca.
+const sinTilde = (w) => w.replace(/[áàä]/g, "a").replace(/[éèë]/g, "e").replace(/[íìï]/g, "i").replace(/[óòö]/g, "o").replace(/[úùü]/g, "u");
+let INDICE = null;
+function indice() {
+  if (INDICE) return INDICE;
+  INDICE = new Map();
+  for (const f of VOCABULARIO.split(" ")) { const k = sinTilde(f); let g = INDICE.get(k); if (!g) INDICE.set(k, g = new Set()); g.add(f); }
+  return INDICE;
+}
+function mejorForma(grupo) {                      // la forma con tilde si es única; si hay dos con tilde distintas, hay duda
+  const conTilde = [...grupo].filter((f) => f !== sinTilde(f));
+  if (conTilde.length === 1) return conTilde[0];
+  if (conTilde.length > 1) return null;
+  return grupo.size === 1 ? [...grupo][0] : null;
+}
+const REGLAS = [["c", "s"], ["c", "z"], ["s", "c"], ["s", "z"], ["z", "s"], ["z", "c"], ["b", "v"], ["v", "b"], ["g", "j"], ["j", "g"], ["y", "ll"], ["ll", "y"],
+  ["rr", "r"], ["r", "rr"], ["ll", "l"], ["l", "ll"], ["ss", "s"], ["cc", "c"], ["c", "cc"], ["h", ""], ["s", "ss"], ["t", "tt"], ["n", "nn"], ["p", "pp"], ["m", "mm"], ["s", "cc"], ["z", "cc"], ["cion", "ccion"], ["sion", "ccion"]];
+function variantes(w) {
+  const r = new Set();
+  for (const [a, b] of REGLAS) {
+    let i = w.indexOf(a);
+    while (i !== -1) {
+      if (!(a === "h" && w[i - 1] === "c") && !(a === "r" && i === 0)) r.add(w.slice(0, i) + b + w.slice(i + a.length));
+      i = w.indexOf(a, i + 1);
+    }
+  }
+  if (/^[aeiou]/.test(w)) r.add("h" + w);                                   // ora → hora
+  for (let i = 1; i < w.length - 1; i++) if (/[aeiou]/.test(w[i - 1]) && /[aeiou]/.test(w[i])) r.add(w.slice(0, i) + "h" + w.slice(i));   // ahora, prohibir
+  for (let i = 0; i < w.length - 1; i++) if (w[i] === "n" && /[bp]/.test(w[i + 1])) r.add(w.slice(0, i) + "m" + w.slice(i + 1));        // conpactar → compactar
+  return r;
+}
+function corregirFonetica(palabra) {
+  if (palabra.length < 6 || palabra.length > 24) return null;
+  if (palabra.length < 7 && palabra === palabra.toUpperCase()) return null;                    // siglas
+  const bajo = palabra.toLowerCase();
+  const ind = indice();
+  const g0 = ind.get(sinTilde(bajo));
+  if (g0 || DIC[bajo]) {                                                                        // la palabra ya existe: solo se le pone la tilde si falta y es única
+    if (!g0 || g0.has(bajo) || bajo !== sinTilde(bajo)) return null;
+    const f = mejorForma(g0);
+    return f && f !== sinTilde(f) && !/[áéó]$/.test(f) ? conMayusculas(palabra, f) : null;     // no si la tilde va al final (verbos: revisó/reviso)
+  }
+  const hallados = new Set();
+  for (const v of variantes(bajo)) { const g = ind.get(sinTilde(v)); if (g) { const f = mejorForma(g); if (f) hallados.add(f); else return null; } }
+  if (hallados.size !== 1) return null;
+  return conMayusculas(palabra, [...hallados][0]);
+}
 // Devuelve la palabra corregida o null si no hay nada seguro que corregir
-export function corregirPalabra(palabra) {
+export function corregirPalabra(palabra, opciones) {
   if (!palabra || palabra.length < 2) return null;
   const bajo = palabra.toLowerCase();
   if (DIC[bajo]) return conMayusculas(palabra, DIC[bajo]);
+  if (!opciones || opciones.fonetica !== false) {
+    const f = corregirFonetica(palabra);
+    if (f) { const t = corregirPalabra(f, { fonetica: false }); return t || f; }       // además le pone la tilde de «-ción» si falta
+  }
   for (const [fin, bien] of TERMINACIONES) {
     if (bajo.length >= fin.length + 2 && bajo.endsWith(fin)) return conMayusculas(palabra, bajo.slice(0, -fin.length) + bien);
   }
@@ -47,10 +103,10 @@ function esPalabraSuelta(texto, ini, fin) {
   return !/[0-9_@\/\\#.\-]/.test(antes) && !/[0-9_@\/\\]/.test(despues);
 }
 // Corrige todas las palabras de un texto. Devuelve { texto, cambios }
-export function corregirTexto(texto) {
+export function corregirTexto(texto, opciones) {
   let cambios = 0;
   const nuevo = String(texto == null ? "" : texto).replace(RE_PALABRA, (p, desde, todo) => {
-    const c = esPalabraSuelta(todo, desde, desde + p.length) ? corregirPalabra(p) : null;
+    const c = esPalabraSuelta(todo, desde, desde + p.length) ? corregirPalabra(p, opciones) : null;
     if (c && c !== p) { cambios++; return c; }
     return p;
   });

@@ -26,6 +26,17 @@ export function marcarOrtografia(el) {
 
 
 // ---------- Autocorrección: arregla sola las tildes y la «ñ» de palabras sin duda (ver autocorreccion.js) ----------
+// En campos de nombres, cargos, códigos, direcciones, etc. solo se arreglan tildes y ñ, nunca letras (podrían ser nombres propios)
+const RE_NOMBRE = /nombre|operador|responsable|apellido|firma|elabor|revis|aprob|contratista|propietario|ingenier|residente|director|interventor|c[eé]dula|\bnit\b|correo|email|direcci|c[oó]digo|placa|referencia|marca|modelo|serie|raz[oó]n|empresa|cliente|conductor|supervisor|inspector|gerente|representante|encargado|cargo|ciudad|municipio|barrio|vereda/i;
+function opcionesDe(el) {
+  try {
+    if (el.__opc) return el.__opc;
+    const txt = [el.getAttribute("placeholder"), el.getAttribute("aria-label"), el.getAttribute("name"), el.id,
+      el.parentElement && el.parentElement.querySelector(":scope > label") && el.parentElement.querySelector(":scope > label").textContent,
+      el.closest("td") && (el.closest("table") && el.closest("table").querySelectorAll("th")[el.closest("td").cellIndex] || {}).textContent].filter(Boolean).join(" ");
+    return (el.__opc = { fonetica: !RE_NOMBRE.test(txt) });
+  } catch (e) { return { fonetica: false }; }
+}
 const BORDES = new Set([" ", ".", ",", ";", ":", ")", "?", "!", "\n"]);
 function cambiarTexto(el, ini, fin, nuevo, enfocado = true) {
   // Al escribir se usa execCommand, que conserva «Deshacer» (Ctrl+Z) y avisa a React. Al salir de la casilla NO se enfoca de nuevo
@@ -45,7 +56,7 @@ function alEscribir(ev) {
     if (!borde || !BORDES.has(borde)) return;
     const pos = el.selectionStart; if (pos == null) return;
     const w = palabraAntesDe(el.value.slice(0, pos - 1), pos - 1); if (!w) return;
-    const c = corregirPalabra(w.palabra); if (!c || c === w.palabra) return;
+    const c = corregirPalabra(w.palabra, opcionesDe(el)); if (!c || c === w.palabra) return;
     const ant = el.value[w.ini - 1];
     if (ant && /[0-9_@\/\\#.\-]/.test(ant)) return;
     const desp = pos;                                      // el cursor queda después del borde escrito
@@ -57,7 +68,7 @@ function alSalir(ev) {
     const el = ev.target;
     if (!el || !el.__ortografia || !el.__editado) return;
     el.__editado = false;
-    const { texto, cambios } = corregirTexto(el.value);
+    const { texto, cambios } = corregirTexto(el.value, opcionesDe(el));
     if (cambios > 0 && texto !== el.value) cambiarTexto(el, 0, el.value.length, texto, false);
   } catch (e) {}
 }
