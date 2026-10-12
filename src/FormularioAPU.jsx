@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
+import { mapaApu, valorSimple, arreglarRendimientoVisible } from "./apuPlantilla";
 import { catalogoVigente, actividadesVigentes } from "./catalogoVivo";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 
@@ -791,27 +792,29 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       await workbook.xlsx.load(buffer);
       const ws = workbook.worksheets[0];
 
-      const nombreActividad = ws.getCell("A9").value;
-      if (nombreActividad) setActividad({ actividad: String(nombreActividad), unidad: ws.getCell("P4").value || "" });
-      setCuadrilla(ws.getCell("S4").value || "");
-      setJornada(ws.getCell("U4").value || 8);
-      setRendimiento(ws.getCell("V4").value || "");
-      setProyecto(ws.getCell("C12").value || "");
-      setNoContrato(ws.getCell("C13").value || "");
-      setUbicacion(ws.getCell("J14").value || "");
+      const mp = mapaApu(ws);
+      const nombreActividad = valorSimple(ws.getCell("A9"));
+      if (nombreActividad) setActividad({ actividad: String(nombreActividad), unidad: valorSimple(ws.getCell(mp.unidad)) || "" });
+      setCuadrilla(valorSimple(ws.getCell(mp.cuadrilla)) || "");
+      setJornada(valorSimple(ws.getCell(mp.jornada)) || 8);
+      setRendimiento(valorSimple(ws.getCell(mp.rendimiento)) || "");
+      setProyecto(valorSimple(ws.getCell("C12")) || "");
+      setNoContrato(valorSimple(ws.getCell("C13")) || "");
+      setUbicacion(valorSimple(ws.getCell(mp.ubicacion)) || "");
 
       const leerFilas = (filaInicio, conFactor) => {
         const filas = [];
+        const col = mp.columnas(filaInicio);
         for (let i = 0; i < 15; i++) {
           const r = filaInicio + i;
-          const desc = ws.getCell(`A${r}`).value;
+          const desc = valorSimple(ws.getCell(`A${r}`));
           if (desc) {
             filas.push({
               desc: String(desc),
-              und: ws.getCell(`E${r}`).value || "",
-              cant: String(ws.getCell(`F${r}`).value || ""),
-              factor: conFactor ? String(ws.getCell(`G${r}`).value || "") : "",
-              vrUnit: String(ws.getCell(`H${r}`).value || ""),
+              und: valorSimple(ws.getCell(`E${r}`)) || "",
+              cant: String(valorSimple(ws.getCell(`F${r}`)) || ""),
+              factor: conFactor ? String(valorSimple(ws.getCell(`${col.factor}${r}`)) || "") : "",
+              vrUnit: String(valorSimple(ws.getCell(`${col.vr}${r}`)) || ""),
             });
           }
         }
@@ -822,10 +825,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       setManoObra(leerFilas(39, true));
       setEquipos(leerFilas(57, true));
 
-      setElaboradoNombre(ws.getCell("C53").value || "");
-      setElaboradoCargo(ws.getCell("C54").value || "");
-      setInterventoriaNombre(ws.getCell("H53").value || "");
-      setInterventoriaCargo(ws.getCell("H54").value || "");
+      setElaboradoNombre(valorSimple(ws.getCell(mp.elaboroNombre)) || "");
+      setElaboradoCargo(valorSimple(ws.getCell(mp.elaboroCargo)) || "");
+      setInterventoriaNombre(valorSimple(ws.getCell(mp.interNombre)) || "");
+      setInterventoriaCargo(valorSimple(ws.getCell(mp.interCargo)) || "");
 
       setArchivoBase(file);
     } catch (e) {
@@ -851,16 +854,18 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Apu's");
 
+      const mp = mapaApu(ws);
+      arreglarRendimientoVisible(ws, mp);
       ws.getCell("A9").value = (actividad.actividad || "").toUpperCase();
-      ws.getCell("P4").value = actividad.unidad;
-      ws.getCell("S4").value = cuadrilla;
-      ws.getCell("U4").value = numES(jornada) || 0;
-      ws.getCell("V4").value = numES(rendimiento) || 0;
+      ws.getCell(mp.unidad).value = actividad.unidad;
+      ws.getCell(mp.cuadrilla).value = cuadrilla;
+      ws.getCell(mp.jornada).value = numES(jornada) || 0;
+      ws.getCell(mp.rendimiento).value = numES(rendimiento) || 0;
 
       ws.getCell("C12").value = proyecto;
       ws.getCell("C13").value = noContrato;
-      ws.getCell("J13").value = fechaDDMMYYYY();
-      ws.getCell("J14").value = ubicacion;
+      ws.getCell(mp.fecha).value = fechaDDMMYYYY();
+      ws.getCell(mp.ubicacion).value = ubicacion;
 
       const escribirFilas = (filas, filaInicio, conFactor) => {
         filas.forEach((f, i) => {
@@ -869,8 +874,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           ws.getCell(`A${r}`).value = f.desc;
           ws.getCell(`E${r}`).value = f.und;
           ws.getCell(`F${r}`).value = numES(f.cant) || 0;
-          if (conFactor) ws.getCell(`G${r}`).value = numES(f.factor) || 1;
-          ws.getCell(`H${r}`).value = numES(f.vrUnit) || 0;
+          const col = mp.columnas(filaInicio);
+          if (conFactor) ws.getCell(`${col.factor}${r}`).value = numES(f.factor) || 1;
+          ws.getCell(`${col.vr}${r}`).value = numES(f.vrUnit) || 0;
         });
       };
       escribirFilas(materiales, 21, true);
@@ -899,10 +905,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         console.warn("No se pudo guardar el APU en memoria local:", e);
       }
 
-      ws.getCell("C53").value = elaboradoNombre;
-      ws.getCell("C54").value = elaboradoCargo;
-      ws.getCell("H53").value = interventoriaNombre;
-      ws.getCell("H54").value = interventoriaCargo;
+      ws.getCell(mp.elaboroNombre).value = elaboradoNombre;
+      ws.getCell(mp.elaboroCargo).value = elaboradoCargo;
+      ws.getCell(mp.interNombre).value = interventoriaNombre;
+      ws.getCell(mp.interCargo).value = interventoriaCargo;
 
       estilarEscritos(workbook, fotoEstilo);
 
