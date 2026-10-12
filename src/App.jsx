@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import { activarOrtografia } from "./ortografia";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
+import BotonSubir from "./BotonSubir";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { useCatalogo } from "./catalogos";
@@ -2412,7 +2413,7 @@ function AppConSesion() {
   }
 
   if (vistaExterna === "admin") {
-    return <PanelAdmin onVolver={() => setVistaExterna("apps")} modulosPorArea={{ tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, presupuesto: MODULOS_PRESUPUESTO }} />;
+    return <><BotonSubir /><PanelAdmin onVolver={() => setVistaExterna("apps")} modulosPorArea={{ tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, presupuesto: MODULOS_PRESUPUESTO }} /></>;
   }
 
   if (!sync.listo) {
@@ -2424,14 +2425,15 @@ function AppConSesion() {
   }
 
   if (vistaExterna === "catalogos" && perfil.esAdmin) {
-    return <PanelCatalogos onVolver={() => setVistaExterna("apps")} />;
+    return <><BotonSubir /><PanelCatalogos onVolver={() => setVistaExterna("apps")} /></>;
   }
 
   return (
     <div>
+      <BotonSubir />
       <AppInterno perfil={perfil} onCerrarSesion={cerrarSesionSegura} onIrAdmin={() => setVistaExterna("admin")} onIrCatalogos={() => setVistaExterna("catalogos")} versionDatos={sync.version} />
       {(sync.hayNuevos || !sync.enLinea) && (
-        <div className="fixed right-2.5 z-40 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md" style={{ bottom: 96, background: sync.hayNuevos ? GOLD : "#FFF4DB", color: sync.hayNuevos ? "white" : "#8A5A00" }}>
+        <div className="fixed right-2.5 z-40 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md" style={{ bottom: 140, background: sync.hayNuevos ? GOLD : "#FFF4DB", color: sync.hayNuevos ? "white" : "#8A5A00" }}>
           {sync.hayNuevos
             ? <button type="button" onClick={sync.actualizar}>🔄 Hay datos nuevos de otro dispositivo · Actualizar</button>
             : "Sin conexión: se guardará aquí y se enviará al volver"}
