@@ -26,8 +26,8 @@ export function marcarOrtografia(el) {
 
 
 // ---------- Autocorrección: arregla sola las tildes y la «ñ» de palabras sin duda (ver autocorreccion.js) ----------
-// En campos de nombres, cargos, códigos, direcciones, etc. solo se arreglan tildes y ñ, nunca letras (podrían ser nombres propios)
-const RE_NOMBRE = /nombre|operador|responsable|apellido|firma|elabor|revis|aprob|contratista|propietario|ingenier|residente|director|interventor|c[eé]dula|\bnit\b|correo|email|direcci|c[oó]digo|placa|referencia|marca|modelo|serie|raz[oó]n|empresa|cliente|conductor|supervisor|inspector|gerente|representante|encargado|cargo|ciudad|municipio|barrio|vereda/i;
+// En campos de nombres de personas, cargos, códigos, direcciones, etc. solo se arreglan tildes y ñ, nunca letras (podrían ser nombres propios)
+const RE_NOMBRE = /nombre(?!\s+(del|de la|de el)\s+(proyecto|obra|contrato|empresa|actividad|equipo|formato|documento|material|sitio|lugar|frente))|operador|responsable|apellido|firma|elabor|revis[oó]|aprob[oó]|contratista|propietario|ingenier|residente|director|interventor|c[eé]dula|\bnit\b|correo|email|direcci|c[oó]digo|placa|referencia|cliente|conductor|supervisor|inspector|gerente|representante|encargado|cargo|\bserie\b/i;
 function opcionesDe(el) {
   try {
     if (el.__opc) return el.__opc;
