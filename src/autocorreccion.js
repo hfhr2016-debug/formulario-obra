@@ -23,6 +23,16 @@ pequeno:pequeño pequena:pequeña contrasena:contraseña panete:pañete panetes:
 `.trim().split(/\s+/).reduce((m, p) => { const [a, b] = p.split(":"); m[a] = b; return m; }, {});
 
 import { VOCABULARIO } from "./vocabulario.js";
+
+// ---------- Mayúsculas ----------
+// Lugares de Colombia: se escriben siempre con mayúscula inicial (y su tilde). No incluye los que también son palabras comunes (meta, pasto, cesar, sucre).
+const LUGARES = `Colombia Bogotá Medellín Cali Barranquilla Cartagena Cúcuta Bucaramanga Pereira Manizales Armenia Ibagué Neiva Popayán Villavicencio Montería Sincelejo Valledupar Riohacha Tunja Yopal Florencia Mocoa Leticia Quibdó Arauca Soacha Bello Itagüí Envigado Palmira Buenaventura Tumaco Girardot Zipaquirá Facatativá Fusagasugá Chía Cajicá Duitama Sogamoso Barrancabermeja Ocaña Pamplona Apartadó Turbo Maicao Aguachica Antioquia Atlántico Bolívar Boyacá Caldas Caquetá Casanare Cauca Chocó Córdoba Cundinamarca Guainía Guaviare Huila Magdalena Nariño Quindío Risaralda Santander Tolima Vaupés Vichada Putumayo Guajira Amazonas Orinoquía Amazonía`.split(" ");
+const PROPIOS = new Map(LUGARES.map((l) => [sinTildeSimple(l.toLowerCase()), l]));
+// Apellidos y nombres comunes con tilde o ñ: solo se aplican en campos de nombres de personas
+const NOMBRES = `María José Jesús Andrés Germán Iván Martín Fabián Adrián Julián Rubén Ángel Ángela Mónica Verónica Lucía Sofía Ramón Simón Sebastián Cristián César Héctor Óscar Víctor Néstor Ómar Íngrid Inés Nubia Yenny Díaz Muñoz Núñez Peña Castaño Ordóñez Quiñones Zúñiga Bermúdez Suárez Velásquez Vásquez Álvarez Benítez Domínguez Gutiérrez González Fernández Jiménez Rodríguez Martínez López Pérez Hernández Sánchez Ramírez Gómez Gálvez Peñaloza Cárdenas Bernal Ibáñez Ñáñez Mejía Ospina Zapata Rojas Vélez Londoño Úsuga Pinzón Rincón Beltrán Galván Guzmán Maldonado Montoya Arévalo Mosquera Murillo Cuéllar`.split(" ");
+const NOMBRES_MAP = new Map(NOMBRES.map((n) => [sinTildeSimple(n.toLowerCase()), n]));
+const PARTICULAS = new Set(["de", "del", "la", "las", "los", "y", "e", "van", "von", "da", "di", "el"]);
+function sinTildeSimple(w) { return w.replace(/[áàä]/g, "a").replace(/[éèë]/g, "e").replace(/[íìï]/g, "i").replace(/[óòö]/g, "o").replace(/[úùü]/g, "u"); }
 const TERMINACIONES = [["cion", "ción"], ["sion", "sión"], ["gion", "gión"]];   // singular: accion→acción (el plural «acciones» ya va sin tilde)
 const LETRAS = "A-Za-zÁÉÍÓÚÜÑáéíóúüñ";
 export const RE_PALABRA = new RegExp(`[${LETRAS}]+`, "g");
@@ -86,6 +96,12 @@ function corregirFonetica(palabra) {
 export function corregirPalabra(palabra, opciones) {
   if (!palabra || palabra.length < 2) return null;
   const bajo = palabra.toLowerCase();
+  const lugar = PROPIOS.get(sinTildeSimple(bajo));
+  if (lugar && palabra.length >= 4) { const r = palabra === palabra.toUpperCase() ? lugar.toUpperCase() : lugar; return r === palabra ? null : r; }
+  if (opciones && opciones.persona) {
+    const nom = NOMBRES_MAP.get(sinTildeSimple(bajo));
+    if (nom) { const r = palabra === palabra.toUpperCase() && palabra.length > 1 ? nom.toUpperCase() : nom; return r === palabra ? null : r; }
+  }
   if (DIC[bajo]) return conMayusculas(palabra, DIC[bajo]);
   if (!opciones || opciones.fonetica !== false) {
     const f = corregirFonetica(palabra);
@@ -102,14 +118,34 @@ function esPalabraSuelta(texto, ini, fin) {
   const despues = fin < texto.length ? texto[fin] : "";
   return !/[0-9_@\/\\#.\-]/.test(antes) && !/[0-9_@\/\\]/.test(despues);
 }
+// Corrige la palabra texto.slice(ini, fin) teniendo en cuenta lo que hay antes (para las mayúsculas). Devuelve la palabra nueva o null.
+//  opciones: { fonetica:false → no cambia letras; persona:true → cada palabra con mayúscula inicial; inicial:false → no pone mayúscula al empezar }
+export function corregirPalabraEn(texto, ini, fin, opciones) {
+  const palabra = texto.slice(ini, fin);
+  if (!palabra) return null;
+  let nueva = corregirPalabra(palabra, opciones) || palabra;
+  const antes = texto.slice(0, ini);
+  const inicio = /^\s*$/.test(antes) || /\n\s*$/.test(antes) || (/[.!?]\s+$/.test(antes) && !/(^|[^A-Za-zÁÉÍÓÚáéíóúñÑ])[A-Za-zÁÉÍÓÚáéíóúñÑ]{1,3}\.\s+$/.test(antes) && !/[0-9]\.\s+$/.test(antes));
+  const quiereMayus = !opciones || opciones.inicial !== false;
+  if (quiereMayus && nueva.length >= 2 && nueva[0] === nueva[0].toLowerCase() && nueva[0] !== nueva[0].toUpperCase()) {
+    const esParticula = PARTICULAS.has(nueva.toLowerCase());
+    if (inicio || (opciones && opciones.persona && !esParticula)) nueva = nueva[0].toUpperCase() + nueva.slice(1);
+  }
+  return nueva !== palabra ? nueva : null;
+}
 // Corrige todas las palabras de un texto. Devuelve { texto, cambios }
 export function corregirTexto(texto, opciones) {
   let cambios = 0;
-  const nuevo = String(texto == null ? "" : texto).replace(RE_PALABRA, (p, desde, todo) => {
-    const c = esPalabraSuelta(todo, desde, desde + p.length) ? corregirPalabra(p, opciones) : null;
-    if (c && c !== p) { cambios++; return c; }
-    return p;
-  });
+  const original = String(texto == null ? "" : texto);
+  let nuevo = original;
+  // De atrás hacia adelante, para que las posiciones anteriores no se muevan
+  const hallazgos = [...original.matchAll(RE_PALABRA)].reverse();
+  for (const m of hallazgos) {
+    const ini = m.index, fin = ini + m[0].length;
+    if (!esPalabraSuelta(original, ini, fin)) continue;
+    const c = corregirPalabraEn(original, ini, fin, opciones);
+    if (c && c !== m[0]) { nuevo = nuevo.slice(0, ini) + c + nuevo.slice(fin); cambios++; }
+  }
   return { texto: nuevo, cambios };
 }
 // Palabra que acaba justo antes de la posición `pos` del cursor: { ini, fin, palabra } o null

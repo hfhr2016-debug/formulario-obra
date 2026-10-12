@@ -2,7 +2,7 @@
 // Marca los campos de texto como español con revisión ortográfica y autocorrección activadas (el navegador subraya en rojo las
 // palabras mal escritas y propone la correcta; en el celular, el teclado las corrige solo). Se aplica también a los campos que
 // aparecen después (secciones que se abren, filas que se agregan) con un observador.
-import { corregirPalabra, corregirTexto, palabraAntesDe } from "./autocorreccion";
+import { corregirPalabraEn, corregirTexto, palabraAntesDe } from "./autocorreccion";
 const NO_TEXTO = new Set(["numeric", "decimal", "tel", "email", "url"]);
 
 export function marcarOrtografia(el) {
@@ -28,14 +28,16 @@ export function marcarOrtografia(el) {
 // ---------- Autocorrección: arregla sola las tildes y la «ñ» de palabras sin duda (ver autocorreccion.js) ----------
 // En campos de nombres de personas, cargos, códigos, direcciones, etc. solo se arreglan tildes y ñ, nunca letras (podrían ser nombres propios)
 const RE_NOMBRE = /nombre(?!\s+(del|de la|de el)\s+(proyecto|obra|contrato|empresa|actividad|equipo|formato|documento|material|sitio|lugar|frente))|operador|responsable|apellido|firma|elabor|revis[oó]|aprob[oó]|contratista|propietario|ingenier|residente|director|interventor|c[eé]dula|\bnit\b|correo|email|direcci|c[oó]digo|placa|referencia|cliente|conductor|supervisor|inspector|gerente|representante|encargado|cargo|\bserie\b/i;
+const RE_PERSONA = /nombre(?!\s+(del|de la|de el)\s+(proyecto|obra|contrato|empresa|actividad|equipo|formato|documento|material|sitio|lugar|frente))|operador|responsable|apellido|elabor|revis[oó]|aprob[oó]|residente|director|interventor|conductor|supervisor|inspector|gerente|representante|encargado|propietario/i;
+const RE_SIN_MAYUS = /placa|c[oó]digo|referencia|\bserie\b|correo|email|\bnit\b|c[eé]dula|\burl\b|usuario|contrase|\bund\b|unidad|\bum\b|medida|n[uú]mero|n°|\bhora\b|fecha|\bpin\b|plano|\bitem\b|\bcap[ií]tulo\b/i;
 function opcionesDe(el) {
   try {
     if (el.__opc) return el.__opc;
     const txt = [el.getAttribute("placeholder"), el.getAttribute("aria-label"), el.getAttribute("name"), el.id,
       el.parentElement && el.parentElement.querySelector(":scope > label") && el.parentElement.querySelector(":scope > label").textContent,
       el.closest("td") && (el.closest("table") && el.closest("table").querySelectorAll("th")[el.closest("td").cellIndex] || {}).textContent].filter(Boolean).join(" ");
-    return (el.__opc = { fonetica: !RE_NOMBRE.test(txt) });
-  } catch (e) { return { fonetica: false }; }
+    return (el.__opc = { fonetica: !RE_NOMBRE.test(txt), persona: RE_PERSONA.test(txt), inicial: !RE_SIN_MAYUS.test(txt) });
+  } catch (e) { return { fonetica: false, inicial: false }; }
 }
 const BORDES = new Set([" ", ".", ",", ";", ":", ")", "?", "!", "\n"]);
 function cambiarTexto(el, ini, fin, nuevo, enfocado = true) {
@@ -56,7 +58,7 @@ function alEscribir(ev) {
     if (!borde || !BORDES.has(borde)) return;
     const pos = el.selectionStart; if (pos == null) return;
     const w = palabraAntesDe(el.value.slice(0, pos - 1), pos - 1); if (!w) return;
-    const c = corregirPalabra(w.palabra, opcionesDe(el)); if (!c || c === w.palabra) return;
+    const c = corregirPalabraEn(el.value, w.ini, w.fin, opcionesDe(el)); if (!c || c === w.palabra) return;
     const ant = el.value[w.ini - 1];
     if (ant && /[0-9_@\/\\#.\-]/.test(ant)) return;
     const desp = pos;                                      // el cursor queda después del borde escrito
