@@ -14,7 +14,7 @@ import {
   construirConceptos, conceptosUsados, opcionesParaTipo, buscarConcepto,
 } from "./cpCostosAuto";
 import {
-  NAVY, GOLD, PAPER, LINE, etiquetaCls, claseInput, estiloInput, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, BuscadorLista,
+  NAVY, GOLD, PAPER, LINE, etiquetaCls, claseInput, estiloInput, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraObra, BarraGenerar, Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
 import { ChipsOpcion } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
@@ -154,6 +154,7 @@ export default function FormularioRegistroCostos({ onVolver }) {
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
       <EncabezadoFormulario titulo="Registro de Costos" subtitulo={`${CODIGO_COSTOS} · Facturas, cuentas de cobro y pagos de la obra`} onVolver={onVolver} />
+      <BarraObra h={h} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={h.obra ? `${h.obra.proyecto}${h.obra.contrato ? " · Contrato " + h.obra.contrato : ""}` : "Obra y contrato"} abierta={abierta === "datos"} onToggle={alternar}>
           <PanelObra h={h} campos={["contrato", "contratante"]} />

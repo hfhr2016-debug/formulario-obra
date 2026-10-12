@@ -29,7 +29,8 @@ export function useObraCal() {
   function cambiar(patch) {
     setObra((cur) => { if (!cur) return cur; const sig = { ...cur, ...patch }; guardarObraCal(sig); return sig; });
   }
-  return { obra, creando, nombreNuevo, setNombreNuevo, aviso, crear, elegir, cambiar, id: obra ? obra.id : "" };
+  function volverALista() { setCreando(true); setNombreNuevo(""); setAviso(""); }   // primera pantalla: la lista de obras (lo hecho ya quedó guardado)
+  return { obra, creando, nombreNuevo, setNombreNuevo, aviso, crear, elegir, cambiar, volverALista, id: obra ? obra.id : "" };
 }
 
 export function PanelObraCal({ h, campos = [] }) {

@@ -37,7 +37,8 @@ export function useObra() {
       return sig;
     });
   }
-  return { obra, creando, nombreNuevo, setNombreNuevo, aviso, crear, elegir, cambiar, id: obra ? obra.id : "" };
+  function volverALista() { setCreando(true); setNombreNuevo(""); setAviso(""); }   // primera pantalla: la lista de obras (lo hecho ya quedó guardado)
+  return { obra, creando, nombreNuevo, setNombreNuevo, aviso, crear, elegir, cambiar, volverALista, id: obra ? obra.id : "" };
 }
 
 // Sección «Datos generales»: elegir o crear la obra y completar los datos del contrato que pida cada formato.

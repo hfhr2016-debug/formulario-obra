@@ -6,7 +6,7 @@ import { informeMensual, mesActual, MESES, nombreMes } from "./calInforme";
 import { escribirInforme } from "./informeExcel";
 import { CifrasResumen } from "./cpComunes";
 import { SeccionFotosAnexo, agregarHojaFotos } from "./fotosAnexo";
-import { NAVY, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Lista, AreaTexto } from "./sstComunes";
+import { NAVY, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraObra, BarraGenerar, Seccion, Lista, AreaTexto } from "./sstComunes";
 
 const CLAVE = (obraId, ym) => `ryr_cal_informe_${obraId}_${ym}`;
 const leer = (obraId, ym) => { try { return JSON.parse(localStorage.getItem(CLAVE(obraId, ym)) || "null") || {}; } catch (e) { return {}; } };
@@ -58,6 +58,7 @@ export default function FormularioInformeCal({ onVolver }) {
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
       <EncabezadoFormulario titulo="Informe Mensual de Calidad" subtitulo="Resumen del mes con lo registrado en los formatos" onVolver={onVolver} />
+      <BarraObra h={h} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         <Seccion id="obra" titulo="Obra" subtitulo={h.obra ? `${h.obra.proyecto}${h.obra.contrato ? " · Contrato " + h.obra.contrato : ""}` : "Elige o crea la obra"} abierta={sinObra} onToggle={() => {}}>
           <PanelObraCal h={h} campos={["contrato", "ubicacion", "contratista"]} />

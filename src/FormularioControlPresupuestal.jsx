@@ -9,7 +9,7 @@ import {
 } from "./cpBase";
 import { useObra, PanelObra, CampoDinero, useFirmas, CifrasResumen } from "./cpComunes";
 import {
-  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo,
+  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraObra, BarraGenerar, Seccion, Campo,
 } from "./sstComunes";
 import { useFaltantes } from "./sstFaltantes";
 
@@ -96,6 +96,7 @@ export default function FormularioControlPresupuestal({ onVolver }) {
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
       <EncabezadoFormulario titulo="Control Presupuestal" subtitulo={`${CODIGO_CONTROL} · Presupuesto, ejecutado y costo real`} onVolver={onVolver} />
+      <BarraObra h={h} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         <Seccion id="datos" titulo="1. Datos generales" subtitulo={o ? `${o.proyecto}${d.acta ? " · Corte " + d.acta : ""}` : "Obra y corte"} abierta={abierta === "datos"} onToggle={alternar}>
           <div className="space-y-2.5">

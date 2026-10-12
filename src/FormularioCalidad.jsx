@@ -10,7 +10,7 @@ import { CifrasResumen } from "./cpComunes";
 import { useObraCal, PanelObraCal } from "./calComunes";
 import { catalogoVigente } from "./catalogoVivo";
 import {
-  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista, CampoCargo, SelectorHora,
+  NAVY, GOLD, PAPER, LINE, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraObra, BarraGenerar, Seccion, Campo, Lista, AreaTexto, BuscadorLista, CampoCargo, SelectorHora,
 } from "./sstComunes";
 import { ChipsOpcion, FilaVerificacion } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
@@ -48,6 +48,8 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   const [avisoTabla, setAvisoTabla] = useState({});
   const [creadasNC, setCreadasNC] = useState([]);
   const [filaAbierta, setFilaAbierta] = useState({});
+  const [porQuitar, setPorQuitar] = useState(null);   // fila que se va a quitar, esperando confirmación {k, i, nombre}
+  const [quitada, setQuitada] = useState(null);       // última fila quitada, para poder deshacer {k, i, fila, nombre}
   const [fotos, setFotos] = useState([]);              // fotos del Excel que se va a generar (no se guardan)
   const memoria = useMemoriaSST();
   const alternar = (id) => setAbierta((cur) => (cur === id ? "" : id));
@@ -60,6 +62,8 @@ export default function FormularioCalidad({ fmt, onVolver }) {
 
   // Al cambiar de obra se cierra el registro abierto
   useEffect(() => { setReg(null); setCreadasNC([]); setFotos([]); }, [h.id]);
+  useEffect(() => { if (!quitada) return undefined; const t = setTimeout(() => setQuitada(null), 15000); return () => clearTimeout(t); }, [quitada]);
+  useEffect(() => { if (!reg) { setQuitada(null); setPorQuitar(null); } }, [reg === null]);
   // Lo que viene de la obra (proyecto, contrato, ubicación…) se mantiene al día en el registro abierto
   useEffect(() => {
     if (!reg || !h.obra) return;
@@ -203,14 +207,45 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: [...cur.datos[s.k], filaNueva(s, base)] } }));
     return true;
   }
+  // Quita la fila (ya confirmada) y deja la última quitada para poder deshacer
+  function quitarYa(k, i, nombre, recordar) {
+    const fila = reg && reg.datos && Array.isArray(reg.datos[k]) ? reg.datos[k][i] : null;
+    if (recordar !== false && fila) setQuitada({ k, i, fila, nombre });
+    setReg((cur) => ({ ...cur, datos: { ...cur.datos, [k]: cur.datos[k].filter((_, j) => j !== i) } }));
+    setAvisoTabla((a) => ({ ...a, [k]: "" }));
+  }
+  function deshacerQuitar() {
+    if (!quitada) return;
+    const q = quitada;
+    setReg((cur) => { const arr = [...(cur.datos[q.k] || [])]; arr.splice(Math.min(q.i, arr.length), 0, q.fila); return { ...cur, datos: { ...cur.datos, [q.k]: arr } }; });
+    setQuitada(null);
+  }
+  // Devuelve a la tabla los registros estándar que faltan, en su orden original (no toca lo ya escrito)
+  function faltantesDeLista(s) {
+    if (!s.restaurar || !Array.isArray(s.inicial)) return [];
+    const clave = s.cols[0].k; const n = (x) => String(x == null ? "" : x).trim().toLowerCase();
+    const hay = new Set(((datos && datos[s.k]) || []).map((f) => n(f[clave])));
+    return s.inicial.filter((o) => !hay.has(n(o[clave])));
+  }
+  function restaurarLista(s) {
+    const clave = s.cols[0].k; const n = (x) => String(x == null ? "" : x).trim().toLowerCase();
+    setReg((cur) => {
+      const actuales = cur.datos[s.k] || []; const porClave = new Map(actuales.map((f) => [n(f[clave]), f]));
+      const ordenadas = s.inicial.map((o) => porClave.get(n(o[clave])) || filaNueva(s, o));
+      const usados = new Set(s.inicial.map((o) => n(o[clave])));
+      const extras = actuales.filter((f) => !usados.has(n(f[clave])));
+      return { ...cur, datos: { ...cur.datos, [s.k]: [...ordenadas, ...extras] } };
+    });
+    setAvisoTabla((a) => ({ ...a, [s.k]: "" })); setQuitada(null);
+  }
   function seccionTabla(s) {
     const filas = datos[s.k];
     const quitar = (i) => {
       const fila = (reg && reg.datos && Array.isArray(reg.datos[s.k]) ? reg.datos[s.k][i] : null) || {};
       const conDatos = s.cols.some((c) => { const v = fila[c.k]; return v !== undefined && v !== null && v !== false && String(v).trim() !== ""; });
       const nombre = String(s.tituloFila ? fila[s.tituloFila] || "" : "").trim() || `${s.nombreFila || "fila"} ${i + 1}`;
-      if (conDatos && !window.confirm(`¿Quitar «${nombre}» de la lista? No se puede deshacer.`)) return;
-      setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: cur.datos[s.k].filter((_, k) => k !== i) } })); setAvisoTabla((a) => ({ ...a, [s.k]: "" })); };
+      if (conDatos) setPorQuitar({ k: s.k, i, nombre }); else quitarYa(s.k, i, nombre, false);
+    };
     const agregar = (base = {}) => agregarFila(s, base);
     const ultima = filas[filas.length - 1];
     return (
@@ -233,6 +268,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
           {ultima && <button type="button" onClick={() => agregar(Object.fromEntries(s.cols.filter((c) => c.repetir !== false && c.tipo !== "calculado" && !["obs", "informe", "resultado", "obtenido", "lote", "recibida", "pedida", "codigo", "estado", "cilindro", "carga", "resistencia", "fechaEnsayo", "remision"].includes(c.k)).map((c) => [c.k, ultima[c.k]])))} className="w-full text-center py-2 rounded-lg text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY }}>➕ Otro con los mismos datos del anterior</button>}
           <button type="button" onClick={() => agregar()} className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-md w-full justify-center border border-dashed" style={{ borderColor: GOLD, color: NAVY }}><Plus size={14} /> Agregar {String(s.nombreFila || "fila").toLowerCase()}</button>
         </div>}
+        {faltantesDeLista(s).length > 0 && <button type="button" data-restaurar-lista onClick={() => restaurarLista(s)} className="mt-2 w-full text-center py-2 rounded-md text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY, background: "#FFF8E8" }}>↺ Restaurar los {faltantesDeLista(s).length} registros que faltan (en su orden original)</button>}
         {avisoTabla[s.k] && <div className="text-[11.5px] mt-2" style={{ color: "#B3401F" }}>{avisoTabla[s.k]}</div>}
       </Seccion>
     );
@@ -281,6 +317,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
       <EncabezadoFormulario titulo={fmt.titulo} subtitulo={fmt.subtitulo} onVolver={onVolver} />
+      <BarraObra h={h} />
       <div className="max-w-md mx-auto bg-white px-3 pb-36">
         <Seccion id="obra" titulo="Obra" subtitulo={h.obra ? `${h.obra.proyecto}${h.obra.contrato ? " · Contrato " + h.obra.contrato : ""}` : "Elige o crea la obra"} abierta={abierta === "obra" || (sinObra && abierta !== "x")} onToggle={alternar}>
           <PanelObraCal h={h} campos={fmt.panelObra} />
@@ -359,6 +396,25 @@ export default function FormularioCalidad({ fmt, onVolver }) {
           </>
         )}
       </div>
+      {porQuitar && (
+        <div data-confirmar-quitar style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: 16, maxWidth: 340, width: "100%", boxShadow: "0 8px 30px rgba(0,0,0,0.3)" }}>
+            <div style={{ color: NAVY, fontWeight: 700, fontSize: 14 }}>¿Quitar «{porQuitar.nombre}» de la lista?</div>
+            <div style={{ color: "#5A6270", fontSize: 12, marginTop: 6 }}>Se borra de este registro. Justo después podrás deshacerlo.</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <button type="button" data-quitar-cancelar onClick={() => setPorQuitar(null)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: `1px solid ${NAVY}`, color: NAVY, fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+              <button type="button" data-quitar-confirmar onClick={() => { const q = porQuitar; setPorQuitar(null); quitarYa(q.k, q.i, q.nombre); }} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: "#B3401F", color: "#fff", fontWeight: 700, fontSize: 13 }}>Quitar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {quitada && !porQuitar && (
+        <div data-deshacer-quitar style={{ position: "fixed", left: 12, right: 12, bottom: 72, zIndex: 65, background: NAVY, color: "#fff", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+          <span style={{ flex: 1 }}>Se quitó «{quitada.nombre}».</span>
+          <button type="button" data-deshacer onClick={deshacerQuitar} style={{ color: GOLD, fontWeight: 700, textDecoration: "underline" }}>Deshacer</button>
+          <button type="button" aria-label="Cerrar aviso" onClick={() => setQuitada(null)} style={{ color: "#fff", opacity: 0.7 }}>✕</button>
+        </div>
+      )}
       {reg && !sinObra && <BarraGenerar mensajeError={mensajeError} aviso={avisoGeneracion} mensajeOk={generado} generando={generando} textoBoton={`Generar Excel de ${fmt.titulo.toLowerCase()}`} onGenerar={generarExcel} />}
     </div>
   );

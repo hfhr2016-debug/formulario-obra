@@ -270,6 +270,21 @@ export function PantallaBorrador({ cual, onContinuar, onEmpezar, onVolver }) {
   );
 }
 
+// Barra fija con la obra en uso y el botón para volver a la lista de obras (primera pantalla) sin salir del formulario.
+export function BarraObra({ h }) {
+  if (!h || !h.obra || h.creando || !h.volverALista) return null;
+  return (
+    <div data-barra-obra className="sticky top-0 z-30 px-3 py-1.5 flex items-center justify-between gap-2" style={{ background: "#F2F6FB", borderBottom: `1px solid ${LINE}` }}>
+      <div className="min-w-0 text-[11.5px]" style={{ color: NAVY }}>
+        <span style={{ color: "#8A8F99" }}>Obra: </span><b className="truncate">{h.obra.proyecto}</b>
+      </div>
+      <button type="button" onClick={h.volverALista} className="shrink-0 text-[11.5px] font-semibold px-2.5 py-1 rounded-full border" style={{ borderColor: NAVY, color: NAVY, background: "white" }}>
+        ↩ Ver todas las obras
+      </button>
+    </div>
+  );
+}
+
 export function EncabezadoFormulario({ titulo, subtitulo, onVolver }) {
   const nav = useNavegacionSST();
   const sistema = (nav && nav.titulo) || "Gestión SG – SST";      // en Gestión Ambiental el contexto trae su propio título
