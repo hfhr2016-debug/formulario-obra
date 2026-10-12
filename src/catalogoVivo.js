@@ -3,6 +3,7 @@
 // Si todavía no hay catálogo guardado, se usa el que trae el código (catalogoPrecios.js): nada se rompe.
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
+import { esActividadPorElemento } from "./apuReglas";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -153,6 +154,8 @@ function ordenarAct(lista) {
   return lista.slice().sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0) || txt(a.actividad).localeCompare(txt(b.actividad), "es"));
 }
 // Actividades vigentes: las del dispositivo/nube si ya hay; si no, las del código. Sin `orden`, en el orden del catálogo base.
+// Regla única para TODOS los formularios (Presupuesto, Cantidades, Cronograma y APU): el concreto se ofrece por RESISTENCIA,
+// no por elemento («Concreto para columnas», «…para vigas», etc.). El catálogo completo sigue en Catálogos → Actividades.
 export function actividadesVigentes() {
   let raw = null;
   try { raw = localStorage.getItem(ACTIVIDADES.clave); } catch (e) { raw = null; }
@@ -165,6 +168,7 @@ export function actividadesVigentes() {
       if (items.length) valor = ordenarAct(items);
     } catch (e) { /* queda el del código */ }
   }
+  valor = valor.filter((a) => !esActividadPorElemento(a.actividad));
   cacheAct = { raw, valor };
   return valor;
 }
