@@ -5,6 +5,8 @@
 import { corregirPalabraEn, corregirTexto, palabraAntesDe } from "./autocorreccion";
 const NO_TEXTO = new Set(["numeric", "decimal", "tel", "email", "url"]);
 
+function esTactil() { try { return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } }
+
 export function marcarOrtografia(el) {
   try {
     if (!el || el.__ortografia) return;
@@ -21,6 +23,15 @@ export function marcarOrtografia(el) {
     el.setAttribute("spellcheck", "true");
     el.setAttribute("autocorrect", "on");
     if (!el.hasAttribute("autocapitalize")) el.setAttribute("autocapitalize", "sentences");
+    if (esTactil()) {
+      // Celular: se apaga la autocorrección del teclado (cambiaba «pasifico» por cosas como «pasi to» y chocaba con la de la app);
+      // la app corrige al salir de la casilla. La mayúscula la pide el teclado según el tipo de campo.
+      el.setAttribute("spellcheck", "false");
+      el.setAttribute("autocorrect", "off");
+      el.setAttribute("autocomplete", "off");
+      const o = opcionesDe(el);
+      el.setAttribute("autocapitalize", o.persona ? "words" : o.inicial === false ? "none" : "sentences");
+    }
   } catch (e) { /* un campo que no se pueda marcar no debe romper nada */ }
 }
 
@@ -70,8 +81,14 @@ function alSalir(ev) {
     const el = ev.target;
     if (!el || !el.__ortografia || !el.__editado) return;
     el.__editado = false;
-    const { texto, cambios } = corregirTexto(el.value, opcionesDe(el));
-    if (cambios > 0 && texto !== el.value) cambiarTexto(el, 0, el.value.length, texto, false);
+    const corregir = () => {
+      try {
+        const { texto, cambios } = corregirTexto(el.value, opcionesDe(el));
+        if (cambios > 0 && texto !== el.value) cambiarTexto(el, 0, el.value.length, texto, false);
+      } catch (e) {}
+    };
+    // En el celular el teclado termina de escribir la última palabra justo al salir: se espera un instante para no pisarla
+    if (esTactil()) { setTimeout(corregir, 120); setTimeout(corregir, 450); } else corregir();
   } catch (e) {}
 }
 
