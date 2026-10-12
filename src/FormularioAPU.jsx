@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import { mapaApu, valorSimple, arreglarRendimientoVisible } from "./apuPlantilla";
+import { esActividadPorElemento, buscarMaterialEnLista, coincideBusqueda, rendimientoExtra, evaluarCoherencia, avisosDelApu } from "./apuReglas";
 import { catalogoVigente, actividadesVigentes } from "./catalogoVivo";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 
@@ -32,7 +33,7 @@ const RENDIMIENTOS_REFERENCIA = {"Localización y Replanteo": 150, "Cerramiento 
 
 // Respaldo por palabras clave — cubre actividades de Vías/Hidrocarburos y los nombres
 // genéricos de concreto/acero (que ya no coinciden exacto con el diccionario de arriba)
-function rendimientoSugeridoPorKeyword(nombreActividad) {
+function rendimientoSugeridoPorKeyword(nombreActividad, unidad) {
   const n = (nombreActividad || "").toLowerCase();
   const reglas = [
     [/acero/, 220],
@@ -58,7 +59,7 @@ function rendimientoSugeridoPorKeyword(nombreActividad) {
   for (const [patron, valor] of reglas) {
     if (patron.test(n)) return valor;
   }
-  return null;
+  return rendimientoExtra(nombreActividad || "", unidad);
 }
 
 function cuadrillaSugeridaPorKeyword(nombreActividad) {
@@ -158,6 +159,7 @@ function BuscadorActividad({ value, onSelect }) {
     const coincide = actividadesVigentes().filter(
       (it) =>
         it.tipo === tipoActivo &&
+        !esActividadPorElemento(it.actividad) &&
         (it.actividad.toLowerCase().includes(q) ||
         it.capitulo.toLowerCase().includes(q))
     );
@@ -288,7 +290,7 @@ function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder, palabrasCl
   const resultados = useMemo(() => {
     if (!texto || texto.length < 2 || !catalogo) return [];
     const q = texto.toLowerCase();
-    const coincide = catalogo.filter((it) => it.descripcion.toLowerCase().includes(q));
+    const coincide = catalogo.filter((it) => coincideBusqueda(it.descripcion, q));
     coincide.sort((a, b) => {
       const aEmpieza = a.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
       const bEmpieza = b.descripcion.toLowerCase().startsWith(q) ? 0 : 1;
@@ -488,15 +490,6 @@ function buscarConsumosPorActividad(nombreActividad) {
   return null;
 }
 
-function buscarMaterialEnLista(materiales, nombreMaterialBuscado) {
-  const n = (nombreMaterialBuscado || '').toLowerCase();
-  for (const m of materiales) {
-    const palabrasClave = m.material.toLowerCase().split(' ').filter(w => w.length > 3);
-    if (palabrasClave.some(w => n.includes(w))) return m;
-  }
-  return null;
-}
-
 function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   if (!nombreMaterial) return null;
   const n = nombreMaterial.toLowerCase();
@@ -520,10 +513,10 @@ function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal, rendimientoActividad }) {
+function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal, rendimientoActividad, clase, unidadActividad, onAviso }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
-    nuevas[i] = { ...nuevas[i], [campo]: val };
+    nuevas[i] = { ...nuevas[i], [campo]: val, ...(campo === "factor" ? { factorAuto: false } : {}) };
     setFilas(nuevas);
   };
   const actualizarDesdeSeleccion = (i, seleccion) => {
@@ -531,9 +524,10 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
     let cantSugerida = nuevas[i].cant;
     let factorSugerido = nuevas[i].factor;
     let fuenteConsumo = "";
+    let autoFactor = false;
     if (esMateriales) {
       const refActividad = buscarConsumosPorActividad(actividadPrincipal);
-      const matPorActividad = refActividad ? buscarMaterialEnLista(refActividad.materiales, seleccion.desc) : null;
+      const matPorActividad = refActividad ? buscarMaterialEnLista(refActividad.materiales, seleccion.desc, seleccion.und) : null;
       if (matPorActividad) {
         if (!cantSugerida) cantSugerida = String(matPorActividad.consumo);
         if (!factorSugerido) factorSugerido = String(Math.round((1 + (matPorActividad.factor || 0)) * 1000) / 1000);
@@ -542,6 +536,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
         if (!cantSugerida) {
           const c = consumoMaterialSugeridoPorKeyword(seleccion.desc);
           if (c !== null) { cantSugerida = String(c); fuenteConsumo = "Estimación general por tipo de material (no específica a esta actividad) — verifica el valor real."; }
+          else if (seleccion.und !== undefined) fuenteConsumo = "Sin consumo de referencia para este material en esta actividad — escribe tú la cantidad (consumo por unidad de la actividad).";
         }
         if (!factorSugerido) {
           const fct = factorDesperdicioSugerido(seleccion.desc);
@@ -555,10 +550,13 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
         // Rendimiento (tiempo por unidad) de ESTE recurso individual: primero desde el Rendimiento
         // global de la actividad (arriba), y si no hay, por palabra clave de la actividad.
         let rendBase = numES(rendimientoActividad);
-        if (!rendBase) rendBase = rendimientoSugeridoPorKeyword(actividadPrincipal);
+        if (!rendBase) rendBase = rendimientoSugeridoPorKeyword(actividadPrincipal, unidadActividad);
         if (rendBase) {
           factorSugerido = String(Math.round((1 / rendBase) * 1000000) / 1000000);
+          autoFactor = true;
           fuenteConsumo = "Sugerido a partir del Rendimiento de la actividad — verifica si este recurso específico rinde distinto.";
+        } else if (seleccion.und !== undefined) {
+          fuenteConsumo = "Sin rendimiento de referencia para esta actividad: escribe el Rendimiento arriba y se calcula solo, o ponlo aquí.";
         }
       }
     }
@@ -571,7 +569,15 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
       vrUnit: seleccion.vrUnit !== undefined ? seleccion.vrUnit : nuevas[i].vrUnit,
       cant: cantSugerida,
       factor: factorSugerido,
+      factorAuto: autoFactor || (nuevas[i].factorAuto && factorSugerido === nuevas[i].factor),
+      aviso: "",
     };
+    // ¿Lo elegido corresponde a la actividad? Solo avisa (nunca bloquea)
+    const alerta = actividadPrincipal && clase ? evaluarCoherencia(actividadPrincipal, clase, seleccion.desc) : null;
+    if (alerta) {
+      nuevas[i].aviso = alerta.mensaje;
+      if (seleccion.und !== undefined && onAviso) onAviso({ mensaje: alerta.mensaje, quitar: () => setFilas((prev) => prev.map((x, k) => (k === i ? { ...filaVacia(), reinicio: (x.reinicio || 0) + 1 } : x))) });
+    }
     setFilas(nuevas);
   };
   return (
@@ -598,6 +604,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
           <div key={i} className="border-b last:border-b-0 p-2.5" style={{ borderColor: LINE }}>
             <div className="mb-2">
               <BuscadorCelda
+                key={`${i}-${f.reinicio || 0}`}
                 valor={f.desc}
                 catalogo={catalogo}
                 placeholder="Descripción (busca o escribe)"
@@ -679,6 +686,11 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
               </div>
             </div>
 
+          {f.aviso && (
+            <div data-aviso-apu className="text-[11.5px] mx-2 mb-1.5 px-2.5 py-1.5 rounded border" style={{ background: "#FDECEA", borderColor: "#E8A39B", color: "#8B1A10" }}>
+              ⚠️ {f.aviso}
+            </div>
+          )}
           {(esMateriales || modoRendimiento) && f.fuenteConsumo && (
             <div className="text-[10px] text-gray-500 px-2 pb-1 italic">
               📎 {f.fuenteConsumo}
@@ -739,6 +751,37 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
   const [interventoriaCargo, setInterventoriaCargo] = useState("");
 
   const [generando, setGenerando] = useState(false);
+
+  // Ventana de aviso propia (la nativa del navegador a veces no aparece). Devuelve una promesa con el botón que se eligió.
+  const [aviso, setAviso] = useState(null);
+  const preguntar = (cfg) => new Promise((resolver) => setAviso({ ...cfg, resolver }));
+  const cerrarAviso = (valor) => { const a = aviso; setAviso(null); if (a && a.resolver) a.resolver(valor); };
+  const avisarFila = async ({ mensaje, quitar }) => {
+    const r = await preguntar({
+      titulo: "Esa elección no corresponde a la actividad",
+      mensaje,
+      botones: [{ texto: "Quitar esta fila", valor: "quitar", principal: true }, { texto: "Dejarla así", valor: "dejar" }],
+    });
+    if (r === "quitar") quitar();
+  };
+
+  // Si se escribe o cambia el Rendimiento de la actividad, los recursos (mano de obra, equipos) que aún no tienen su rendimiento lo reciben
+  React.useEffect(() => {
+    const rend = numES(rendimiento);
+    if (!(rend > 0)) return;
+    const valor = String(Math.round((1 / rend) * 1000000) / 1000000);
+    const poner = (lista, setLista) => {
+      let cambio = false;
+      const nueva = lista.map((f) => {
+        if (!f.desc || (f.factor && !f.factorAuto) || f.factor === valor) return f;
+        cambio = true;
+        return { ...f, factor: valor, factorAuto: true, cant: f.cant || "1", fuenteConsumo: "Calculado a partir del Rendimiento de la actividad — verifica si este recurso específico rinde distinto." };
+      });
+      if (cambio) setLista(nueva);
+    };
+    poner(manoObra, setManoObra);
+    poner(equipos, setEquipos);
+  }, [rendimiento, manoObra, equipos]);
 
   const [borradorDisponible, setBorradorDisponible] = useState(() => {
     try { return !!localStorage.getItem("ryr_borrador_apu"); } catch (e) { return false; }
@@ -843,6 +886,16 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
     if (!actividad) {
       alert("Selecciona primero la actividad del catálogo.");
       return;
+    }
+    const avisos = avisosDelApu(actividad.actividad, [["materiales", materiales, "Materiales"], ["mano_obra", manoObra, "Mano de obra"], ["equipos", equipos, "Equipos y herramientas"]]);
+    if (avisos.length) {
+      const r = await preguntar({
+        titulo: `Revisa antes de generar el Excel (${avisos.length} ${avisos.length === 1 ? "elección no parece corresponder" : "elecciones no parecen corresponder"} a la actividad)`,
+        mensaje: `Actividad: ${actividad.actividad}`,
+        lista: avisos.map((a) => `${a.tabla}: ${a.desc}`),
+        botones: [{ texto: "Volver a revisar", valor: "revisar", principal: true }, { texto: "Generar de todos modos", valor: "seguir" }],
+      });
+      if (r !== "seguir") return;
     }
     setGenerando(true);
     try {
@@ -1020,7 +1073,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
               setEquipos(seisFilasVacias());
               const rendSugerido = RENDIMIENTOS_REFERENCIA[a.actividad] !== undefined
                 ? RENDIMIENTOS_REFERENCIA[a.actividad]
-                : rendimientoSugeridoPorKeyword(a.actividad);
+                : rendimientoSugeridoPorKeyword(a.actividad, a.unidad);
               const cuadSugerida = CUADRILLAS_REFERENCIA[a.actividad] || (() => {
                 const c = cuadrillaSugeridaPorKeyword(a.actividad);
                 return c ? { cuadrilla: c, personas: null } : null;
@@ -1030,12 +1083,14 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
                 setRendimiento(String(rendSugerido * numCuadrillas));
               } else {
                 setRendimientoBase(null);
+                setRendimiento("");           // no se arrastra el rendimiento de la actividad anterior
               }
               if (cuadSugerida) {
                 setCuadrillaBase(cuadSugerida.cuadrilla);
                 setCuadrilla(numCuadrillas > 1 ? `${numCuadrillas}× (${cuadSugerida.cuadrilla})` : cuadSugerida.cuadrilla);
               } else {
                 setCuadrillaBase(null);
+                setCuadrilla("");             // ni la cuadrilla de la actividad anterior
               }
             }}
           />
@@ -1133,9 +1188,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           </Campo>
         </div>
 
-        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={catMateriales} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} />
-        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={catManoObra} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} />
-        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={catEquipos} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} />
+        <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={catMateriales} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} clase="materiales" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
+        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={catManoObra} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} clase="mano_obra" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
+        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={catEquipos} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} clase="equipos" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
@@ -1177,6 +1232,28 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         >
           {generando ? "Generando..." : "Descargar APU en Excel"}
         </button>
+        {aviso && (
+          <div data-modal-aviso-apu className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.45)" }}>
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-4">
+              <div className="text-[14.5px] font-bold mb-1.5" style={{ color: "#8B1A10" }}>⚠️ {aviso.titulo}</div>
+              <div className="text-[13px] mb-2" style={{ color: NAVY }}>{aviso.mensaje}</div>
+              {aviso.lista && (
+                <ul className="text-[12.5px] mb-2 list-disc pl-5" style={{ color: NAVY }}>
+                  {aviso.lista.map((t, k) => <li key={k}>{t}</li>)}
+                </ul>
+              )}
+              <div className="flex gap-2 justify-end flex-wrap">
+                {aviso.botones.map((b) => (
+                  <button key={b.valor} type="button" data-aviso-boton={b.valor} onClick={() => cerrarAviso(b.valor)}
+                    className="px-3 py-2 rounded-lg text-[13px] font-semibold"
+                    style={b.principal ? { background: NAVY, color: "white" } : { background: PAPER, color: NAVY, border: `1px solid ${LINE}` }}>
+                    {b.texto}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
