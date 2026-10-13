@@ -189,7 +189,7 @@ export const COLORES_ESTADO = {
   Pendiente: "medio", "En proceso": "medio", "En corrección": "medio", Corregido: "bueno", Verificado: "bueno", "Recibida a satisfacción": "bueno", "Recibida con pendientes": "medio", "No recibida": "malo", Recibida: "bueno", "En cuarentena": "medio", "En cuarentena (espera ensayo)": "medio", "Aceptado con observaciones": "medio", "En revisión": "medio", Mayor: "medio",
 };
 function pintarSemaforo(ws, ref, valor) {
-  const k = COLORES_ESTADO[texto(valor)];
+  const k = COLORES_ESTADO[texto(valor)] || COLORES_ESTADO[texto(valor).split(/[\s(→]/)[0]];
   if (k && ref) { const [fondo, letra] = COLOR_RES[k]; pintarCelda(ws, ref, fondo, letra); }
 }
 // Formatos como "#,##0.##" muestran "10." en Excel cuando el número es entero: se cambia a "#,##0".
@@ -222,7 +222,8 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
     const T = (celdas.tablas || {})[s.k]; if (!T) continue;
     if (!esVisible(s, datos)) continue;
     if (s.tipo === "tabla") {
-      const filas = (s.fija ? arr(datos[s.k]).slice(0, s.max) : filasConDatos(s, datos)).map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = valorExcel(c, f[c.k]); return o; });
+      const origen = s.fija ? arr(datos[s.k]).slice(0, s.max) : filasConDatos(s, datos);
+      const filas = origen.map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = c.excel ? c.excel(f) : valorExcel(c, f[c.k]); return o; });
       if (s.limpiar) {   // las filas que la plantilla trae escritas (p. ej. las actividades del plan) se vacían primero: lo que se quitó o se dejó en blanco no debe quedar con el texto de la plantilla
         for (let i = 0; i < T.n; i++) { const r = T.filas ? T.filas[i] : T.fila0 + i; for (const col of Object.values(T.columnas)) { try { ws.getCell(`${col}${r}`).value = null; } catch (e) { /* celda sin acceso */ } } }
       }
@@ -232,6 +233,9 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
         const r = T.filas ? T.filas[i] : T.fila0 + i;
         for (const c of colsPlantilla(s)) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k], c);
         for (const c of colsPlantilla(s)) if (c.semaforo && T.columnas[c.k]) pintarSemaforo(ws, `${T.columnas[c.k]}${r}`, f[c.k]);
+        if (s.obsoletaSi && s.obsoletaSi(origen[i])) {   // un registro obsoleto sale en gris y tachado
+          for (const c of colsPlantilla(s)) if (T.columnas[c.k]) { try { const cel = ws.getCell(`${T.columnas[c.k]}${r}`); cel.font = { ...(cel.font || {}), color: { argb: "FF8A8F99" }, strike: true }; } catch (e) { /* celda sin acceso */ } }
+        }
       });
     } else if (s.tipo === "lista") {
       const filas = arr(datos[s.k]).map((x) => ({ resp: s.resp.numerica ? (numero(x.resp) === null ? "" : numero(x.resp)) : x.resp, obs: x.obs }));

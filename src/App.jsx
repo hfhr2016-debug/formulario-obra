@@ -2195,7 +2195,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     if (vista === "cal-vencimientos") return conMenuCal(<PanelVencimientos key={vista} onVolver={() => setVista("inicio-calidad")} onIr={setVista} />);
     if (vista === "cal-informe") return conMenuCal(<FormularioInformeCal key={vista} onVolver={() => setVista("inicio-calidad")} />);
     if (vista === "cal-nc") return conMenuCal(<FormularioNC key={vista} onVolver={() => setVista("inicio-calidad")} />);
-    if (FORMATOS_CAL[vista]) return conMenuCal(<FormularioCalidad key={vista} fmt={FORMATOS_CAL[vista]} onVolver={() => setVista("inicio-calidad")} />);
+    if (FORMATOS_CAL[vista]) return conMenuCal(<FormularioCalidad key={vista} fmt={FORMATOS_CAL[vista]} puedeCalidad={!!(perfil && (perfil.esAdmin || (perfil.roles || []).includes("calidad")))} usuario={(perfil && (perfil.nombre || perfil.correo)) || ""} onVolver={() => setVista("inicio-calidad")} />);
     return conMenuCal(<Proximamente nombre={(MODULOS_CALIDAD.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-calidad")} />);
   }
   if (vista === "inicio-presupuesto") {

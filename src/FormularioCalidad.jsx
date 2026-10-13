@@ -35,7 +35,7 @@ function Calculado({ label, valor, semaforo }) {
 }
 const colorAviso = { alerta: ["#FDEDEA", "#B3401F"], aviso: ["#FFF8E8", "#7A5A00"], ok: ["#EAF4EC", "#1D6B3A"], info: ["#EEF3FA", "#1B2A45"] };
 
-export default function FormularioCalidad({ fmt, onVolver }) {
+export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, usuario = "" }) {
   const h = useObraCal();
   const [reg, setReg] = useState(null);                // registro abierto (null = se ve la lista)
   const [version, setVersion] = useState(0);           // sube al guardar/eliminar, para repintar la lista
@@ -117,7 +117,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   function guardarFinal() {
     if (!reg) return [];
     let guardado = tieneContenido(fmt, reg.datos) ? guardarRegistro(fmt, reg) : reg;
-    const parche = fmt.alGuardar ? fmt.alGuardar(guardado.datos, guardado) : null;
+    const parche = fmt.alGuardar ? fmt.alGuardar(guardado.datos, guardado, { usuario }) : null;
     if (parche && typeof parche === "object") {
       guardado = { ...guardado, datos: { ...guardado.datos, ...parche } };
       if (tieneContenido(fmt, guardado.datos)) guardado = guardarRegistro(fmt, guardado);
@@ -201,6 +201,24 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     const act = (patch) => setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: cur.datos[s.k].map((f, k) => { if (k !== i) return f; const n = { ...f, ...patch }; const extra = s.autoFila ? s.autoFila(n, f) : null; return extra ? { ...n, ...extra } : n; }) } }));
     const etq = etiquetaUI({ etq: c.enc, label: c.label }) + (c.etqUnidad && texto(fila[c.etqUnidad]) ? ` (${texto(fila[c.etqUnidad])})` : ""); const v = fila[c.k];
     if (c.tipo === "calculado") return <Calculado key={c.k} label={etq} valor={c.calc ? c.calc(fila, datos) : ""} semaforo={c.semaforo} />;
+    if (c.tipo === "oculto") return null;
+    if (c.soloSi && !c.soloSi(fila)) return null;
+    if (c.tipo === "historial") {
+      const hs = Array.isArray(v) ? v : [];
+      if (!hs.length) return null;
+      const f8 = (x) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(x || "")); return m ? `${m[3]}/${m[2]}/${m[1]}` : String(x || ""); };
+      return (
+        <div key={c.k} data-historial className="w-full">
+          <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#8A8F99" }}>{etq}</div>
+          <div className="text-[11.5px] rounded-md px-2.5 py-1.5 space-y-0.5" style={{ background: "#F3F4F6", color: NAVY }}>{[...hs].reverse().map((e, j) => <div key={j}>{f8(e.fecha)}{e.quien ? ` · ${e.quien}` : ""} — {e.texto}</div>)}</div>
+        </div>
+      );
+    }
+    if (c.soloCalidad && !puedeCalidad) return <Calculado key={c.k} label={etq} valor={c.k === "estado" || c.k === "version" ? v : (c.tipo === "fecha" ? v : v)} semaforo={c.semaforo} />;
+    if (c.fuente === "codigosMaestro") {
+      const ops = (datos[s.k] || []).filter((x, j) => j !== i && texto(x.codigo) && x.estado !== "Obsoleto").map((x) => ({ texto: texto(x.codigo), detalle: texto(x.nombre) }));
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={ops} opcionesAlAbrir={ops.slice(0, 8)} placeholder="Elige el código del registro nuevo o déjalo vacío" />;
+    }
     if (c.tipo === "hora" || c.tipo === "horaExcel") return <SelectorHora key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} />;
     if (c.tipo === "fechahora") return <Campo key={c.k} label={etq} type="datetime-local" value={v} onChange={(x) => act({ [c.k]: x })} />;
     if (c.fuente === "materiales") {
@@ -284,7 +302,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
           <div key={i} className="border rounded-lg p-2.5 mb-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>
             {s.plegable ? (
               <button type="button" data-fila={llave} onClick={() => setFilaAbierta((a) => ({ ...a, [llave]: !a[llave] }))} className="w-full text-left text-[12px] font-semibold pr-5" style={{ color: NAVY }}>
-                <span style={{ color: GOLD }}>{plegada ? "▸" : "▾"} #{i + 1}</span> {texto(fila[s.tituloFila]) || <span style={{ color: "#8A8F99" }}>(sin nombre)</span>}
+                <span style={{ color: GOLD }}>{plegada ? "▸" : "▾"} #{i + 1}</span> {s.obsoletaSi && s.obsoletaSi(fila) ? <span data-obsoleto style={{ color: "#8A8F99", textDecoration: "line-through" }}>{texto(fila[s.tituloFila])}</span> : (texto(fila[s.tituloFila]) || <span style={{ color: "#8A8F99" }}>(sin nombre)</span>)}{s.obsoletaSi && s.obsoletaSi(fila) && <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#FDEDEA", color: "#B3401F" }}>OBSOLETO</span>}
               </button>
             ) : <div className="text-[10px] font-bold mb-1" style={{ color: GOLD }}>{s.nombreFila || "Fila"} #{i + 1}</div>}
             {!plegada && <div className="space-y-2 mt-1.5">{s.cols.map((c) => celdaTabla(s, fila, i, c))}</div>}

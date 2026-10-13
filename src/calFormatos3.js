@@ -1175,6 +1175,12 @@ export const ACTA = {
 };
 
 // ================================================================= CA-003 Listado maestro de registros de calidad
+// En el Excel el estado de un registro obsoleto dice desde cuándo y qué lo reemplaza
+function excelEstadoMaestro(f) {
+  const e = texto(f.estado); if (e !== "Obsoleto") return e;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(texto(f.fechaObs)); const fecha = m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+  return `Obsoleto${fecha ? " (" + fecha + ")" : ""}${texto(f.reemplazo) ? " → " + texto(f.reemplazo) : ""}`;
+}
 export const MAESTRO = {
   id: "cal-maestro", fotos: false, col: "cal_maestro", clave: "ryr_cal_maestro", codigo: "RYR-CA-003", hoja: "Listado Maestro", plantilla: "/plantilla-cal-maestro.xlsx", archivo: "Listado_Maestro",
   titulo: "Listado Maestro de Registros", subtitulo: "RYR-CA-003 · Todos los registros de la empresa por Gestión: quién los llena y cuánto se conservan", panelObra: ["contrato", "contratista"], copiarTablas: true,
@@ -1197,15 +1203,44 @@ export const MAESTRO = {
         { k: "frecuencia", enc: "Frecuencia", tipo: "texto" },
         { k: "archivo", enc: "Dónde se archiva", tipo: "texto" },
         { k: "conservacion", enc: "Tiempo de conservación", tipo: "texto" },
-        { k: "version", enc: "Versión", tipo: "numero", numerica: true },
-        { k: "estado", enc: "Estado", tipo: "chips", opciones: ["Vigente", "Obsoleto"], semaforo: true },
-      ] },
+        { k: "version", enc: "Versión", tipo: "numero", numerica: true, soloCalidad: true },
+        { k: "estado", enc: "Estado", tipo: "chips", opciones: ["Vigente", "Obsoleto"], semaforo: true, soloCalidad: true, excel: excelEstadoMaestro },
+        { k: "fechaObs", enc: "Fecha en que quedó obsoleto", tipo: "fecha", soloApp: true, soloCalidad: true, soloSi: (f) => f.estado === "Obsoleto" },
+        { k: "motivo", enc: "Motivo del cambio (obsolescencia o nueva versión)", tipo: "area", soloApp: true, soloCalidad: true },
+        { k: "reemplazo", enc: "Lo reemplaza (código del registro nuevo)", tipo: "texto", fuente: "codigosMaestro", soloApp: true, soloCalidad: true, soloSi: (f) => f.estado === "Obsoleto" },
+        { k: "historial", enc: "Historial de cambios", tipo: "historial", soloApp: true },
+        { k: "baseEstado", enc: "base estado", tipo: "oculto", soloApp: true },
+        { k: "baseVersion", enc: "base versión", tipo: "oculto", soloApp: true },
+      ], obsoletaSi: (f) => f && f.estado === "Obsoleto",
+      // al marcar Obsoleto se pone la fecha de hoy (Calidad la puede cambiar); al volver a Vigente se limpian fecha y reemplazo
+      autoFila: (n, a) => (n.estado !== a.estado ? (n.estado === "Obsoleto" ? (texto(n.fechaObs) ? null : { fechaObs: hoyISO() }) : { fechaObs: "", reemplazo: "" }) : null) },
   ],
   firmas: { ...FIRMAS3("3. FIRMAS", "Elaboró — inspector / ingeniero de calidad", "Revisó — residente de obra", "Vo.Bo. — gerencia / interventoría", ["elaboro", "reviso", "vobo"]), req: false },
+  // Al guardar: deja en el historial de cada registro lo que cambió (estado o versión), con fecha y quién lo hizo
+  alGuardar: (d, reg, ctx) => {
+    const filas = Array.isArray(d.registros) ? d.registros : []; let cambio = false; const hoy = hoyISO(); const quien = (ctx && ctx.usuario) || "";
+    const nuevas = filas.map((f0) => {
+      let f = f0; if (!texto(f.codigo) && !texto(f.nombre)) return f;
+      const estado = texto(f.estado) || "Vigente", version = texto(f.version);
+      if (f.baseEstado === undefined || f.baseEstado === null || f.baseEstado === "") f = { ...f, baseEstado: "Vigente", baseVersion: version };   // registro anterior al control: se toma como punto de partida «Vigente» y esta versión
+      const h = Array.isArray(f.historial) ? [...f.historial] : []; let hecho = false; const extra = {};
+      if (estado !== f.baseEstado) {
+        hecho = true; h.push({ fecha: hoy, quien, texto: estado === "Obsoleto" ? `Marcado OBSOLETO${texto(f.reemplazo) ? ` · lo reemplaza ${texto(f.reemplazo)}` : ""}${texto(f.motivo) ? ` · ${texto(f.motivo)}` : ""}` : `Vuelve a ${estado}${texto(f.motivo) ? ` · ${texto(f.motivo)}` : ""}` });
+      }
+      if (version !== texto(f.baseVersion)) { hecho = true; h.push({ fecha: hoy, quien, texto: `Versión ${texto(f.baseVersion) || "—"} → ${version || "—"}${texto(f.motivo) ? ` · ${texto(f.motivo)}` : ""}` }); }
+      if (!hecho) { if (f !== f0) cambio = true; return f; }
+      cambio = true; return { ...f, ...extra, historial: h, baseEstado: estado, baseVersion: version, motivo: "" };
+    });
+    return cambio ? { registros: nuevas } : null;
+  },
   etiquetaExtra: (d) => `${filasConDatos(MAESTRO.secciones[1], d).length} registros`,
   resumen: (d) => { const f = filasConDatos(MAESTRO.secciones[1], d); return [{ t: "Registros", v: f.length }, { t: "Vigentes", v: f.filter((x) => x.estado === "Vigente").length, color: "#1D6B3A" }, { t: "Obsoletos", v: f.filter((x) => x.estado === "Obsoleto").length, color: "#B3401F" }]; },
   avisos: (d) => {
     const a = []; const f = filasConDatos(MAESTRO.secciones[1], d); const cods = f.map((x) => norm(x.codigo));
+    for (const x of f) if (x.estado === "Obsoleto") {
+      const faltaDe = []; if (!texto(x.fechaObs)) faltaDe.push("la fecha"); if (!texto(x.reemplazo)) faltaDe.push("qué registro lo reemplaza (déjalo vacío si no hay reemplazo)");
+      if (faltaDe.length) { a.push({ tipo: "aviso", texto: `${x.codigo} está Obsoleto y le falta ${faltaDe[0]}${faltaDe[1] ? " y " + faltaDe[1] : ""}.` }); break; }
+    }
     const rep = cods.filter((c, i) => cods.indexOf(c) !== i); if (rep.length) a.push({ tipo: "aviso", texto: `El código ${rep[0].toUpperCase()} está repetido en el listado.` });
     const faltan = MAESTRO_FILAS.filter((m) => !cods.includes(norm(m[0])));
     if (faltan.length) a.push({ tipo: "aviso", texto: `Faltan ${faltan.length} registros en el listado${faltan.length <= 4 ? ": " + faltan.map((m) => m[0] + " " + m[1]).join("; ") : " (por ejemplo " + faltan.slice(0, 3).map((m) => m[0]).join(", ") + ")"}. Usa el botón «Restaurar» al final de la sección 2 para traerlos.` });
