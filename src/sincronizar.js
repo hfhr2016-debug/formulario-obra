@@ -12,6 +12,11 @@ const G = "gerente", D = "director", R = "residente", A = "administrativo", L = 
 
 // Cada flujo = una colección del servidor. leer / escribir = cargos que pueden (el administrador siempre puede).
 // Es la misma matriz de cpPermisos.jsx; las reglas del servidor (firestore.rules) se generan desde esta tabla con generar_reglas.js.
+// ---- Qué claves del dispositivo se espejan en SG-SST, Ambiental y Técnica ----
+const NO_SINCRONIZAR = /_consecutivo$|^ryr_sync_|^ryr_sst_ultimos|_ultim[oa]s?(_|$)|^ryr_nombres_usados$/;   // consecutivos (numeración) y «lo último que usó este equipo»
+export const esClaveSST = (k) => typeof k === "string" && !NO_SINCRONIZAR.test(k) && (/^ryr_sst_/.test(k) || /^ryr_borrador_(ats|accidente|acciones|actos_condiciones|capacitaciones|charla|contratistas|emergencias|entrega_epp|ficha|indicadores|induccion|inspeccion|investigacion|lista_asistencia|matriz|mensual_sst|permiso_trabajo|personal|semanal_sst)$/.test(k));
+export const esClaveAmbiental = (k) => typeof k === "string" && !NO_SINCRONIZAR.test(k) && (/^ryr_amb_/.test(k) || /^ryr_borrador_.*(_amb|ambiental)$/.test(k) || /^ryr_borrador_(forestal|consumos|emisiones|fotografico|hidrocarburos|manifiesto_rcd|maquinaria|pqrs|quimicos|residuos|vertimientos)$/.test(k));
+export const esClaveTecnica = (k) => typeof k === "string" && !NO_SINCRONIZAR.test(k) && (/^ryr_borrador_(apu|acta|cantidades|cronograma|diario|mensual|memoria|presupuesto|semanal)$/.test(k) || /^(ryr_apus_guardados|ryr_cronograma_fechas|ryr_avance_diario_actividades|ryr_avance_diario_capitulos|ryr_horas_hombre_diario)$/.test(k) || /^ryr_acumulados_items_/.test(k));
 export const FLUJOS = [
   { col: "cp_obras",          clave: "ryr_cp_obras",          tipo: "lista", idDe: (r) => r.id,       leer: [G, D, R, A, L], escribir: [G, D, R, A] },
   { col: "cp_facturas",       clave: "ryr_cp_facturas",       tipo: "lista", idDe: (r) => r.id,       leer: [G, D, R, A],    escribir: [G, D, R, A] },
@@ -61,8 +66,14 @@ export const FLUJOS = [
   { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
   { col: "cat_equipos",    clave: "ryr_cat_equipos",    tipo: "mapa", catalogo: true },
   { col: "cat_actividades", clave: "ryr_cat_actividades", tipo: "mapa", catalogo: true },
+  // SG-SST, Ambiental y Técnica (informes, borradores y registros): cada clave guardada en el dispositivo es UN documento del servidor.
+  // Así lo que se empieza en el celular se puede seguir en el PC. No se sincronizan los consecutivos ni lo propio de cada equipo.
+  { col: "sst_datos", tipo: "claves", gestion: "sst",       incluye: (k) => esClaveSST(k) },
+  { col: "amb_datos", tipo: "claves", gestion: "ambiental", incluye: (k) => esClaveAmbiental(k) },
+  { col: "tec_datos", tipo: "claves", gestion: "tecnica",   incluye: (k) => esClaveTecnica(k) },
 ];
-export const CLAVES_SINCRONIZADAS = Array.from(new Set(FLUJOS.map((f) => f.clave)));
+export const CLAVES_SINCRONIZADAS = Array.from(new Set(FLUJOS.map((f) => f.clave).filter(Boolean)));
+export const esClaveSincronizada = (k) => FLUJOS.some((f) => f.tipo === "claves" && f.incluye(k)) || CLAVES_SINCRONIZADAS.includes(k);
 export const CLAVE_ESTADO_SYNC = "ryr_sync_estado";
 export const CLAVE_UID_SYNC = "ryr_sync_uid";
 
@@ -73,6 +84,7 @@ export function puede(perfil, f, modo) {
   if (f.catalogo) return modo === "leer";                       // los catálogos: todos leen, solo el administrador escribe
   const roles = perfil.roles || [];
   if (f.calidad) return roles.includes("calidad");
+  if (f.gestion) return roles.includes(f.gestion) || (f.gestion === "tecnica" && modo === "leer" && roles.includes("presupuesto"));   // SG-SST, Ambiental y Técnica: quien tenga esa gestión
   if (f.tecnica) return roles.includes("tecnica") || (modo === "leer" && roles.includes("presupuesto"));
   if (!roles.includes("presupuesto")) return false;
   return (f[modo] || []).includes(perfil.rolCP);
@@ -87,8 +99,18 @@ const leer = (almacen, clave, porDefecto) => { try { const t = almacen.getItem(c
 const escribir = (almacen, clave, valor) => { try { almacen.setItem(clave, JSON.stringify(valor)); } catch (e) { /* sin memoria */ } };
 
 // Registros locales de un flujo como { id: objeto }
+// Claves del dispositivo que corresponden a un flujo de tipo «claves»
+function clavesDe(almacen, f) {
+  const out = [];
+  try { for (let i = 0; i < almacen.length; i++) { const k = almacen.key(i); if (f.incluye(k)) out.push(k); } } catch (x) { /* sin lectura */ }
+  return out;
+}
 function registrosLocales(almacen, f) {
   const out = {};
+  if (f.tipo === "claves") {
+    clavesDe(almacen, f).forEach((k) => { const v = leer(almacen, k, undefined); if (v !== undefined && v !== null) out[k] = v; });
+    return out;
+  }
   if (f.tipo === "lista") {
     const a = leer(almacen, f.clave, []);
     (Array.isArray(a) ? a : []).forEach((r) => { const id = r && f.idDe(r); if (id) out[id] = r; });
@@ -99,6 +121,11 @@ function registrosLocales(almacen, f) {
   return out;
 }
 function guardarRegistrosLocales(almacen, f, regs) {
+  if (f.tipo === "claves") {
+    clavesDe(almacen, f).forEach((k) => { if (regs[k] === undefined) { try { almacen.removeItem(k); } catch (x) { /* nada */ } } });
+    Object.keys(regs).forEach((k) => { const nuevo = JSON.stringify(regs[k]); let previo = null; try { previo = almacen.getItem(k); } catch (x) { /* nada */ } if (previo !== nuevo) escribir(almacen, k, regs[k]); });
+    return;
+  }
   if (f.tipo === "lista") {
     const actual = leer(almacen, f.clave, []);
     const lista = Array.isArray(actual) ? actual : [];
@@ -115,6 +142,23 @@ function guardarRegistrosLocales(almacen, f, regs) {
     Object.keys(regs).forEach((k) => { m[k] = regs[k]; });
     escribir(almacen, f.clave, m);
   }
+}
+
+// Dos copias del MISMO valor que se ven por primera vez (una en el equipo, otra en el servidor): si son listas con identificador se unen
+// (lo más reciente de cada registro); si no, se queda la del equipo cuando fue editada después de lo que hay en el servidor o no se sabe cuándo.
+function idDeItem(x) { return x && typeof x === "object" ? (x.id !== undefined ? x.id : x.nombreId !== undefined ? x.nombreId : JSON.stringify(x)) : JSON.stringify(x); }
+export function fusionarValores(local, remoto, modLocal, tsRemoto) {
+  if (Array.isArray(local) && Array.isArray(remoto)) {
+    const mapa = new Map(); const orden = [];
+    local.forEach((x) => { const id = idDeItem(x); if (!mapa.has(id)) orden.push(id); mapa.set(id, x); });
+    remoto.forEach((x) => {
+      const id = idDeItem(x);
+      if (!mapa.has(id)) { orden.push(id); mapa.set(id, x); return; }
+      const l = mapa.get(id); if ((Number(x && x.actualizado) || 0) > (Number(l && l.actualizado) || 0)) mapa.set(id, x);
+    });
+    return orden.map((id) => mapa.get(id));
+  }
+  return modLocal && modLocal < tsRemoto ? remoto : local;
 }
 
 // ---------- Motor ----------
@@ -150,6 +194,11 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
       } else if (enLocal && !data.borrado) {
         let remoto = null; try { remoto = JSON.parse(data.json); } catch (x) { /* ilegible */ }
         if (remoto && canon(remoto) === localCanon) { e.base[k] = localCanon; e.ts[k] = ts; return; }
+        if (f.tipo === "claves") {                                         // primera vez que se ven: se unen (listas) o queda la más reciente
+          const fus = fusionarValores(loc[k], remoto, Number((estadoTodo.__mod || {})[k]) || 0, ts);
+          loc[k] = fus; e.base[k] = canon(remoto); e.ts[k] = ts; cambio = true;   // la base es lo del servidor: si lo unido es distinto, se sube
+          return;
+        }
         const loc_act = Number(loc[k] && loc[k].actualizado) || 0;
         if (loc_act > ts) return;                                          // primera vez que se ven: gana lo más reciente
       }
@@ -185,6 +234,7 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
       Object.keys(loc).forEach((k) => {
         const c = canon(loc[k]);
         if (e.base[k] === c) return;
+        if (f.tipo === "claves" && c.length > 850000) { onEvento({ tipo: "error", col: f.col, error: new Error("demasiado grande para sincronizar: " + k) }); return; }   // el servidor no admite documentos tan grandes
         const ts = Math.max(ahora(), (e.ts[k] || 0) + 1);
         e.base[k] = c; e.ts[k] = ts;                                       // optimista: la cola sin conexión del SDK lo enviará
         tareas.push(adaptador.escribir(f.col, codificarId(k), { json: JSON.stringify(loc[k]), ts, borrado: false, por: uid }).catch((er) => onEvento({ tipo: "error", col: f.col, error: er })));
@@ -223,7 +273,11 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
       await enCurso;
       onEvento({ tipo: "listo" });
     },
-    cambio(clave) { if (CLAVES_SINCRONIZADAS.includes(clave)) programar(); },
+    cambio(clave) {
+      if (!esClaveSincronizada(clave)) return;
+      if (flujos.some((f) => f.tipo === "claves" && f.incluye(clave))) { (estadoTodo.__mod = estadoTodo.__mod || {})[clave] = ahora(); }   // cuándo se tocó por última vez en este equipo
+      programar();
+    },
     enviarYa() { clearTimeout(temporizador); enCurso = subir(); return enCurso; },
     // ¿Queda algo en el dispositivo que el servidor aún no tiene?
     hayPendientes() {
@@ -254,6 +308,7 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
 // Borra del dispositivo los datos sincronizados (solo los de los flujos dados) y el registro de sincronización.
 export function borrarCopiaLocal(almacen, flujos = FLUJOS) {
   flujos.forEach((f) => {
+    if (f.tipo === "claves") { clavesDe(almacen, f).forEach((k) => { try { almacen.removeItem(k); } catch (x) { /* nada */ } }); return; }
     if (f.tipo === "lista") { try { almacen.removeItem(f.clave); } catch (x) { /* nada */ } return; }
     const m = leer(almacen, f.clave, {}) || {};
     Object.keys(m).forEach((k) => { if (!f.prefijo || k.startsWith(f.prefijo)) delete m[k]; });

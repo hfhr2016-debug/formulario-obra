@@ -16,6 +16,7 @@ import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_capacitaciones";
 const CLAVE_TEMAS = "ryr_sst_temas_lista";                 // la misma memoria de temas de la Lista de Asistencia
@@ -71,13 +72,13 @@ export default function FormularioCapacitaciones({ onVolver }) {
     <BloqueProfesional memoria={memoria} etqNombre="Responsable del programa SST (nombre)" etqCargo="Cargo del responsable" nombre={d.responsableNombre} cargo={d.responsableCargo} onChange={cambiarPersona("responsableNombre", "responsableCargo")} />
   );
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Filas de la matriz ----
   const filas = d.filas;

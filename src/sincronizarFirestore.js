@@ -27,6 +27,12 @@ function instalarGancho() {
     original.call(this, clave, valor);
     try { if (motor && this === window.localStorage) motor.cambio(clave); } catch (e) { /* nunca debe romper un guardado */ }
   };
+  // Borrar una clave (p. ej. un borrador terminado) también se sincroniza
+  const quitar = Storage.prototype.removeItem;
+  Storage.prototype.removeItem = function (clave) {
+    quitar.call(this, clave);
+    try { if (motor && this === window.localStorage) motor.cambio(clave); } catch (e) { /* nunca debe romper un borrado */ }
+  };
 }
 
 export async function iniciarSync({ uid, perfil, onEvento }) {

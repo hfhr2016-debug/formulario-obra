@@ -18,6 +18,7 @@ import { CERTIFICACIONES } from "./sstListas";
 import { fechaHoyISO } from "./sstBase";
 import { ChipsOpcion, CampoFecha, FilaVerificacion } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_permiso_trabajo";
 const CLAVE_CONSECUTIVO = "ryr_sst_permiso_consecutivo";
@@ -72,13 +73,13 @@ export default function FormularioPermisoTrabajo({ onVolver }) {
       ...(patch.cargo !== undefined ? { [campoCargo]: patch.cargo } : {}),
     }));
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Tipo de trabajo ----
   // Cada permiso es de UN tipo. Al cambiar de tipo se limpian los requisitos (cada tipo tiene los suyos).

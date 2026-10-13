@@ -38,8 +38,9 @@ export const CLAVE_AMB_ICA = "ryr_amb_ica";                         // resumen d
 export function obrasConocidas() {
   const amb = leerJSON(CLAVE_AMB_FICHA, []).map((f) => ({ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.municipio || f.ubicacion || "", origen: "ambiental" }));
   const sst = leerJSON("ryr_sst_ficha", []).map((f) => ({ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion || "", origen: "SST" }));
+  const tec = leerJSON("ryr_proyectos_guardados", []).filter((p) => p && p.datos).map((p) => ({ proyecto: String(p.datos.proyecto || ""), contratista: String(p.datos.contratista || ""), ubicacion: String(p.datos.ubicacion || ""), origen: "Técnica" }));
   const vistos = new Set(); const todas = [];
-  for (const o of [...amb, ...sst]) {
+  for (const o of [...amb, ...sst, ...tec]) {
     const k = String(o.proyecto || "").trim().toLowerCase();
     if (!k || vistos.has(k)) continue;
     vistos.add(k); todas.push(o);

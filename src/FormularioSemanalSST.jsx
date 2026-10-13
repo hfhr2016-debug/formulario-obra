@@ -13,7 +13,7 @@ import {
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 
-const CLAVE_BORRADOR = "ryr_borrador_semanal";
+const CLAVE_BORRADOR = "ryr_borrador_semanal_sst";   // propia: la de Técnica ("ryr_borrador_semanal") es otra
 const CLAVE_SEMANALES = "ryr_sst_semanales";           // resumen de cada informe semanal generado
 
 function datosIniciales() {

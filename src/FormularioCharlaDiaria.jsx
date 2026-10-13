@@ -12,6 +12,7 @@ import { BotonMenuSST } from "./sstNavegacion";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
 import { TraerDeFicha, SelectorHora } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -499,7 +500,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     setBorradorDisponible(false);
   }
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
@@ -510,7 +511,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       ubicacion: f.ubicacion || cur.ubicacion,
     }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Asistentes ----
   const asistentes = d.asistentes;

@@ -15,6 +15,7 @@ import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { EPS, ARL, AFP, PARENTESCOS } from "./sstListas";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_induccion";
 const CLAVE_CONSECUTIVO = "ryr_sst_induccion_consecutivo";
@@ -90,13 +91,13 @@ export default function FormularioInduccion({ onVolver }) {
     }));
   }
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   const actualizarDoc = (i, campo, valor) => setD((cur) => ({ ...cur, documentos: cur.documentos.map((x, k) => (k === i ? { ...x, [campo]: valor } : x)) }));
   const actualizarTema = (i, campo, valor) => setD((cur) => ({ ...cur, temas: cur.temas.map((x, k) => (k === i ? { ...x, [campo]: valor } : x)) }));

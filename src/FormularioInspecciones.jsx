@@ -16,6 +16,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha, FilaVerificacion, GrillaOpciones } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_inspeccion";
 const CLAVE_CONSECUTIVO = "ryr_sst_inspeccion_consecutivo";
@@ -63,13 +64,13 @@ export default function FormularioInspecciones({ onVolver }) {
       ...(patch.cargo !== undefined ? { [campoCargo]: patch.cargo } : {}),
     }));
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Lista de verificación ----
   const poner = (campo, i, valor) => setD((cur) => ({ ...cur, [campo]: cur[campo].map((v, k) => (k === i ? valor : v)) }));

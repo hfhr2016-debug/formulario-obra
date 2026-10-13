@@ -14,6 +14,7 @@ import { camposFaltantesEpp } from "./eppDatos";
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_entrega_epp";
 const CLAVE_EPP_USADOS = "ryr_sst_epp_usados";            // elementos de EPP que el usuario ha escrito antes
@@ -72,13 +73,13 @@ export default function FormularioEntregaEPP({ onVolver }) {
     <BloqueProfesional memoria={memoria} etqNombre="Entrega a cargo de (nombre)" etqCargo="Cargo de quien entrega" nombre={d.entregaNombre} cargo={d.entregaCargo} onChange={cambiarPersona("entregaNombre", "entregaCargo")} />
   );
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Líneas de entrega ----
   const lineas = d.lineas;

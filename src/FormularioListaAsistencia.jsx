@@ -17,6 +17,7 @@ import { decidirDistribucion } from "./sstBase";
 import { useListaRecordada } from "./sstComunes";
 import { ENTIDADES_QUE_DICTAN } from "./sstListas";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_lista_asistencia";
 const CLAVE_TEMAS = "ryr_sst_temas_lista";                      // temas que el usuario ha escrito antes
@@ -101,13 +102,13 @@ export default function FormularioListaAsistencia({ onVolver }) {
     setBorradorDisponible(false);
   }
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Asistentes ----
   const asistentes = d.asistentes;

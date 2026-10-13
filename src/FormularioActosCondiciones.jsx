@@ -13,6 +13,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha, GrillaOpciones, CasillaFoto, fotoVacia, agregarFotosARecuadros, lineasMarca, InterruptorMarca } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_actos_condiciones";
 const CLAVE_CONSECUTIVO = "ryr_sst_actos_consecutivo";
@@ -58,13 +59,13 @@ export default function FormularioActosCondiciones({ onVolver }) {
       ...(patch.cargo !== undefined ? { [campoCargo]: patch.cargo } : {}),
     }));
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   const alternarMarca = (campo) => (base) => setD((cur) => ({ ...cur, [campo]: cur[campo].includes(base) ? cur[campo].filter((t) => t !== base) : [...cur[campo], base] }));
   const cambiarOtro = (base, texto) => setD((cur) => ({ ...cur, otros: { ...cur.otros, [base]: texto } }));

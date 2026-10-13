@@ -14,6 +14,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 import { ChipsOpcion, CampoFecha, GrillaOpciones } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const CLAVE_BORRADOR = "ryr_borrador_ats";
 const CLAVE_CONSECUTIVO = "ryr_sst_ats_consecutivo";
@@ -71,13 +72,13 @@ export default function FormularioATS({ onVolver }) {
       ...(patch.cargo !== undefined ? { [campoCargo]: patch.cargo } : {}),
     }));
 
-  function traerDeFicha() {
+  function traerDeFicha() { pedirProyectoFicha(() => {
     const lista = leerJSON("ryr_proyectos_guardados", []);
     if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
     const f = lista[0].datos || {};
     setD((cur) => ({ ...cur, proyecto: f.proyecto || cur.proyecto, contratista: f.contratista || cur.contratista, ubicacion: f.ubicacion || cur.ubicacion }));
     alert(`Datos traídos de: "${lista[0].nombreId}"`);
-  }
+  });}
 
   // ---- Pasos de la tarea ----
   const setPasos = (nuevos) => setD((cur) => ({ ...cur, pasos: nuevos }));

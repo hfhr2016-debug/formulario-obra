@@ -4,6 +4,7 @@ import { actividadesVigentes } from "./catalogoVivo";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
+import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -467,7 +468,7 @@ export default function FormularioCronograma({ onVolver, onNavegar }) {
         )}
         <button
           type="button"
-          onClick={() => {
+          onClick={() => { pedirProyectoFicha(() => {
             try {
               const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
               if (!lista.length) { alert("No hay ninguna Ficha Técnica guardada todavía en este dispositivo."); return; }
@@ -479,7 +480,7 @@ export default function FormularioCronograma({ onVolver, onNavegar }) {
             } catch (e) {
               alert("No se pudo leer la memoria de Ficha Técnica.");
             }
-          }}
+          });}}
           className="w-full text-center py-2.5 rounded-lg text-[12.5px] font-semibold text-white mb-3"
           style={{ background: NAVY }}
         >

@@ -574,7 +574,12 @@ export function SelectorHora({ label, value, onChange, half }) {
 // ---------- "Traer los datos de la obra" desde la Ficha SST (una vez diligenciada, los demás formularios no tienen que repetirlos) ----------
 export function TraerDeFicha({ onTraer }) {
   const [aviso, setAviso] = useState("");
-  const fichas = leerJSON("ryr_sst_ficha", []);
+  const sst = leerJSON("ryr_sst_ficha", []);
+  // También los proyectos de la Ficha Técnica (no se repiten los que ya están en la Ficha SST)
+  const nombresSst = new Set(sst.map((x) => String(x.proyecto || "").trim().toLowerCase()));
+  const tecnicos = leerJSON("ryr_proyectos_guardados", []).filter((p) => p && p.datos && String(p.datos.proyecto || "").trim() && !nombresSst.has(String(p.datos.proyecto).trim().toLowerCase()))
+    .map((p) => ({ proyecto: String(p.datos.proyecto), contratista: String(p.datos.contratista || ""), ubicacion: String(p.datos.ubicacion || "") }));
+  const fichas = [...sst, ...tecnicos];
   if (!fichas.length) return null;
   const traer = (f) => { onTraer(f); setAviso(`Se trajeron los datos de «${f.proyecto}».`); };
   return (
@@ -582,7 +587,7 @@ export function TraerDeFicha({ onTraer }) {
       {fichas.length === 1 ? (
         <button type="button" onClick={() => traer(fichas[0])} className="w-full text-left text-[12px] font-semibold" style={{ color: NAVY }}>📋 Traer los datos de la obra · {fichas[0].proyecto}</button>
       ) : (
-        <Lista label="📋 Traer los datos de la obra (Ficha SST)" value="" onChange={(v) => { const f = fichas.find((x) => x.proyecto === v); if (f) traer(f); }} opciones={fichas.map((x) => x.proyecto)} />
+        <Lista label="📋 Traer los datos de la obra (Ficha SST o Técnica)" value="" onChange={(v) => { const f = fichas.find((x) => x.proyecto === v); if (f) traer(f); }} opciones={fichas.map((x) => x.proyecto)} />
       )}
       {aviso && <div className="text-[11px] mt-1" style={{ color: "#2E7D4F" }}>{aviso}</div>}
     </div>

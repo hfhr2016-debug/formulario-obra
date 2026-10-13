@@ -12,7 +12,7 @@ import {
 import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion } from "./sstBase";
 
-const CLAVE_BORRADOR = "ryr_borrador_mensual";
+const CLAVE_BORRADOR = "ryr_borrador_mensual_sst";   // propia: la de Técnica ("ryr_borrador_mensual") es otra
 const CLAVE_CONSECUTIVO = "ryr_sst_mensual_consecutivo";
 const CLAVE_MENSUALES = "ryr_sst_mensuales";           // resumen de cada informe mensual generado
 
