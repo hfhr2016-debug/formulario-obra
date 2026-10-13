@@ -48,6 +48,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   const [avisoTabla, setAvisoTabla] = useState({});
   const [creadasNC, setCreadasNC] = useState([]);
   const [filaAbierta, setFilaAbierta] = useState({});
+  const [filtroTabla, setFiltroTabla] = useState({});       // filtro activo de cada tabla que lo trae (p. ej. la Gestión en el Listado Maestro)
   const [regPorEliminar, setRegPorEliminar] = useState(null);   // registro guardado que se va a eliminar, esperando confirmación {id, nombre}
   const [regEliminado, setRegEliminado] = useState(null);       // último registro eliminado, para poder deshacer {reg, nombre}
   const [porQuitar, setPorQuitar] = useState(null);   // fila que se va a quitar, esperando confirmación {k, i, nombre}
@@ -149,7 +150,10 @@ export default function FormularioCalidad({ fmt, onVolver }) {
         const T = celdas.tablas[s.k];
         if (filasConDatos(s, datos).length > T.n) throw new Error(`la plantilla tiene espacio para ${T.n} filas en «${s.titulo}» y hay ${filasConDatos(s, datos).length}`);
       }
-      escribirEnHoja(ws, fmt, datos, celdas);
+      // Si una tabla tiene filtro activo (p. ej. la Gestión en el Listado Maestro), el Excel sale solo con esas filas
+      let datosExcel = datos;
+      for (const sec of seccionesDe(fmt)) { const fa = sec.filtro ? (filtroTabla[sec.k] || "") : ""; if (fa) datosExcel = { ...datosExcel, [sec.k]: (datos[sec.k] || []).filter((f) => sec.filtro.valorDe(f) === fa) }; }
+      escribirEnHoja(ws, fmt, datosExcel, celdas);
       const nFotos = fmt.fotos === false ? 0 : await agregarHojaFotos(workbook, { titulo: fmt.titulo, proyecto: h.obra.proyecto, fecha: String(datos.fecha || "").split("-").reverse().join("/"), fotos });
       await descargarLibro(workbook, `${fmt.archivo}_${textoParaArchivo(h.obra.proyecto, 24)}_${datos.fecha || "sin-fecha"}${texto(datos.hoja) ? "_Hoja-" + textoParaArchivo(datos.hoja, 12) : ""}.xlsx`);
       memoria.recordarUso({ personas: fmt.firmas.personas.map((p) => [datos[`${p.k}Nombre`], datos[`${p.k}Cargo`]]) });
@@ -258,11 +262,23 @@ export default function FormularioCalidad({ fmt, onVolver }) {
       const nombre = String(s.tituloFila ? fila[s.tituloFila] || "" : "").trim() || `${s.nombreFila || "fila"} ${i + 1}`;
       if (conDatos) setPorQuitar({ k: s.k, i, nombre }); else quitarYa(s.k, i, nombre, false);
     };
-    const agregar = (base = {}) => agregarFila(s, base);
+    const fAct = s.filtro ? (filtroTabla[s.k] || "") : "";
+    const agregar = (base = {}) => agregarFila(s, { ...(fAct ? { [s.filtro.k]: fAct } : {}), ...base });
     const ultima = filas[filas.length - 1];
+    const cuentaFiltro = (o) => filas.filter((f) => s.filtro.valorDe(f) === o).length;
     return (
       <Seccion key={s.id} id={s.id} titulo={s.titulo} subtitulo={`${filasConDatos(s, datos).length} de ${s.max}`} abierta={abierta === s.id} onToggle={alternar} contador={filasConDatos(s, datos).length}>
+        {s.filtro && <div className="text-[11px] mb-1.5" style={{ color: "#8A8F99" }}>{fAct ? `El Excel saldrá solo con los registros de ${fAct}.` : "El Excel saldrá con todos los registros. Elige una Gestión para sacar solo los suyos."}</div>}
+        {s.filtro && (
+          <div data-filtro-tabla className="flex flex-wrap gap-1.5 mb-3">
+            {["", ...s.filtro.opciones].map((o) => {
+              const act = fAct === o; const n = o ? cuentaFiltro(o) : filas.length;
+              return <button key={o || "todas"} type="button" data-filtro={o || "todas"} onClick={() => setFiltroTabla((a) => ({ ...a, [s.k]: o }))} className="text-[11.5px] px-2.5 py-1 rounded-full border" style={{ borderColor: act ? NAVY : LINE, background: act ? NAVY : "white", color: act ? "white" : NAVY, fontWeight: act ? 700 : 500 }}>{o || "Todas"} ({n})</button>;
+            })}
+          </div>
+        )}
         {filas.map((fila, i) => {
+          if (fAct && s.filtro.valorDe(fila) !== fAct) return null;
           const llave = `${s.k}${i}`; const plegada = s.plegable && !filaAbierta[llave];
           return (
           <div key={i} className="border rounded-lg p-2.5 mb-2.5 relative" style={{ borderColor: LINE, background: PAPER }}>

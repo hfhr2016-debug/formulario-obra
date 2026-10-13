@@ -227,6 +227,7 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
         for (let i = 0; i < T.n; i++) { const r = T.filas ? T.filas[i] : T.fila0 + i; for (const col of Object.values(T.columnas)) { try { ws.getCell(`${col}${r}`).value = null; } catch (e) { /* celda sin acceso */ } } }
       }
       escribirTabla(ws, T, filas);
+      if (s.ocultarSobrantes) { for (let i = filas.length; i < T.n; i++) { try { ws.getRow(T.filas ? T.filas[i] : T.fila0 + i).hidden = true; } catch (e) { /* fila sin acceso */ } } }   // plantilla con más filas de las usadas: las vacías no se ven ni se imprimen
       filas.forEach((f, i) => {
         const r = T.filas ? T.filas[i] : T.fila0 + i;
         for (const c of colsPlantilla(s)) if (T.columnas[c.k]) ajustarFormato(ws, `${T.columnas[c.k]}${r}`, f[c.k], c);

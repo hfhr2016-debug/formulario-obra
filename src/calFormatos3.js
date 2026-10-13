@@ -44,6 +44,10 @@ const ACT_A = [
  "Llaves, controles y accesorios entregados",
  "Lista de pendientes de entrega (RYR-CA-015) revisada y firmada"
 ];
+// Listado Maestro único de la empresa (lo administra Calidad). Cada fila trae su Gestión (última posición); los códigos RYR-TE son provisionales hasta que Calidad asigne los oficiales.
+const GESTIONES_MAESTRO = ["Calidad", "SG-SST", "Ambiental", "Presupuesto", "Técnica"];
+const GESTION_POR_PREFIJO = { CA: "Calidad", SS: "SG-SST", AM: "Ambiental", CP: "Presupuesto", TE: "Técnica" };
+const gestionDeFila = (f) => { const g = String((f && f.gestion) || "").trim(); if (g) return g; const m = /^RYR-([A-Z]{2})-/i.exec(String((f && f.codigo) || "").trim()); return (m && GESTION_POR_PREFIJO[m[1].toUpperCase()]) || "Calidad"; };
 const MAESTRO_FILAS = [
  [
   "RYR-CA-001",
@@ -53,7 +57,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-002",
@@ -63,7 +68,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-003",
@@ -73,7 +79,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-004",
@@ -83,7 +90,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-005",
@@ -93,7 +101,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-006",
@@ -103,7 +112,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-007",
@@ -113,7 +123,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-008",
@@ -123,7 +134,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-009",
@@ -133,7 +145,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-010",
@@ -143,7 +156,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-011",
@@ -153,7 +167,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-012",
@@ -163,7 +178,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-013",
@@ -173,7 +189,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-014",
@@ -183,7 +200,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-015",
@@ -193,7 +211,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-016",
@@ -203,7 +222,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-017",
@@ -213,7 +233,8 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
  ],
  [
   "RYR-CA-018",
@@ -223,9 +244,737 @@ const MAESTRO_FILAS = [
   "Carpeta de calidad y app",
   "Cierre del contrato + 5 años",
   "1",
-  "Vigente"
+  "Vigente",
+  "Calidad"
+ ],
+ [
+  "RYR-SS-002",
+  "Charla Diaria de Seguridad",
+  "Profesional SST",
+  "Diaria",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-003",
+  "Lista de Asistencia",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-004",
+  "Inducción en Seguridad y Salud en el Trabajo",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-005",
+  "Matriz de Capacitación SG-SST",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-006",
+  "Registro de Entrega de Elementos de Protección Personal (EPP)",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-007",
+  "Permiso de Trabajo de Alto Riesgo",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-008",
+  "Análisis de Trabajo Seguro (ATS)",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-010",
+  "Inspección de Seguridad",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-011",
+  "Tarjeta iCAI — Reporte de Actos y Condiciones Inseguras",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-012",
+  "Acciones Correctivas, Preventivas y de Mejora",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-013",
+  "Reporte de Accidente o Incidente de Trabajo",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-014",
+  "Investigación de Accidentes e Incidentes",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-015",
+  "Indicadores del SG-SST",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-016",
+  "Ficha SST del Proyecto",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-017",
+  "Registro de Personal de la Obra",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-018",
+  "Matriz de Peligros y Valoración de Riesgos",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-019",
+  "Plan de Emergencias de la Obra",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-020",
+  "Informe Semanal de SST",
+  "Profesional SST",
+  "Semanal",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-021",
+  "Informe Mensual de SST",
+  "Profesional SST",
+  "Mensual",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-SS-022",
+  "Evaluación de Contratistas en SST",
+  "Profesional SST",
+  "Cada vez que se usa",
+  "Carpeta de SG-SST y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "SG-SST"
+ ],
+ [
+  "RYR-AM-001",
+  "Ficha Ambiental de la Obra",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-002",
+  "Registro de Residuos",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-003",
+  "Manifiesto de Transporte de RCD",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-004",
+  "Control de Consumo de Agua, Energía y Combustibles",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-005",
+  "Control de Vertimientos y Manejo de Aguas",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-006",
+  "Control de Emisiones Atmosféricas y Ruido",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-007",
+  "Inspección Ambiental de Obra",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-008",
+  "Inspección Ambiental de Maquinaria y Equipos",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-009",
+  "Capacitación e Inducción Ambiental",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-010",
+  "Registro Fotográfico Ambiental",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-011",
+  "Incidente o Accidente Ambiental",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-012",
+  "Quejas y PQRS de la Comunidad",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-013",
+  "Matriz de Aspectos e Impactos Ambientales",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-014",
+  "Sustancias Químicas y Combustibles",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-015",
+  "Control de Hidrocarburos",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-016",
+  "Aprovechamiento Forestal",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-017",
+  "Acciones Correctivas, Preventivas y de Mejora Ambientales",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-018",
+  "Indicadores Ambientales",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-019",
+  "Informe Semanal Ambiental",
+  "Profesional ambiental",
+  "Semanal",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-020",
+  "Informe Mensual Ambiental",
+  "Profesional ambiental",
+  "Mensual",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-021",
+  "Informe Trimestral Ambiental",
+  "Profesional ambiental",
+  "Trimestral",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-022",
+  "Resumen para el Informe de Cumplimiento Ambiental (ICA)",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-023",
+  "Evaluación Ambiental de Contratistas",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-024",
+  "Plan de Emergencias Ambientales",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-AM-025",
+  "Registro de Permisos Ambientales",
+  "Profesional ambiental",
+  "Cada vez que se usa",
+  "Carpeta ambiental y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Ambiental"
+ ],
+ [
+  "RYR-CP-001",
+  "Registro de Costos Reales de Obra",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-002",
+  "Control Presupuestal de Obra",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-003",
+  "Adicionales, Obra No Prevista y Mayores Cantidades",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-004",
+  "Anticipo, Amortización y Retenciones",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-005",
+  "Control de Materiales de Obra",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-006",
+  "Control de Mano de Obra y Subcontratos",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-007",
+  "Control de Costos de Maquinaria y Equipos",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-008",
+  "Cuentas por Pagar y Vencimientos",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-009",
+  "Flujo de Caja de la Obra",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-010",
+  "Informe de Costos y Rentabilidad",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-CP-011",
+  "Cierre Financiero de la Obra",
+  "Residente / control de costos",
+  "Cada vez que se usa",
+  "Carpeta de costos y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Presupuesto"
+ ],
+ [
+  "RYR-TE-001",
+  "Ficha Técnica",
+  "Ingeniero residente",
+  "Una vez; se actualiza al cambiar el alcance",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-002",
+  "APU's",
+  "Ingeniero residente",
+  "Cada vez que se usa",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-003",
+  "Presupuesto de Obra",
+  "Ingeniero residente",
+  "Cada vez que se usa",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-004",
+  "Cronograma de Obra",
+  "Ingeniero residente",
+  "Se actualiza durante la obra",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-005",
+  "Cantidades de Obra",
+  "Ingeniero residente",
+  "Cada vez que se usa",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-006",
+  "Informe Diario de Obra",
+  "Ingeniero residente",
+  "Diaria",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-007",
+  "Informe Semanal de Obra",
+  "Ingeniero residente",
+  "Semanal",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-008",
+  "Informe Mensual de Obra",
+  "Ingeniero residente",
+  "Mensual",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-009",
+  "Memorias de Cálculo",
+  "Ingeniero residente",
+  "Cada vez que se usa",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
+ ],
+ [
+  "RYR-TE-010",
+  "Acta de Obra",
+  "Ingeniero residente",
+  "Cada vez que se usa",
+  "Carpeta técnica y app",
+  "Por definir",
+  "1",
+  "Vigente",
+  "Técnica"
  ]
 ];
+
 
 // ================================================================= CA-015 Pendientes de entrega (punch list)
 const ESTADOS_PEND = ["Pendiente", "En corrección", "Corregido", "Verificado"];
@@ -428,7 +1177,7 @@ export const ACTA = {
 // ================================================================= CA-003 Listado maestro de registros de calidad
 export const MAESTRO = {
   id: "cal-maestro", fotos: false, col: "cal_maestro", clave: "ryr_cal_maestro", codigo: "RYR-CA-003", hoja: "Listado Maestro", plantilla: "/plantilla-cal-maestro.xlsx", archivo: "Listado_Maestro",
-  titulo: "Listado Maestro de Registros", subtitulo: "RYR-CA-003 · Qué registros existen, quién los llena y cuánto se conservan", panelObra: ["contrato", "contratista"], copiarTablas: true,
+  titulo: "Listado Maestro de Registros", subtitulo: "RYR-CA-003 · Todos los registros de la empresa por Gestión: quién los llena y cuánto se conservan", panelObra: ["contrato", "contratista"], copiarTablas: true,
   secciones: [
     { id: "datos", titulo: "1. Datos generales", tipo: "campos", campos: [
       { k: "proyecto", etq: "Proyecto / Obra", colEtq: "A", obra: "proyecto" },
@@ -437,10 +1186,12 @@ export const MAESTRO = {
       { k: "contratista", etq: "Contratista / Empresa", colEtq: "A", obra: "contratista" },
       { k: "responsable", etq: "Responsable del listado", colEtq: "E", tipo: "persona", cargo: "Ingeniero de calidad" },
     ] },
-    { id: "registros", titulo: "2. Registros de calidad", tipo: "tabla", k: "registros", fin: "Registros vigentes", max: 19, req: true, nombreFila: "Registro", plegable: true, tituloFila: "nombre", limpiar: true,
-      inicial: MAESTRO_FILAS.map((f) => ({ codigo: f[0], nombre: f[1], responsable: f[2], frecuencia: f[3], archivo: f[4], conservacion: f[5], version: f[6], estado: f[7] })),
+    { id: "registros", titulo: "2. Registros de la empresa", tipo: "tabla", k: "registros", fin: "Registros vigentes", max: 120, ocultarSobrantes: true, restaurar: true, req: true, nombreFila: "Registro", plegable: true, tituloFila: "nombre", limpiar: true,
+      inicial: MAESTRO_FILAS.map((f) => ({ gestion: f[8], codigo: f[0], nombre: f[1], responsable: f[2], frecuencia: f[3], archivo: f[4], conservacion: f[5], version: f[6], estado: f[7] })),
+      filtro: { k: "gestion", opciones: GESTIONES_MAESTRO, valorDe: gestionDeFila },
       cols: [
         { k: "codigo", enc: "Código", tipo: "texto", req: true },
+        { k: "gestion", enc: "Gestión", tipo: "chips", opciones: GESTIONES_MAESTRO, soloApp: true },
         { k: "nombre", enc: "Nombre del registro", tipo: "texto", req: true },
         { k: "responsable", enc: "Responsable de diligenciarlo", tipo: "texto" },
         { k: "frecuencia", enc: "Frecuencia", tipo: "texto" },
@@ -457,7 +1208,7 @@ export const MAESTRO = {
     const a = []; const f = filasConDatos(MAESTRO.secciones[1], d); const cods = f.map((x) => norm(x.codigo));
     const rep = cods.filter((c, i) => cods.indexOf(c) !== i); if (rep.length) a.push({ tipo: "aviso", texto: `El código ${rep[0].toUpperCase()} está repetido en el listado.` });
     const faltan = MAESTRO_FILAS.filter((m) => !cods.includes(norm(m[0])));
-    if (faltan.length) a.push({ tipo: "aviso", texto: `Faltan en el listado: ${faltan.map((m) => m[0] + " " + m[1]).join("; ")}. Agrégalos como filas nuevas del listado.` });
+    if (faltan.length) a.push({ tipo: "aviso", texto: `Faltan ${faltan.length} registros en el listado${faltan.length <= 4 ? ": " + faltan.map((m) => m[0] + " " + m[1]).join("; ") : " (por ejemplo " + faltan.slice(0, 3).map((m) => m[0]).join(", ") + ")"}. Usa el botón «Restaurar» al final de la sección 2 para traerlos.` });
     return a;
   },
 };
