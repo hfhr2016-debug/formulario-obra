@@ -370,7 +370,8 @@ function factorDesperdicioSugerido(nombreMaterial) {
     [/vidrio/, 0.05],
     [/tubería|tuberia|conduit/, 0.05],
     [/acero/, 0.05],
-    [/cemento|concreto|agregado|arena|grava|recebo/, 0.03],
+    [/grava|gravilla|triturado|agregado|arena|recebo/, 0.07],      // agregados: entre 5 % y 10 % de merma
+    [/cemento|concreto/, 0.03],
   ];
   for (const [patron, factor] of reglas) {
     if (patron.test(n)) return factor;
