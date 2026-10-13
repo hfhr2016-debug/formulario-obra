@@ -2,6 +2,7 @@
 // Las piezas visuales (Seccion, Campo, BuscadorLista, AreaTexto, Lista, CampoCargo, SelectorHora) son las mismas de la Charla
 // Diaria. La lógica sin pantalla está en sstBase.js.
 import { useState, useEffect, useRef, useMemo } from "react";
+import { proyectoPermitido } from "./accesoProyectos";
 import ExcelJS from "exceljs";
 import { ChevronDown, Loader2, FileSpreadsheet } from "lucide-react";
 import {
@@ -43,14 +44,31 @@ export function borrar(clave) {
   try { localStorage.removeItem(clave); } catch (e) {}
 }
 
-// ---------- Numeración consecutiva (por formato) ----------
+// ---------- Numeración consecutiva (por formato y por proyecto) ----------
+// Cada proyecto (o frente) lleva su propia numeración: el formulario avisa con qué proyecto trabaja (useBorrador lo toma de «d.proyecto»).
+// Sin proyecto se usa el contador de siempre. Un proyecto nuevo empieza en 1, salvo que sea el único que hay en el equipo: ahí sigue el conteo que ya llevaba.
+let proyectoNumeracion = "";
+export function fijarProyectoNumeracion(nombre) { proyectoNumeracion = String(nombre == null ? "" : nombre).trim().toLowerCase().replace(/\s+/g, " "); }
+function proyectosEnElEquipo() {
+  try { const l = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]"); return Array.isArray(l) ? l.filter((p) => p && p.datos && String(p.datos.proyecto || "").trim()).length : 0; } catch (e) { return 0; }
+}
+export function claveConsecutivo(clave) {
+  if (!proyectoNumeracion) return clave;
+  const propia = clave + "@" + proyectoNumeracion;
+  try {
+    if (localStorage.getItem(propia) === null && localStorage.getItem(clave) !== null && proyectosEnElEquipo() <= 1) localStorage.setItem(propia, localStorage.getItem(clave));
+  } catch (e) {}
+  return propia;
+}
 export function siguienteConsecutivo(clave) {
+  clave = claveConsecutivo(clave);
   let ultimo = 0;
   try { ultimo = parseInt(localStorage.getItem(clave) || "0", 10) || 0; } catch (e) {}
   return ultimo + 1;
 }
 // Un número escrito a mano se respeta; el consecutivo solo avanza si el número usado es mayor o igual al guardado.
 export function registrarConsecutivo(clave, n) {
+  clave = claveConsecutivo(clave);
   const num = parseInt(n, 10);
   if (isNaN(num)) return;
   let guardado = 0;
@@ -58,11 +76,13 @@ export function registrarConsecutivo(clave, n) {
   try { localStorage.setItem(clave, String(Math.max(num, guardado))); } catch (e) {}
 }
 export function fijarSiguienteConsecutivo(clave, siguiente) {
+  clave = claveConsecutivo(clave);
   try { localStorage.setItem(clave, String(siguiente - 1)); } catch (e) {}
 }
 
 // ---------- Borrador: se guarda solo mientras se escribe; al volver se ofrece continuar ----------
 export function useBorrador({ clave, d, setD, inicial, tieneContenido }) {
+  fijarProyectoNumeracion(d && d.proyecto);   // la numeración sigue al proyecto del formulario
   const [borradorDisponible, setBorradorDisponible] = useState(() => {
     try { return !!localStorage.getItem(clave); } catch (e) { return false; }
   });
@@ -574,10 +594,10 @@ export function SelectorHora({ label, value, onChange, half }) {
 // ---------- "Traer los datos de la obra" desde la Ficha SST (una vez diligenciada, los demás formularios no tienen que repetirlos) ----------
 export function TraerDeFicha({ onTraer }) {
   const [aviso, setAviso] = useState("");
-  const sst = leerJSON("ryr_sst_ficha", []);
+  const sst = leerJSON("ryr_sst_ficha", []).filter((x) => proyectoPermitido(x.proyecto));
   // También los proyectos de la Ficha Técnica (no se repiten los que ya están en la Ficha SST)
   const nombresSst = new Set(sst.map((x) => String(x.proyecto || "").trim().toLowerCase()));
-  const tecnicos = leerJSON("ryr_proyectos_guardados", []).filter((p) => p && p.datos && String(p.datos.proyecto || "").trim() && !nombresSst.has(String(p.datos.proyecto).trim().toLowerCase()))
+  const tecnicos = leerJSON("ryr_proyectos_guardados", []).filter((p) => p && p.datos && proyectoPermitido(p.datos.proyecto) && String(p.datos.proyecto || "").trim() && !nombresSst.has(String(p.datos.proyecto).trim().toLowerCase()))
     .map((p) => ({ proyecto: String(p.datos.proyecto), contratista: String(p.datos.contratista || ""), ubicacion: String(p.datos.ubicacion || "") }));
   const fichas = [...sst, ...tecnicos];
   if (!fichas.length) return null;

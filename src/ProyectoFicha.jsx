@@ -2,6 +2,7 @@
 // Reutilizable en cualquier formulario: <TraerProyectoFicha onElegir={(p) => ...} tipoActual="edificacion" />
 // p = { nombre, contrato, contratista, ubicacion, tipo, datos }
 import React, { useState } from "react";
+import { proyectoPermitido } from "./accesoProyectos.js";
 
 const NAVY = "#1B2A45", LINE = "#D9DCE1";
 const NOMBRES_TIPO = { edificacion: "Edificación / Reformas", vias: "Vías y Carreteras", hidrocarburos: "Hidrocarburos" };
@@ -13,7 +14,7 @@ export function tipoDeProyecto(datos) {
 export function listarProyectosFicha() {
   try {
     const l = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
-    return (Array.isArray(l) ? l : []).filter((p) => p && p.nombreId && p.datos).map((p) => ({
+    return (Array.isArray(l) ? l : []).filter((p) => p && p.nombreId && p.datos && proyectoPermitido(p.datos.proyecto || p.nombreId)).map((p) => ({
       nombre: p.datos.proyecto || p.nombreId, contrato: p.datos.noContrato || "", contratista: p.datos.contratista || "", ubicacion: p.datos.ubicacion || "",
       tipo: tipoDeProyecto(p.datos), datos: p.datos,
     }));

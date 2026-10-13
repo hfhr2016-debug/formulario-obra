@@ -1,12 +1,13 @@
 // proyectoElegir.js — «Traer proyecto desde la Ficha Técnica» en cualquier formulario, sin cambiar su pantalla.
 // pedirProyectoFicha(alElegir): si hay un solo proyecto lo toma; si hay varios abre una ventana propia para elegir uno; si no hay ninguno lo dice.
 // El elegido pasa al primer lugar de la lista «ryr_proyectos_guardados» (los formularios leen el primero), así el resto de su código no cambia.
+import { proyectoPermitido } from "./accesoProyectos.js";
 const NAVY = "#1B2A45", LINE = "#D9DCE1";
 const TIPOS = { edificacion: "Edificación / Reformas", vias: "Vías y Carreteras", hidrocarburos: "Hidrocarburos" };
 const tipoDe = (d) => { const m = (d && d.modulos) || {}; return m.vias ? TIPOS.vias : m.hidrocarburos ? TIPOS.hidrocarburos : TIPOS.edificacion; };
 
 function leerLista() {
-  try { const l = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]"); return Array.isArray(l) ? l.filter((p) => p && p.nombreId && p.datos) : []; } catch (e) { return []; }
+  try { const l = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]"); return Array.isArray(l) ? l.filter((p) => p && p.nombreId && p.datos && proyectoPermitido(p.datos.proyecto || p.nombreId)) : []; } catch (e) { return []; }
 }
 export function ponerPrimero(nombreId) {
   try {

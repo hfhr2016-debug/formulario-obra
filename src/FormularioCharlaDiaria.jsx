@@ -11,7 +11,7 @@ import {
 import { BotonMenuSST } from "./sstNavegacion";
 import { comprimirFoto, lineasMarca, InterruptorMarca } from "./sstControles";
 import { useFaltantes } from "./sstFaltantes";
-import { TraerDeFicha, SelectorHora } from "./sstComunes";
+import { TraerDeFicha, SelectorHora, claveConsecutivo, fijarProyectoNumeracion } from "./sstComunes";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 
 const NAVY = "#1B2A45";
@@ -55,7 +55,7 @@ function borrar(clave) {
 // Último consecutivo usado en este dispositivo + 1
 function siguienteConsecutivo() {
   let ultimo = 0;
-  try { ultimo = parseInt(localStorage.getItem(CLAVE_CONSECUTIVO) || "0", 10) || 0; } catch (e) {}
+  try { ultimo = parseInt(localStorage.getItem(claveConsecutivo(CLAVE_CONSECUTIVO)) || "0", 10) || 0; } catch (e) {}
   return ultimo + 1;
 }
 
@@ -359,6 +359,7 @@ function CasillaFoto({ foto, numero, onChange, onRemove }) {
 // =====================================================================================
 export default function FormularioCharlaDiaria({ onVolver }) {
   const [d, setD] = useState(datosIniciales);
+  fijarProyectoNumeracion(d.proyecto);
   const [fotos, setFotos] = useState(() => Array.from({ length: N_FOTOS }, fotoVacia));
   const [abierta, setAbierta] = useState("general");
   const { marcar: resaltarFaltantes, limpiar: limpiarFaltantes } = useFaltantes(setAbierta);   // marca en rojo las casillas que faltan
@@ -647,8 +648,8 @@ export default function FormularioCharlaDiaria({ onVolver }) {
       const n = parseInt(nUsar, 10);
       if (!isNaN(n)) {
         let guardado = 0;
-        try { guardado = parseInt(localStorage.getItem(CLAVE_CONSECUTIVO) || "0", 10) || 0; } catch (e) {}
-        try { localStorage.setItem(CLAVE_CONSECUTIVO, String(Math.max(n, guardado))); } catch (e) {}
+        try { guardado = parseInt(localStorage.getItem(claveConsecutivo(CLAVE_CONSECUTIVO)) || "0", 10) || 0; } catch (e) {}
+        try { localStorage.setItem(claveConsecutivo(CLAVE_CONSECUTIVO), String(Math.max(n, guardado))); } catch (e) {}
       }
       let lista = recordarProfesional(profesionales, d.facilitadorNombre, d.facilitadorCargo);
       lista = recordarProfesional(lista, d.responsableNombre, d.responsableCargo);
@@ -681,7 +682,7 @@ export default function FormularioCharlaDiaria({ onVolver }) {
     if (resp === null) return;
     const n = parseInt(resp, 10);
     if (isNaN(n) || n < 1) { alert("Escribe un número entero mayor o igual a 1."); return; }
-    try { localStorage.setItem(CLAVE_CONSECUTIVO, String(n - 1)); } catch (e) {}
+    try { localStorage.setItem(claveConsecutivo(CLAVE_CONSECUTIVO), String(n - 1)); } catch (e) {}
     setRefresco((x) => x + 1);
   }
 

@@ -1,3 +1,4 @@
+import { fijarProyectoNumeracion } from "./sstComunes";
 import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { fechaHoyISO, decidirDistribucion } from "./sstBase";
@@ -124,7 +125,8 @@ export default function FormularioFotografico({ onVolver }) {
     const quedan = leerJSON(CLAVE_HOJAS, []).filter((x) => x.id !== h.id);
     guardarJSON(CLAVE_HOJAS, quedan); setHojas(quedan);
     guardarJSON(CLAVE_AMB_FOTOGRAFICO, leerJSON(CLAVE_AMB_FOTOGRAFICO, []).filter((x) => !(x.proyecto === h.proyecto && x.hoja === h.hoja)));
-    const mayor = quedan.reduce((m, x) => Math.max(m, parseInt(x.hoja, 10) || 0), 0);
+    const mayor = quedan.filter((x) => (x.proyecto || "") === (h.proyecto || "")).reduce((m, x) => Math.max(m, parseInt(x.hoja, 10) || 0), 0);   // la numeración es por proyecto
+    fijarProyectoNumeracion(h.proyecto);
     fijarSiguienteConsecutivo(CLAVE_CONSECUTIVO, mayor + 1);          // si eliminas la última, ese número vuelve a estar libre
     setAvisoGeneracion(`Se eliminó la hoja N° ${h.hoja}.`);
   }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { proyectoPermitido } from "./accesoProyectos";
 import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
@@ -398,7 +399,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
   if (pantalla === "selector") {
     let proyectosGuardados = [];
     try {
-      proyectosGuardados = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+      proyectosGuardados = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]").filter((p) => p && proyectoPermitido((p.datos && p.datos.proyecto) || p.nombreId));
     } catch (e) {}
     let hayProyectoEnCurso = false;
     let nombreProyectoEnCurso = "";

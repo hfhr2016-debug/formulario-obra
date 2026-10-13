@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { ROLES_CP } from "./cpPermisos";
+import { CARGOS } from "./cargos";
 import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
@@ -10,6 +11,13 @@ import ReinicioApp from "./ReinicioApp";
 import { limpiarEquipo, marcarVisto } from "./reinicioApp";
 import { publicarReinicio } from "./reinicioNube";
 import { detenerSync } from "./sincronizarFirestore";
+
+function nombresProyectosConocidos() {
+  try {
+    const l = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
+    return (Array.isArray(l) ? l : []).map((p) => p && p.datos && p.datos.proyecto).filter(Boolean);
+  } catch (e) { return []; }
+}
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -44,6 +52,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [rolCPNuevo, setRolCPNuevo] = useState("");
+  const [cargoNuevo, setCargoNuevo] = useState("");
   const [rolesNuevo, setRolesNuevo] = useState({ tecnica: false, sst: false, ambiental: false, calidad: false, presupuesto: false });
   const [creando, setCreando] = useState(false);
   const [error, setError] = useState("");
@@ -89,12 +98,14 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
         correo: correo.trim(),
         roles: rolesArray,
         rolCP: rolesNuevo.presupuesto ? rolCPNuevo : "",
+        cargo: cargoNuevo,
+        proyectos: "todos",
         esAdmin: false,
         activo: true,
         creadoEn: new Date().toISOString(),
       });
       await authSecundaria.signOut();
-      setNombre(""); setCorreo(""); setContrasena("");
+      setNombre(""); setCorreo(""); setContrasena(""); setCargoNuevo("");
       setRolesNuevo({ tecnica: false, sst: false, ambiental: false, calidad: false, presupuesto: false });
       setMostrarForm(false);
       await cargarUsuarios();
@@ -127,6 +138,25 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
       alert("No se pudo actualizar. Intenta de nuevo.");
     }
   }
+
+  async function guardarCampo(u, campos) {
+    try {
+      await updateDoc(doc(db, "usuarios", u.uid), campos);
+      await cargarUsuarios();
+    } catch (e) {
+      alert("No se pudo actualizar. Intenta de nuevo.");
+    }
+  }
+  const cambiarCargo = (u, cargo) => guardarCampo(u, { cargo });
+  const ponerTodosLosProyectos = (u, todos) => guardarCampo(u, { proyectos: todos ? "todos" : [] });
+  const agregarProyecto = (u, nombreProy) => {
+    const n = String(nombreProy || "").trim();
+    if (!n) return;
+    const actuales = Array.isArray(u.proyectos) ? u.proyectos : [];
+    if (actuales.some((x) => String(x).trim().toLowerCase() === n.toLowerCase())) return;
+    return guardarCampo(u, { proyectos: [...actuales, n] });
+  };
+  const quitarProyecto = (u, n) => guardarCampo(u, { proyectos: (Array.isArray(u.proyectos) ? u.proyectos : []).filter((x) => x !== n) });
 
   async function alternarRol(u, rolId) {
     const rolesActuales = u.roles || [];
@@ -184,6 +214,12 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
 
             <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña (mínimo 6 caracteres)</label>
             <input type="text" value={contrasena} onChange={(e) => setContrasena(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }} />
+
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Cargo</label>
+            <select value={cargoNuevo} onChange={(e) => setCargoNuevo(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }}>
+              <option value="">Elegir cargo…</option>
+              {CARGOS.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+            </select>
 
             <label className="block text-[11px] font-semibold mb-1.5" style={{ color: NAVY }}>Acceso a:</label>
             {ROLES_DISPONIBLES.map((r) => (
@@ -257,6 +293,39 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
                   })}
                 </div>
               )}
+              {!u.esAdmin && (
+                <div className="mt-2" data-cargo-proyectos>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10.5px]" style={{ color: NAVY }}>Cargo:</span>
+                    <select data-cargo value={u.cargo || ""} onChange={(e) => cambiarCargo(u, e.target.value)} className="text-[11px] border rounded px-1.5 py-1" style={{ borderColor: LINE }}>
+                      <option value="">Sin cargo</option>
+                      {CARGOS.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-2 text-[11px] mb-1" style={{ color: NAVY }}>
+                    <input type="checkbox" data-todos-proyectos checked={!Array.isArray(u.proyectos)} onChange={(e) => ponerTodosLosProyectos(u, e.target.checked)} />
+                    Ve todos los proyectos
+                  </label>
+                  {Array.isArray(u.proyectos) && (
+                    <div>
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        {u.proyectos.length === 0 && <span className="text-[10.5px]" style={{ color: "#B3401F" }}>Sin proyectos asignados: no ve ninguno.</span>}
+                        {u.proyectos.map((n) => (
+                          <span key={n} data-proyecto-asignado className="text-[10.5px] px-2 py-1 rounded-full border" style={{ background: "#FFF8E8", borderColor: GOLD, color: NAVY }}>
+                            {n} <button type="button" aria-label={`Quitar ${n}`} onClick={() => quitarProyecto(u, n)} className="ml-1">✕</button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input list="lista-proyectos-admin" data-agregar-proyecto placeholder="Nombre del proyecto o frente…" className="flex-1 border rounded px-2 py-1 text-[11px]" style={{ borderColor: LINE }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregarProyecto(u, e.currentTarget.value); e.currentTarget.value = ""; } }} />
+                        <button type="button" data-boton-agregar-proyecto className="text-[11px] px-2.5 py-1 rounded border font-semibold" style={{ borderColor: NAVY, color: NAVY }}
+                          onClick={(e) => { const inp = e.currentTarget.previousSibling; agregarProyecto(u, inp.value); inp.value = ""; }}>Agregar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {!u.esAdmin && (u.roles || []).includes("presupuesto") && (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-[10.5px]" style={{ color: NAVY }}>Cargo en Control Presupuestal:</span>
@@ -270,6 +339,9 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
           ))
         )}
       </div>
+      <datalist id="lista-proyectos-admin">
+        {nombresProyectosConocidos().map((n) => <option key={n} value={n} />)}
+      </datalist>
       <ReinicioApp
         onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }}
         onLimpiarTodos={async () => { const marca = await publicarReinicio((perfil && perfil.email) || ""); await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); marcarVisto(window.localStorage, marca); }}

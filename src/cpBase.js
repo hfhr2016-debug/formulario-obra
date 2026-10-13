@@ -1,3 +1,4 @@
+import { proyectoPermitido } from "./accesoProyectos";
 // Gestión de Control Presupuestal — núcleo compartido por los 4 formatos del Lote 1 (sin pantallas; solo datos y cálculos).
 //
 // Los datos se guardan en el dispositivo (como en las demás gestiones) PERO con la forma que tendrán cuando se conecte el servidor:
@@ -94,7 +95,7 @@ export function proyectosConocidos() {
   arr(leerJSON("ryr_proyectos_guardados", [])).forEach((p) => ver(p && p.datos && p.datos.proyecto));
   arr(leerJSON("ryr_amb_ficha", [])).forEach((f) => ver(f && f.proyecto));
   arr(leerJSON("ryr_sst_ficha", [])).forEach((f) => ver(f && f.proyecto));
-  return nombres;
+  return nombres.filter((n) => proyectoPermitido(n));
 }
 // Datos de la Ficha Técnica del proyecto (contrato) para adelantar el formulario
 export function datosDeFichaTecnica(proyecto) {

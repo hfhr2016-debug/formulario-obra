@@ -1,5 +1,6 @@
 // ambComunes.jsx — piezas comunes de los formatos de Gestión Ambiental (se apoyan en las de SST).
 import { useState } from "react";
+import { proyectoPermitido } from "./accesoProyectos";
 import { Plus, Trash2 } from "lucide-react";
 import { leerJSON, Lista, Campo, NAVY, GOLD, LINE } from "./sstComunes";
 import { FilaVerificacion, CasillaFoto, fotoVacia, InterruptorMarca } from "./sstControles";
@@ -40,7 +41,7 @@ export function obrasConocidas() {
   const sst = leerJSON("ryr_sst_ficha", []).map((f) => ({ proyecto: f.proyecto, contratista: f.contratista, ubicacion: f.ubicacion || "", origen: "SST" }));
   const tec = leerJSON("ryr_proyectos_guardados", []).filter((p) => p && p.datos).map((p) => ({ proyecto: String(p.datos.proyecto || ""), contratista: String(p.datos.contratista || ""), ubicacion: String(p.datos.ubicacion || ""), origen: "Técnica" }));
   const vistos = new Set(); const todas = [];
-  for (const o of [...amb, ...sst, ...tec]) {
+  for (const o of [...amb, ...sst, ...tec].filter((x) => proyectoPermitido(x.proyecto))) {
     const k = String(o.proyecto || "").trim().toLowerCase();
     if (!k || vistos.has(k)) continue;
     vistos.add(k); todas.push(o);

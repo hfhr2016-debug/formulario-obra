@@ -47,6 +47,8 @@ function motivoExpiracion() {
   }
 }
 
+import { fijarAcceso } from "./accesoProyectos";
+
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [perfil, setPerfil] = useState(null);
@@ -180,6 +182,9 @@ export function AuthProvider({ children }) {
       clearInterval(intervaloVerificar);
     };
   }, [usuario]);
+
+  useEffect(() => { fijarAcceso(perfil); }, [perfil]);
+  fijarAcceso(perfil);   // también en el mismo render, para que las listas que se dibujan ahora ya vengan filtradas
 
   const tieneRol = (rol) => {
     if (!perfil) return false;
