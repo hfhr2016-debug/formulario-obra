@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
@@ -28,7 +29,7 @@ function aFechaDDMMYYYY(iso) {
   return `${d}/${m}/${a}`;
 }
 
-const CATALOGO_CIUDADES = [{"ciudad": "Leticia", "departamento": "Amazonas"}, {"ciudad": "Puerto Nariño", "departamento": "Amazonas"}, {"ciudad": "Medellín", "departamento": "Antioquia"}, {"ciudad": "Bello", "departamento": "Antioquia"}, {"ciudad": "Itagüí", "departamento": "Antioquia"}, {"ciudad": "Envigado", "departamento": "Antioquia"}, {"ciudad": "Rionegro", "departamento": "Antioquia"}, {"ciudad": "Arauca", "departamento": "Arauca"}, {"ciudad": "Saravena", "departamento": "Arauca"}, {"ciudad": "Tame", "departamento": "Arauca"}, {"ciudad": "Barranquilla", "departamento": "Atlántico"}, {"ciudad": "Soledad", "departamento": "Atlántico"}, {"ciudad": "Malambo", "departamento": "Atlántico"}, {"ciudad": "Sabanalarga", "departamento": "Atlántico"}, {"ciudad": "Puerto Colombia", "departamento": "Atlántico"}, {"ciudad": "Bogotá D.C.", "departamento": "Bogotá D.C."}, {"ciudad": "Cartagena", "departamento": "Bolívar"}, {"ciudad": "Magangué", "departamento": "Bolívar"}, {"ciudad": "Turbaco", "departamento": "Bolívar"}, {"ciudad": "Arjona", "departamento": "Bolívar"}, {"ciudad": "El Carmen de Bolívar", "departamento": "Bolívar"}, {"ciudad": "Tunja", "departamento": "Boyacá"}, {"ciudad": "Duitama", "departamento": "Boyacá"}, {"ciudad": "Sogamoso", "departamento": "Boyacá"}, {"ciudad": "Chiquinquirá", "departamento": "Boyacá"}, {"ciudad": "Paipa", "departamento": "Boyacá"}, {"ciudad": "Manizales", "departamento": "Caldas"}, {"ciudad": "La Dorada", "departamento": "Caldas"}, {"ciudad": "Chinchiná", "departamento": "Caldas"}, {"ciudad": "Villamaría", "departamento": "Caldas"}, {"ciudad": "Riosucio", "departamento": "Caldas"}, {"ciudad": "Florencia", "departamento": "Caquetá"}, {"ciudad": "San Vicente del Caguán", "departamento": "Caquetá"}, {"ciudad": "Puerto Rico", "departamento": "Caquetá"}, {"ciudad": "Yopal", "departamento": "Casanare"}, {"ciudad": "Aguazul", "departamento": "Casanare"}, {"ciudad": "Villanueva", "departamento": "Casanare"}, {"ciudad": "Tauramena", "departamento": "Casanare"}, {"ciudad": "Popayán", "departamento": "Cauca"}, {"ciudad": "Santander de Quilichao", "departamento": "Cauca"}, {"ciudad": "Puerto Tejada", "departamento": "Cauca"}, {"ciudad": "Patía", "departamento": "Cauca"}, {"ciudad": "Valledupar", "departamento": "Cesar"}, {"ciudad": "Aguachica", "departamento": "Cesar"}, {"ciudad": "Codazzi", "departamento": "Cesar"}, {"ciudad": "La Jagua de Ibirico", "departamento": "Cesar"}, {"ciudad": "Quibdó", "departamento": "Chocó"}, {"ciudad": "Istmina", "departamento": "Chocó"}, {"ciudad": "Condoto", "departamento": "Chocó"}, {"ciudad": "Tadó", "departamento": "Chocó"}, {"ciudad": "Montería", "departamento": "Córdoba"}, {"ciudad": "Cereté", "departamento": "Córdoba"}, {"ciudad": "Lorica", "departamento": "Córdoba"}, {"ciudad": "Sahagún", "departamento": "Córdoba"}, {"ciudad": "Planeta Rica", "departamento": "Córdoba"}, {"ciudad": "Soacha", "departamento": "Cundinamarca"}, {"ciudad": "Girardot", "departamento": "Cundinamarca"}, {"ciudad": "Zipaquirá", "departamento": "Cundinamarca"}, {"ciudad": "Facatativá", "departamento": "Cundinamarca"}, {"ciudad": "Chía", "departamento": "Cundinamarca"}, {"ciudad": "Inírida", "departamento": "Guainía"}, {"ciudad": "San José del Guaviare", "departamento": "Guaviare"}, {"ciudad": "Neiva", "departamento": "Huila"}, {"ciudad": "Pitalito", "departamento": "Huila"}, {"ciudad": "Garzón", "departamento": "Huila"}, {"ciudad": "La Plata", "departamento": "Huila"}, {"ciudad": "Riohacha", "departamento": "La Guajira"}, {"ciudad": "Maicao", "departamento": "La Guajira"}, {"ciudad": "Uribia", "departamento": "La Guajira"}, {"ciudad": "Fonseca", "departamento": "La Guajira"}, {"ciudad": "Santa Marta", "departamento": "Magdalena"}, {"ciudad": "Ciénaga", "departamento": "Magdalena"}, {"ciudad": "Fundación", "departamento": "Magdalena"}, {"ciudad": "El Banco", "departamento": "Magdalena"}, {"ciudad": "Villavicencio", "departamento": "Meta"}, {"ciudad": "Acacías", "departamento": "Meta"}, {"ciudad": "Granada", "departamento": "Meta"}, {"ciudad": "Puerto López", "departamento": "Meta"}, {"ciudad": "Pasto", "departamento": "Nariño"}, {"ciudad": "Tumaco", "departamento": "Nariño"}, {"ciudad": "Ipiales", "departamento": "Nariño"}, {"ciudad": "Túquerres", "departamento": "Nariño"}, {"ciudad": "Cúcuta", "departamento": "Norte de Santander"}, {"ciudad": "Ocaña", "departamento": "Norte de Santander"}, {"ciudad": "Pamplona", "departamento": "Norte de Santander"}, {"ciudad": "Villa del Rosario", "departamento": "Norte de Santander"}, {"ciudad": "Mocoa", "departamento": "Putumayo"}, {"ciudad": "Puerto Asís", "departamento": "Putumayo"}, {"ciudad": "Orito", "departamento": "Putumayo"}, {"ciudad": "Armenia", "departamento": "Quindío"}, {"ciudad": "Calarcá", "departamento": "Quindío"}, {"ciudad": "La Tebaida", "departamento": "Quindío"}, {"ciudad": "Montenegro", "departamento": "Quindío"}, {"ciudad": "Pereira", "departamento": "Risaralda"}, {"ciudad": "Dosquebradas", "departamento": "Risaralda"}, {"ciudad": "Santa Rosa de Cabal", "departamento": "Risaralda"}, {"ciudad": "San Andrés", "departamento": "San Andrés y Providencia"}, {"ciudad": "Providencia", "departamento": "San Andrés y Providencia"}, {"ciudad": "Bucaramanga", "departamento": "Santander"}, {"ciudad": "Floridablanca", "departamento": "Santander"}, {"ciudad": "Girón", "departamento": "Santander"}, {"ciudad": "Piedecuesta", "departamento": "Santander"}, {"ciudad": "Barrancabermeja", "departamento": "Santander"}, {"ciudad": "Sincelejo", "departamento": "Sucre"}, {"ciudad": "Corozal", "departamento": "Sucre"}, {"ciudad": "San Marcos", "departamento": "Sucre"}, {"ciudad": "Ibagué", "departamento": "Tolima"}, {"ciudad": "Espinal", "departamento": "Tolima"}, {"ciudad": "Melgar", "departamento": "Tolima"}, {"ciudad": "Honda", "departamento": "Tolima"}, {"ciudad": "Cali", "departamento": "Valle del Cauca"}, {"ciudad": "Palmira", "departamento": "Valle del Cauca"}, {"ciudad": "Buenaventura", "departamento": "Valle del Cauca"}, {"ciudad": "Tuluá", "departamento": "Valle del Cauca"}, {"ciudad": "Cartago", "departamento": "Valle del Cauca"}, {"ciudad": "Mitú", "departamento": "Vaupés"}, {"ciudad": "Puerto Carreño", "departamento": "Vichada"}];
+const CATALOGO_CIUDADES = MUNICIPIOS_NOMBRES;   // todos los municipios de Colombia
 
 const ELEMENTOS_HIDROCARBUROS = {
   civil: [
@@ -70,16 +71,17 @@ const DESCRIPCIONES_HC = {
   "Seguridad activa (SIS, SDV/BDV, F&G)": "Sistema de Instrumentación de Seguridad (SIS) con válvulas de corte de emergencia (SDV/BDV) y sistemas de detección de fuego y gas (F&G).",
 };
 
+const sinTildes = (t) => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
   const [abierto, setAbierto] = React.useState(false);
   const resultados = React.useMemo(() => {
     if (!value || value.length < 1) return [];
-    const q = value.toLowerCase();
+    const q = sinTildes(value);
     const items = catalogo.map((it) => (typeof it === "string" ? it : it[campo]));
-    const filtrados = items.filter((it) => it.toLowerCase().includes(q));
+    const filtrados = items.filter((it) => sinTildes(it).includes(q));
     filtrados.sort((a, b) => {
-      const aE = a.toLowerCase().startsWith(q) ? 0 : 1;
-      const bE = b.toLowerCase().startsWith(q) ? 0 : 1;
+      const aE = sinTildes(a).startsWith(q) ? 0 : 1;
+      const bE = sinTildes(b).startsWith(q) ? 0 : 1;
       return aE - bE || a.length - b.length;
     });
     return [...new Set(filtrados)].slice(0, 8);
@@ -196,16 +198,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
     setGenerando(true);
     try {
       try {
-        localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
-          modulos, hcBloques, hcElementos, proyecto,
-          via: {
-            tipo: viaTipo, longitud: viaLongitud, carriles: viaCarriles, zona: viaZona,
-            tipoIntervencion: viaTipoIntervencion, velocidadDiseno: viaVelocidadDiseno,
-            anchoCalzada: viaAnchoCalzada, anchoCarril: viaAnchoCarril, anchoBerma: viaAnchoBerma,
-            pendienteMax: viaPendienteMax, estructuraPavimento: viaEstructuraPavimento,
-            cbrDiseno: viaCbrDiseno, subbase: viaSubbase, base: viaBase, capaRodadura: viaCapaRodadura,
-          },
-        }));
+        localStorage.setItem("ryr_tipo_proyecto", JSON.stringify(objetoTipo()));
       } catch (e) {
         console.warn("No se pudo guardar el tipo de proyecto en memoria local:", e);
       }
@@ -331,21 +324,53 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
     };
   }
 
+  // Lo que otros formularios leen de «ryr_tipo_proyecto» (tipo, bloques, vía) + TODOS los datos del proyecto para poder continuar
+  function objetoTipo() {
+    return {
+      modulos, hcBloques, hcElementos, proyecto,
+      via: {
+        tipo: viaTipo, longitud: viaLongitud, carriles: viaCarriles, zona: viaZona,
+        tipoIntervencion: viaTipoIntervencion, velocidadDiseno: viaVelocidadDiseno,
+        anchoCalzada: viaAnchoCalzada, anchoCarril: viaAnchoCarril, anchoBerma: viaAnchoBerma,
+        pendienteMax: viaPendienteMax, estructuraPavimento: viaEstructuraPavimento,
+        cbrDiseno: viaCbrDiseno, subbase: viaSubbase, base: viaBase, capaRodadura: viaCapaRodadura,
+      },
+      datos: objetoProyectoActual(),
+    };
+  }
+
+  // Guarda el proyecto en la lista (la lista se sincroniza con el servidor). Si el nombre cambió mientras se escribía, reemplaza la entrada anterior en vez de dejar una por letra.
   function guardarProyectoEnMemoria() {
     try {
+      const nombreId = String(proyecto || "").trim();
+      if (!nombreId) return;
       const lista = JSON.parse(localStorage.getItem("ryr_proyectos_guardados") || "[]");
-      const nombreId = proyecto || "Proyecto sin nombre";
-      const sinDuplicado = lista.filter((p) => p.nombreId !== nombreId);
+      const anterior = nombreGuardado.current;
+      const sinDuplicado = lista.filter((p) => p.nombreId !== nombreId && !(anterior && p.nombreId === anterior));
       sinDuplicado.unshift({
         nombreId,
-        fechaGuardado: fechaLocalHoy().toISOString(),
+        fechaGuardado: new Date().toISOString(),
+        actualizado: Date.now(),
         datos: objetoProyectoActual(),
       });
       localStorage.setItem("ryr_proyectos_guardados", JSON.stringify(sinDuplicado.slice(0, 50)));
+      nombreGuardado.current = nombreId;
     } catch (e) {
       console.warn("No se pudo guardar el proyecto en memoria local:", e);
     }
   }
+
+  // Autoguardado: mientras se llena la ficha, el proyecto queda guardado (en el equipo y, por sincronización, en el servidor)
+  const nombreGuardado = useRef("");
+  const firmaProyecto = JSON.stringify(objetoProyectoActual());
+  useEffect(() => {
+    if (pantalla !== "formulario") return undefined;
+    const t = setTimeout(() => {
+      try { localStorage.setItem("ryr_tipo_proyecto", JSON.stringify(objetoTipo())); } catch (e) { /* sin memoria */ }
+      guardarProyectoEnMemoria();
+    }, 800);
+    return () => clearTimeout(t);
+  }, [firmaProyecto, pantalla]);   // eslint-disable-line
 
   function cargarProyectoDesdeDatos(datos) {
     setModulos(datos.modulos || { edificacion: true, vias: false, hidrocarburos: false });
@@ -380,7 +405,7 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
     let tipoEnCurso = "";
     try {
       const datosTipo = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
-      if (datosTipo && datosTipo.modulos) {
+      if (datosTipo && datosTipo.modulos && (datosTipo.proyecto || datosTipo.datos)) {
         hayProyectoEnCurso = true;
         nombreProyectoEnCurso = datosTipo.proyecto || "(sin nombre todavía)";
         if (datosTipo.modulos.vias) tipoEnCurso = "Vías y Carreteras";
@@ -404,7 +429,15 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
 
         {hayProyectoEnCurso && (
           <button
-            onClick={() => setPantalla("formulario")}
+            data-continuar-proyecto
+            onClick={() => {
+              try {
+                const d = JSON.parse(localStorage.getItem("ryr_tipo_proyecto") || "null");
+                if (d && d.datos) { cargarProyectoDesdeDatos(d.datos); nombreGuardado.current = String(d.proyecto || "").trim(); }
+                else if (d) { cargarProyectoDesdeDatos({ modulos: d.modulos, hcBloques: d.hcBloques, hcElementos: d.hcElementos, proyecto: d.proyecto }); nombreGuardado.current = String(d.proyecto || "").trim(); }
+              } catch (e) { /* se abre como estaba */ }
+              setPantalla("formulario");
+            }}
             className="w-full max-w-xs py-3.5 rounded-xl text-white font-bold text-[14px] mb-3"
             style={{ background: NAVY }}
           >
@@ -414,7 +447,9 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
         )}
 
         <button
+          data-proyecto-nuevo
           onClick={() => {
+            nombreGuardado.current = "";
             cargarProyectoDesdeDatos({});
             try {
               localStorage.setItem("ryr_tipo_proyecto", JSON.stringify({
@@ -439,18 +474,18 @@ export default function FormularioFicha({ onVolver, onNavegar }) {
           🔄 Actualizar Proyecto Existente
         </div>
         {proyectosGuardados.length === 0 ? (
-          <div className="text-[11.5px] text-gray-400 text-center">Todavía no has generado ningún Excel de Ficha Técnica — esta lista se llena automáticamente la primera vez que descargues uno.</div>
+          <div className="text-[11.5px] text-gray-400 text-center">Todavía no hay proyectos guardados — cada proyecto se guarda solo mientras llenas la ficha y queda disponible aquí y en los demás equipos.</div>
         ) : (
           <div className="w-full max-w-xs max-h-[300px] overflow-y-auto">
             {proyectosGuardados.map((p, i) => (
               <button
                 key={i}
-                onClick={() => { cargarProyectoDesdeDatos(p.datos); setPantalla("formulario"); }}
+                data-proyecto-guardado onClick={() => { cargarProyectoDesdeDatos(p.datos); nombreGuardado.current = p.nombreId; setPantalla("formulario"); }}
                 className="w-full text-left px-3 py-2.5 mb-1.5 rounded-lg border bg-white"
                 style={{ borderColor: LINE }}
               >
                 <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{p.nombreId}</div>
-                <div className="text-[10px] text-gray-400">Guardado: {new Date(p.fechaGuardado).toLocaleDateString("es-CO")}</div>
+                <div className="text-[10px] text-gray-400">{p.datos && p.datos.modulos && p.datos.modulos.vias ? "Vías y Carreteras" : p.datos && p.datos.modulos && p.datos.modulos.hidrocarburos ? "Hidrocarburos" : "Edificación / Reformas"} · Guardado: {new Date(p.fechaGuardado).toLocaleDateString("es-CO")}</div>
               </button>
             ))}
           </div>

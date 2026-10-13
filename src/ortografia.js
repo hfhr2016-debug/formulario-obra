@@ -62,9 +62,10 @@ function alEscribir(ev) {
     const el = ev.target;
     if (!el || !el.__ortografia || !ev.isTrusted) return;
     el.__editado = true;
+    if (esTactil()) programarPausa(el);                  // celular: corrección en pausa (las palabras ya terminadas)
     if (ev.isComposing || ev.inputType !== "insertText" && ev.inputType !== "insertLineBreak") return;
     const tactil = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-    if (tactil) return;                                   // en el celular el teclado compone el texto: se corrige al salir de la casilla
+    if (tactil) return;                                   // en el celular el teclado compone el texto: se corrige en una pausa, al tocar fuera y al salir de la casilla
     const borde = ev.inputType === "insertLineBreak" ? "\n" : ev.data;
     if (!borde || !BORDES.has(borde)) return;
     const pos = el.selectionStart; if (pos == null) return;
@@ -75,6 +76,31 @@ function alEscribir(ev) {
     const desp = pos;                                      // el cursor queda después del borde escrito
     if (cambiarTexto(el, w.ini, w.fin, c)) { try { el.setSelectionRange(desp + (c.length - w.palabra.length), desp + (c.length - w.palabra.length)); } catch (e) {} }
   } catch (e) { /* la autocorrección nunca debe romper la escritura */ }
+}
+// ----- Celular: no basta con «al salir de la casilla» (tocar un espacio en blanco o un botón no la deja) -----
+const BORDES_TXT = " .,;:)?!\n";
+// Corrige solo las palabras ya TERMINADAS (seguidas de espacio o signo): la que se está escribiendo la deja el teclado
+function corregirTerminadas(el) {
+  try {
+    const v = el.value; let idx = -1; for (let i = v.length - 1; i >= 0; i--) { if (BORDES_TXT.includes(v[i])) { idx = i; break; } }
+    if (idx < 0) return;
+    const cabeza = v.slice(0, idx + 1);
+    const { texto, cambios } = corregirTexto(cabeza, opcionesDe(el));
+    if (cambios > 0 && texto !== cabeza) { el.setRangeText(texto, 0, idx + 1, "preserve"); el.dispatchEvent(new Event("input", { bubbles: true })); }
+  } catch (e) { /* nunca debe romper la escritura */ }
+}
+function programarPausa(el) {
+  try { clearTimeout(el.__pausa); el.__pausa = setTimeout(() => { if (document.activeElement === el && !el.__componiendo) corregirTerminadas(el); }, 1200); } catch (e) {}
+}
+function alTocarFuera(ev) {
+  try {
+    const el = document.activeElement;
+    if (!el || !el.__ortografia || !el.__editado || ev.target === el || !esTactil()) return;
+    clearTimeout(el.__pausa);
+    const { texto, cambios } = corregirTexto(el.value, opcionesDe(el));
+    if (cambios > 0 && texto !== el.value) cambiarTexto(el, 0, el.value.length, texto, false);
+    el.__editado = false;
+  } catch (e) {}
 }
 function alSalir(ev) {
   try {
@@ -102,7 +128,8 @@ export function activarOrtografia(raiz = document) {
   pasar(raiz.body || raiz);
   document.addEventListener("input", alEscribir, true);
   document.addEventListener("focusout", alSalir, true);
-  const quitar = () => { document.removeEventListener("input", alEscribir, true); document.removeEventListener("focusout", alSalir, true); };
+  document.addEventListener("pointerdown", alTocarFuera, true);
+  const quitar = () => { document.removeEventListener("input", alEscribir, true); document.removeEventListener("focusout", alSalir, true); document.removeEventListener("pointerdown", alTocarFuera, true); };
   if (typeof MutationObserver === "undefined") return quitar;
   const obs = new MutationObserver((lista) => { for (const m of lista) m.addedNodes.forEach(pasar); });
   obs.observe(raiz.body || raiz, { childList: true, subtree: true });
