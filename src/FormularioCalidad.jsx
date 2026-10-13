@@ -48,6 +48,8 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   const [avisoTabla, setAvisoTabla] = useState({});
   const [creadasNC, setCreadasNC] = useState([]);
   const [filaAbierta, setFilaAbierta] = useState({});
+  const [regPorEliminar, setRegPorEliminar] = useState(null);   // registro guardado que se va a eliminar, esperando confirmación {id, nombre}
+  const [regEliminado, setRegEliminado] = useState(null);       // último registro eliminado, para poder deshacer {reg, nombre}
   const [porQuitar, setPorQuitar] = useState(null);   // fila que se va a quitar, esperando confirmación {k, i, nombre}
   const [quitada, setQuitada] = useState(null);       // última fila quitada, para poder deshacer {k, i, fila, nombre}
   const [fotos, setFotos] = useState([]);              // fotos del Excel que se va a generar (no se guardan)
@@ -61,7 +63,7 @@ export default function FormularioCalidad({ fmt, onVolver }) {
   const materiales = useMemo(() => catalogoVigente("materiales").map((m) => ({ texto: String(m.descripcion || ""), detalle: String(m.unidad || ""), unidad: String(m.unidad || "") })), []);
 
   // Al cambiar de obra se cierra el registro abierto
-  useEffect(() => { setReg(null); setCreadasNC([]); setFotos([]); }, [h.id]);
+  useEffect(() => { setReg(null); setCreadasNC([]); setFotos([]); setRegEliminado(null); setRegPorEliminar(null); }, [h.id]);
   useEffect(() => { if (!quitada) return undefined; const t = setTimeout(() => setQuitada(null), 15000); return () => clearTimeout(t); }, [quitada]);
   useEffect(() => { if (!reg) { setQuitada(null); setPorQuitar(null); } }, [reg === null]);
   // Lo que viene de la obra (proyecto, contrato, ubicación…) se mantiene al día en el registro abierto
@@ -98,7 +100,17 @@ export default function FormularioCalidad({ fmt, onVolver }) {
     previo.current = JSON.stringify(r.datos);
     setReg(r); setFotos([]); setAbierta("datos"); setGenerado(""); setMensajeError(""); setAvisoGeneracion(""); setCreadasNC([]); window.scrollTo(0, 0);
   }
-  function eliminar(id) { if (window.confirm("¿Eliminar este registro? No se puede deshacer.")) { eliminarRegistro(fmt, id); setVersion((v) => v + 1); } }
+  // Eliminar un registro guardado: primero se pide confirmación (ventana de la app) y, ya borrado, queda el aviso «Deshacer» para recuperarlo
+  function eliminar(id) { const r = obtenerRegistro(fmt, id); if (r) setRegPorEliminar({ id, nombre: etiquetaRegistro(fmt, r) }); }
+  function eliminarYa() {
+    const q = regPorEliminar; setRegPorEliminar(null); if (!q) return;
+    const r = obtenerRegistro(fmt, q.id); if (!r) return;
+    eliminarRegistro(fmt, q.id); setRegEliminado({ reg: r, nombre: q.nombre }); setVersion((v) => v + 1);
+  }
+  function deshacerEliminarRegistro() {
+    if (!regEliminado) return;
+    guardarRegistro(fmt, regEliminado.reg); setRegEliminado(null); setVersion((v) => v + 1);
+  }
 
   // Guardar de verdad: guarda, actualiza las listas comunes (proveedores…) y crea las no conformidades que corresponden
   function guardarFinal() {
@@ -406,6 +418,25 @@ export default function FormularioCalidad({ fmt, onVolver }) {
               <button type="button" data-quitar-confirmar onClick={() => { const q = porQuitar; setPorQuitar(null); quitarYa(q.k, q.i, q.nombre); }} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: "#B3401F", color: "#fff", fontWeight: 700, fontSize: 13 }}>Quitar</button>
             </div>
           </div>
+        </div>
+      )}
+      {regPorEliminar && (
+        <div data-confirmar-eliminar-registro style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: 16, maxWidth: 340, width: "100%", boxShadow: "0 8px 30px rgba(0,0,0,0.3)" }}>
+            <div style={{ color: NAVY, fontWeight: 700, fontSize: 14 }}>¿Eliminar este registro?</div>
+            <div style={{ color: "#5A6270", fontSize: 12, marginTop: 6 }}>«{regPorEliminar.nombre}». Justo después podrás deshacerlo.</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <button type="button" data-eliminar-cancelar onClick={() => setRegPorEliminar(null)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: `1px solid ${NAVY}`, color: NAVY, fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+              <button type="button" data-eliminar-confirmar onClick={eliminarYa} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: "#B3401F", color: "#fff", fontWeight: 700, fontSize: 13 }}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {regEliminado && !regPorEliminar && !reg && (
+        <div data-deshacer-registro style={{ position: "fixed", left: 12, right: 12, bottom: 24, zIndex: 65, background: NAVY, color: "#fff", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+          <span style={{ flex: 1 }}>Se eliminó «{regEliminado.nombre}».</span>
+          <button type="button" data-deshacer-reg onClick={deshacerEliminarRegistro} style={{ color: GOLD, fontWeight: 700, textDecoration: "underline" }}>Deshacer</button>
+          <button type="button" aria-label="Cerrar aviso" onClick={() => setRegEliminado(null)} style={{ color: "#fff", opacity: 0.7 }}>✕</button>
         </div>
       )}
       {quitada && !porQuitar && (
