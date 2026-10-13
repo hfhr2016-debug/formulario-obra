@@ -92,6 +92,10 @@ export function puede(perfil, f, modo) {
 
 // ---------- Utilidades ----------
 export const codificarId = (k) => btoa(unescape(encodeURIComponent(String(k)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+// Los borradores (lo que cada persona está escribiendo y aún no genera) son de quien los escribe: el documento del servidor lleva el uid de la persona,
+// así sus otros equipos lo reciben y sus compañeros de rol no. Los borradores viejos sin uid (compartidos) se ignoran.
+export const esBorrador = (k) => typeof k === "string" && /^ryr_borrador_/.test(k);
+export const idDeDoc = (f, k, uid) => codificarId(f.tipo === "claves" && esBorrador(k) ? `${k}@@${uid}` : k);
 export const decodificarId = (s) => decodeURIComponent(escape(atob(String(s).replace(/-/g, "+").replace(/_/g, "/"))));
 // Forma canónica para comparar: ignora `actualizado` (los formularios lo renuevan en cada guardado aunque nada haya cambiado)
 const canon = (v) => JSON.stringify(v, (k, x) => (k === "actualizado" ? undefined : x));
@@ -184,6 +188,11 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
     docs.forEach(({ id, data }) => {
       if (!data) return;
       let k; try { k = decodificarId(id); } catch (x) { return; }
+      if (f.tipo === "claves" && esBorrador(k.split("@@")[0])) {           // borrador: solo el de esta persona
+        const partes = k.split("@@");
+        if (partes.length !== 2 || partes[1] !== uid) return;
+        k = partes[0];
+      }
       const ts = Number(data.ts) || 0;
       if (ts <= (e.ts[k] || 0)) return;                                   // ya lo tengo (incluye lo que yo mismo subí)
       const enLocal = loc[k] !== undefined;
@@ -237,14 +246,14 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
         if (f.tipo === "claves" && c.length > 850000) { onEvento({ tipo: "error", col: f.col, error: new Error("demasiado grande para sincronizar: " + k) }); return; }   // el servidor no admite documentos tan grandes
         const ts = Math.max(ahora(), (e.ts[k] || 0) + 1);
         e.base[k] = c; e.ts[k] = ts;                                       // optimista: la cola sin conexión del SDK lo enviará
-        tareas.push(adaptador.escribir(f.col, codificarId(k), { json: JSON.stringify(loc[k]), ts, borrado: false, por: uid }).catch((er) => onEvento({ tipo: "error", col: f.col, error: er })));
+        tareas.push(adaptador.escribir(f.col, idDeDoc(f, k, uid), { json: JSON.stringify(loc[k]), ts, borrado: false, por: uid }).catch((er) => onEvento({ tipo: "error", col: f.col, error: er })));
       });
       Object.keys(e.base).forEach((k) => {
         if (loc[k] !== undefined) return;
         if (f.prefijo && !k.startsWith(f.prefijo)) return;
         const ts = Math.max(ahora(), (e.ts[k] || 0) + 1);
         delete e.base[k]; e.ts[k] = ts;
-        tareas.push(adaptador.escribir(f.col, codificarId(k), { json: "", ts, borrado: true, por: uid }).catch((er) => onEvento({ tipo: "error", col: f.col, error: er })));
+        tareas.push(adaptador.escribir(f.col, idDeDoc(f, k, uid), { json: "", ts, borrado: true, por: uid }).catch((er) => onEvento({ tipo: "error", col: f.col, error: er })));
       });
     });
     guardarEstado();
