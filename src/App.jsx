@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, cloneElement } from "react";
 import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
@@ -2061,6 +2061,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   // Permisos por cargo: sin acceso -> aviso; solo consulta -> formulario bloqueado; editar -> tal cual. (Control Presupuestal tiene los suyos.)
   const inicioDe = (id) => (id.startsWith("sst-") ? "inicio-sst" : id.startsWith("amb-") ? "inicio-ambiental" : id.startsWith("cal-") ? "inicio-calidad" : "inicio");
   const conPermiso = (nodo) => {
+    nodo = cloneElement(nodo, { key: `${vista}:${versionDatos}` });   // llegaron datos de otro equipo: la pantalla se vuelve a leer
     const nivel = nivelModulo(perfil, vista);
     if (!nivel) return <SinAcceso onVolver={() => setVista(inicioDe(vista))} />;
     return nivel === "V" ? <SoloConsulta key={vista}>{nodo}</SoloConsulta> : nodo;
@@ -2404,7 +2405,9 @@ function useSincronizacion(usuario, perfil) {
   }, []);
   useEffect(() => {
     if (!hayNuevos) return undefined;
-    const t = setInterval(() => { if (Date.now() - ultimaAccion.current > 2500) { setHayNuevos(false); setVersion((v) => v + 1); } }, 1000);
+    // Si hay un borrador sin terminar en este equipo no se recarga sola la pantalla (se perdería el hilo): queda el aviso para actualizar a mano.
+    const hayBorrador = () => { try { for (let i = 0; i < localStorage.length; i++) if (/^ryr_borrador_/.test(localStorage.key(i))) return true; } catch (e) { /* sin lectura */ } return false; };
+    const t = setInterval(() => { if (Date.now() - ultimaAccion.current > 2500 && !hayBorrador()) { setHayNuevos(false); setVersion((v) => v + 1); } }, 1000);
     return () => clearInterval(t);
   }, [hayNuevos]);
   return { listo, hayNuevos, version, actualizar, enLinea };
