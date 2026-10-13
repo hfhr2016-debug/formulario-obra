@@ -5,8 +5,7 @@ import ExcelJS from "exceljs";
 import { descargarLibro } from "./sstComunes";
 import {
   CATALOGOS, catalogoDef, itemsConLlave, hayCatalogoPropio, guardarItem, quitarItem, filasParaExcel, importarFilas, ENCABEZADOS_EXCEL,
-  TIPOS_PROYECTO, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT,
-} from "./catalogoVivo";
+  TIPOS_PROYECTO, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT, UNIDADES_COMUNES, gruposDe, sugerirCodigo } from "./catalogoVivo";
 
 const NAVY = "#1B2A45", GOLD = "#D9A233", PAPER = "#F7F7F5", LINE = "#D9DCE1";
 const pesos = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-CO");
@@ -204,7 +203,7 @@ function PanelActividades() {
   }
   const campoTxt = (etq, k, ph) => (
     <label className="block text-[11px] font-semibold" style={{ color: "#8A8F99" }}>{etq}
-      <input value={edit.item[k] || ""} placeholder={ph} onChange={cambia(k)} className={campo + " mt-0.5"} style={{ borderColor: LINE }} aria-label={etq} list={k === "capitulo" ? "lista-capitulos" : k === "subcapitulo" ? "lista-subcapitulos" : undefined} /></label>
+      <input value={edit.item[k] || ""} placeholder={ph} onChange={cambia(k)} className={campo + " mt-0.5"} style={{ borderColor: LINE }} aria-label={etq} list={k === "capitulo" ? "lista-capitulos" : k === "subcapitulo" ? "lista-subcapitulos" : k === "grupo" ? "lista-grupos" : k === "unidad" ? "lista-unidades" : undefined} /></label>
   );
 
   return (
@@ -238,11 +237,23 @@ function PanelActividades() {
           </div>
           <div className="grid grid-cols-2 gap-2">{campoTxt("Subcapítulo", "subcapitulo")}{campoTxt("Grupo", "grupo")}</div>
           <div className="grid grid-cols-3 gap-2">
-            {campoTxt("Código", "codigo", "(opcional)")}
-            <div className="col-span-2">{campoTxt("Método sugerido", "metodo", "(opcional)")}</div>
+            <div>
+              {campoTxt("Código", "codigo", "(opcional)")}
+              {!edit.item.codigo && sugerirCodigo(edit.item.tipo, edit.item.capitulo, edit.item.subcapitulo) && (
+                <button type="button" data-usar-codigo onClick={() => setEdit({ ...edit, item: { ...edit.item, codigo: sugerirCodigo(edit.item.tipo, edit.item.capitulo, edit.item.subcapitulo) } })} className="mt-1 text-[10.5px] underline" style={{ color: NAVY }}>
+                  Sugerido: {sugerirCodigo(edit.item.tipo, edit.item.capitulo, edit.item.subcapitulo)} · usar
+                </button>
+              )}
+            </div>
+            <div className="col-span-2">
+              {campoTxt("Método sugerido", "metodo", "(opcional)")}
+              <div className="text-[10px] mt-0.5" style={{ color: "#8A8F99" }}>Es una nota: cómo se mide o calcula la cantidad de esta actividad (por ejemplo «Largo × Ancho × N° de elementos»).</div>
+            </div>
           </div>
           <datalist id="lista-capitulos">{capitulos.map((c) => <option key={c} value={c} />)}</datalist>
           <datalist id="lista-subcapitulos">{subcaps.map((c) => <option key={c} value={c} />)}</datalist>
+          <datalist id="lista-grupos">{gruposDe(edit.item.tipo, edit.item.capitulo, edit.item.subcapitulo).map((c) => <option key={c} value={c} />)}</datalist>
+          <datalist id="lista-unidades">{UNIDADES_COMUNES.map((c) => <option key={c} value={c} />)}</datalist>
           {error && <div className="text-[11.5px]" style={{ color: "#B3401F" }}>{error}</div>}
           <div className="flex gap-2">
             <button type="button" onClick={guardarEdicion} className="flex-1 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: NAVY }}>Guardar</button>

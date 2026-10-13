@@ -10,6 +10,7 @@ import {
   buscarProfesional, recordarProfesional, quitarProfesional, cargosDisponibles, mezclarTrabajadores, buscarTrabajador,
 } from "./sstBase";
 import { BotonMenuSST, useNavegacionSST } from "./sstNavegacion";
+import { refrescoVivoReciente, alLlegarDatos } from "./refrescoVivo";
 
 export const NAVY = "#1B2A45";
 export const GOLD = "#D9A233";
@@ -90,6 +91,19 @@ export function useBorrador({ clave, d, setD, inicial, tieneContenido }) {
   const [aplicado, setAplicado] = useState(() => {
     try { return !localStorage.getItem(clave); } catch (e) { return true; }
   });
+  const ultimoD = useRef(d); ultimoD.current = d;
+  const aplicadoRef = useRef(aplicado); aplicadoRef.current = aplicado;
+  useEffect(() => alLlegarDatos((claves) => {   // la misma persona escribió este formulario en otro equipo: se pone al día sin cerrarlo
+    if (!claves.includes(clave) || !aplicadoRef.current) return [];
+    const g = leerJSON(clave, null);
+    if (g && JSON.stringify({ ...inicial(), ...g }) !== JSON.stringify(ultimoD.current)) setD({ ...inicial(), ...g });
+    return [clave];
+  }), [clave]);   // eslint-disable-line
+  const alMontar = useRef(false);
+  useEffect(() => {   // la pantalla se volvió a leer por datos de otro equipo: el borrador se recupera solo
+    if (alMontar.current) return; alMontar.current = true;
+    if (borradorDisponible && refrescoVivoReciente()) { const g = leerJSON(clave, null); if (g) setD({ ...inicial(), ...g }); setAplicado(true); setBorradorDisponible(false); }
+  }, []);   // eslint-disable-line
   useEffect(() => {
     if (!aplicado) return;
     if (omitir.current) { omitir.current = false; return; }

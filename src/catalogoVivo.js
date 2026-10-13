@@ -280,3 +280,33 @@ export function importarActividades(filas) {
   guardar(ACTIVIDADES.clave, m);
   return { nuevos, actualizados, sinCambio, errores };
 }
+
+// ---------- Ayudas para crear actividades ----------
+// Unidades de medida habituales en obra (el catálogo trae variantes sueltas: m3, M3, m³…; aquí van una sola vez).
+export const UNIDADES_COMUNES = ["m", "m²", "m³", "ml", "kg", "ton", "und", "gl", "hr", "día", "lt", "ha", "km", "m³-km", "ton-km", "global", "mes", "sem"];
+// Grupos que ya existen para un capítulo (y subcapítulo, si se eligió): para ofrecerlos en una lista.
+export function gruposDe(tipo, capitulo, subcapitulo) {
+  const lista = itemsActividades(tipo).map(({ item }) => item).filter((x) => txt(x.capitulo) === txt(capitulo) && txt(x.grupo));
+  const delSub = subcapitulo ? lista.filter((x) => txt(x.subcapitulo) === txt(subcapitulo)) : lista;
+  return Array.from(new Set((delSub.length ? delSub : lista).map((x) => txt(x.grupo))));
+}
+// Siguiente código libre: sigue el último código del mismo subcapítulo (o del capítulo) y le suma 1 al último número («22.02.02» -> «22.02.03», «HC-3.017» -> «HC-3.018»).
+export function sugerirCodigo(tipo, capitulo, subcapitulo) {
+  const todas = itemsActividades(tipo).map(({ item }) => item).filter((x) => txt(x.codigo));
+  if (!txt(capitulo) || !todas.length) return "";
+  const usados = new Set(todas.map((x) => txt(x.codigo).toLowerCase()));
+  const delCap = todas.filter((x) => txt(x.capitulo) === txt(capitulo));
+  const delSub = subcapitulo ? delCap.filter((x) => txt(x.subcapitulo) === txt(subcapitulo)) : [];
+  const grupo = delSub.length ? delSub : delCap;
+  if (!grupo.length) return "";
+  const ultimo = grupo.reduce((a, b) => ((Number(b.orden) || 0) >= (Number(a.orden) || 0) ? b : a));
+  const m = /^(.*?)(\d+)(\D*)$/.exec(txt(ultimo.codigo));
+  if (!m) return "";
+  let n = parseInt(m[2], 10);
+  for (let i = 0; i < 500; i++) {
+    n += 1;
+    const cand = `${m[1]}${String(n).padStart(m[2].length, "0")}${m[3]}`;
+    if (!usados.has(cand.toLowerCase())) return cand;
+  }
+  return "";
+}

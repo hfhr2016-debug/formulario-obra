@@ -87,7 +87,9 @@ import FormularioAnticipo from "./FormularioAnticipo";
 import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
 import { ContextoSST } from "./sstNavegacion";
-import { SelectorHora } from "./sstComunes";
+import { SelectorHora, Lista } from "./sstComunes";
+import { marcarRefrescoVivo, refrescoVivoReciente, alLlegarDatos, avisarDatosRemotos } from "./refrescoVivo";
+import { UNIDADES_COMUNES, actividadesVigentes } from "./catalogoVivo";
 import {
 
   ChevronDown,
@@ -140,6 +142,18 @@ function tipoProyectoDiario() {
 }
 function itemsDesdeCatalogo(actividades) {
   return actividades.map((a, i) => ({ item: String(i + 1), descripcion: a.actividad, unidad: a.unidad, contractual: "" }));
+}
+const normAct = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+function unirConCatalogoVivo(archivo, tipo) {
+  let vivas = [];
+  try { vivas = actividadesVigentes().filter((a) => a.tipo === tipo); } catch (e) { return archivo; }
+  const porNombre = new Map(vivas.map((a) => [normAct(a.actividad), a]));
+  const base = archivo.map((a) => { const v = porNombre.get(normAct(a.actividad)); return v && v.unidad && v.unidad !== a.unidad ? { ...a, unidad: v.unidad } : a; });
+  const conocidas = new Set(archivo.map((a) => normAct(a.actividad)));
+  const nuevas = vivas.filter((a) => !conocidas.has(normAct(a.actividad)))
+    .sort((x, y) => (Number(x.actualizado) || 0) - (Number(y.actualizado) || 0) || String(x.actividad).localeCompare(String(y.actividad)))
+    .map((a) => ({ ...a, seccion: a.seccion || a.capitulo }));
+  return nuevas.length ? base.concat(nuevas) : base;
 }
 function capitulosDesdeCatalogo(actividades, tipo) {
   const campo = tipo === "hidrocarburos" ? "seccion" : "capitulo";
@@ -256,6 +270,8 @@ function Section({ id, title, subtitle, open, onToggle, children, count }) {
   );
 }
 
+// Lista de unidades para el desplegable; si la fila ya trae otra (p. ej. «M3» del catálogo) se conserva para no perderla.
+const opcionesUnidad = (actual) => (actual && !UNIDADES_COMUNES.includes(actual) ? [actual, ...UNIDADES_COMUNES] : UNIDADES_COMUNES);
 function Field({ label, value, onChange, placeholder, type = "text", half }) {
   return (
     <div className={half ? "flex-1 min-w-0" : "w-full"}>
@@ -534,7 +550,10 @@ function AddButton({ onClick, label }) {
 function CapturaAvanceObra({ onVolver, onNavegar }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const tipoDiario = tipoProyectoDiario();
-  const { actividades: actividadesDiario, error: errorCatalogo } = useCatalogo(tipoDiario);
+  const [versionCat, setVersionCat] = useState(0);
+  const { actividades: actividadesArchivo, error: errorCatalogo } = useCatalogo(tipoDiario);
+  // Las actividades creadas en Catálogos (en este u otro dispositivo) se suman al final de la lista del archivo, sin mover los números de ítem existentes.
+  const actividadesDiario = useMemo(() => unirConCatalogoVivo(actividadesArchivo, tipoDiario), [actividadesArchivo, tipoDiario, versionCat]);   // eslint-disable-line
   const itemsCatalogo = useMemo(() => itemsDesdeCatalogo(actividadesDiario), [actividadesDiario]);
   const nombresActividades = useMemo(() => itemsCatalogo.map((it) => it.descripcion), [itemsCatalogo]);
   const capitulosDiario = useMemo(() => capitulosDesdeCatalogo(actividadesDiario, tipoDiario), [actividadesDiario, tipoDiario]);
@@ -602,6 +621,14 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
     setBorradorAplicado(true);
     setBorradorDisponible(false);
   }
+  useEffect(() => { if (borradorDisponible && refrescoVivoReciente()) restaurarBorradorDiario(); }, []);   // eslint-disable-line
+  const aplicadoDiarioRef = useRef(borradorAplicado); aplicadoDiarioRef.current = borradorAplicado;
+  useEffect(() => alLlegarDatos((claves) => {   // otro equipo cambió el borrador, las actividades o el Presupuesto: se refleja aquí sin cerrar el formulario
+    const hechas = [];
+    if (claves.includes("ryr_borrador_diario") && aplicadoDiarioRef.current) { restaurarBorradorDiario(); hechas.push("ryr_borrador_diario"); }
+    ["ryr_cat_actividades", "ryr_presupuesto_cantidades"].forEach((k) => { if (claves.includes(k)) { setVersionCat((v) => v + 1); hechas.push(k); } });
+    return hechas;
+  }), []);   // eslint-disable-line
   function descartarBorradorDiario() {
     try { localStorage.removeItem("ryr_borrador_diario"); } catch (e) {}
     setBorradorAplicado(true);
@@ -1110,10 +1137,10 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                 <label className="block text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Ubicación</label>
                 <BuscadorTexto value={general.ubicacion} onChange={(v) => setG("ubicacion", v)} catalogo={CATALOGO_CIUDADES_NOMBRES} placeholder="Ciudad..." />
               </div>
-            <div className="flex gap-2">
-              <SelectorHora label="Hora entrada" value={general.horaEntrada} onChange={(v) => setG("horaEntrada", v)} half />
-              <SelectorHora label="Apertura permiso" value={general.horaApertura} onChange={(v) => setG("horaApertura", v)} half />
-              <SelectorHora label="Hora salida" value={general.horaSalida} onChange={(v) => setG("horaSalida", v)} half />
+            <div className="flex flex-col gap-3">
+              <SelectorHora label="Hora entrada" value={general.horaEntrada} onChange={(v) => setG("horaEntrada", v)} />
+              <SelectorHora label="Apertura permiso" value={general.horaApertura} onChange={(v) => setG("horaApertura", v)} />
+              <SelectorHora label="Hora salida" value={general.horaSalida} onChange={(v) => setG("horaSalida", v)} />
             </div>
           </div>
         </Section>
@@ -1143,7 +1170,9 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                     let contractualReal = it.contractual;
                     try {
                       const pres = JSON.parse(localStorage.getItem("ryr_presupuesto_cantidades") || "{}");
-                      const match = Object.values(pres).find((p) => p.actividad === it.descripcion);
+                      const sinTildes = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+                      const k = sinTildes(it.descripcion);
+                      const match = pres[String(it.descripcion || "").trim().toLowerCase()] || Object.values(pres).find((p) => sinTildes(p.actividad) === k);
                       if (match && match.cantidad) contractualReal = String(match.cantidad);
                     } catch (e) {}
                     setCantidades((rows) =>
@@ -1166,8 +1195,11 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
               </div>
               <Field label="Ubicación" value={r.ubicacion} onChange={(v) => updateRow(setCantidades, i, "ubicacion", v)} />
               <Field label="Item" value={r.item} onChange={(v) => updateRow(setCantidades, i, "item", v)} />
-              <Field label="Contractual" value={r.contractual} onChange={(v) => updateRow(setCantidades, i, "contractual", v)} />
-              <Field label="Unidad" value={r.unidad} onChange={(v) => updateRow(setCantidades, i, "unidad", v)} />
+              <div>
+                <Field label="Contractual (según Presupuesto)" value={r.contractual} onChange={(v) => updateRow(setCantidades, i, "contractual", v)} />
+                {r.descripcion && !r.contractual && <div className="text-[10px] mt-0.5" style={{ color: "#B3401F" }}>No está en el Presupuesto: escribe la cantidad contratada.</div>}
+              </div>
+              <Lista label="Unidad" value={r.unidad} onChange={(v) => updateRow(setCantidades, i, "unidad", v)} opciones={opcionesUnidad(r.unidad)} />
               <Field label="Acum. anterior" type="text" inputMode="decimal" value={r.acumAnterior} onChange={(v) => updateRow(setCantidades, i, "acumAnterior", v)} />
               <Field label="Avance diario" type="text" inputMode="decimal" value={r.avanceDiario} onChange={(v) => updateRow(setCantidades, i, "avanceDiario", v)} />
             </RowCard>
@@ -1212,7 +1244,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                   );
                 }}
               />
-              <Field label="Unidad" value={r.unidad} onChange={(v) => updateRow(setOtras, i, "unidad", v)} />
+              <Lista label="Unidad" value={r.unidad} onChange={(v) => updateRow(setOtras, i, "unidad", v)} opciones={opcionesUnidad(r.unidad)} />
               <Field label="Acum. anterior" type="text" inputMode="decimal" value={r.acumAnterior} onChange={(v) => updateRow(setOtras, i, "acumAnterior", v)} />
               <Field label="Avance diario" type="text" inputMode="decimal" value={r.avanceDiario} onChange={(v) => updateRow(setOtras, i, "avanceDiario", v)} />
               <div className="col-span-2">
@@ -1345,7 +1377,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
               <div className="col-span-2">
                 <Field label="Motivo" value={r.motivo} onChange={(v) => updateRow(setHorasPerdidas, i, "motivo", v)} />
               </div>
-              <SelectorHora
+              <div className="col-span-2"><SelectorHora
                 label="Inicio"
                 value={r.inicio}
                 onChange={(v) =>
@@ -1353,8 +1385,8 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                     rows.map((row, idx) => (idx === i ? { ...row, inicio: v, total: calcularHorasEntre(v, row.fin) } : row))
                   )
                 }
-              />
-              <SelectorHora
+              /></div>
+              <div className="col-span-2"><SelectorHora
                 label="Fin"
                 value={r.fin}
                 onChange={(v) =>
@@ -1362,7 +1394,7 @@ function CapturaAvanceObra({ onVolver, onNavegar }) {
                     rows.map((row, idx) => (idx === i ? { ...row, fin: v, total: calcularHorasEntre(row.inicio, v) } : row))
                   )
                 }
-              />
+              /></div>
               <div>
                 <label className="block text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Total horas</label>
                 <div className="w-full border rounded-lg px-2.5 py-2 text-[13px] bg-gray-50 text-gray-600" style={{ borderColor: LINE }}>
@@ -2377,6 +2409,8 @@ function useSincronizacion(usuario, perfil) {
   const [listo, setListo] = useState(false);
   const [hayNuevos, setHayNuevos] = useState(false);
   const [version, setVersion] = useState(0);
+  const sinManejar = useRef([]);
+  const pendientes = useRef([]);   // claves que llegaron de otros equipos y aún no se reflejan en pantalla
   const [enLinea, setEnLinea] = useState(typeof navigator === "undefined" ? true : navigator.onLine !== false);
   const uid = usuario && usuario.uid;
   const huella = perfil ? JSON.stringify([perfil.esAdmin || false, perfil.roles || [], perfil.rolCP || ""]) : "";
@@ -2384,7 +2418,7 @@ function useSincronizacion(usuario, perfil) {
     if (!uid || !perfil) { setListo(false); return undefined; }
     let vivo = true;
     setListo(false);
-    revisarReinicioGeneral().then((reinicio) => (reinicio ? null : iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) setHayNuevos(true); if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })))
+    revisarReinicioGeneral().then((reinicio) => (reinicio ? null : iniciarSync({ uid, perfil, onEvento: (e) => { if (e.tipo === "datos" && e.remoto && vivo) { pendientes.current = pendientes.current.concat(e.claves || []); setHayNuevos(true); } if (e.tipo === "error") console.warn("Sincronización:", e.col, e.error && e.error.code); } })))
       .catch((e) => console.warn("No se pudo iniciar la sincronización", e))
       .finally(() => { if (vivo) setListo(true); });
     return () => { vivo = false; detenerSync({ limpiar: true }); };
@@ -2405,9 +2439,19 @@ function useSincronizacion(usuario, perfil) {
   }, []);
   useEffect(() => {
     if (!hayNuevos) return undefined;
-    // Si hay un borrador sin terminar en este equipo no se recarga sola la pantalla (se perdería el hilo): queda el aviso para actualizar a mano.
-    const hayBorrador = () => { try { for (let i = 0; i < localStorage.length; i++) if (/^ryr_borrador_/.test(localStorage.key(i))) return true; } catch (e) { /* sin lectura */ } return false; };
-    const t = setInterval(() => { if (Date.now() - ultimaAccion.current > 2500 && !hayBorrador()) { setHayNuevos(false); setVersion((v) => v + 1); } }, 1000);
+    // Los borradores se guardan al instante y se recuperan solos al volver a leer la pantalla, así que ya no hace falta esperar a que se cierre el formulario.
+    const t = setInterval(() => {
+      const quieto = Date.now() - ultimaAccion.current;
+      if (quieto > 800 && pendientes.current.length) {          // las pantallas que se actualizan en vivo lo hacen casi al instante
+        const claves = Array.from(new Set(pendientes.current)); pendientes.current = [];
+        sinManejar.current = Array.from(new Set(sinManejar.current.concat(avisarDatosRemotos(claves))));
+      }
+      if (quieto > 2500 && !pendientes.current.length) {
+        const hacerRemontar = sinManejar.current.length > 0; sinManejar.current = [];
+        setHayNuevos(false);
+        if (hacerRemontar) { marcarRefrescoVivo(); setVersion((v) => v + 1); }   // lo demás: se vuelve a leer la pantalla
+      }
+    }, 400);
     return () => clearInterval(t);
   }, [hayNuevos]);
   return { listo, hayNuevos, version, actualizar, enLinea };

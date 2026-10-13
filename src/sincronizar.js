@@ -184,7 +184,7 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
   function alLlegar(f, docs) {
     const e = est(f);
     const loc = registrosLocales(almacen, f);
-    let cambio = false;
+    let cambio = false; const tocadas = [];
     docs.forEach(({ id, data }) => {
       if (!data) return;
       let k; try { k = decodificarId(id); } catch (x) { return; }
@@ -205,22 +205,22 @@ export function crearMotor({ almacen, adaptador, uid, perfil, ahora = () => Date
         if (remoto && canon(remoto) === localCanon) { e.base[k] = localCanon; e.ts[k] = ts; return; }
         if (f.tipo === "claves") {                                         // primera vez que se ven: se unen (listas) o queda la más reciente
           const fus = fusionarValores(loc[k], remoto, Number((estadoTodo.__mod || {})[k]) || 0, ts);
-          loc[k] = fus; e.base[k] = canon(remoto); e.ts[k] = ts; cambio = true;   // la base es lo del servidor: si lo unido es distinto, se sube
+          tocadas.push(k); loc[k] = fus; e.base[k] = canon(remoto); e.ts[k] = ts; cambio = true;   // la base es lo del servidor: si lo unido es distinto, se sube
           return;
         }
         const loc_act = Number(loc[k] && loc[k].actualizado) || 0;
         if (loc_act > ts) return;                                          // primera vez que se ven: gana lo más reciente
       }
       if (data.borrado) {
-        if (enLocal) { delete loc[k]; cambio = true; }
+        if (enLocal) { delete loc[k]; cambio = true; tocadas.push(k); }
         delete e.base[k]; e.ts[k] = ts;
       } else {
         let obj; try { obj = JSON.parse(data.json); } catch (x) { return; }
-        loc[k] = obj; e.base[k] = canon(obj); e.ts[k] = ts; cambio = true;
+        tocadas.push(k); loc[k] = obj; e.base[k] = canon(obj); e.ts[k] = ts; cambio = true;
         (recientes[f.col] = recientes[f.col] || {})[k] = { obj, t: ahora() };
       }
     });
-    if (cambio) { guardarRegistrosLocales(almacen, f, loc); cambiosRemotos.add(f.col); guardarEstado(); onEvento({ tipo: "datos", col: f.col, remoto: true }); }
+    if (cambio) { guardarRegistrosLocales(almacen, f, loc); cambiosRemotos.add(f.col); guardarEstado(); onEvento({ tipo: "datos", col: f.col, remoto: true, claves: f.tipo === "claves" ? tocadas : [f.clave] }); }
     else guardarEstado();
   }
 
