@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { ROLES_CP } from "./cpPermisos";
-import { CARGOS } from "./cargos";
+import { CARGOS, nivelModulo } from "./cargos";
 import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
@@ -148,6 +148,13 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
     }
   }
   const cambiarCargo = (u, cargo) => guardarCampo(u, { cargo });
+  const [permisosAbierto, setPermisosAbierto] = useState("");
+  // Permiso individual de un módulo: "" = el que le da su cargo; E = edita; V = solo consulta; N = sin acceso
+  const cambiarPermisoExtra = (u, moduloId, valor) => {
+    const actual = { ...(u.permisosExtra || {}) };
+    if (!valor) delete actual[moduloId]; else actual[moduloId] = valor;
+    return guardarCampo(u, { permisosExtra: actual });
+  };
   const ponerTodosLosProyectos = (u, todos) => guardarCampo(u, { proyectos: todos ? "todos" : [] });
   const agregarProyecto = (u, nombreProy) => {
     const n = String(nombreProy || "").trim();
@@ -322,6 +329,38 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
                         <button type="button" data-boton-agregar-proyecto className="text-[11px] px-2.5 py-1 rounded border font-semibold" style={{ borderColor: NAVY, color: NAVY }}
                           onClick={(e) => { const inp = e.currentTarget.previousSibling; agregarProyecto(u, inp.value); inp.value = ""; }}>Agregar</button>
                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!u.esAdmin && (
+                <div className="mt-2">
+                  <button type="button" data-abrir-permisos onClick={() => setPermisosAbierto(permisosAbierto === u.uid ? "" : u.uid)} className="text-[10.5px] underline" style={{ color: NAVY }}>
+                    {permisosAbierto === u.uid ? "Ocultar permisos individuales" : `Permisos individuales${u.permisosExtra && Object.keys(u.permisosExtra).length ? ` (${Object.keys(u.permisosExtra).length})` : ""}`}
+                  </button>
+                  {permisosAbierto === u.uid && (
+                    <div data-permisos-individuales className="mt-1.5 p-2 rounded-lg" style={{ background: "#F7F7F5", border: `1px solid ${LINE}` }}>
+                      <div className="text-[10.5px] mb-1.5" style={{ color: "#6B7280" }}>Por defecto cada módulo sigue el cargo de la persona. Aquí puedes dar o quitar acceso a un módulo en particular.</div>
+                      {[["tecnica", "Gestión Técnica"], ["sst", "Gestión SG-SST"], ["ambiental", "Gestión Ambiental"], ["calidad", "Gestión de Calidad"]].filter(([a]) => (u.roles || []).includes(a)).map(([area, titulo]) => (
+                        <div key={area} className="mb-2">
+                          <div className="text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>{titulo}</div>
+                          {(modulosPorArea[area] || []).filter((m) => m.activo !== false).map((m) => {
+                            const porCargo = nivelModulo({ cargo: u.cargo }, m.id);
+                            const textoCargo = porCargo === "E" ? "Editar" : porCargo === "V" ? "Solo consulta" : "Sin acceso";
+                            return (
+                              <div key={m.id} className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-[10.5px]" style={{ color: NAVY }}>{m.nombre}</span>
+                                <select data-permiso-modulo={m.id} value={(u.permisosExtra || {})[m.id] || ""} onChange={(e) => cambiarPermisoExtra(u, m.id, e.target.value)} className="text-[10.5px] border rounded px-1 py-0.5" style={{ borderColor: LINE, maxWidth: 150 }}>
+                                  <option value="">Según cargo ({u.cargo ? textoCargo : "Editar"})</option>
+                                  <option value="E">Editar</option>
+                                  <option value="V">Solo consulta</option>
+                                  <option value="N">Sin acceso</option>
+                                </select>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

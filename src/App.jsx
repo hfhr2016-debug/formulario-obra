@@ -13,6 +13,8 @@ import PantallaLogin from "./PantallaLogin";
 import PanelAdmin from "./PanelAdmin";
 import PanelCatalogos from "./PanelCatalogos";
 import { nivelCP, SoloLectura, SinAcceso } from "./cpPermisos";
+import { nivelModulo } from "./cargos";
+import { SoloConsulta } from "./SoloConsulta";
 import { iniciarSync, detenerSync } from "./sincronizarFirestore";
 import { aplicarReinicioGeneral, limpiarEquipo } from "./reinicioApp";
 import { LimpiarEquipoEnlace } from "./ReinicioApp";
@@ -1749,6 +1751,7 @@ function Proximamente({ nombre, onVolver }) {
 }
 
 function Inicio({ onSeleccionar, onVolverSelector }) {
+  const { perfil: perfilSesion } = useAuth();   // oculta los módulos que el cargo no ve
     return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1778,7 +1781,7 @@ function Inicio({ onSeleccionar, onVolverSelector }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 p-4">
-        {MODULOS.map((m) => (
+        {MODULOS.filter((m) => nivelModulo(perfilSesion, m.id)).map((m) => (
           <button
             key={m.id}
             onClick={() => m.activo && onSeleccionar(m.id)}
@@ -1809,6 +1812,7 @@ function Inicio({ onSeleccionar, onVolverSelector }) {
 }
 
 function InicioSST({ onSeleccionar, onVolverSelector }) {
+  const { perfil: perfilSesion } = useAuth();   // oculta los módulos que el cargo no ve
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1835,7 +1839,7 @@ function InicioSST({ onSeleccionar, onVolverSelector }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 p-4">
-        {MODULOS_SST.map((m) => (
+        {MODULOS_SST.filter((m) => nivelModulo(perfilSesion, m.id)).map((m) => (
           <button
             key={m.id}
             onClick={() => m.activo && onSeleccionar(m.id)}
@@ -1865,6 +1869,7 @@ function InicioSST({ onSeleccionar, onVolverSelector }) {
 }
 
 function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
+  const { perfil: perfilSesion } = useAuth();   // oculta los módulos que el cargo no ve
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1892,7 +1897,7 @@ function InicioAmbiental({ onSeleccionar, onVolverSelector }) {
 
       <AlertasAmbientales onIr={onSeleccionar} />
       <div className="grid grid-cols-2 gap-3 p-4">
-        {MODULOS_AMBIENTAL.map((m) => (
+        {MODULOS_AMBIENTAL.filter((m) => nivelModulo(perfilSesion, m.id)).map((m) => (
           <button
             key={m.id}
             onClick={() => onSeleccionar(m.id)}
@@ -1936,6 +1941,7 @@ function BannerVencimientos({ onVer }) {
 }
 
 function InicioCalidad({ onSeleccionar, onVolverSelector }) {
+  const { perfil: perfilSesion } = useAuth();   // oculta los módulos que el cargo no ve
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <link
@@ -1963,7 +1969,7 @@ function InicioCalidad({ onSeleccionar, onVolverSelector }) {
 
       <BannerVencimientos onVer={() => onSeleccionar("cal-vencimientos")} />
       <div className="grid grid-cols-2 gap-3 px-4 pb-4 pt-2">
-        {MODULOS_CALIDAD.map((m) => (
+        {MODULOS_CALIDAD.filter((m) => nivelModulo(perfilSesion, m.id)).map((m) => (
           <button
             key={m.id}
             onClick={() => onSeleccionar(m.id)}
@@ -2044,7 +2050,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   const [vista, setVista] = useState("selector-apps");
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
   const ctxSST = {
-    modulos: MODULOS_SST.filter((m) => m.activo),
+    modulos: MODULOS_SST.filter((m) => m.activo && nivelModulo(perfil, m.id)),
     vistaActual: vista,
     ir: (id) => setVista(id),
     irInicio: () => setVista("inicio-sst"),
@@ -2052,10 +2058,17 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
     cerrarSesion: onCerrarSesion,
   };
-  const conMenuSST = (nodo) => <ContextoSST.Provider value={ctxSST}>{nodo}</ContextoSST.Provider>;
+  // Permisos por cargo: sin acceso -> aviso; solo consulta -> formulario bloqueado; editar -> tal cual. (Control Presupuestal tiene los suyos.)
+  const inicioDe = (id) => (id.startsWith("sst-") ? "inicio-sst" : id.startsWith("amb-") ? "inicio-ambiental" : id.startsWith("cal-") ? "inicio-calidad" : "inicio");
+  const conPermiso = (nodo) => {
+    const nivel = nivelModulo(perfil, vista);
+    if (!nivel) return <SinAcceso onVolver={() => setVista(inicioDe(vista))} />;
+    return nivel === "V" ? <SoloConsulta key={vista}>{nodo}</SoloConsulta> : nodo;
+  };
+  const conMenuSST = (nodo) => <ContextoSST.Provider value={ctxSST}>{conPermiso(nodo)}</ContextoSST.Provider>;
   // Menú lateral de Gestión Ambiental (mismo componente del menú de SST, con los módulos ambientales activos)
   const ctxAmb = {
-    modulos: MODULOS_AMBIENTAL.filter((m) => m.activo),
+    modulos: MODULOS_AMBIENTAL.filter((m) => m.activo && nivelModulo(perfil, m.id)),
     vistaActual: vista,
     ir: (id) => setVista(id),
     irInicio: () => setVista("inicio-ambiental"),
@@ -2065,10 +2078,10 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     titulo: "Gestión Ambiental",
     otrosSistemas: "Técnica / SST",
   };
-  const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{nodo}</ContextoSST.Provider>;
+  const conMenuAmb = (nodo) => <ContextoSST.Provider value={ctxAmb}>{conPermiso(nodo)}</ContextoSST.Provider>;
   // Menú lateral de Gestión de Calidad
   const ctxCal = {
-    modulos: MODULOS_CALIDAD.filter((m) => m.activo),
+    modulos: MODULOS_CALIDAD.filter((m) => m.activo && nivelModulo(perfil, m.id)),
     vistaActual: vista,
     ir: (id) => setVista(id),
     irInicio: () => setVista("inicio-calidad"),
@@ -2078,7 +2091,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     titulo: "Gestión de Calidad",
     otrosSistemas: "Técnica / SST / Ambiental",
   };
-  const conMenuCal = (nodo) => <ContextoSST.Provider value={ctxCal}>{nodo}</ContextoSST.Provider>;
+  const conMenuCal = (nodo) => <ContextoSST.Provider value={ctxCal}>{conPermiso(nodo)}</ContextoSST.Provider>;
   // Menú lateral de Control Presupuestal (mismo componente, con sus 4 formatos)
   const ctxPres = {
     modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo && nivelCP(perfil, m.id)),
@@ -2306,34 +2319,34 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     return <Proximamente nombre="Gestión Ambiental" onVolver={() => setVista("selector-apps")} />;
   }
   if (vista === "diario") {
-    return <CapturaAvanceObra onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<CapturaAvanceObra onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "apus") {
-    return <FormularioAPU onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioAPU onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "ficha") {
-    return <FormularioFicha onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioFicha onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "presupuesto") {
-    return <FormularioPresupuestoNuevo onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioPresupuestoNuevo onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "cronograma") {
-    return <FormularioCronograma onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioCronograma onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "cantidades") {
-    return <FormularioCantidadesNuevo onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioCantidadesNuevo onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "semanal") {
-    return <FormularioSemanal onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioSemanal onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "acta") {
-    return <FormularioActa onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioActa onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "mensual") {
-    return <FormularioMensual onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioMensual onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   if (vista === "memorias") {
-    return <FormularioMemoria onVolver={() => setVista("inicio")} onNavegar={setVista} />;
+    return conPermiso(<FormularioMemoria onVolver={() => setVista("inicio")} onNavegar={setVista} />);
   }
   return <Inicio onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
 }

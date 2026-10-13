@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "./AuthContext";
+import { nivelModulo } from "./cargos";
 
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
@@ -47,7 +48,7 @@ export default function MenuLateral({ abierto, onCerrar, onNavegar, vistaActual 
           <button onClick={onCerrar} className="text-white/80 text-[20px] leading-none">✕</button>
         </div>
         <div className="p-2">
-          {MODULOS_MENU.map((m) => (
+          {MODULOS_MENU.filter((m) => nivelModulo(sesion && sesion.perfil, m.id)).map((m) => (
             <button
               key={m.id}
               onClick={() => { onNavegar(m.id); onCerrar(); }}
