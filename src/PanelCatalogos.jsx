@@ -166,7 +166,7 @@ function PanelActividades() {
   function aplicarUnificacion() {
     if (!window.confirm("Se unifican los nombres de las actividades que coinciden entre Edificación, Vías e Hidrocarburos. Los nombres anteriores quedan como equivalencias y lo ya guardado se actualiza solo. ¿Continuar?")) return;
     const r = aplicarUnificacionCatalogo();
-    setError(""); setAviso(`Listo: ${r.renombradas} actividades con nombre único${r.quitadas ? `, ${r.quitadas} repetidas unidas` : ""}.`); refrescar();
+    setError(""); setAviso(`Listo: ${r.renombradas} actividades con nombre único${r.quitadas ? `, ${r.quitadas} repetidas unidas` : ""}${r.concretos ? `, ${r.concretos} concretos agregados para que los tres tipos tengan los mismos` : ""}.`); refrescar();
   }
   const campo = "w-full border rounded-lg px-3 py-2 text-[13px]";
   const cambia = (k) => (e) => setEdit({ ...edit, item: { ...edit.item, [k]: e.target.value } });
@@ -227,8 +227,11 @@ function PanelActividades() {
       {pendiente && (
         <div className="rounded-lg p-3 mb-2 text-[12px]" style={{ background: "#FFF6DC", border: "1px solid " + GOLD, color: NAVY }} data-unificacion-pendiente>
           <div className="font-bold mb-1">Unificar actividades entre los tres tipos de proyecto</div>
-          <div className="mb-2">Hay {pendiente.renombradas} actividades que se pasan a un nombre único (y {pendiente.quitadas} repetidas que se unen), para que un solo APU sirva en Edificación, Vías e Hidrocarburos. Los nombres anteriores quedan como equivalencias.</div>
-          <button type="button" onClick={aplicarUnificacion} className="px-3 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: GOLD }} data-aplicar-unificacion>Aplicar unificación</button>
+          <div className="mb-2">
+            {pendiente.renombradas > 0 && <>Hay {pendiente.renombradas} actividades que se pasan a un nombre único (y {pendiente.quitadas} repetidas que se unen), para que un solo APU sirva en Edificación, Vías e Hidrocarburos. Los nombres anteriores quedan como equivalencias. </>}
+            {pendiente.concretos > 0 && <>Faltan {pendiente.concretos} concretos para que los tres tipos de proyecto tengan los mismos 8.</>}
+          </div>
+          <button type="button" onClick={aplicarUnificacion} className="px-3 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: GOLD }} data-aplicar-unificacion>{pendiente.renombradas > 0 ? "Aplicar unificación" : "Completar concretos"}</button>
         </div>
       )}
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por actividad, capítulo o código" className={campo + " mb-2"} style={{ borderColor: LINE, background: "white" }} />

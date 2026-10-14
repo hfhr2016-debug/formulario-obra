@@ -5,6 +5,7 @@ import { fotoLibro, estilarEscritos } from "./sstBase";
 import { mapaApu, valorSimple, arreglarRendimientoVisible } from "./apuPlantilla";
 import { esActividadPorElemento, buscarMaterialEnLista, coincideBusqueda, rendimientoExtra, evaluarCoherencia, avisosDelApu } from "./apuReglas";
 import { catalogoVigente, actividadesVigentesTodosLosTipos } from "./catalogoVivo";
+import { buscarPorNombre } from "./unificacion";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 
@@ -1075,10 +1076,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
               setMateriales(seisFilasVacias());
               setManoObra(seisFilasVacias());
               setEquipos(seisFilasVacias());
-              const rendSugerido = RENDIMIENTOS_REFERENCIA[a.actividad] !== undefined
-                ? RENDIMIENTOS_REFERENCIA[a.actividad]
+              const rendSugerido = buscarPorNombre(RENDIMIENTOS_REFERENCIA, a.actividad) !== undefined
+                ? buscarPorNombre(RENDIMIENTOS_REFERENCIA, a.actividad)
                 : rendimientoSugeridoPorKeyword(a.actividad, a.unidad);
-              const cuadSugerida = CUADRILLAS_REFERENCIA[a.actividad] || (() => {
+              const cuadSugerida = buscarPorNombre(CUADRILLAS_REFERENCIA, a.actividad) || (() => {
                 const c = cuadrillaSugeridaPorKeyword(a.actividad);
                 return c ? { cuadrilla: c, personas: null } : null;
               })();
@@ -1108,9 +1109,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
               ⚡ Rendimiento sugerido: {rendimientoBase} {actividad.unidad}/jornada por cuadrilla (promedio del sector — ajústalo según tu experiencia)
             </div>
           )}
-          {actividad && DESPERDICIO_REFERENCIA[actividad.actividad] !== undefined && (
+          {actividad && buscarPorNombre(DESPERDICIO_REFERENCIA, actividad.actividad) !== undefined && (
             <div className="text-[11px] mt-1" style={{ color: GOLD }}>
-              ⚡ Desperdicio típico de esta actividad: ~{(DESPERDICIO_REFERENCIA[actividad.actividad] * 100).toFixed(0)}% — considera aumentarlo en las cantidades de materiales de abajo.
+              ⚡ Desperdicio típico de esta actividad: ~{(buscarPorNombre(DESPERDICIO_REFERENCIA, actividad.actividad) * 100).toFixed(0)}% — considera aumentarlo en las cantidades de materiales de abajo.
             </div>
           )}
         </Campo>

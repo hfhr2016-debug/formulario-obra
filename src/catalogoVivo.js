@@ -4,7 +4,7 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
-import { MARCA as MARCA_UNIFICACION } from "./unificacion";
+import { MARCA as MARCA_UNIFICACION, nombreUnificado } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -174,6 +174,18 @@ export function actividadesVigentes() {
   return valor;
 }
 const mapaAct = () => leer(ACTIVIDADES.clave);
+// Para los formularios que solo necesitan elegir una actividad (Acta, Memoria, Semanal, Mensual): nombres del catálogo vigente del tipo de proyecto, sin repetir.
+export function listaActividadesTipo(tipo) {
+  const vistos = new Set(); const lista = [];
+  actividadesVigentes().forEach((a) => { if (a.tipo !== tipo) return; const k = clave(a.actividad); if (vistos.has(k)) return; vistos.add(k); lista.push(a.actividad); });
+  return lista;
+}
+// Datos de una actividad (unidad, capítulo…) por su nombre; reconoce también el nombre anterior a la unificación.
+export function infoActividad(nombre, tipo) {
+  const n = nombreUnificado(nombre);
+  const a = actividadesVigentes().find((x) => (!tipo || x.tipo === tipo) && clave(x.actividad) === clave(n)) || actividadesVigentes().find((x) => clave(x.actividad) === clave(n));
+  return a ? { unidad: a.unidad, capitulo: a.capitulo, tipo: a.tipo } : null;
+}
 // Para el APU: una actividad = un APU, sin importar el tipo de proyecto. Se ofrecen las de todos los tipos, sin repetir el nombre
 // (si el nombre está en varios tipos, se muestra la del tipo del proyecto activo).
 export function actividadesVigentesTodosLosTipos(tipoPreferido) {

@@ -7,8 +7,11 @@ const sinTilde = (s) => String(s || "").toLowerCase()
 // ---------- 1. Concretos: en el APU se muestran por RESISTENCIA, no por elemento ----------
 // «Concreto para columnas / vigas / zapatas / losas…» son lo mismo que el concreto de una resistencia (f'c); el APU es del concreto.
 const CONCRETO_POR_ELEMENTO = /^\s*concreto\s+para\b/i;
+// Igual con el acero: «Acero de refuerzo de columnas / vigas / losas / en cimentación» se reemplazan por el acero por resistencia (fy).
+const ACERO_POR_ELEMENTO = /^\s*acero\s+de\s+refuerzo\s+(de|en)\b/i;
 export function esActividadPorElemento(nombre) {
   const n = String(nombre || "");
+  if (ACERO_POR_ELEMENTO.test(n)) return !/\bfy\b|\bpsi\b|\bmpa\b|grado/i.test(n);
   if (!CONCRETO_POR_ELEMENTO.test(n)) return false;
   return !/f['’]?c\s*=|\bpsi\b|\bmpa\b|cicl[oó]peo|resistencia/i.test(n);
 }

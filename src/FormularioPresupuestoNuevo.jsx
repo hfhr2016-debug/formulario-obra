@@ -113,7 +113,7 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
       if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
       return a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 12);
+    return coincide.slice(0, 40);
   }, [texto, catalogo]);
 
   return (

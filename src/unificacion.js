@@ -24,6 +24,23 @@ export const ALIAS = (() => {
   });
   return m;
 })();
+// nombre único (normalizado) -> nombres anteriores tal como estaban escritos (para encontrar tablas de referencia hechas con los nombres viejos)
+const REVERSO = (() => {
+  const m = new Map();
+  UNIFICACION.forEach(([nombre, , tipos]) => {
+    const l = m.get(norm(nombre)) || [];
+    Object.values(tipos).forEach((lista) => lista.forEach(([ant]) => { if (!l.includes(ant)) l.push(ant); }));
+    m.set(norm(nombre), l);
+  });
+  return m;
+})();
+export const nombresAnteriores = (nombre) => REVERSO.get(norm(nombre)) || [];
+// Busca en una tabla hecha con nombres de actividad: primero el nombre actual y, si no está, sus nombres anteriores.
+export function buscarPorNombre(tabla, nombre) {
+  if (tabla[nombre] !== undefined) return tabla[nombre];
+  for (const ant of nombresAnteriores(nombre)) if (tabla[ant] !== undefined) return tabla[ant];
+  return undefined;
+}
 export const NOMBRES_UNICOS = new Set(UNIFICACION.map(([n]) => norm(n)));
 
 const mapaVivo = () => leer(CLAVE_ACT, {});
@@ -42,6 +59,47 @@ export function nombreUnificado(nombre) {
 }
 
 // ---------- Catálogo propio (lo corre quien administra) ----------
+// Concretos: los mismos 8 (mismo nombre y unidad) en los tres tipos de proyecto.
+export const CONCRETOS_COMUNES = [
+  "Concreto de limpieza clase h (105 kg/cm2 ó 1500 psi)",
+  "Concreto de f'c=140 kg/cm² (2000 PSI), incluye vaciado y vibrado",
+  "Concreto de f'c=175 kg/cm² (2500 PSI), incluye vaciado y vibrado",
+  "Concreto ciclópeo",
+  "Concreto de f'c=210 kg/cm² (3000 PSI), incluye vaciado y vibrado",
+  "Concreto de f'c=280 kg/cm² (4000 PSI), incluye vaciado y vibrado",
+  "Concreto de f'c=350 kg/cm² (5000 PSI), incluye vaciado y vibrado",
+  "Concreto de f'c=420 kg/cm² (6000 PSI), incluye vaciado y vibrado",
+];
+const TIPOS = ["edificacion", "vias", "hidrocarburos"];
+const llaveConcreto = (m, tipo, nombre) => Object.keys(m).find((k) => m[k] && m[k].tipo === tipo && txt(m[k].actividad) && norm(m[k].actividad) === norm(nombre));
+// Los concretos que faltan en el catálogo propio, por tipo
+function concretosFaltantes(m) {
+  const lista = [];
+  TIPOS.forEach((tipo) => CONCRETOS_COMUNES.forEach((n) => { if (!llaveConcreto(m, tipo, n)) lista.push({ tipo, nombre: n }); }));
+  return lista;
+}
+function completarConcretos(m) {
+  let agregados = 0;
+  TIPOS.forEach((tipo) => {
+    CONCRETOS_COMUNES.forEach((nombre, i) => {
+      if (llaveConcreto(m, tipo, nombre)) return;
+      let j = -1;
+      for (let k = i - 1; k >= 0 && j < 0; k--) if (llaveConcreto(m, tipo, CONCRETOS_COMUNES[k])) j = k;
+      let tpl = null, orden = 0;
+      if (j >= 0) { tpl = m[llaveConcreto(m, tipo, CONCRETOS_COMUNES[j])]; orden = (Number(tpl.orden) || 0) + 0.001 * (i - j); }
+      else {
+        for (let k = i + 1; k < CONCRETOS_COMUNES.length && !tpl; k++) { const kk = llaveConcreto(m, tipo, CONCRETOS_COMUNES[k]); if (kk) { tpl = m[kk]; orden = (Number(tpl.orden) || 0) - 0.001 * (k - i); } }
+      }
+      if (!tpl) return;
+      const nuevo = { tipo, capitulo: tpl.capitulo, actividad: nombre, unidad: "m³", orden, actualizado: Date.now() };
+      ["subcapitulo", "grupo", "metodo"].forEach((c) => { if (txt(tpl[c])) nuevo[c] = tpl[c]; });
+      let k2 = clavAct(nuevo); let n = 2; while (m[k2]) k2 = `${clavAct(nuevo)}~${n++}`;
+      m[k2] = nuevo; agregados += 1;
+    });
+  });
+  return agregados;
+}
+
 // Llaves del catálogo propio que corresponden a la lista de nombres anteriores de un tipo (sin repetir)
 function llavesDe(m, tipo, lista) {
   const llaves = [];
@@ -50,34 +108,41 @@ function llavesDe(m, tipo, lista) {
 }
 export function resumenPendiente() {
   const m = mapaVivo();
-  if (!Object.values(m).some((x) => x && txt(x.actividad)) || m[MARCA]) return null;
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return null;
   let renombradas = 0, quitadas = 0;
-  UNIFICACION.forEach(([, , tipos]) => Object.entries(tipos).forEach(([tipo, lista]) => {
-    const n = llavesDe(m, tipo, lista).length;
-    if (n) { renombradas += 1; quitadas += n - 1; }
-  }));
-  return { renombradas, quitadas };
+  if (!m[MARCA]) {
+    UNIFICACION.forEach(([, , tipos]) => Object.entries(tipos).forEach(([tipo, lista]) => {
+      const n = llavesDe(m, tipo, lista).length;
+      if (n) { renombradas += 1; quitadas += n - 1; }
+    }));
+  }
+  const concretos = m[MARCA] ? concretosFaltantes(m).length : 0;   // antes de unificar, los concretos se completan al aplicar
+  if (m[MARCA] && !concretos) return null;
+  return { renombradas, quitadas, concretos };
 }
 export function aplicarUnificacionCatalogo() {
   const m = mapaVivo();
-  if (m[MARCA]) return { ok: true, yaAplicada: true, renombradas: 0, quitadas: 0 };
-  if (!Object.values(m).some((x) => x && txt(x.actividad))) return { ok: true, sinCatalogoPropio: true, renombradas: 0, quitadas: 0 };
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return { ok: true, sinCatalogoPropio: true, renombradas: 0, quitadas: 0, concretos: 0 };
   let renombradas = 0, quitadas = 0;
-  UNIFICACION.forEach(([nombre, unidad, tipos]) => {
-    Object.entries(tipos).forEach(([tipo, lista]) => {
-      const llaves = llavesDe(m, tipo, lista);
-      if (!llaves.length) return;
-      const guardian = m[llaves[0]];
-      const nuevo = { ...guardian, actividad: nombre, unidad, actualizado: Date.now() };
-      llaves.forEach((k) => { delete m[k]; });
-      let k2 = clavAct(nuevo); let n = 2; while (m[k2]) k2 = `${clavAct(nuevo)}~${n++}`;
-      m[k2] = nuevo;
-      renombradas += 1; quitadas += llaves.length - 1;
+  const yaAplicada = !!m[MARCA];
+  if (!yaAplicada) {
+    UNIFICACION.forEach(([nombre, unidad, tipos]) => {
+      Object.entries(tipos).forEach(([tipo, lista]) => {
+        const llaves = llavesDe(m, tipo, lista);
+        if (!llaves.length) return;
+        const guardian = m[llaves[0]];
+        const nuevo = { ...guardian, actividad: nombre, unidad, actualizado: Date.now() };
+        llaves.forEach((k) => { delete m[k]; });
+        let k2 = clavAct(nuevo); let n = 2; while (m[k2]) k2 = `${clavAct(nuevo)}~${n++}`;
+        m[k2] = nuevo;
+        renombradas += 1; quitadas += llaves.length - 1;
+      });
     });
-  });
-  m[MARCA] = { unificacion: 1, actualizado: Date.now() };
-  guardar(CLAVE_ACT, m);
-  return { ok: true, renombradas, quitadas };
+    m[MARCA] = { unificacion: 1, actualizado: Date.now() };
+  }
+  const concretos = completarConcretos(m);
+  if (!yaAplicada || concretos) guardar(CLAVE_ACT, m);
+  return { ok: true, yaAplicada: yaAplicada && !concretos, renombradas, quitadas, concretos };
 }
 
 // ---------- Datos guardados en este equipo (se puede correr cuantas veces haga falta: solo escribe si algo cambia) ----------
@@ -109,5 +174,29 @@ export function migrarDatosLocales() {
     Object.keys(acta).forEach((k) => { const a = ALIAS.get(norm(k)); if (a) { c = true; nueva[a.nombre] = (Number(nueva[a.nombre]) || 0) + (Number(acta[k]) || 0); } else if (!(k in nueva)) nueva[k] = acta[k]; });
     if (c && JSON.stringify(nueva) !== JSON.stringify(acta)) { guardar("ryr_acta_acumulado", nueva); tocado = true; }
   }
+  if (renombrarEnBorradores()) tocado = true;
   return tocado;
+}
+// Presupuesto, Cantidades de obra y Cronograma sin terminar: sus filas guardan el nombre de la actividad; se pasan al nombre unificado.
+function renombrarEnBorradores() {
+  let cambio = false;
+  const pasar = (clave, campoLista, campoNombre, campoUnidad) => {
+    const d = leer(clave, null);
+    if (!d || !Array.isArray(d[campoLista])) return;
+    let c = false;
+    const lista = d[campoLista].map((f) => {
+      if (!f || typeof f !== "object") return f;
+      const a = ALIAS.get(norm(f[campoNombre]));
+      if (!a || a.nombre === f[campoNombre]) return f;
+      c = true;
+      const n = { ...f, [campoNombre]: a.nombre };
+      if (campoUnidad && a.unidad) n[campoUnidad] = a.unidad;
+      return n;
+    });
+    if (c) { guardar(clave, { ...d, [campoLista]: lista }); cambio = true; }
+  };
+  pasar("ryr_borrador_presupuesto", "filas", "actividad", "unidad");
+  pasar("ryr_borrador_cantidades", "actividades", "actividad", "unidad");
+  pasar("ryr_borrador_cronograma", "tareas", "nombre", null);
+  return cambio;
 }

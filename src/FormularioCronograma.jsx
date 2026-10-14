@@ -64,7 +64,13 @@ function BuscadorActividadTarea({ value, onSeleccionar }) {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
     const tipoActivo = tipoProyectoActivo();
-    return actividadesVigentes().filter((it) => it.tipo === tipoActivo && it.actividad.toLowerCase().includes(q)).slice(0, 6);
+    const coincide = actividadesVigentes().filter((it) => it.tipo === tipoActivo && it.actividad.toLowerCase().includes(q));
+    coincide.sort((a, b) => {
+      const ae = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
+      const be = b.actividad.toLowerCase().startsWith(q) ? 0 : 1;
+      return ae !== be ? ae - be : a.actividad.length - b.actividad.length;
+    });
+    return coincide.slice(0, 40);
   }, [texto]);
   return (
     <div className="relative">

@@ -121,7 +121,7 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder, limpia
       if (ae !== be) return ae - be;
       return a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 12);
+    return coincide.slice(0, 40);
   }, [texto, catalogo]);
   return (
     <div className="relative w-full">
