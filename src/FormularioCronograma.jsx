@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
-import { actividadesVigentes } from "./catalogoVivo";
+import { actividadesParaFormularios } from "./catalogoVivo";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
@@ -64,7 +64,7 @@ function BuscadorActividadTarea({ value, onSeleccionar }) {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
     const tipoActivo = tipoProyectoActivo();
-    const coincide = actividadesVigentes().filter((it) => it.tipo === tipoActivo && it.actividad.toLowerCase().includes(q));
+    const coincide = actividadesParaFormularios(tipoActivo).filter((it) => it.actividad.toLowerCase().includes(q));
     coincide.sort((a, b) => {
       const ae = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       const be = b.actividad.toLowerCase().startsWith(q) ? 0 : 1;

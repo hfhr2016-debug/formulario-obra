@@ -177,7 +177,7 @@ const mapaAct = () => leer(ACTIVIDADES.clave);
 // Para los formularios que solo necesitan elegir una actividad (Acta, Memoria, Semanal, Mensual): nombres del catálogo vigente del tipo de proyecto, sin repetir.
 export function listaActividadesTipo(tipo) {
   const vistos = new Set(); const lista = [];
-  actividadesVigentes().forEach((a) => { if (a.tipo !== tipo) return; const k = clave(a.actividad); if (vistos.has(k)) return; vistos.add(k); lista.push(a.actividad); });
+  actividadesParaFormularios(tipo).forEach((a) => { const k = clave(a.actividad); if (vistos.has(k)) return; vistos.add(k); lista.push(a.actividad); });
   return lista;
 }
 // Datos de una actividad (unidad, capítulo…) por su nombre; reconoce también el nombre anterior a la unificación.
@@ -199,6 +199,11 @@ export function actividadesVigentesTodosLosTipos(tipoPreferido) {
     if (!previa || (a.tipo === tipoPreferido && previa.tipo !== tipoPreferido)) vistas.set(k, a);
   });
   return Array.from(vistas.values());
+}
+// Para todos los formularios: las actividades de los tres tipos de proyecto, sin repetir el nombre; primero las del tipo del proyecto activo.
+export function actividadesParaFormularios(tipoPreferido) {
+  const todas = actividadesVigentesTodosLosTipos(tipoPreferido);
+  return todas.filter((a) => a.tipo === tipoPreferido).concat(todas.filter((a) => a.tipo !== tipoPreferido));
 }
 export const hayActividadesPropias = () => Object.values(mapaAct()).some((x) => x && txt(x.actividad));
 // Llaves del catálogo base (únicas: si dos actividades quedan iguales, la segunda lleva ~2)

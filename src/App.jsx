@@ -90,7 +90,7 @@ import { ContextoSST } from "./sstNavegacion";
 import { SelectorHora, Lista } from "./sstComunes";
 import { ALIAS, norm as normUnif, unificacionActiva, migrarDatosLocales } from "./unificacion";
 import { marcarRefrescoVivo, refrescoVivoReciente, alLlegarDatos, avisarDatosRemotos } from "./refrescoVivo";
-import { UNIDADES_COMUNES, actividadesVigentes } from "./catalogoVivo";
+import { UNIDADES_COMUNES, actividadesVigentes, actividadesParaFormularios } from "./catalogoVivo";
 import {
 
   ChevronDown,
@@ -147,7 +147,7 @@ function itemsDesdeCatalogo(actividades) {
 const normAct = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 function unirConCatalogoVivo(archivo, tipo) {
   let vivas = [];
-  try { vivas = actividadesVigentes().filter((a) => a.tipo === tipo); } catch (e) { return archivo; }
+  try { vivas = actividadesParaFormularios(tipo); } catch (e) { return archivo; }
   // Los números de ítem siguen siendo la posición en el archivo (los acumulados ya guardados dependen de eso); las actividades unificadas conservan el número de la primera.
   let base = archivo.map((a, i) => ({ ...a, __n: i + 1 }));
   if (unificacionActiva()) {
@@ -161,7 +161,7 @@ function unirConCatalogoVivo(archivo, tipo) {
   base = base.map((a) => { const v = porNombre.get(normAct(a.actividad)); return v && v.unidad && v.unidad !== a.unidad ? { ...a, unidad: v.unidad } : a; });
   const conocidas = new Set(base.map((a) => normAct(a.actividad)));
   const nuevas = vivas.filter((a) => !conocidas.has(normAct(a.actividad)))
-    .sort((x, y) => (Number(x.actualizado) || 0) - (Number(y.actualizado) || 0) || String(x.actividad).localeCompare(String(y.actividad)))
+    .sort((x, y) => (x.tipo === tipo ? 0 : 1) - (y.tipo === tipo ? 0 : 1) || (Number(x.actualizado) || 0) - (Number(y.actualizado) || 0) || String(x.actividad).localeCompare(String(y.actividad)))
     .map((a, k) => ({ ...a, seccion: a.seccion || a.capitulo, __n: archivo.length + k + 1 }));
   return nuevas.length ? base.concat(nuevas) : base;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { actividadesVigentes } from "./catalogoVivo";
+import { actividadesParaFormularios } from "./catalogoVivo";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
@@ -65,11 +65,11 @@ function catalogoFiltrado() {
   else if (modulos.hidrocarburos) tipoActivo = "hidrocarburos";
   else if (modulos.edificacion) tipoActivo = "edificacion";
 
-  let filtrado = actividadesVigentes().filter((a) => a.tipo === tipoActivo);
+  let filtrado = actividadesParaFormularios(tipoActivo);   // las de los tres tipos, primero las del tipo del proyecto
   if (tipoActivo === "hidrocarburos") {
     const algunBloque = bloquesHC.civil || bloquesHC.mecanico || bloquesHC.electrico;
     if (algunBloque) {
-      filtrado = filtrado.filter((a) => bloquesHC[a.componente]);
+      filtrado = filtrado.filter((a) => a.tipo !== "hidrocarburos" || bloquesHC[a.componente]);
     }
   }
   return { tipoActivo, catalogo: filtrado };
