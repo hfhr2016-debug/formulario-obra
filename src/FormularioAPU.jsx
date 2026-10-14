@@ -173,7 +173,7 @@ function BuscadorActividad({ value, onSelect }) {
       if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
       return a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 10);
+    return coincide.slice(0, 40);
   }, [texto]);
 
   return (
@@ -309,7 +309,7 @@ function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder, palabrasCl
       }
       return a.descripcion.length - b.descripcion.length;
     });
-    return coincide.slice(0, 10);
+    return coincide.slice(0, 40);
   }, [texto, catalogo, palabrasClaveActividad]);
 
   return (

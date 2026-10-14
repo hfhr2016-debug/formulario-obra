@@ -4,7 +4,7 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
-import { MARCA as MARCA_UNIFICACION, nombreUnificado } from "./unificacion";
+import { MARCA as MARCA_UNIFICACION, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -190,7 +190,10 @@ export function infoActividad(nombre, tipo) {
 // (si el nombre está en varios tipos, se muestra la del tipo del proyecto activo).
 export function actividadesVigentesTodosLosTipos(tipoPreferido) {
   const vistas = new Map();
-  actividadesVigentes().forEach((a) => {
+  actividadesVigentes().forEach((a0) => {
+    // Si en algún tipo el catálogo propio todavía tiene el nombre anterior (aún no se aplicó la unificación), el APU ya lo ofrece con el nombre único.
+    const al = ALIAS.get(normUnif(a0.actividad));
+    const a = al ? { ...a0, actividad: al.nombre, unidad: al.unidad || a0.unidad } : a0;
     const k = clave(a.actividad);
     const previa = vistas.get(k);
     if (!previa || (a.tipo === tipoPreferido && previa.tipo !== tipoPreferido)) vistas.set(k, a);
