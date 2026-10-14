@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
 import { descargarLibro } from "./sstComunes";
+import { resumenPendiente, aplicarUnificacionCatalogo } from "./unificacion";
 import {
   CATALOGOS, catalogoDef, itemsConLlave, hayCatalogoPropio, guardarItem, quitarItem, filasParaExcel, importarFilas, ENCABEZADOS_EXCEL,
   TIPOS_PROYECTO, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT, UNIDADES_COMUNES, gruposDe, sugerirCodigo } from "./catalogoVivo";
@@ -161,6 +162,12 @@ function PanelActividades() {
   const capitulos = useMemo(() => Array.from(new Set(todos.map(({ item }) => item.capitulo).filter(Boolean))), [todos]);
   const subcaps = useMemo(() => Array.from(new Set(todos.filter(({ item }) => !edit || item.capitulo === edit.item.capitulo).map(({ item }) => item.subcapitulo).filter(Boolean))), [todos, edit && edit.item.capitulo]);   // eslint-disable-line
   const refrescar = () => setVersion((v) => v + 1);
+  const pendiente = useMemo(() => resumenPendiente(), [version]);          // eslint-disable-line
+  function aplicarUnificacion() {
+    if (!window.confirm("Se unifican los nombres de las actividades que coinciden entre Edificación, Vías e Hidrocarburos. Los nombres anteriores quedan como equivalencias y lo ya guardado se actualiza solo. ¿Continuar?")) return;
+    const r = aplicarUnificacionCatalogo();
+    setError(""); setAviso(`Listo: ${r.renombradas} actividades con nombre único${r.quitadas ? `, ${r.quitadas} repetidas unidas` : ""}.`); refrescar();
+  }
   const campo = "w-full border rounded-lg px-3 py-2 text-[13px]";
   const cambia = (k) => (e) => setEdit({ ...edit, item: { ...edit.item, [k]: e.target.value } });
 
@@ -217,6 +224,13 @@ function PanelActividades() {
       <div className="text-[11px] mb-2" style={{ color: "#8A8F99" }}>
         {todos.length} actividades · {hayActividadesPropias() ? "catálogo propio (sincronizado)" : "catálogo base: se guarda como propio al hacer el primer cambio"}
       </div>
+      {pendiente && (
+        <div className="rounded-lg p-3 mb-2 text-[12px]" style={{ background: "#FFF6DC", border: "1px solid " + GOLD, color: NAVY }} data-unificacion-pendiente>
+          <div className="font-bold mb-1">Unificar actividades entre los tres tipos de proyecto</div>
+          <div className="mb-2">Hay {pendiente.renombradas} actividades que se pasan a un nombre único (y {pendiente.quitadas} repetidas que se unen), para que un solo APU sirva en Edificación, Vías e Hidrocarburos. Los nombres anteriores quedan como equivalencias.</div>
+          <button type="button" onClick={aplicarUnificacion} className="px-3 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: GOLD }} data-aplicar-unificacion>Aplicar unificación</button>
+        </div>
+      )}
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por actividad, capítulo o código" className={campo + " mb-2"} style={{ borderColor: LINE, background: "white" }} />
       <div className="flex gap-2 mb-3">
         <button type="button" onClick={() => { setEdit({ llave: null, item: actVacia(tipo) }); setError(""); setAviso(""); }} className="flex-1 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: GOLD }}>+ Agregar actividad</button>

@@ -4,6 +4,7 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
+import { MARCA as MARCA_UNIFICACION } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -173,6 +174,17 @@ export function actividadesVigentes() {
   return valor;
 }
 const mapaAct = () => leer(ACTIVIDADES.clave);
+// Para el APU: una actividad = un APU, sin importar el tipo de proyecto. Se ofrecen las de todos los tipos, sin repetir el nombre
+// (si el nombre está en varios tipos, se muestra la del tipo del proyecto activo).
+export function actividadesVigentesTodosLosTipos(tipoPreferido) {
+  const vistas = new Map();
+  actividadesVigentes().forEach((a) => {
+    const k = clave(a.actividad);
+    const previa = vistas.get(k);
+    if (!previa || (a.tipo === tipoPreferido && previa.tipo !== tipoPreferido)) vistas.set(k, a);
+  });
+  return Array.from(vistas.values());
+}
 export const hayActividadesPropias = () => Object.values(mapaAct()).some((x) => x && txt(x.actividad));
 // Llaves del catálogo base (únicas: si dos actividades quedan iguales, la segunda lleva ~2)
 let llavesBase = null;
@@ -188,6 +200,7 @@ export function sembrarActividades() {
   const nuevo = {};
   const llaves = llavesDeLaBase();
   CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => { nuevo[llaves[i]] = { ...it, orden: (i + 1) * 10, actualizado: Date.now() }; });
+  nuevo[MARCA_UNIFICACION] = { unificacion: 1, actualizado: Date.now() };   // el catálogo del código ya trae los nombres únicos
   guardar(ACTIVIDADES.clave, nuevo);
   return true;
 }

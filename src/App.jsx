@@ -88,6 +88,7 @@ import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
 import { ContextoSST } from "./sstNavegacion";
 import { SelectorHora, Lista } from "./sstComunes";
+import { ALIAS, norm as normUnif, unificacionActiva, migrarDatosLocales } from "./unificacion";
 import { marcarRefrescoVivo, refrescoVivoReciente, alLlegarDatos, avisarDatosRemotos } from "./refrescoVivo";
 import { UNIDADES_COMUNES, actividadesVigentes } from "./catalogoVivo";
 import {
@@ -141,18 +142,25 @@ function tipoProyectoDiario() {
   return "edificacion";
 }
 function itemsDesdeCatalogo(actividades) {
-  return actividades.map((a, i) => ({ item: String(i + 1), descripcion: a.actividad, unidad: a.unidad, contractual: "" }));
+  return actividades.map((a, i) => ({ item: String(a.__n || i + 1), descripcion: a.actividad, unidad: a.unidad, contractual: "" }));
 }
 const normAct = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 function unirConCatalogoVivo(archivo, tipo) {
   let vivas = [];
   try { vivas = actividadesVigentes().filter((a) => a.tipo === tipo); } catch (e) { return archivo; }
+  // Los números de ítem siguen siendo la posición en el archivo (los acumulados ya guardados dependen de eso); las actividades unificadas conservan el número de la primera.
+  let base = archivo.map((a, i) => ({ ...a, __n: i + 1 }));
+  if (unificacionActiva()) {
+    const vistos = new Set();
+    base = base.map((a) => { const al = ALIAS.get(normUnif(a.actividad)); return al ? { ...a, actividad: al.nombre, unidad: al.unidad || a.unidad } : a; })
+      .filter((a) => { const k = normAct(a.actividad); if (vistos.has(k)) return false; vistos.add(k); return true; });
+  }
   const porNombre = new Map(vivas.map((a) => [normAct(a.actividad), a]));
-  const base = archivo.map((a) => { const v = porNombre.get(normAct(a.actividad)); return v && v.unidad && v.unidad !== a.unidad ? { ...a, unidad: v.unidad } : a; });
-  const conocidas = new Set(archivo.map((a) => normAct(a.actividad)));
+  base = base.map((a) => { const v = porNombre.get(normAct(a.actividad)); return v && v.unidad && v.unidad !== a.unidad ? { ...a, unidad: v.unidad } : a; });
+  const conocidas = new Set(base.map((a) => normAct(a.actividad)));
   const nuevas = vivas.filter((a) => !conocidas.has(normAct(a.actividad)))
     .sort((x, y) => (Number(x.actualizado) || 0) - (Number(y.actualizado) || 0) || String(x.actividad).localeCompare(String(y.actividad)))
-    .map((a) => ({ ...a, seccion: a.seccion || a.capitulo }));
+    .map((a, k) => ({ ...a, seccion: a.seccion || a.capitulo, __n: archivo.length + k + 1 }));
   return nuevas.length ? base.concat(nuevas) : base;
 }
 function capitulosDesdeCatalogo(actividades, tipo) {
@@ -2080,6 +2088,12 @@ function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
 
 function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionDatos = 0 }) {
   const [vista, setVista] = useState("selector-apps");
+  // Unificación de actividades: lo ya guardado en este equipo (APU, cantidades del Presupuesto…) pasa a los nombres únicos cuando el catálogo ya los trae.
+  useEffect(() => { try { migrarDatosLocales(); } catch (e) { /* no frena la app */ } }, [versionDatos]);
+  useEffect(() => alLlegarDatos((claves) => {
+    if (claves.some((k) => ["ryr_cat_actividades", "ryr_apus_guardados", "ryr_presupuesto_cantidades", "ryr_acta_acumulado"].includes(k))) { try { migrarDatosLocales(); } catch (e) { /* igual */ } }
+    return [];
+  }), []);
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
   const ctxSST = {
     modulos: MODULOS_SST.filter((m) => m.activo && nivelModulo(perfil, m.id)),

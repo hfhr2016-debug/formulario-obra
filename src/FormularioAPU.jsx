@@ -4,7 +4,7 @@ import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import { mapaApu, valorSimple, arreglarRendimientoVisible } from "./apuPlantilla";
 import { esActividadPorElemento, buscarMaterialEnLista, coincideBusqueda, rendimientoExtra, evaluarCoherencia, avisosDelApu } from "./apuReglas";
-import { catalogoVigente, actividadesVigentes } from "./catalogoVivo";
+import { catalogoVigente, actividadesVigentesTodosLosTipos } from "./catalogoVivo";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 
@@ -159,9 +159,9 @@ function BuscadorActividad({ value, onSelect }) {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
     const tipoActivo = tipoProyectoActivo();
-    const coincide = actividadesVigentes().filter(
+    // El APU es el mismo para una actividad sin importar el tipo de proyecto: se busca en las actividades de los tres tipos.
+    const coincide = actividadesVigentesTodosLosTipos(tipoActivo).filter(
       (it) =>
-        it.tipo === tipoActivo &&
         !esActividadPorElemento(it.actividad) &&
         (it.actividad.toLowerCase().includes(q) ||
         it.capitulo.toLowerCase().includes(q))
