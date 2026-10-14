@@ -156,6 +156,8 @@ function unirConCatalogoVivo(archivo, tipo) {
       .filter((a) => { const k = normAct(a.actividad); if (vistos.has(k)) return false; vistos.add(k); return true; });
   }
   const porNombre = new Map(vivas.map((a) => [normAct(a.actividad), a]));
+  // Lo que la administradora quitó del catálogo (o lo que ya no se ofrece, como los concretos y aceros «por elemento») deja de aparecer también aquí.
+  if (vivas.length) base = base.filter((a) => porNombre.has(normAct(a.actividad)));
   base = base.map((a) => { const v = porNombre.get(normAct(a.actividad)); return v && v.unidad && v.unidad !== a.unidad ? { ...a, unidad: v.unidad } : a; });
   const conocidas = new Set(base.map((a) => normAct(a.actividad)));
   const nuevas = vivas.filter((a) => !conocidas.has(normAct(a.actividad)))
