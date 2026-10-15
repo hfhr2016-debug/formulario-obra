@@ -2,11 +2,12 @@
 // Sin pantallas. Los datos viven en el dispositivo (claves ryr_cat_*) y el motor de sincronización los espeja con Firestore.
 // Si todavía no hay catálogo guardado, se usa el que trae el código (catalogoPrecios.js): nada se rompe.
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
+import { MATERIALES_PEDIDO } from "./catalogoMaterialesPedido";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
 
 export const CATALOGOS = [
-  { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
+  { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: [...CATALOGO_MATERIALES, ...MATERIALES_PEDIDO], unidadSug: "u" },
   { id: "mano_obra", titulo: "Mano de obra", clave: "ryr_cat_mano_obra", col: "cat_mano_obra", base: CATALOGO_MANO_OBRA, unidadSug: "día" },
   { id: "equipos", titulo: "Equipos y herramientas", clave: "ryr_cat_equipos", col: "cat_equipos", base: CATALOGO_EQUIPOS, unidadSug: "día" },
 ];
@@ -135,6 +136,27 @@ export function importarFilas(id, filas) {
   });
   guardar(def.clave, m);
   return { nuevos, actualizados, sinCambio, errores };
+}
+
+
+// ---------- Materiales «como se piden al proveedor» (acero por diámetro, chipa, mallas, cemento, agregados…) ----------
+// Quien ya tiene catálogo propio guardado no recibe los del código solo: este botón agrega los que le faltan (por código o por nombre + unidad),
+// sin tocar los precios que ya tiene.
+const faltantesPedido = () => {
+  const m = leer(catalogoDef("materiales").clave);
+  const items = Object.values(m).filter((x) => x && txt(x.descripcion));
+  if (!items.length) return [];
+  const codigos = new Set(items.map((x) => txt(x.codigo)));
+  const nombres = new Set(items.map((x) => clave(x.descripcion) + "|" + txt(x.unidad)));
+  return MATERIALES_PEDIDO.filter((x) => !codigos.has(txt(x.codigo)) && !nombres.has(clave(x.descripcion) + "|" + txt(x.unidad)));
+};
+export const resumenMaterialesPedido = () => { const f = faltantesPedido(); return f.length ? { faltan: f.length, total: MATERIALES_PEDIDO.length } : null; };
+export function agregarMaterialesPedido() {
+  const f = faltantesPedido(); if (!f.length) return { agregados: 0 };
+  const def = catalogoDef("materiales"); const m = leer(def.clave);
+  f.forEach((it) => { let k = txt(it.codigo); let n = 2; while (m[k]) k = `${txt(it.codigo)}~${n++}`; m[k] = { codigo: txt(it.codigo), descripcion: txt(it.descripcion), unidad: txt(it.unidad), precio: Number(it.precio) || 0, actualizado: Date.now() }; });
+  guardar(def.clave, m);
+  return { agregados: f.length };
 }
 
 // =====================================================================================================================

@@ -5,7 +5,7 @@ import ExcelJS from "exceljs";
 import { descargarLibro } from "./sstComunes";
 import {
   CATALOGOS, catalogoDef, itemsConLlave, hayCatalogoPropio, guardarItem, quitarItem, filasParaExcel, importarFilas, ENCABEZADOS_EXCEL,
-  TIPOS_PROYECTO, resumenCatalogoMaestro, aplicarCatalogoMaestro, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT, UNIDADES_COMUNES, gruposDe, sugerirCodigo } from "./catalogoVivo";
+  TIPOS_PROYECTO, resumenMaterialesPedido, agregarMaterialesPedido, resumenCatalogoMaestro, aplicarCatalogoMaestro, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT, UNIDADES_COMUNES, gruposDe, sugerirCodigo } from "./catalogoVivo";
 
 const NAVY = "#1B2A45", GOLD = "#D9A233", PAPER = "#F7F7F5", LINE = "#D9DCE1";
 const pesos = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-CO");
@@ -25,6 +25,11 @@ export default function PanelCatalogos({ onVolver }) {
   const q = busca.trim().toLowerCase();
   const filtrados = q ? todos.filter(({ item }) => `${item.descripcion} ${item.codigo}`.toLowerCase().includes(q)) : todos;
   const refrescar = () => setVersion((v) => v + 1);
+  const faltaPedido = cat === "materiales" ? resumenMaterialesPedido() : null;      // eslint-disable-line
+  function traerPedido() {
+    const r = agregarMaterialesPedido(); refrescar();
+    setError(""); setAviso(`Listo: se agregaron ${r.agregados} materiales (acero por diámetro, chipa, mallas, cemento, agregados, mampostería, instalaciones, acabados…). Revisa y ajusta sus precios.`);
+  }
 
   function guardarEdicion() {
     const r = guardarItem(cat, edit.item, edit.llave);
@@ -103,6 +108,11 @@ export default function PanelCatalogos({ onVolver }) {
             ⬆ Subir Excel<input type="file" accept=".xlsx" onChange={subir} className="hidden" data-subir-excel />
           </label>
         </div>
+        {faltaPedido && (
+          <button type="button" data-agregar-pedido onClick={traerPedido} className="w-full mb-2 py-2 rounded-lg font-bold text-[12.5px]" style={{ background: "#F5C518", color: NAVY }}>
+            Agregar {faltaPedido.faltan} materiales nuevos (acero por diámetro, chipa, mallas, cemento…)
+          </button>
+        )}
         {aviso && <div className="text-[11.5px] mb-2 p-2 rounded" style={{ background: "#EAF4EC", color: "#1D6B3A" }}>{aviso}</div>}
         {error && !edit && <div className="text-[11.5px] mb-2 p-2 rounded" style={{ background: "#FDEDEA", color: "#B3401F" }}>{error}</div>}
 
