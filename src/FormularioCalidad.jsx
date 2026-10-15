@@ -7,6 +7,7 @@ import {
   faltantes, validar, descubrirCal, escribirEnHoja, listarProveedores, crearNCsAutomaticas, ncDeOrigen, etiquetaUI, esVisible,
 } from "./calBase";
 import { CifrasResumen } from "./cpComunes";
+import { pesos as pesosCom } from "./comBase";
 import { useObraCal, PanelObraCal } from "./calComunes";
 import { catalogoVigente } from "./catalogoVivo";
 import {
@@ -20,6 +21,7 @@ const COLOR_ESTADO = {
   Cumple: "#2E7D4F", Conforme: "#2E7D4F", Aprobado: "#2E7D4F", Aceptado: "#2E7D4F", Vigente: "#2E7D4F", "Para construcción": "#2E7D4F", Sí: "#2E7D4F",
   "No cumple": "#B3401F", "No conforme": "#B3401F", Rechazado: "#B3401F", Obsoleto: "#B3401F", No: "#B3401F",
   Pendiente: "#B8860B", "En cuarentena": "#B8860B", "En cuarentena (espera ensayo)": "#B8860B", "Aceptado con observaciones": "#B8860B", "En revisión": "#B8860B", "N/A": "#6B7280",
+  Completo: "#2E7D4F", Faltante: "#B8860B", "Con daños": "#B3401F", Devuelto: "#B3401F", "Recibido completo": "#2E7D4F", "Recibido con faltantes": "#B8860B", "Recibido con novedades": "#B8860B", "Rechazado / devuelto": "#B3401F", "En plazo": "#2E7D4F", "Por vencer": "#B8860B", Atrasado: "#B3401F", "Cumple parcial": "#B8860B", Atendida: "#2E7D4F", "Pendiente de aprobación": "#B8860B", "Aprobada parcialmente": "#B8860B",
   "Sí, con observaciones": "#B8860B", "Aprobado para vaciar": "#2E7D4F", "Aprobado con observaciones": "#B8860B", Aprobada: "#2E7D4F", Rechazada: "#B3401F", "Aprobada con observaciones": "#B8860B", Seguimiento: "#B8860B",
 };
 const COLOR_PEND = { vencido: ["#FDEDEA", "#B3401F"], hoy: ["#FFF1DD", "#9A5B00"], pronto: ["#FFF8E8", "#7A5A00"], proximo: ["#F3F4F6", "#4B5563"] };
@@ -46,6 +48,7 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
   const [generado, setGenerado] = useState("");
   const [avisoGeneracion, setAvisoGeneracion] = useState("");
   const [avisoTabla, setAvisoTabla] = useState({});
+  const [avisoTraer, setAvisoTraer] = useState({});     // resultado de «traer» filas de otros formatos (p. ej. los pedidos pendientes)
   const [creadasNC, setCreadasNC] = useState([]);
   const [filaAbierta, setFilaAbierta] = useState({});
   const [filtroTabla, setFiltroTabla] = useState({});       // filtro activo de cada tabla que lo trae (p. ej. la Gestión en el Listado Maestro)
@@ -173,7 +176,12 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
   }
   function campoBase(c) {
     const etq = etiquetaUI(c); const v = datos[c.k];
-    if (c.tipo === "calculado") return <Calculado key={c.k} label={etq} valor={c.calc ? c.calc(datos) : ""} />;
+    if (c.tipo === "calculado") { const cv = c.calc ? c.calc(datos) : ""; return <Calculado key={c.k} label={etq} valor={c.formato === "pesos" && cv !== "" ? pesosCom(cv) : cv} />; }
+    if (c.fuente && fmt.fuentes && fmt.fuentes[c.fuente]) {
+      const ops = fmt.fuentes[c.fuente]({ obraId: reg && reg.obraId, idRegistro: reg && reg.id, datos });
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={ops} opcionesAlAbrir={ops.slice(0, 8)} placeholder={ops.length ? "Elige de la lista o escribe" : "Escribe (aún no hay opciones guardadas)"}
+        onElegir={(o) => setVarios({ [c.k]: o.texto, ...(o.patch || {}) })} />;
+    }
     if (c.fuente === "proveedores") {
       return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={opcionesProveedor} opcionesAlAbrir={opcionesProveedor.slice(0, 8)} placeholder="Elige uno guardado o escribe uno nuevo"
         onElegir={(o) => setVarios({ [c.k]: o.texto, ...(o.nit && !texto(datos.nit) ? { nit: o.nit } : {}), ...(o.tipo && "tipoTercero" in datos && !texto(datos.tipoTercero) ? { tipoTercero: o.tipo } : {}) })} />;
@@ -200,7 +208,7 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
   function celdaTabla(s, fila, i, c) {
     const act = (patch) => setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: cur.datos[s.k].map((f, k) => { if (k !== i) return f; const n = { ...f, ...patch }; const extra = s.autoFila ? s.autoFila(n, f) : null; return extra ? { ...n, ...extra } : n; }) } }));
     const etq = etiquetaUI({ etq: c.enc, label: c.label }) + (c.etqUnidad && texto(fila[c.etqUnidad]) ? ` (${texto(fila[c.etqUnidad])})` : ""); const v = fila[c.k];
-    if (c.tipo === "calculado") return <Calculado key={c.k} label={etq} valor={c.calc ? c.calc(fila, datos) : ""} semaforo={c.semaforo} />;
+    if (c.tipo === "calculado") { const cv = c.calc ? c.calc(fila, datos) : ""; return <Calculado key={c.k} label={etq} valor={c.formato === "pesos" && cv !== "" ? pesosCom(cv) : cv} semaforo={c.semaforo} />; }
     if (c.tipo === "oculto") return null;
     if (c.soloSi && !c.soloSi(fila)) return null;
     if (c.tipo === "historial") {
@@ -272,6 +280,13 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
     });
     setAvisoTabla((a) => ({ ...a, [s.k]: "" })); setQuitada(null);
   }
+  // Llena la tabla con filas que salen de otros registros (p. ej. los pedidos que aún no han llegado); lo escrito a mano en ciertas casillas lo conserva la propia función
+  function traerFilas(s) {
+    const filas = s.traer.fn({ obraId: reg && reg.obraId, datos, obra: h.obra });
+    const lista = filas.slice(0, s.max).map((f) => { const b = filaNueva(s, f); return s.autoFila ? { ...b, ...(s.autoFila(b, {}) || {}) } : b; });
+    if (lista.length) setReg((cur) => ({ ...cur, datos: { ...cur.datos, [s.k]: lista } }));
+    setAvisoTraer((a) => ({ ...a, [s.k]: !filas.length ? (s.traer.vacio || "No hay nada para traer.") : filas.length > s.max ? `Hay ${filas.length} filas y la hoja tiene espacio para ${s.max}: se trajeron las primeras ${s.max}. Guarda esta hoja y crea otra para el resto.` : `Se ${filas.length === 1 ? "trajo 1 fila" : `trajeron ${filas.length} filas`}.` }));
+  }
   function seccionTabla(s) {
     const filas = datos[s.k];
     const quitar = (i) => {
@@ -293,6 +308,12 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
               const act = fAct === o; const n = o ? cuentaFiltro(o) : filas.length;
               return <button key={o || "todas"} type="button" data-filtro={o || "todas"} onClick={() => setFiltroTabla((a) => ({ ...a, [s.k]: o }))} className="text-[11.5px] px-2.5 py-1 rounded-full border" style={{ borderColor: act ? NAVY : LINE, background: act ? NAVY : "white", color: act ? "white" : NAVY, fontWeight: act ? 700 : 500 }}>{o || "Todas"} ({n})</button>;
             })}
+          </div>
+        )}
+        {s.traer && (
+          <div className="mb-3">
+            <button type="button" data-traer={s.k} onClick={() => traerFilas(s)} className="w-full text-center py-2 rounded-md text-[12px] font-semibold border" style={{ borderColor: NAVY, color: NAVY, background: "#FFF8E8" }}>{s.traer.texto}</button>
+            {avisoTraer[s.k] && <div data-aviso-traer className="text-[11.5px] mt-1.5" style={{ color: "#1D6B3A" }}>{avisoTraer[s.k]}</div>}
           </div>
         )}
         {filas.map((fila, i) => {

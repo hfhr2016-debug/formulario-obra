@@ -18,7 +18,7 @@ export const esClaveSST = (k) => typeof k === "string" && !NO_SINCRONIZAR.test(k
 export const esClaveAmbiental = (k) => typeof k === "string" && !NO_SINCRONIZAR.test(k) && (/^ryr_amb_/.test(k) || /^ryr_borrador_.*(_amb|ambiental)$/.test(k) || /^ryr_borrador_(forestal|consumos|emisiones|fotografico|hidrocarburos|manifiesto_rcd|maquinaria|pqrs|quimicos|residuos|vertimientos)$/.test(k));
 export const esClaveTecnica = (k) => typeof k === "string" && !NO_SINCRONIZAR.test(k) && (/^ryr_borrador_(apu|acta|cantidades|cronograma|diario|mensual|memoria|presupuesto|semanal)$/.test(k) || /^(ryr_apus_guardados|ryr_cronograma_fechas|ryr_avance_diario_actividades|ryr_avance_diario_capitulos|ryr_horas_hombre_diario)$/.test(k) || /^ryr_acumulados_items_/.test(k));
 export const FLUJOS = [
-  { col: "cp_obras",          clave: "ryr_cp_obras",          tipo: "lista", idDe: (r) => r.id,       leer: [G, D, R, A, L], escribir: [G, D, R, A] },
+  { col: "cp_obras",          clave: "ryr_cp_obras",          tipo: "lista", idDe: (r) => r.id,       leer: [G, D, R, A, L], escribir: [G, D, R, A], leeTambien: ["compras"] },   // compras lee los capítulos del presupuesto para avisar cuando una orden lo supera
   { col: "cp_facturas",       clave: "ryr_cp_facturas",       tipo: "lista", idDe: (r) => r.id,       leer: [G, D, R, A],    escribir: [G, D, R, A] },
   { col: "cp_adicionales",    clave: "ryr_cp_adicionales",    tipo: "lista", idDe: (r) => r.id,       leer: [G, D, R, A],    escribir: [G, D, R] },
   { col: "cp_anticipo_actas", clave: "ryr_cp_anticipo_actas", tipo: "lista", idDe: (r) => r.id,       leer: [G, D, A],       escribir: [G, A] },
@@ -42,12 +42,12 @@ export const FLUJOS = [
   { col: "cp_tecnica_actasvalor",  clave: "ryr_actas_valor_presente",   tipo: "mapa", tecnica: true },
   { col: "cp_tecnica_proyectos",   clave: "ryr_proyectos_guardados",    tipo: "lista", idDe: (r) => r.nombreId, tecnica: true },
   // Gestión de Calidad: cada formato es una colección; leen y escriben el administrador y quien tenga la gestión «calidad».
-  { col: "cal_obras",             clave: "ryr_cal_obras",             tipo: "lista", idDe: (r) => r.id, calidad: true },
+  { col: "cal_obras",             clave: "ryr_cal_obras",             tipo: "lista", idDe: (r) => r.id, calidad: true, tambien: ["compras"] },   // el maestro de obras lo comparten Calidad y Compras
   { col: "cal_planos",            clave: "ryr_cal_planos",            tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_recepcion",         clave: "ryr_cal_recepcion",         tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_proveedores_eval",  clave: "ryr_cal_proveedores_eval",  tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_ensayos",           clave: "ryr_cal_ensayos",           tipo: "lista", idDe: (r) => r.id, calidad: true },
-  { col: "cal_proveedores",       clave: "ryr_cal_proveedores",       tipo: "lista", idDe: (r) => r.id, calidad: true },
+  { col: "cal_proveedores",       clave: "ryr_cal_proveedores",       tipo: "lista", idDe: (r) => r.id, calidad: true, tambien: ["compras"] },   // el directorio de proveedores lo comparten Calidad y Compras
   { col: "cal_nc",                clave: "ryr_cal_nc",                tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_plan", clave: "ryr_cal_plan", tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_excavacion", clave: "ryr_cal_excavacion", tipo: "lista", idDe: (r) => r.id, calidad: true },
@@ -61,6 +61,15 @@ export const FLUJOS = [
   { col: "cal_acta", clave: "ryr_cal_acta", tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_maestro", clave: "ryr_cal_maestro", tipo: "lista", idDe: (r) => r.id, calidad: true },
   { col: "cal_equipos", clave: "ryr_cal_equipos", tipo: "lista", idDe: (r) => r.id, calidad: true },
+  // Gestión de Compras: cada formato es una colección; leen y escriben el administrador y quien tenga la gestión «compras».
+  // Control Presupuestal también lee las órdenes y recepciones (para traerlas al Registro de Costos).
+  { col: "comp_requisicion", clave: "ryr_comp_requisicion", tipo: "lista", idDe: (r) => r.id, compras: true },
+  { col: "comp_solicitud",   clave: "ryr_comp_solicitud",   tipo: "lista", idDe: (r) => r.id, compras: true },
+  { col: "comp_cuadro",      clave: "ryr_comp_cuadro",      tipo: "lista", idDe: (r) => r.id, compras: true },
+  { col: "comp_orden",       clave: "ryr_comp_orden",       tipo: "lista", idDe: (r) => r.id, compras: true },
+  { col: "comp_recepcion",   clave: "ryr_comp_recepcion",   tipo: "lista", idDe: (r) => r.id, compras: true },
+  { col: "comp_pendientes",  clave: "ryr_comp_pendientes",  tipo: "lista", idDe: (r) => r.id, compras: true },
+  { col: "comp_evaluacion",  clave: "ryr_comp_evaluacion",  tipo: "lista", idDe: (r) => r.id, compras: true },
   // Catálogos (materiales, mano de obra, equipos): los lee todo usuario activo; solo el administrador los cambia.
   { col: "cat_materiales", clave: "ryr_cat_materiales", tipo: "mapa", catalogo: true },
   { col: "cat_mano_obra",  clave: "ryr_cat_mano_obra",  tipo: "mapa", catalogo: true },
@@ -83,9 +92,11 @@ export function puede(perfil, f, modo) {
   if (perfil.esAdmin) return true;
   if (f.catalogo) return modo === "leer";                       // los catálogos: todos leen, solo el administrador escribe
   const roles = perfil.roles || [];
-  if (f.calidad) return roles.includes("calidad");
+  if (f.compras) return roles.includes("compras") || (modo === "leer" && roles.includes("presupuesto"));
+  if (f.calidad) return roles.includes("calidad") || (f.tambien || []).some((r) => roles.includes(r));
   if (f.gestion) return roles.includes(f.gestion) || (f.gestion === "tecnica" && modo === "leer" && roles.includes("presupuesto"));   // SG-SST, Ambiental y Técnica: quien tenga esa gestión
   if (f.tecnica) return roles.includes("tecnica") || (modo === "leer" && roles.includes("presupuesto"));
+  if (modo === "leer" && (f.leeTambien || []).some((r) => roles.includes(r))) return true;
   if (!roles.includes("presupuesto")) return false;
   return (f[modo] || []).includes(perfil.rolCP);
 }

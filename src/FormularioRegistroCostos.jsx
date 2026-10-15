@@ -17,6 +17,7 @@ import {
   NAVY, GOLD, PAPER, LINE, etiquetaCls, claseInput, estiloInput, cargarPlantilla, descargarLibro, textoParaArchivo, useMemoriaSST, BloqueProfesional, EncabezadoFormulario, BarraObra, BarraGenerar, Seccion, Campo, Lista, BuscadorLista,
 } from "./sstComunes";
 import { ChipsOpcion } from "./sstControles";
+import { comprasPorRegistrar } from "./comBase";
 import { useFaltantes } from "./sstFaltantes";
 
 // Texto pequeño bajo IVA / Retenciones: dice de dónde sale el valor y permite volver al automático
@@ -115,6 +116,12 @@ export default function FormularioRegistroCostos({ onVolver }) {
     h.cambiar({ capitulos: r.capitulos.map((c) => capituloNuevo({ nombre: c.nombre, contratado: String(c.contratado), ejecutado: String(c.ejecutado) })) });
     setAvisoCaps(`Se trajeron ${r.capitulos.length} capítulos del Presupuesto.`);
   }
+  // Compras recibidas en obra (Gestión de Compras) que aún no están en este registro
+  const porRegistrar = h.id ? comprasPorRegistrar(h.id, libro.lista) : [];
+  function traerCompras() {
+    setLista((l) => [...l, ...porRegistrar.map((c) => facturaNueva({ obraId: h.id, fecha: c.fecha, proveedor: c.proveedor, nit: c.nit, capitulo: c.capitulo, concepto: c.concepto, tipo: c.tipo, numero: c.numero, valorAntes: String(c.valorAntes), iva: String(c.iva), estado: "Pendiente", ivaManual: true, retManual: false, origenCompra: c.recepcionId }))]);
+    setAvisoCaps(`Se trajeron ${porRegistrar.length} compra(s) recibida(s) como facturas pendientes. Revisa el número de factura real y el estado de pago.`);
+  }
   const usados = conceptosUsados(listarFacturas(""));
   const aperturaCap = nombresCap.slice(0, 12).map((t) => ({ texto: t, detalle: "" }));
   // Proveedores ya usados (con su NIT) para no escribirlos otra vez
@@ -173,6 +180,12 @@ export default function FormularioRegistroCostos({ onVolver }) {
                   Esta obra aún no tiene capítulos del presupuesto: sin ellos no se puede asignar cada factura.
                   <button type="button" onClick={traerCapitulos} className="block mt-1.5 font-semibold underline" style={{ color: NAVY }}>Traer los capítulos del Presupuesto</button>
                   <span className="block mt-1">También puedes crearlos a mano en «Control Presupuestal».</span>
+                </div>
+              )}
+              {porRegistrar.length > 0 && (
+                <div data-compras-recibidas className="text-[11.5px] p-2 rounded mb-3" style={{ background: "#EAF4EE", color: "#1F5C3A", border: "1px solid #CFE5D8" }}>
+                  <b>{porRegistrar.length}</b> compra(s) recibida(s) en obra sin registrar como costo ({pesos(porRegistrar.reduce((t, c) => t + c.valorAntes + c.iva, 0))}).
+                  <button type="button" data-traer-compras onClick={traerCompras} className="block mt-1.5 font-semibold underline" style={{ color: NAVY }}>Traer compras recibidas (Gestión de Compras)</button>
                 </div>
               )}
               {avisoCaps && <div className="text-[11px] mb-2" style={{ color: "#2E7D4F" }}>{avisoCaps}</div>}

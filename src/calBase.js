@@ -45,7 +45,7 @@ export const seccionesDe = (fmt, tipo) => arr(fmt.secciones).filter((s) => !tipo
 export const camposDe = (fmt) => seccionesDe(fmt, "campos").flatMap((s) => arr(s.campos).map((c) => ({ ...c, seccion: s.id })));
 export const etiquetaUI = (c) => c.label || c.etq || c.enc;
 // Casillas que solo viven en la app: «calculado» (la plantilla las calcula con su fórmula o no las trae) y «soloApp» (datos internos, p. ej. las edades de ensayo de los cilindros)
-export const enPlantilla = (c) => c.tipo !== "calculado" && !c.soloApp;
+export const enPlantilla = (c) => (c.tipo !== "calculado" || c.enExcel) && !c.soloApp;   // «enExcel»: columna calculada por la app que SÍ va a la plantilla (p. ej. el subtotal de una orden de compra)
 export const colsPlantilla = (s) => arr(s.cols).filter(enPlantilla);
 // Una sección puede mostrarse solo según lo elegido (p. ej. el grupo de la actividad inspeccionada en el protocolo)
 export const esVisible = (s, datos) => !s.visibleSi || !!s.visibleSi(datos || {});
@@ -185,6 +185,7 @@ const COLOR_RES = {
 };
 export const COLORES_ESTADO = {
   Cumple: "bueno", Conforme: "bueno", Sí: "bueno", No: "malo", "Sí, con observaciones": "medio", "Aprobado para vaciar": "bueno", "Aprobado con observaciones": "medio", Aprobada: "bueno", Rechazada: "malo", "Aprobada con observaciones": "medio", Seguimiento: "medio", Aprobado: "bueno", Aceptado: "bueno", Vigente: "bueno", "Para construcción": "bueno", Cerrada: "bueno", Cerrado: "bueno",
+  "Cumple parcial": "medio", Completo: "bueno", Faltante: "medio", "Con daños": "malo", Devuelto: "malo", "Recibido completo": "bueno", "Recibido con faltantes": "medio", "Recibido con novedades": "medio", "En plazo": "bueno", "Por vencer": "medio", Atrasado: "malo", Atendida: "bueno", "Aprobada parcialmente": "medio", "Pendiente de aprobación": "medio",
   "No cumple": "malo", "No conforme": "malo", Rechazado: "malo", Obsoleto: "malo", Crítica: "malo", Abierta: "malo", Vencida: "malo",
   Pendiente: "medio", "En proceso": "medio", "En corrección": "medio", Corregido: "bueno", Verificado: "bueno", "Recibida a satisfacción": "bueno", "Recibida con pendientes": "medio", "No recibida": "malo", Recibida: "bueno", "En cuarentena": "medio", "En cuarentena (espera ensayo)": "medio", "Aceptado con observaciones": "medio", "En revisión": "medio", Mayor: "medio",
 };
@@ -223,7 +224,7 @@ export function escribirEnHoja(ws, fmt, datos, celdas) {
     if (!esVisible(s, datos)) continue;
     if (s.tipo === "tabla") {
       const origen = s.fija ? arr(datos[s.k]).slice(0, s.max) : filasConDatos(s, datos);
-      const filas = origen.map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = c.excel ? c.excel(f) : valorExcel(c, f[c.k]); return o; });
+      const filas = origen.map((f) => { const o = {}; for (const c of colsPlantilla(s)) o[c.k] = c.excel ? c.excel(f, datos) : valorExcel(c, f[c.k]); return o; });
       if (s.limpiar) {   // las filas que la plantilla trae escritas (p. ej. las actividades del plan) se vacían primero: lo que se quitó o se dejó en blanco no debe quedar con el texto de la plantilla
         for (let i = 0; i < T.n; i++) { const r = T.filas ? T.filas[i] : T.fila0 + i; for (const col of Object.values(T.columnas)) { try { ws.getCell(`${col}${r}`).value = null; } catch (e) { /* celda sin acceso */ } } }
       }
@@ -265,6 +266,14 @@ export function registrarEvaluacion(nombre, evaluacion) {
   const p = registrarProveedor({ nombre });
   if (!p) return null;
   const sig = { ...p, evaluacion: { ...evaluacion }, actualizado: Date.now() };
+  guardarJSON(CLAVE_CAL_PROVEEDORES, [sig, ...listarProveedores().filter((x) => x.id !== sig.id)]);
+  return sig;
+}
+// Guarda datos propios de un área en el proveedor (p. ej. la evaluación de Compras, aparte de la de Calidad)
+export function actualizarProveedor(nombre, patch) {
+  const p = registrarProveedor({ nombre });
+  if (!p) return null;
+  const sig = { ...p, ...patch, actualizado: Date.now() };
   guardarJSON(CLAVE_CAL_PROVEEDORES, [sig, ...listarProveedores().filter((x) => x.id !== sig.id)]);
   return sig;
 }

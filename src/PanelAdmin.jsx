@@ -38,6 +38,7 @@ const ROLES_DISPONIBLES = [
   { id: "sst", nombre: "Gestión SST" },
   { id: "ambiental", nombre: "Gestión Ambiental" },
   { id: "calidad", nombre: "Gestión de Calidad" },
+  { id: "compras", nombre: "Gestión de Compras" },
   { id: "presupuesto", nombre: "Control Presupuestal" },
 ];
 
@@ -53,7 +54,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
   const [contrasena, setContrasena] = useState("");
   const [rolCPNuevo, setRolCPNuevo] = useState("");
   const [cargoNuevo, setCargoNuevo] = useState("");
-  const [rolesNuevo, setRolesNuevo] = useState({ tecnica: false, sst: false, ambiental: false, calidad: false, presupuesto: false });
+  const [rolesNuevo, setRolesNuevo] = useState({ tecnica: false, sst: false, ambiental: false, calidad: false, compras: false, presupuesto: false });
   const [creando, setCreando] = useState(false);
   const [error, setError] = useState("");
 
@@ -106,7 +107,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
       });
       await authSecundaria.signOut();
       setNombre(""); setCorreo(""); setContrasena(""); setCargoNuevo("");
-      setRolesNuevo({ tecnica: false, sst: false, ambiental: false, calidad: false, presupuesto: false });
+      setRolesNuevo({ tecnica: false, sst: false, ambiental: false, calidad: false, compras: false, presupuesto: false });
       setMostrarForm(false);
       await cargarUsuarios();
     } catch (err) {
@@ -341,7 +342,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
                   {permisosAbierto === u.uid && (
                     <div data-permisos-individuales className="mt-1.5 p-2 rounded-lg" style={{ background: "#F7F7F5", border: `1px solid ${LINE}` }}>
                       <div className="text-[10.5px] mb-1.5" style={{ color: "#6B7280" }}>Por defecto cada módulo sigue el cargo de la persona. Aquí puedes dar o quitar acceso a un módulo en particular.</div>
-                      {[["tecnica", "Gestión Técnica"], ["sst", "Gestión SG-SST"], ["ambiental", "Gestión Ambiental"], ["calidad", "Gestión de Calidad"]].filter(([a]) => (u.roles || []).includes(a)).map(([area, titulo]) => (
+                      {[["tecnica", "Gestión Técnica"], ["sst", "Gestión SG-SST"], ["ambiental", "Gestión Ambiental"], ["calidad", "Gestión de Calidad"], ["compras", "Gestión de Compras"]].filter(([a]) => (u.roles || []).includes(a)).map(([area, titulo]) => (
                         <div key={area} className="mb-2">
                           <div className="text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>{titulo}</div>
                           {(modulosPorArea[area] || []).filter((m) => m.activo !== false).map((m) => {

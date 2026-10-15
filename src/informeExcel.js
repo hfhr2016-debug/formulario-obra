@@ -10,7 +10,7 @@ const ddmmyyyy = (iso) => String(iso || "").split("-").reverse().join("/");
 // Anchos (caracteres) de los grupos de columnas de la plantilla: A:C · D · E:I
 const ANCHO = { concepto: 63, valor: 26, detalle: 90, tipo: 19, ref: 44 };
 
-export function escribirInforme(ws, inf, { obraDatos = {}, observaciones = "", firmas = {} } = {}) {
+export function escribirInforme(ws, inf, { obraDatos = {}, observaciones = "", firmas = {}, titulosFirmas = {} } = {}) {
   poner(ws, "H7", fechaDDMMYYYY(fechaHoyISO()));
   poner(ws, "C11", inf.obra); poner(ws, "F11", obraDatos.contrato); poner(ws, "I11", inf.periodo);
   poner(ws, "C12", obraDatos.contratista); poner(ws, "F12", obraDatos.ubicacion); poner(ws, "I12", ddmmyyyy(inf.corte));
@@ -67,7 +67,7 @@ export function escribirInforme(ws, inf, { obraDatos = {}, observaciones = "", f
 
   barra("Firmas");
   const f1 = firmas.elaboro || {}, f2 = firmas.reviso || {};
-  const bloques = [["A", "C", "ELABORÓ — INGENIERO / INSPECTOR DE CALIDAD", f1], ["D", "I", "REVISÓ — RESIDENTE DE OBRA / GERENCIA", f2]];
+  const bloques = [["A", "C", titulosFirmas.elaboro || "ELABORÓ — INGENIERO / INSPECTOR DE CALIDAD", f1], ["D", "I", titulosFirmas.reviso || "REVISÓ — RESIDENTE DE OBRA / GERENCIA", f2]];
   for (const [d, h, t] of bloques) { unir(d, h); celda(`${d}${r}`, t, { negrilla: true, tam: 9, color: TINTA, fondo: CLARO, h: "center" }); }
   rellenarBordes("A", "I"); r++;
   const filas = [["Firma:", () => ""], ["Nombre:", (f) => f.nombre || ""], ["Cargo:", (f) => f.cargo || ""]];

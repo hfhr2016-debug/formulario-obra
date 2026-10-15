@@ -83,6 +83,9 @@ import PanelVencimientos from "./PanelVencimientos";
 import FormularioInformeCal from "./FormularioInformeCal";
 import { vencimientos, resumenVenc } from "./calVencimientos";
 import { FORMATOS_CAL } from "./calFormatos";
+import { FORMATOS_COM } from "./comFormatos";
+import FormularioCompras from "./FormularioCompras";
+import FormularioResumenCompras from "./FormularioResumenCompras";
 import FormularioAnticipo from "./FormularioAnticipo";
 import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
@@ -1612,6 +1615,20 @@ const MODULOS_CALIDAD = [
   { id: "cal-informe", nombre: "Informe Mensual de Calidad", emoji: "📈", icono: "/icons/icon-cal-informe.png", activo: true },
 ];
 
+const MODULOS_COMPRAS = [
+  // --- Del pedido a la compra ---
+  { id: "com-requisicion", nombre: "Requisición de Materiales y Servicios", emoji: "📝", icono: "/icons/icon-com-requisicion.png", activo: true },
+  { id: "com-solicitud", nombre: "Solicitud de Cotización", emoji: "📨", icono: "/icons/icon-com-solicitud.png", activo: true },
+  { id: "com-cuadro", nombre: "Cuadro Comparativo de Cotizaciones", emoji: "⚖️", icono: "/icons/icon-com-cuadro.png", activo: true },
+  { id: "com-orden", nombre: "Orden de Compra", emoji: "🧾", icono: "/icons/icon-com-orden.png", activo: true },
+  // --- Del pedido a la obra ---
+  { id: "com-recepcion", nombre: "Recepción de Materiales", emoji: "📦", icono: "/icons/icon-com-recepcion.png", activo: true },
+  { id: "com-pendientes", nombre: "Control de Pedidos Pendientes", emoji: "⏳", icono: "/icons/icon-com-pendientes.png", activo: true },
+  { id: "com-evaluacion", nombre: "Evaluación de Proveedores", emoji: "🤝", icono: "/icons/icon-com-evaluacion.png", activo: true },
+  // --- Cierre ---
+  { id: "com-resumen", nombre: "Resumen de Compras del Proyecto", emoji: "📊", icono: "/icons/icon-com-resumen.png", activo: true },
+];
+
 const MODULOS_PRESUPUESTO = [
   // --- Seguimiento del presupuesto ---
   { id: "cp-control", nombre: "Control Presupuestal", emoji: "📊", icono: "/icons/icon-cp-control.png", activo: true },
@@ -1656,6 +1673,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
     { id: "ambiental", nombre: "Gestión Ambiental", icono: "/icons/icon-gestion-ambiental.png", activo: true },
     { id: "calidad", nombre: "Gestión de Calidad", icono: "/icons/icon-gestion-calidad.png", emoji: "🏅", activo: true },
+    { id: "compras", nombre: "Gestión de Compras", icono: "/icons/icon-gestion-compras.png", emoji: "🛒", activo: true },
     { id: "presupuesto", nombre: "Control Presupuestal", icono: "/icons/icon-gestion-presupuesto.png", emoji: "💰", activo: true },
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
@@ -2031,6 +2049,59 @@ function InicioCalidad({ onSeleccionar, onVolverSelector }) {
   );
 }
 
+function InicioCompras({ onSeleccionar, onVolverSelector }) {
+  const { perfil: perfilSesion } = useAuth();   // oculta los módulos que el cargo no ve
+  return (
+    <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      />
+      <div className="px-4 pt-6 pb-5" style={{ background: NAVY }}>
+        {onVolverSelector && (
+          <button onClick={onVolverSelector} className="text-[11px] mb-2" style={{ color: GOLD }}>
+            ← Cambiar de sistema (Técnica / SST / Ambiental)
+          </button>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-white font-bold text-[17px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              GESTIÓN DE COMPRAS
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>
+              Del pedido a la obra y al presupuesto
+            </div>
+          </div>
+          <img src="/logo-header.png" alt="Reformas y Remodelaciones" className="h-16 w-auto" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 px-4 pb-4 pt-2">
+        {MODULOS_COMPRAS.filter((m) => nivelModulo(perfilSesion, m.id)).map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSeleccionar(m.id)}
+            className="flex flex-col items-center justify-center rounded-2xl p-3 gap-1 relative"
+            style={{ background: "white", border: `1px solid ${LINE}`, opacity: m.activo ? 1 : 0.55 }}
+          >
+            <div className="h-[70px] flex items-center justify-center">
+              <IconoConRespaldo src={m.icono} emoji={m.emoji} alt={m.nombre} tamano={70} />
+            </div>
+            <div className="text-[11.5px] font-semibold text-center" style={{ color: NAVY }}>
+              {m.nombre}
+            </div>
+            {!m.activo && (
+              <div className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: LINE, color: NAVY }}>
+                Próximamente
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
   return (
     <div className="min-h-screen" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
@@ -2096,7 +2167,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     cerrarSesion: onCerrarSesion,
   };
   // Permisos por cargo: sin acceso -> aviso; solo consulta -> formulario bloqueado; editar -> tal cual. (Control Presupuestal tiene los suyos.)
-  const inicioDe = (id) => (id.startsWith("sst-") ? "inicio-sst" : id.startsWith("amb-") ? "inicio-ambiental" : id.startsWith("cal-") ? "inicio-calidad" : "inicio");
+  const inicioDe = (id) => (id.startsWith("sst-") ? "inicio-sst" : id.startsWith("amb-") ? "inicio-ambiental" : id.startsWith("cal-") ? "inicio-calidad" : id.startsWith("com-") ? "inicio-compras" : "inicio");
   const conPermiso = (nodo) => {
     nodo = cloneElement(nodo, { key: `${vista}:${versionDatos}` });   // llegaron datos de otro equipo: la pantalla se vuelve a leer
     const nivel = nivelModulo(perfil, vista);
@@ -2130,6 +2201,19 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
     otrosSistemas: "Técnica / SST / Ambiental",
   };
   const conMenuCal = (nodo) => <ContextoSST.Provider value={ctxCal}>{conPermiso(nodo)}</ContextoSST.Provider>;
+  // Menú lateral de Gestión de Compras
+  const ctxCom = {
+    modulos: MODULOS_COMPRAS.filter((m) => m.activo && nivelModulo(perfil, m.id)),
+    vistaActual: vista,
+    ir: (id) => setVista(id),
+    irInicio: () => setVista("inicio-compras"),
+    irSelector: () => setVista("selector-apps"),
+    nombreUsuario: (perfil && (perfil.nombre || perfil.correo)) || "",
+    cerrarSesion: onCerrarSesion,
+    titulo: "Gestión de Compras",
+    otrosSistemas: "Técnica / SST / Ambiental / Calidad",
+  };
+  const conMenuCom = (nodo) => <ContextoSST.Provider value={ctxCom}>{conPermiso(nodo)}</ContextoSST.Provider>;
   // Menú lateral de Control Presupuestal (mismo componente, con sus 4 formatos)
   const ctxPres = {
     modulos: MODULOS_PRESUPUESTO.filter((m) => m.activo && nivelCP(perfil, m.id)),
@@ -2168,6 +2252,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
           else if (id === "sst") setVista("inicio-sst");
           else if (id === "ambiental") setVista("inicio-ambiental");
           else if (id === "calidad") setVista("inicio-calidad");
+          else if (id === "compras") setVista("inicio-compras");
           else if (id === "presupuesto") setVista("inicio-presupuesto");
           else setVista(`proximamente-${id}`);
         }}
@@ -2242,6 +2327,14 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
   }
   if (vista === "inicio-ambiental") {
     return <InicioAmbiental onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista === "inicio-compras") {
+    return <InicioCompras onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
+  }
+  if (vista.startsWith("com-")) {
+    if (vista === "com-resumen") return conMenuCom(<FormularioResumenCompras key={vista} onVolver={() => setVista("inicio-compras")} />);
+    if (FORMATOS_COM[vista]) return conMenuCom(<FormularioCompras key={vista} fmt={FORMATOS_COM[vista]} puedeCalidad={!!(perfil && (perfil.esAdmin || (perfil.roles || []).includes("compras")))} usuario={(perfil && (perfil.nombre || perfil.correo)) || ""} onVolver={() => setVista("inicio-compras")} />);
+    return conMenuCom(<Proximamente nombre={(MODULOS_COMPRAS.find((m) => m.id === vista) || {}).nombre || "Este formato"} onVolver={() => setVista("inicio-compras")} />);
   }
   if (vista === "inicio-calidad") {
     return <InicioCalidad onSeleccionar={setVista} onVolverSelector={() => setVista("selector-apps")} />;
@@ -2482,7 +2575,7 @@ function AppConSesion() {
   }
 
   if (vistaExterna === "admin") {
-    return <><BotonSubir /><PanelAdmin onVolver={() => setVistaExterna("apps")} modulosPorArea={{ tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, presupuesto: MODULOS_PRESUPUESTO }} /></>;
+    return <><BotonSubir /><PanelAdmin onVolver={() => setVistaExterna("apps")} modulosPorArea={{ tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, compras: MODULOS_COMPRAS, presupuesto: MODULOS_PRESUPUESTO }} /></>;
   }
 
   if (!sync.listo) {

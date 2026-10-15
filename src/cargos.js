@@ -13,6 +13,8 @@ export const CARGOS = [
   { id: "coord_amb", nombre: "Coordinador Ambiental" },
   { id: "coord_sst", nombre: "Coordinador SG-SST" },
   { id: "coord_calidad", nombre: "Coordinador de Calidad" },
+  { id: "comprador", nombre: "Comprador / Jefe de compras" },
+  { id: "almacenista", nombre: "Almacenista" },
 ];
 export const nombreCargo = (id) => (CARGOS.find((c) => c.id === id) || {}).nombre || "";
 
@@ -27,9 +29,9 @@ const SOLO_FICHA = { ficha: "V" };
 
 export const PERMISOS_CARGO = {
   admin_general: { "*": "E" },
-  director_obra: { tecnica: "E", "sst-*": "V", "amb-*": "V", "cal-*": "V" },
+  director_obra: { tecnica: "E", "sst-*": "V", "amb-*": "V", "cal-*": "V", "com-*": "E" },
   coord_tecnico: { tecnica: "E" },
-  residente: { ficha: "V", apus: "V", presupuesto: "V", cronograma: "V", cantidades: "E", diario: "E", semanal: "V", mensual: "V", memorias: "E", acta: "E" },
+  residente: { ficha: "V", apus: "V", presupuesto: "V", cronograma: "V", cantidades: "E", diario: "E", semanal: "V", mensual: "V", memorias: "E", acta: "E", "com-requisicion": "E", "com-recepcion": "E", "com-pendientes": "V", "com-orden": "V" },
   programador: { ficha: "V", presupuesto: "V", cantidades: "V", diario: "V", cronograma: "E" },
   admin_frente: { ficha: "V", diario: "V", cantidades: "V", acta: "V", "sst-personal": "E", "sst-asistencia": "E", "sst-epp": "E", "sst-induccion": "E" },
   aux_admin: {},
@@ -39,6 +41,8 @@ export const PERMISOS_CARGO = {
   coord_amb: { ...SOLO_FICHA, ...TODO_E("amb-") },
   coord_sst: { ...SOLO_FICHA, ...TODO_E("sst-") },
   coord_calidad: { ...SOLO_FICHA, ...TODO_E("cal-") },
+  comprador: { ...SOLO_FICHA, ...TODO_E("com-") },
+  almacenista: { ...SOLO_FICHA, "com-recepcion": "E", "com-pendientes": "V", "com-requisicion": "V" },
 };
 const expandir = (reglas, id) => {
   if (reglas[id] !== undefined) return reglas[id];
