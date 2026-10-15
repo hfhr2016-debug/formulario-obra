@@ -88,7 +88,6 @@ import FormularioCostosLibro from "./FormularioCostosLibro";
 import FormularioCostosFicha from "./FormularioCostosFicha";
 import { ContextoSST } from "./sstNavegacion";
 import { SelectorHora, Lista } from "./sstComunes";
-import { ALIAS, norm as normUnif, unificacionActiva, migrarDatosLocales } from "./unificacion";
 import { marcarRefrescoVivo, refrescoVivoReciente, alLlegarDatos, avisarDatosRemotos } from "./refrescoVivo";
 import { UNIDADES_COMUNES, actividadesVigentes, actividadesParaFormularios } from "./catalogoVivo";
 import {
@@ -148,13 +147,9 @@ const normAct = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]
 function unirConCatalogoVivo(archivo, tipo) {
   let vivas = [];
   try { vivas = actividadesParaFormularios(tipo); } catch (e) { return archivo; }
-  // Los números de ítem siguen siendo la posición en el archivo (los acumulados ya guardados dependen de eso); las actividades unificadas conservan el número de la primera.
-  let base = archivo.map((a, i) => ({ ...a, __n: i + 1 }));
-  if (unificacionActiva()) {
-    const vistos = new Set();
-    base = base.map((a) => { const al = ALIAS.get(normUnif(a.actividad)); return al ? { ...a, actividad: al.nombre, unidad: al.unidad || a.unidad } : a; })
-      .filter((a) => { const k = normAct(a.actividad); if (vistos.has(k)) return false; vistos.add(k); return true; });
-  }
+  // Los números de ítem siguen siendo la posición en el archivo (los acumulados ya guardados dependen de eso).
+  const base0 = archivo.map((a, i) => ({ ...a, __n: i + 1 }));
+  let base = base0;
   const porNombre = new Map(vivas.map((a) => [normAct(a.actividad), a]));
   // Lo que la administradora quitó del catálogo (o lo que ya no se ofrece, como los concretos y aceros «por elemento») deja de aparecer también aquí.
   if (vivas.length) base = base.filter((a) => porNombre.has(normAct(a.actividad)));
@@ -2090,12 +2085,6 @@ function InicioPresupuesto({ onSeleccionar, onVolverSelector, perfil }) {
 
 function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionDatos = 0 }) {
   const [vista, setVista] = useState("selector-apps");
-  // Unificación de actividades: lo ya guardado en este equipo (APU, cantidades del Presupuesto…) pasa a los nombres únicos cuando el catálogo ya los trae.
-  useEffect(() => { try { migrarDatosLocales(); } catch (e) { /* no frena la app */ } }, [versionDatos]);
-  useEffect(() => alLlegarDatos((claves) => {
-    if (claves.some((k) => ["ryr_cat_actividades", "ryr_apus_guardados", "ryr_presupuesto_cantidades", "ryr_acta_acumulado"].includes(k))) { try { migrarDatosLocales(); } catch (e) { /* igual */ } }
-    return [];
-  }), []);
   // Menú lateral de Gestión SG – SST (☰): permite pasar de un formulario a otro sin volver al inicio
   const ctxSST = {
     modulos: MODULOS_SST.filter((m) => m.activo && nivelModulo(perfil, m.id)),

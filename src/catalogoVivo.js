@@ -4,7 +4,6 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
-import { nombresAnteriores, MARCA as MARCA_UNIFICACION, MARCA_V2 as MARCA_UNIFICACION_V2, MARCA_ADIC as MARCA_ADICIONALES, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -180,37 +179,34 @@ export function listaActividadesTipo(tipo) {
   actividadesParaFormularios(tipo).forEach((a) => { const k = clave(a.actividad); if (vistos.has(k)) return; vistos.add(k); lista.push(a.actividad); });
   return lista;
 }
-// Datos de una actividad (unidad, capítulo…) por su nombre; reconoce también el nombre anterior a la unificación.
+// Datos de una actividad (unidad, capítulo…) por su nombre.
 export function infoActividad(nombre, tipo) {
-  const n = nombreUnificado(nombre);
+  const n = nombre;
   const a = actividadesVigentes().find((x) => (!tipo || x.tipo === tipo) && clave(x.actividad) === clave(n)) || actividadesVigentes().find((x) => clave(x.actividad) === clave(n));
   return a ? { unidad: a.unidad, capitulo: a.capitulo, tipo: a.tipo } : null;
 }
-// Para el APU: una actividad = un APU, sin importar el tipo de proyecto. Se ofrecen las de todos los tipos, sin repetir el nombre
-// (si el nombre está en varios tipos, se muestra la del tipo del proyecto activo).
+// Para el APU: se ofrecen las actividades de los tres catálogos. Si una actividad está repetida (mismo nombre y misma unidad) sale una sola vez
+// (la del tipo del proyecto activo, si está ahí). Con la misma unidad distinta o nombre distinto, salen todas.
+const normNU = (t) => String(t === undefined || t === null ? "" : t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/²/g, "2").replace(/³/g, "3").replace(/\s+/g, " ").trim();
 export function actividadesVigentesTodosLosTipos(tipoPreferido) {
   const vistas = new Map();
-  actividadesVigentes().forEach((a0) => {
-    // Si en algún tipo el catálogo propio todavía tiene el nombre anterior (aún no se aplicó la unificación), el APU ya lo ofrece con el nombre único.
-    const al = ALIAS.get(normUnif(a0.actividad));
-    const a = al ? { ...a0, actividad: al.nombre, unidad: al.unidad || a0.unidad } : a0;
-    const k = clave(a.actividad);
+  actividadesVigentes().forEach((a) => {
+    const k = normNU(a.actividad) + "|" + normNU(a.unidad);
     const previa = vistas.get(k);
     if (!previa || (a.tipo === tipoPreferido && previa.tipo !== tipoPreferido)) vistas.set(k, a);
   });
   return Array.from(vistas.values());
 }
-// Búsqueda de actividades por palabras (en cualquier orden, sin tildes ni puntos de miles): «acero 60000 psi» encuentra «…acero de refuerzo corrugado fy = 420 MPa (Grado 60)»
-// porque también se busca en los nombres anteriores de la actividad («Acero fy: 60000 psi…») y en su capítulo.
+// Búsqueda de actividades por palabras (en cualquier orden, sin tildes ni puntos de miles): «acero 60000 psi» encuentra los aceros de 60000 psi.
 const sinAcentos = (t) => String(t === undefined || t === null ? "" : t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/(\d)[.,](?=\d{3}\b)/g, "$1").replace(/[.,:;()\/]/g, " ").replace(/\s+/g, " ").trim();
 export function coincideActividad(it, consulta) {
   const q = sinAcentos(consulta);
   if (!q) return false;
-  const pajar = sinAcentos([it.actividad, ...nombresAnteriores(it.actividad), it.capitulo, it.subcapitulo].join(" "));
+  const pajar = sinAcentos([it.actividad, it.capitulo, it.subcapitulo].join(" "));
   return q.split(" ").every((p) => pajar.includes(p));
 }
 // Para los formularios de cada proyecto (Presupuesto, Cantidades, Cronograma, Informe diario, Acta…): las actividades del tipo del proyecto.
-// Las unificadas tienen el mismo nombre en los tres tipos, así que aparecen en cada uno. Solo el APU junta los tres tipos (actividadesVigentesTodosLosTipos).
+// Solo el APU junta los tres tipos (actividadesVigentesTodosLosTipos).
 export function actividadesParaFormularios(tipo) {
   return actividadesVigentes().filter((a) => a.tipo === tipo);
 }
@@ -229,11 +225,25 @@ export function sembrarActividades() {
   const nuevo = {};
   const llaves = llavesDeLaBase();
   CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => { nuevo[llaves[i]] = { ...it, orden: (i + 1) * 10, actualizado: Date.now() }; });
-  nuevo[MARCA_UNIFICACION] = { unificacion: 1, actualizado: Date.now() };
-  nuevo[MARCA_UNIFICACION_V2] = { unificacion: 2, actualizado: Date.now() };
-  nuevo[MARCA_ADICIONALES] = { adicionales: 1, actualizado: Date.now() };   // el catálogo del código ya trae los nombres únicos
+  nuevo[MARCA_CATALOGO] = { catalogoMaestro: 1, actualizado: Date.now() };   // el catálogo del código ya es el maestro
   guardar(ACTIVIDADES.clave, nuevo);
   return true;
+}
+// Reemplazar el catálogo guardado (nube) por los tres catálogos del archivo. Las actividades agregadas a mano se pierden (el botón lo avisa).
+export const MARCA_CATALOGO = "__catalogo_maestro_v1";
+export function resumenCatalogoMaestro() {
+  const m = mapaAct();
+  const hay = Object.values(m).some((x) => x && txt(x.actividad));
+  if (!hay || m[MARCA_CATALOGO]) return null;      // sin catálogo propio ya se usa el del código; con la marca ya se aplicó
+  return { actuales: Object.values(m).filter((x) => x && txt(x.actividad)).length, nuevas: CATALOGO_ACTIVIDADES_BASE.length };
+}
+export function aplicarCatalogoMaestro() {
+  const nuevo = {};
+  const llaves = llavesDeLaBase();
+  CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => { nuevo[llaves[i]] = { ...it, orden: (i + 1) * 10, actualizado: Date.now() }; });
+  nuevo[MARCA_CATALOGO] = { catalogoMaestro: 1, actualizado: Date.now() };
+  guardar(ACTIVIDADES.clave, nuevo);
+  return { total: CATALOGO_ACTIVIDADES_BASE.length };
 }
 export function itemsActividades(tipo) {
   const m = mapaAct();
