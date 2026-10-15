@@ -9,6 +9,7 @@ const txt = (v) => String(v === undefined || v === null ? "" : v).trim();
 export const norm = (t) => txt(t).toLowerCase().replace(/\s+/g, " ");
 const CLAVE_ACT = "ryr_cat_actividades";
 export const MARCA = "__unificacion_v1";
+export const MARCA_V2 = "__unificacion_v2";   // ya se completaron las actividades unificadas en los tres tipos (se hace una sola vez)
 
 const leer = (k, def) => { try { const t = localStorage.getItem(k); const v = t ? JSON.parse(t) : def; return v && typeof v === "object" ? v : def; } catch (e) { return def; } };
 const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin memoria */ } };
@@ -100,29 +101,41 @@ function completarConcretos(m) {
   return agregados;
 }
 
+// Actividades unificadas que le faltan a algún tipo de proyecto: toda actividad unificada debe existir, con el mismo nombre y unidad, en los tres tipos.
+function llavePorNombre(m, tipo, nombre) { return Object.keys(m).find((k) => m[k] && m[k].tipo === tipo && txt(m[k].actividad) && norm(m[k].actividad) === norm(nombre)); }
+function faltantesUnificadas(m) {
+  const lista = [];
+  UNIFICACION.forEach(([nombre, unidad]) => {
+    const donde = TIPOS.filter((t) => llavePorNombre(m, t, nombre));
+    if (!donde.length) return;                       // no existe en ningún tipo (se quitó a propósito): no se agrega
+    TIPOS.forEach((tipo) => { if (!donde.includes(tipo)) lista.push({ tipo, nombre, unidad, fuente: donde[0] }); });
+  });
+  return lista;
+}
+function completarUnificadas(m) {
+  let agregadas = 0;
+  faltantesUnificadas(m).forEach(({ tipo, nombre, unidad, fuente }) => {
+    const tpl = m[llavePorNombre(m, fuente, nombre)];
+    const delTipo = Object.values(m).filter((x) => x && x.tipo === tipo && txt(x.actividad));
+    const delCapitulo = delTipo.filter((x) => norm(x.capitulo) === norm(tpl.capitulo));
+    const maxOrden = (l) => l.reduce((mx, x) => Math.max(mx, Number(x.orden) || 0), 0);
+    const orden = delCapitulo.length ? maxOrden(delCapitulo) + 0.001 : maxOrden(delTipo) + 10;
+    const nuevo = { tipo, capitulo: tpl.capitulo, actividad: nombre, unidad, orden, actualizado: Date.now() };
+    ["subcapitulo", "grupo", "metodo"].forEach((c) => { if (txt(tpl[c])) nuevo[c] = tpl[c]; });
+    let k2 = clavAct(nuevo); let n = 2; while (m[k2]) k2 = `${clavAct(nuevo)}~${n++}`;
+    m[k2] = nuevo; agregadas += 1;
+  });
+  return agregadas;
+}
+
 // Llaves del catálogo propio que corresponden a la lista de nombres anteriores de un tipo (sin repetir)
 function llavesDe(m, tipo, lista) {
   const llaves = [];
   lista.forEach(([ant, uni]) => Object.keys(m).forEach((k) => { const x = m[k]; if (x && x.tipo === tipo && norm(x.actividad) === norm(ant) && norm(x.unidad) === norm(uni) && !llaves.includes(k)) llaves.push(k); }));
   return llaves;
 }
-export function resumenPendiente() {
-  const m = mapaVivo();
-  if (!Object.values(m).some((x) => x && txt(x.actividad))) return null;
-  let renombradas = 0, quitadas = 0;
-  if (!m[MARCA]) {
-    UNIFICACION.forEach(([, , tipos]) => Object.entries(tipos).forEach(([tipo, lista]) => {
-      const n = llavesDe(m, tipo, lista).length;
-      if (n) { renombradas += 1; quitadas += n - 1; }
-    }));
-  }
-  const concretos = m[MARCA] ? concretosFaltantes(m).length : 0;   // antes de unificar, los concretos se completan al aplicar
-  if (m[MARCA] && !concretos) return null;
-  return { renombradas, quitadas, concretos };
-}
-export function aplicarUnificacionCatalogo() {
-  const m = mapaVivo();
-  if (!Object.values(m).some((x) => x && txt(x.actividad))) return { ok: true, sinCatalogoPropio: true, renombradas: 0, quitadas: 0, concretos: 0 };
+// Aplica la unificación sobre un catálogo propio (m se modifica) y devuelve cuántas cosas cambió
+function unificarMapa(m) {
   let renombradas = 0, quitadas = 0;
   const yaAplicada = !!m[MARCA];
   if (!yaAplicada) {
@@ -140,9 +153,27 @@ export function aplicarUnificacionCatalogo() {
     });
     m[MARCA] = { unificacion: 1, actualizado: Date.now() };
   }
-  const concretos = completarConcretos(m);
-  if (!yaAplicada || concretos) guardar(CLAVE_ACT, m);
-  return { ok: true, yaAplicada: yaAplicada && !concretos, renombradas, quitadas, concretos };
+  let agregadas = 0;
+  if (!m[MARCA_V2]) {
+    agregadas = completarConcretos(m) + completarUnificadas(m);
+    m[MARCA_V2] = { unificacion: 2, actualizado: Date.now() };
+  }
+  return { yaAplicada, renombradas, quitadas, agregadas };
+}
+export function resumenPendiente() {
+  const m = mapaVivo();
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return null;
+  if (m[MARCA] && m[MARCA_V2]) return null;
+  const r = unificarMapa(JSON.parse(JSON.stringify(m)));   // se calcula sobre una copia
+  if (!r.renombradas && !r.quitadas && !r.agregadas) return null;
+  return { renombradas: r.renombradas, quitadas: r.quitadas, agregadas: r.agregadas };
+}
+export function aplicarUnificacionCatalogo() {
+  const m = mapaVivo();
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return { ok: true, sinCatalogoPropio: true, renombradas: 0, quitadas: 0, agregadas: 0 };
+  const r = unificarMapa(m);
+  guardar(CLAVE_ACT, m);
+  return { ok: true, yaAplicada: r.yaAplicada && !r.agregadas, renombradas: r.renombradas, quitadas: r.quitadas, agregadas: r.agregadas };
 }
 
 // ---------- Datos guardados en este equipo (se puede correr cuantas veces haga falta: solo escribe si algo cambia) ----------

@@ -4,7 +4,7 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
-import { MARCA as MARCA_UNIFICACION, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
+import { MARCA as MARCA_UNIFICACION, MARCA_V2 as MARCA_UNIFICACION_V2, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -200,10 +200,10 @@ export function actividadesVigentesTodosLosTipos(tipoPreferido) {
   });
   return Array.from(vistas.values());
 }
-// Para todos los formularios: las actividades de los tres tipos de proyecto, sin repetir el nombre; primero las del tipo del proyecto activo.
-export function actividadesParaFormularios(tipoPreferido) {
-  const todas = actividadesVigentesTodosLosTipos(tipoPreferido);
-  return todas.filter((a) => a.tipo === tipoPreferido).concat(todas.filter((a) => a.tipo !== tipoPreferido));
+// Para los formularios de cada proyecto (Presupuesto, Cantidades, Cronograma, Informe diario, Acta…): las actividades del tipo del proyecto.
+// Las unificadas tienen el mismo nombre en los tres tipos, así que aparecen en cada uno. Solo el APU junta los tres tipos (actividadesVigentesTodosLosTipos).
+export function actividadesParaFormularios(tipo) {
+  return actividadesVigentes().filter((a) => a.tipo === tipo);
 }
 export const hayActividadesPropias = () => Object.values(mapaAct()).some((x) => x && txt(x.actividad));
 // Llaves del catálogo base (únicas: si dos actividades quedan iguales, la segunda lleva ~2)
@@ -220,7 +220,8 @@ export function sembrarActividades() {
   const nuevo = {};
   const llaves = llavesDeLaBase();
   CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => { nuevo[llaves[i]] = { ...it, orden: (i + 1) * 10, actualizado: Date.now() }; });
-  nuevo[MARCA_UNIFICACION] = { unificacion: 1, actualizado: Date.now() };   // el catálogo del código ya trae los nombres únicos
+  nuevo[MARCA_UNIFICACION] = { unificacion: 1, actualizado: Date.now() };
+  nuevo[MARCA_UNIFICACION_V2] = { unificacion: 2, actualizado: Date.now() };   // el catálogo del código ya trae los nombres únicos
   guardar(ACTIVIDADES.clave, nuevo);
   return true;
 }

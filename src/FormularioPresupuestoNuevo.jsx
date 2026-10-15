@@ -75,6 +75,15 @@ function catalogoFiltrado() {
   return { tipoActivo, catalogo: filtrado };
 }
 
+// APU guardado de la actividad (se busca por el nombre exacto, sin importar el tipo de proyecto)
+function apuDeActividad(nombre) {
+  try {
+    const apus = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
+    const apu = apus[String(nombre || "").trim().toLowerCase()];
+    return apu && Number(apu.total) > 0 ? apu : null;
+  } catch (e) { return null; }
+}
+
 function factorDesperdicioSugerido(nombreActividad) {
   if (!nombreActividad) return null;
   const n = nombreActividad.toLowerCase();
@@ -446,7 +455,8 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                 onSeleccionar={(it) => {
                   const desp = factorDesperdicioSugerido(it.actividad);
                   const factorSugerido = desp !== null ? Math.round((1 + desp) * 1000) / 1000 : undefined;
-                  actualizarFila(i, { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subMedicionVacia(factorSugerido)] });
+                  const apu = apuDeActividad(it.actividad);   // un solo APU por actividad, sirve en cualquier tipo de proyecto
+                  actualizarFila(i, { actividad: it.actividad, capitulo: it.capitulo, unidad: it.unidad, subs: [subMedicionVacia(factorSugerido)], precio: apu ? String(Math.round(apu.total * 100) / 100) : (f.precioDeAPU ? "" : f.precio), precioDeAPU: !!apu });
                 }}
               />
               {filas.length > 1 && (
@@ -558,7 +568,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                   </div>
                 )}
 
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   <input
                     placeholder="Cantidad"
                     type="text" inputMode="decimal"
@@ -571,13 +581,14 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                     placeholder="Precio Unitario"
                     type="text" inputMode="decimal"
                     value={f.precio}
-                    onChange={(e) => actualizarFila(i, { precio: e.target.value })}
+                    onChange={(e) => actualizarFila(i, { precio: e.target.value, precioDeAPU: false })}
                     className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"
                     style={{ borderColor: LINE }}
                   />
                   <div className="flex-1 text-[12px] text-right font-medium pt-1.5" style={{ color: NAVY }}>
                     {formatoMoneda((numES(f.cantidad) || 0) * (numES(f.precio) || 0))}
                   </div>
+                  {f.precioDeAPU && <div className="basis-full text-[10.5px] text-gray-500" data-precio-apu>Precio unitario traído del APU de esta actividad (puedes cambiarlo).</div>}
                 </div>
               </>
             )}
