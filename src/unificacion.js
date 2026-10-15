@@ -3,12 +3,14 @@
 // - aplicarUnificacionCatalogo(): lo corre la persona administradora una vez sobre el catálogo propio de actividades (que ya está en la nube).
 // - migrarDatosLocales(): pasa lo ya guardado en este equipo (APU, cantidades del Presupuesto…) a los nombres únicos.
 import { UNIFICACION } from "./unificacionDatos";
+import { ADICIONALES } from "./actividadesAdicionales";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 
 const txt = (v) => String(v === undefined || v === null ? "" : v).trim();
 export const norm = (t) => txt(t).toLowerCase().replace(/\s+/g, " ");
 const CLAVE_ACT = "ryr_cat_actividades";
 export const MARCA = "__unificacion_v1";
+export const MARCA_ADIC = "__actividades_adicionales_v1";   // ya se agregaron las actividades que la administradora marcó para otros tipos
 export const MARCA_V2 = "__unificacion_v2";   // ya se completaron las actividades unificadas en los tres tipos (se hace una sola vez)
 
 const leer = (k, def) => { try { const t = localStorage.getItem(k); const v = t ? JSON.parse(t) : def; return v && typeof v === "object" ? v : def; } catch (e) { return def; } };
@@ -112,20 +114,31 @@ function faltantesUnificadas(m) {
   });
   return lista;
 }
-function completarUnificadas(m) {
+// Agrega al catálogo propio las actividades de la lista (mismo nombre y unidad; capítulo, subcapítulo… de la original)
+function agregarFaltantes(m, lista) {
   let agregadas = 0;
-  faltantesUnificadas(m).forEach(({ tipo, nombre, unidad, fuente }) => {
+  lista.forEach(({ tipo, nombre, unidad, fuente }) => {
     const tpl = m[llavePorNombre(m, fuente, nombre)];
+    if (!tpl || llavePorNombre(m, tipo, nombre)) return;
     const delTipo = Object.values(m).filter((x) => x && x.tipo === tipo && txt(x.actividad));
     const delCapitulo = delTipo.filter((x) => norm(x.capitulo) === norm(tpl.capitulo));
     const maxOrden = (l) => l.reduce((mx, x) => Math.max(mx, Number(x.orden) || 0), 0);
     const orden = delCapitulo.length ? maxOrden(delCapitulo) + 0.001 : maxOrden(delTipo) + 10;
-    const nuevo = { tipo, capitulo: tpl.capitulo, actividad: nombre, unidad, orden, actualizado: Date.now() };
+    const nuevo = { tipo, capitulo: tpl.capitulo, actividad: tpl.actividad, unidad, orden, actualizado: Date.now() };
     ["subcapitulo", "grupo", "metodo"].forEach((c) => { if (txt(tpl[c])) nuevo[c] = tpl[c]; });
     let k2 = clavAct(nuevo); let n = 2; while (m[k2]) k2 = `${clavAct(nuevo)}~${n++}`;
     m[k2] = nuevo; agregadas += 1;
   });
   return agregadas;
+}
+const completarUnificadas = (m) => agregarFaltantes(m, faltantesUnificadas(m));
+function faltantesAdicionales(m) {
+  const lista = [];
+  ADICIONALES.forEach(([nombre, unidad, origen, destinos]) => {
+    if (!llavePorNombre(m, origen, nombre)) return;
+    destinos.forEach((tipo) => { if (!llavePorNombre(m, tipo, nombre)) lista.push({ tipo, nombre, unidad, fuente: origen }); });
+  });
+  return lista;
 }
 
 // Llaves del catálogo propio que corresponden a la lista de nombres anteriores de un tipo (sin repetir)
@@ -158,12 +171,16 @@ function unificarMapa(m) {
     agregadas = completarConcretos(m) + completarUnificadas(m);
     m[MARCA_V2] = { unificacion: 2, actualizado: Date.now() };
   }
+  if (!m[MARCA_ADIC]) {
+    agregadas += agregarFaltantes(m, faltantesAdicionales(m));
+    m[MARCA_ADIC] = { adicionales: 1, actualizado: Date.now() };
+  }
   return { yaAplicada, renombradas, quitadas, agregadas };
 }
 export function resumenPendiente() {
   const m = mapaVivo();
   if (!Object.values(m).some((x) => x && txt(x.actividad))) return null;
-  if (m[MARCA] && m[MARCA_V2]) return null;
+  if (m[MARCA] && m[MARCA_V2] && m[MARCA_ADIC]) return null;
   const r = unificarMapa(JSON.parse(JSON.stringify(m)));   // se calcula sobre una copia
   if (!r.renombradas && !r.quitadas && !r.agregadas) return null;
   return { renombradas: r.renombradas, quitadas: r.quitadas, agregadas: r.agregadas };

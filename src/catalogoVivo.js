@@ -4,7 +4,7 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
-import { MARCA as MARCA_UNIFICACION, MARCA_V2 as MARCA_UNIFICACION_V2, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
+import { MARCA as MARCA_UNIFICACION, MARCA_V2 as MARCA_UNIFICACION_V2, MARCA_ADIC as MARCA_ADICIONALES, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -221,7 +221,8 @@ export function sembrarActividades() {
   const llaves = llavesDeLaBase();
   CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => { nuevo[llaves[i]] = { ...it, orden: (i + 1) * 10, actualizado: Date.now() }; });
   nuevo[MARCA_UNIFICACION] = { unificacion: 1, actualizado: Date.now() };
-  nuevo[MARCA_UNIFICACION_V2] = { unificacion: 2, actualizado: Date.now() };   // el catálogo del código ya trae los nombres únicos
+  nuevo[MARCA_UNIFICACION_V2] = { unificacion: 2, actualizado: Date.now() };
+  nuevo[MARCA_ADICIONALES] = { adicionales: 1, actualizado: Date.now() };   // el catálogo del código ya trae los nombres únicos
   guardar(ACTIVIDADES.clave, nuevo);
   return true;
 }

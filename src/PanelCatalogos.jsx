@@ -229,7 +229,7 @@ function PanelActividades() {
           <div className="font-bold mb-1">Unificar actividades entre los tres tipos de proyecto</div>
           <div className="mb-2">
             {pendiente.renombradas > 0 && <>Hay {pendiente.renombradas} actividades que se pasan a un nombre único (y {pendiente.quitadas} repetidas que se unen), para que un solo APU sirva en Edificación, Vías e Hidrocarburos. Los nombres anteriores quedan como equivalencias. </>}
-            {pendiente.agregadas > 0 && <>Faltan {pendiente.agregadas} actividades unificadas en algún tipo de proyecto (se agregarán con el mismo nombre y unidad).</>}
+            {pendiente.agregadas > 0 && <>Se agregarán {pendiente.agregadas} actividades para que existan en los tipos de proyecto donde se necesitan (con el mismo nombre y unidad).</>}
           </div>
           <button type="button" onClick={aplicarUnificacion} className="px-3 py-2 rounded-lg text-white font-bold text-[12.5px]" style={{ background: GOLD }} data-aplicar-unificacion>{pendiente.renombradas > 0 ? "Aplicar unificación" : "Completar actividades"}</button>
         </div>
