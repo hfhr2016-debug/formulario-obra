@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
-import { actividadesParaFormularios } from "./catalogoVivo";
+import { actividadesParaFormularios, coincideActividad } from "./catalogoVivo";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
@@ -64,13 +64,13 @@ function BuscadorActividadTarea({ value, onSeleccionar }) {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
     const tipoActivo = tipoProyectoActivo();
-    const coincide = actividadesParaFormularios(tipoActivo).filter((it) => it.actividad.toLowerCase().includes(q));
+    const coincide = actividadesParaFormularios(tipoActivo).filter((it) => coincideActividad(it, texto));
     coincide.sort((a, b) => {
       const ae = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       const be = b.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       return ae !== be ? ae - be : a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 40);
+    return coincide.slice(0, 60);
   }, [texto]);
   return (
     <div className="relative">

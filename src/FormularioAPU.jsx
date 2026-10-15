@@ -4,7 +4,7 @@ import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import { mapaApu, valorSimple, arreglarRendimientoVisible } from "./apuPlantilla";
 import { esActividadPorElemento, buscarMaterialEnLista, coincideBusqueda, rendimientoExtra, evaluarCoherencia, avisosDelApu } from "./apuReglas";
-import { catalogoVigente, actividadesVigentesTodosLosTipos } from "./catalogoVivo";
+import { catalogoVigente, actividadesVigentesTodosLosTipos, coincideActividad } from "./catalogoVivo";
 import { buscarPorNombre } from "./unificacion";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
@@ -163,9 +163,7 @@ function BuscadorActividad({ value, onSelect }) {
     // El APU es el mismo para una actividad sin importar el tipo de proyecto: se busca en las actividades de los tres tipos.
     const coincide = actividadesVigentesTodosLosTipos(tipoActivo).filter(
       (it) =>
-        !esActividadPorElemento(it.actividad) &&
-        (it.actividad.toLowerCase().includes(q) ||
-        it.capitulo.toLowerCase().includes(q))
+        !esActividadPorElemento(it.actividad) && coincideActividad(it, texto)
     );
     coincide.sort((a, b) => {
       const aEmpieza = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
@@ -173,7 +171,7 @@ function BuscadorActividad({ value, onSelect }) {
       if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
       return a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 40);
+    return coincide.slice(0, 60);
   }, [texto]);
 
   return (

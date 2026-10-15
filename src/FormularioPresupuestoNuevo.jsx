@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { actividadesParaFormularios } from "./catalogoVivo";
+import { actividadesParaFormularios, coincideActividad } from "./catalogoVivo";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
@@ -115,14 +115,14 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder }) {
   const resultados = useMemo(() => {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
-    const coincide = catalogo.filter((it) => it.actividad.toLowerCase().includes(q));
+    const coincide = catalogo.filter((it) => coincideActividad(it, texto));
     coincide.sort((a, b) => {
       const aEmpieza = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       const bEmpieza = b.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       if (aEmpieza !== bEmpieza) return aEmpieza - bEmpieza;
       return a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 40);
+    return coincide.slice(0, 60);
   }, [texto, catalogo]);
 
   return (

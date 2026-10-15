@@ -4,7 +4,7 @@
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
-import { MARCA as MARCA_UNIFICACION, MARCA_V2 as MARCA_UNIFICACION_V2, MARCA_ADIC as MARCA_ADICIONALES, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
+import { nombresAnteriores, MARCA as MARCA_UNIFICACION, MARCA_V2 as MARCA_UNIFICACION_V2, MARCA_ADIC as MARCA_ADICIONALES, nombreUnificado, ALIAS, norm as normUnif } from "./unificacion";
 
 export const CATALOGOS = [
   { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: CATALOGO_MATERIALES, unidadSug: "u" },
@@ -199,6 +199,15 @@ export function actividadesVigentesTodosLosTipos(tipoPreferido) {
     if (!previa || (a.tipo === tipoPreferido && previa.tipo !== tipoPreferido)) vistas.set(k, a);
   });
   return Array.from(vistas.values());
+}
+// Búsqueda de actividades por palabras (en cualquier orden, sin tildes ni puntos de miles): «acero 60000 psi» encuentra «…acero de refuerzo corrugado fy = 420 MPa (Grado 60)»
+// porque también se busca en los nombres anteriores de la actividad («Acero fy: 60000 psi…») y en su capítulo.
+const sinAcentos = (t) => String(t === undefined || t === null ? "" : t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/(\d)[.,](?=\d{3}\b)/g, "$1").replace(/[.,:;()\/]/g, " ").replace(/\s+/g, " ").trim();
+export function coincideActividad(it, consulta) {
+  const q = sinAcentos(consulta);
+  if (!q) return false;
+  const pajar = sinAcentos([it.actividad, ...nombresAnteriores(it.actividad), it.capitulo, it.subcapitulo].join(" "));
+  return q.split(" ").every((p) => pajar.includes(p));
 }
 // Para los formularios de cada proyecto (Presupuesto, Cantidades, Cronograma, Informe diario, Acta…): las actividades del tipo del proyecto.
 // Las unificadas tienen el mismo nombre en los tres tipos, así que aparecen en cada uno. Solo el APU junta los tres tipos (actividadesVigentesTodosLosTipos).

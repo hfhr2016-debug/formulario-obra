@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { actividadesParaFormularios } from "./catalogoVivo";
+import { actividadesParaFormularios, coincideActividad } from "./catalogoVivo";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
@@ -114,14 +114,14 @@ function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder, limpia
   const resultados = useMemo(() => {
     if (!texto || texto.length < 2) return [];
     const q = texto.toLowerCase();
-    const coincide = catalogo.filter((it) => it.actividad.toLowerCase().includes(q));
+    const coincide = catalogo.filter((it) => coincideActividad(it, texto));
     coincide.sort((a, b) => {
       const ae = a.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       const be = b.actividad.toLowerCase().startsWith(q) ? 0 : 1;
       if (ae !== be) return ae - be;
       return a.actividad.length - b.actividad.length;
     });
-    return coincide.slice(0, 40);
+    return coincide.slice(0, 60);
   }, [texto, catalogo]);
   return (
     <div className="relative w-full">
