@@ -21,7 +21,7 @@ function textoMedicion(s, unidad) {
   } else if (u === "m³" || u === "m3") {
     partes.push(`${fmt(s.largo)} × ${fmt(s.ancho || 1)} × ${fmt(s.alto || 1)}`);
   } else if (u === "m²" || u === "m2") {
-    partes.push(`${fmt(s.largo)} × ${fmt(s.ancho || s.alto || 1)}`);
+    partes.push([s.largo, s.ancho, s.alto].filter((m) => Number(m) > 0).map(fmt).join(" × "));
   } else {
     partes.push(`${fmt(s.largo)}`);
   }
@@ -32,12 +32,8 @@ function textoMedicion(s, unidad) {
 }
 
 function textoDeduccion(d, unidad) {
-  const u = (unidad || "").toLowerCase();
-  let base;
-  if (u === "m³" || u === "m3") base = `${fmt(d.largo)} × ${fmt(d.ancho || 1)} × ${fmt(d.alto || 1)}`;
-  else if (u === "m²" || u === "m2") base = `${fmt(d.largo)} × ${fmt(d.ancho || d.alto || 1)}`;
-  else base = `${fmt(d.largo)}`;
-  return `${base} × ${fmt(d.cantidad || 1)} elem.`;
+  const medidas = [d.largo, d.ancho, d.alto].filter((m) => Number(m) > 0).map(fmt);
+  return `${medidas.join(" × ") || "0"} × ${fmt(d.cantidad || 1)} elem.`;
 }
 
 /**

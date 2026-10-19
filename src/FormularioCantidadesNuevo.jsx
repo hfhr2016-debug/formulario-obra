@@ -54,12 +54,11 @@ function factorDesperdicioSugerido(nombreActividad) {
   return null;
 }
 function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
-// Valor de UNA deducción según la unidad: m³ = L×A×H, m² = L×(Ancho o Alto), lineal = L
+// Valor de UNA deducción: se multiplican todas las medidas que se llenen (Largo × Ancho × Alto) por el N° de elementos
 function valorDeduccion(unidad, d) {
-  const l = numES(d.largo) || 0, an = numES(d.ancho) || 0, h = numES(d.alto) || 0, q = numES(d.cantidad) || 1;
-  if (unidadNecesitaAlto(unidad)) return l * (an || 1) * (h || 1) * q;
-  if (unidadEsArea(unidad)) return l * (an || h || 1) * q;
-  return l * q;
+  const medidas = [numES(d.largo) || 0, numES(d.ancho) || 0, numES(d.alto) || 0].filter((m) => m > 0);
+  if (!medidas.length) return 0;
+  return medidas.reduce((acc, m) => acc * m, 1) * (numES(d.cantidad) || 1);
 }
 function totalDeducciones(unidad, sub) { return Math.round((sub.deducciones || []).reduce((acc, d) => acc + valorDeduccion(unidad, d), 0) * 1000) / 1000; }
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
@@ -110,7 +109,7 @@ function brutaNoAcero(unidad, sub) {
   let bruta = 0;
   if (esUnidadDirecta(unidad)) bruta = CD * N * R * F;
   else if (unidadNecesitaAlto(unidad)) bruta = L * (An||1) * (H||1) * N * R * F;
-  else if (unidadEsArea(unidad)) bruta = L * (An||H||1) * N * R * F;
+  else if (unidadEsArea(unidad)) bruta = L * (An||1) * (H||1) * N * R * F;   // en m²: se multiplican las medidas que se llenen
   else if (unidadEsLineal(unidad)) bruta = L * N * R * F;
   else bruta = CD * N * R * F;
   return bruta;

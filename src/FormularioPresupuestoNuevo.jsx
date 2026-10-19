@@ -30,13 +30,11 @@ const PESO_ACERO_KG_POR_METRO = {
 };
 function esActividadAcero(nombre) { return /acero/i.test(nombre || ""); }
 function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
-// Valor de UNA deducción según la unidad: m³ = L×A×H, m² = L×(Ancho o Alto), lineal = L
+// Valor de UNA deducción: se multiplican todas las medidas que se llenen (Largo × Ancho × Alto) por el N° de elementos
 function valorDeduccion(unidad, d) {
-  const u = (unidad || "").toLowerCase();
-  const l = numES(d.largo) || 0, an = numES(d.ancho) || 0, h = numES(d.alto) || 0, q = numES(d.cantidad) || 1;
-  if (u === "m³" || u === "m3") return l * (an || 1) * (h || 1) * q;
-  if (u === "m²" || u === "m2") return l * (an || h || 1) * q;
-  return l * q;
+  const medidas = [numES(d.largo) || 0, numES(d.ancho) || 0, numES(d.alto) || 0].filter((m) => m > 0);
+  if (!medidas.length) return 0;
+  return medidas.reduce((acc, m) => acc * m, 1) * (numES(d.cantidad) || 1);
 }
 function totalDeducciones(unidad, sub) { return Math.round((sub.deducciones || []).reduce((acc, d) => acc + valorDeduccion(unidad, d), 0) * 1000) / 1000; }
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
@@ -281,7 +279,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       const metros = numES(sub.metros);
       bruta = (denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0) * numElem * factor;
     } else if (unidadNecesitaAlto(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem * factor;
-    else if (unidadEsArea(unidad)) bruta = largo * (ancho || alto || 1) * numElem * factor;   // en m²: Largo × Ancho, o Largo × Alto (muros)
+    else if (unidadEsArea(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem * factor;   // en m²: se multiplican las medidas que se llenen (Largo × Ancho, o Largo × Alto para muros)
     else if (unidadEsLineal(unidad)) bruta = largo * numElem * factor;
     return bruta;
   }
