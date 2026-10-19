@@ -56,10 +56,10 @@ function factorDesperdicioSugerido(nombreActividad) {
 function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
 // Valor de UNA deducción según la unidad: m³ = L×A×H, m² = L×(Ancho o Alto), lineal = L
 function valorDeduccion(unidad, d) {
-  const l = numES(d.largo) || 0, an = numES(d.ancho) || 0, h = numES(d.alto) || 0;
-  if (unidadNecesitaAlto(unidad)) return l * (an || 1) * (h || 1);
-  if (unidadEsArea(unidad)) return l * (an || h || 1);
-  return l;
+  const l = numES(d.largo) || 0, an = numES(d.ancho) || 0, h = numES(d.alto) || 0, q = numES(d.cantidad) || 1;
+  if (unidadNecesitaAlto(unidad)) return l * (an || 1) * (h || 1) * q;
+  if (unidadEsArea(unidad)) return l * (an || h || 1) * q;
+  return l * q;
 }
 function totalDeducciones(unidad, sub) { return Math.round((sub.deducciones || []).reduce((acc, d) => acc + valorDeduccion(unidad, d), 0) * 1000) / 1000; }
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
@@ -229,23 +229,24 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) 
         <div className="mb-1.5">
           <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional) — descríbelas para dejar la memoria del cálculo:</div>
           {deducciones.length > 0 && (
-            <div className="grid gap-1.5 mb-0.5 text-[10px] text-gray-500" style={{ gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 22px" }}>
-              <span>Descripción</span><span>Largo</span><span>Ancho</span><span>Alto</span><span></span>
+            <div className="grid gap-1.5 mb-0.5 text-[10px] text-gray-500" style={{ gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.8fr) 22px" }}>
+              <span>Descripción</span><span>Largo</span><span>Ancho</span><span>Alto</span><span>N° elem.</span><span></span>
             </div>
           )}
           {deducciones.map((d, di) => {
             const cambiar = (campo, valor) => { const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], [campo]: valor }; actualizar({ ...sub, deducciones: nuevas }); };
             return (
-              <div key={di} data-deduccion className="grid gap-1.5 mb-1 items-center" style={{ gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 22px" }}>
+              <div key={di} data-deduccion className="grid gap-1.5 mb-1 items-center" style={{ gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.8fr) 22px" }}>
                 <input placeholder="Ej. Ventana 1" data-deduccion-nombre type="text" value={d.nombre || ""} onChange={(e) => cambiar("nombre", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Largo" type="text" inputMode="decimal" value={d.largo} onChange={(e) => cambiar("largo", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Ancho" type="text" inputMode="decimal" value={d.ancho} onChange={(e) => cambiar("ancho", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <input placeholder="Alto" type="text" inputMode="decimal" value={d.alto} onChange={(e) => cambiar("alto", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="N°" data-deduccion-cantidad type="text" inputMode="decimal" value={d.cantidad || ""} onChange={(e) => cambiar("cantidad", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                 <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: deducciones.filter((_, k) => k !== di) })} className="text-[12px] text-red-500 text-center" aria-label="Quitar deducción">✕</button>
               </div>
             );
           })}
-          <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: [...deducciones, { nombre: "", largo: "", ancho: "", alto: "" }] })}
+          <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: [...deducciones, { nombre: "", largo: "", ancho: "", alto: "", cantidad: "" }] })}
             className="w-full py-1.5 rounded-lg text-[11px] font-semibold border" style={{ borderColor: GOLD, color: NAVY }}>
             + Agregar deducción
           </button>
@@ -457,7 +458,7 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
                 metros: numES(s.metros) || 0, kgPorMetro: (denomMem && PESO_ACERO_KG_POR_METRO[denomMem]) || 0,
                 cantidadDirecta: numES(s.cantidadDirecta) || 0,
                 bruta: tipoMem === "acero" ? resultado : brutaNoAcero(a.unidad, s),
-                deducciones: tipoMem === "dim" ? (s.deducciones || []).filter((d) => (d.nombre || "").trim() || valorDeduccion(a.unidad, d)).map((d) => ({ nombre: d.nombre || "", largo: numES(d.largo) || 0, ancho: numES(d.ancho) || 0, alto: numES(d.alto) || 0, valor: valorDeduccion(a.unidad, d) })) : [],
+                deducciones: tipoMem === "dim" ? (s.deducciones || []).filter((d) => (d.nombre || "").trim() || valorDeduccion(a.unidad, d)).map((d) => ({ nombre: d.nombre || "", largo: numES(d.largo) || 0, ancho: numES(d.ancho) || 0, alto: numES(d.alto) || 0, cantidad: numES(d.cantidad) || 1, valor: valorDeduccion(a.unidad, d) })) : [],
                 final: resultado,
               }],
             });

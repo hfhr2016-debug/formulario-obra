@@ -33,9 +33,11 @@ function textoMedicion(s, unidad) {
 
 function textoDeduccion(d, unidad) {
   const u = (unidad || "").toLowerCase();
-  if (u === "m³" || u === "m3") return `${fmt(d.largo)} × ${fmt(d.ancho || 1)} × ${fmt(d.alto || 1)}`;
-  if (u === "m²" || u === "m2") return `${fmt(d.largo)} × ${fmt(d.ancho || d.alto || 1)}`;
-  return `${fmt(d.largo)}`;
+  let base;
+  if (u === "m³" || u === "m3") base = `${fmt(d.largo)} × ${fmt(d.ancho || 1)} × ${fmt(d.alto || 1)}`;
+  else if (u === "m²" || u === "m2") base = `${fmt(d.largo)} × ${fmt(d.ancho || d.alto || 1)}`;
+  else base = `${fmt(d.largo)}`;
+  return `${base} × ${fmt(d.cantidad || 1)} elem.`;
 }
 
 /**
@@ -134,6 +136,7 @@ export function escribirMemoria(workbook, bloques, { proyecto = "", fecha = "", 
         poner(r, 7, redondear(d.largo), numero());
         if (Number(d.ancho)) poner(r, 8, redondear(d.ancho), numero());
         if (Number(d.alto)) poner(r, 9, redondear(d.alto), numero());
+        poner(r, 10, redondear(d.cantidad || 1), numero());
         poner(r, 12, -redondear(d.valor), numero({ numFmt: "#,##0.000;[Red]-#,##0.000" }));
         poner(r, 13, textoDeduccion(d, unidad), { ...base, alignment: { vertical: "middle", wrapText: true } });
         r++;
@@ -206,6 +209,7 @@ export function leerMemoria(ws) {
         actual.deducciones.push({
           nombre,
           largo: numTxt(ws.getCell(r, 7).value), ancho: numTxt(ws.getCell(r, 8).value), alto: numTxt(ws.getCell(r, 9).value),
+          cantidad: numTxt(ws.getCell(r, 10).value),
         });
       } else if (/^Medición \(/.test(concepto)) {
         actual = null;   // acero o cantidad directa: no se reconstruye
