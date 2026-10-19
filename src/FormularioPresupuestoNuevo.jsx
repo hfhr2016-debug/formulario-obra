@@ -307,6 +307,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
     setGenerando(true);
     try {
       const resp = await fetch("/plantilla-presupuesto-unificado.xlsx?v=" + Date.now(), { cache: "no-store" });
+      if (!resp.ok || /text\/html/i.test(resp.headers.get("content-type") || "")) throw new Error("No se encontró la plantilla del Presupuesto en el sitio (el archivo plantilla-presupuesto-unificado.xlsx debe estar dentro de la carpeta public).");
       const buffer = await resp.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
@@ -366,7 +367,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       } catch (e) {}
     } catch (e) {
       console.error(e);
-      alert("Hubo un error generando el Excel. Revisa la consola.");
+      alert("Hubo un error generando el Excel: " + ((e && e.message) || e) + "\n\n(Si este mensaje se repite, envíaselo a soporte tal cual.)");
     } finally {
       setGenerando(false);
     }
