@@ -187,7 +187,7 @@ export function actividadesVigentes() {
     try {
       const m = JSON.parse(raw);
       // Actividades nuevas del código (marcadas «nueva»): se agregan UNA vez al catálogo guardado; si luego se borran, no vuelven.
-      if (m && typeof m === "object" && !Array.isArray(m) && incorporarNuevas(m)) {
+      if (m && typeof m === "object" && !Array.isArray(m) && (corregirEstucos(m) | incorporarNuevas(m))) {
         guardar(ACTIVIDADES.clave, m);
         try { raw = localStorage.getItem(ACTIVIDADES.clave); } catch (e) { /* queda el anterior */ }
       }
@@ -201,6 +201,23 @@ export function actividadesVigentes() {
 }
 const mapaAct = () => leer(ACTIVIDADES.clave);
 const MARCA_NUEVAS = "__nuevas_actividades_v1";
+// Los estucos son del capítulo PINTURA (no de Pañetes): se corrige en el catálogo guardado, una sola vez
+const MARCA_ESTUCO = "__estuco_pintura_v1";
+function corregirEstucos(m) {
+  if (m[MARCA_ESTUCO]) return false;
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return false;
+  const pint = Object.values(m).filter((x) => x && x.tipo === "edificacion" && x.capitulo === "PINTURA" && Number.isFinite(Number(x.orden)));
+  const ordenBase = pint.length ? Math.min(...pint.map((x) => Number(x.orden))) : null;
+  let k = 0;
+  Object.values(m).forEach((x) => {
+    if (!x || x.tipo !== "edificacion" || !/^Estuco plástico o tradicional/.test(txt(x.actividad))) return;
+    const ml = txt(x.unidad) === "ml";
+    Object.assign(x, { capitulo: "PINTURA", subcapitulo: "Estuco", grupo: ml ? "Estuco en filos y dilataciones" : "Estuco", codigo: ml ? "10.02.02" : "10.02.01", actualizado: Date.now() });
+    if (ordenBase !== null) x.orden = ordenBase - 1 + (k++) * 0.1;
+  });
+  m[MARCA_ESTUCO] = { estucoPintura: 1, actualizado: Date.now() };
+  return true;
+}
 function incorporarNuevas(m) {
   if (m[MARCA_NUEVAS]) return false;
   if (!Object.values(m).some((x) => x && txt(x.actividad))) return false;   // sin catálogo propio se usa el del código completo
