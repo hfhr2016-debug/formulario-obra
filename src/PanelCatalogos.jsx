@@ -6,9 +6,10 @@ import { descargarLibro } from "./sstComunes";
 import {
   CATALOGOS, catalogoDef, itemsConLlave, hayCatalogoPropio, guardarItem, quitarItem, filasParaExcel, importarFilas, ENCABEZADOS_EXCEL,
   TIPOS_PROYECTO, resumenMaterialesPedido, agregarMaterialesPedido, resumenCatalogoMaestro, aplicarCatalogoMaestro, itemsActividades, hayActividadesPropias, guardarActividad, quitarActividad, filasActividadesParaExcel, importarActividades, ENCABEZADOS_EXCEL_ACT, UNIDADES_COMUNES, gruposDe, sugerirCodigo } from "./catalogoVivo";
+import { formatPesos } from "./formatoNumeros";
 
 const NAVY = "#1B2A45", GOLD = "#D9A233", PAPER = "#F7F7F5", LINE = "#D9DCE1";
-const pesos = (n) => "$ " + Math.round(Number(n) || 0).toLocaleString("es-CO");
+const pesos = (n) => formatPesos(Math.round(Number(n) || 0), 0);
 const vacio = { codigo: "", descripcion: "", unidad: "", precio: "" };
 const celdaTexto = (v) => (v && typeof v === "object" ? (v.result !== undefined ? v.result : v.text !== undefined ? v.text : v.richText ? v.richText.map((r) => r.text).join("") : "") : v);
 

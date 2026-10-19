@@ -6,6 +6,7 @@ import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { Camera, X } from "lucide-react";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 import { listaActividadesTipo, infoActividad } from "./catalogoVivo";
+import { formatPesos } from "./formatoNumeros";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -40,7 +41,7 @@ function aFechaDDMMYYYY(iso) {
   return `${d}/${m}/${a}`;
 }
 function formatoMoneda(n) {
-  return "$ " + Math.round(n || 0).toLocaleString("es-CO");
+  return formatPesos(Math.round(n || 0), 0);
 }
 
 function CasillaFoto({ foto, onChange, onRemove, numero }) {

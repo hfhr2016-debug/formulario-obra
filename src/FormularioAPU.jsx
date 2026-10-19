@@ -7,12 +7,8 @@ import { esActividadPorElemento, buscarMaterialEnLista, coincideBusqueda, rendim
 import { catalogoVigente, actividadesVigentesTodosLosTipos, coincideActividad } from "./catalogoVivo";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
+import { numES, formatNum } from "./formatoNumeros";
 
-function numES(v) {
-  if (v === null || v === undefined || v === "") return 0;
-  const n = Number(String(v).replace(",", "."));
-  return isNaN(n) ? 0 : n;
-}
 
 // Cantidad × Factor/Rendimiento × Precio (misma fórmula en las 3 tablas: Materiales, Mano de Obra, Equipos).
 function sumarTabla(filas) {
@@ -345,7 +341,7 @@ function BuscadorCelda({ valor, onSeleccionar, catalogo, placeholder, palabrasCl
                 {it.descripcion}
               </div>
               <div className="text-[10.5px] text-gray-500">
-                {it.unidad} · ${it.precio.toLocaleString("es-CO")}
+                {it.unidad} · {formatNum(it.precio, 0, 3)}
               </div>
             </button>
           ))}
@@ -700,7 +696,7 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
           )}
           {(f.cant || f.vrUnit) && (
             <div className="text-[10.5px] text-right px-2 pb-1.5 font-medium" style={{ color: NAVY }}>
-              Subtotal: $ {sumarTabla([f]).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Subtotal: $ {formatNum(sumarTabla([f]), 2, 2)}
             </div>
           )}
           </div>
@@ -1222,7 +1218,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         <div className="p-3 rounded-lg mb-3 text-center" style={{ background: NAVY }}>
           <div className="text-[11px]" style={{ color: GOLD }}>TOTAL DIRECTO UNITARIO DEL APU</div>
           <div className="text-white font-bold text-[19px]">
-            $ {totalDirectoUnitarioVista.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            $ {formatNum(totalDirectoUnitarioVista, 2, 2)}
           </div>
         </div>
 

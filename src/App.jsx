@@ -19,6 +19,7 @@ import { iniciarSync, detenerSync } from "./sincronizarFirestore";
 import { aplicarReinicioGeneral, limpiarEquipo } from "./reinicioApp";
 import { LimpiarEquipoEnlace } from "./ReinicioApp";
 import { leerMarcaReinicio } from "./reinicioNube";
+import { leerFormato, guardarFormato, formatNum, formatPesos, instalarFormulasEnCampos } from "./formatoNumeros";
 import FormularioAPU from "./FormularioAPU";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
@@ -1666,8 +1667,44 @@ const MARCO_DORADO = {
   padding: 7, borderRadius: 23,
   boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85), inset 0 -1px 1px rgba(120,70,0,0.55), 0 0 14px rgba(251,186,18,0.55), 0 6px 18px rgba(0,0,0,0.35)",
 };
+instalarFormulasEnCampos();
+
+// Ajustes de números de la persona (en este equipo): separadores, símbolo, decimales y fórmulas en los campos
+function AjustesNumeros({ cerrar }) {
+  const [f, setF] = useState(leerFormato());
+  const cambiar = (c) => setF(guardarFormato(c));
+  const campo = "border rounded px-2 py-1.5 text-[13px] w-full";
+  const fila = "mb-2.5";
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.55)" }} data-ajustes-numeros>
+      <div className="bg-white rounded-xl p-4 w-full max-w-sm max-h-[90vh] overflow-auto">
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-bold text-[15px]" style={{ color: "#1B2A45" }}>Formato de números</div>
+          <button type="button" onClick={cerrar} data-cerrar-ajustes className="text-[18px] px-2">✕</button>
+        </div>
+        <div className={fila}><label className="text-[11.5px] font-semibold">Separador de decimales</label>
+          <select className={campo} data-aj-decimal value={f.decimal} onChange={(e) => cambiar({ decimal: e.target.value })}><option value=",">Coma (,)</option><option value=".">Punto (.)</option></select></div>
+        <div className={fila}><label className="text-[11.5px] font-semibold">Separador de miles</label>
+          <select className={campo} data-aj-miles value={f.miles} onChange={(e) => cambiar({ miles: e.target.value })}><option value=".">Punto (.)</option><option value=",">Coma (,)</option><option value=" ">Espacio</option><option value="">Ninguno</option></select></div>
+        <div className={fila}><label className="text-[11.5px] font-semibold">Símbolo de la moneda</label>
+          <input className={campo} data-aj-simbolo maxLength={4} value={f.simbolo} onChange={(e) => cambiar({ simbolo: e.target.value })} /></div>
+        <div className={fila}><label className="text-[11.5px] font-semibold">Decimales de los importes</label>
+          <select className={campo} data-aj-dec-importe value={f.decImporte} onChange={(e) => cambiar({ decImporte: Number(e.target.value) })}>{[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
+        <label className="flex items-start gap-2 text-[12px] mb-2.5"><input type="checkbox" data-aj-formulas checked={f.formulas} onChange={(e) => cambiar({ formulas: e.target.checked })} className="mt-0.5" />
+          <span>Permitir fórmulas en los campos numéricos (por ejemplo <b>12*3+2</b>): al salir del campo se calcula el resultado.</span></label>
+        <div className="rounded-lg p-2.5 text-[12px]" style={{ background: "#F7F7F5" }} data-aj-ejemplo>
+          Así se verá: <b>{formatPesos(1234567.891)}</b> · <b>{formatNum(1234.5, 0, 3)}</b> · <b>{formatNum(0.125, 0, 3)}</b>
+        </div>
+        <div className="text-[10.5px] text-gray-500 mt-2">Esto cambia lo que ves en pantalla. En los Excel, los números se ven según la configuración regional del computador. Se guarda solo en este equipo.</div>
+        <button type="button" onClick={cerrar} className="w-full mt-3 py-2.5 rounded-lg text-white font-semibold text-[13px]" style={{ background: "#1B2A45" }}>Listo</button>
+      </div>
+    </div>
+  );
+}
+
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const [verManual, setVerManual] = useState(false);
+  const [verAjustes, setVerAjustes] = useState(false);
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
@@ -1710,6 +1747,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
             {perfil.esAdmin && onIrCatalogos && (
               <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
             )}
+            <button type="button" onClick={() => setVerAjustes(true)} data-ajustes-formato className="text-[10.5px] underline" style={{ color: GOLD }}>⚙ Formato de números</button>
             <button type="button" onClick={() => setVerManual(true)} data-manual className="text-[10.5px] underline" style={{ color: GOLD }}>📖 Manual de usuario</button>
             <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="text-[10.5px] underline text-white/70" />
             <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
@@ -1779,6 +1817,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         </div>
         <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
       </div>
+      {verAjustes && <AjustesNumeros cerrar={() => setVerAjustes(false)} />}
       {verManual && (
         <div data-manual-visor style={{ position: "fixed", inset: 0, zIndex: 60, background: "#E8E6E1", display: "flex", flexDirection: "column" }}>
           <div style={{ background: "#1B2A45", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", paddingTop: "calc(10px + env(safe-area-inset-top))" }}>

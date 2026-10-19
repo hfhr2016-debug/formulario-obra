@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import ExcelJS from "exceljs";
+import { formatPesos } from "./formatoNumeros";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -58,7 +59,7 @@ function fechaLocalHoy() {
 }
 
 function formatoMoneda(n) {
-  return "$ " + Math.round(n || 0).toLocaleString("es-CO");
+  return formatPesos(Math.round(n || 0), 0);
 }
 
 function Campo({ label, unidad, children }) {

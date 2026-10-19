@@ -6,12 +6,8 @@ import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } fro
 import { Camera, X } from "lucide-react";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 import { listaActividadesTipo, infoActividad } from "./catalogoVivo";
+import { numES, formatNum } from "./formatoNumeros";
 
-function numES(v) {
-  if (v === null || v === undefined || v === "") return 0;
-  const n = Number(String(v).replace(",", "."));
-  return isNaN(n) ? 0 : n;
-}
 
 
 const NAVY = "#1B2A45";
@@ -709,7 +705,7 @@ export default function FormularioActa({ onVolver, onNavegar }) {
               </div>
               <div className="mt-1.5">
                 {it.cantActa && it.precioUnitario && (
-                  <div className="text-[11px] text-gray-500 mt-1">Valor de esta actividad: {(numES(it.cantActa) * numES(it.precioUnitario)).toLocaleString("es-CO")}</div>
+                  <div className="text-[11px] text-gray-500 mt-1">Valor de esta actividad: {formatNum(numES(it.cantActa) * numES(it.precioUnitario), 0, 3)}</div>
                 )}
               </div>
               <input placeholder="Observación" value={it.observacion} onChange={(e) => { const c = [...items]; c[i] = { ...c[i], observacion: e.target.value }; setItems(c); }} className="w-full border rounded px-2 py-1.5 text-[12px] mt-1.5" style={{ borderColor: LINE }} />
@@ -749,7 +745,7 @@ export default function FormularioActa({ onVolver, onNavegar }) {
           </button>
           <Campo label="Valor presente acta">
             <div className="w-full border rounded-lg px-3 py-2.5 text-[14px] font-semibold" style={{ borderColor: LINE, background: PAPER, color: NAVY }}>
-              {valorPresenteActa.toLocaleString("es-CO")}
+              {formatNum(valorPresenteActa, 0, 3)}
             </div>
           </Campo>
           <div className="text-[11px] text-gray-500 mb-3">Se calcula solo (Cant. esta acta × Precio unitario, sumado de todas las actividades). <b>Nota:</b> si tus precios de APU's son de costo directo, súmale el AIU/IVA al precio unitario de cada actividad, o usa el "Valor Total" de Presupuesto (que ya incluye AIU) como referencia.</div>
@@ -759,7 +755,7 @@ export default function FormularioActa({ onVolver, onNavegar }) {
             <Campo label="Retenciones"><Input type="text" inputMode="decimal" value={retenciones} onChange={(e) => setRetenciones(e.target.value)} /></Campo>
           </div>
           <div className="mt-2 p-2 rounded-lg text-center" style={{ background: "#F0F2F5" }}>
-            <div className="text-[11px] text-gray-500">Saldo contractual: {saldoContractual.toLocaleString("es-CO")} · % Ejecutado: {porcentajeEjecutado.toFixed(1)}%</div>
+            <div className="text-[11px] text-gray-500">Saldo contractual: {formatNum(saldoContractual, 0, 3)} · % Ejecutado: {porcentajeEjecutado.toFixed(1)}%</div>
           </div>
         </div>
 

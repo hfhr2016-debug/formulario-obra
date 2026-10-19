@@ -6,12 +6,8 @@ import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 import { aplicarBandas } from "./bandasFilas";
 import { escribirMemoria, leerMemoria, NOMBRE_HOJA_MEMORIA } from "./memoriaCalculo";
+import { numES, formatNum, aTextoCampo } from "./formatoNumeros";
 
-function numES(v) {
-  if (v === null || v === undefined || v === "") return 0;
-  const n = Number(String(v).replace(",", "."));
-  return isNaN(n) ? 0 : n;
-}
 function aFechaDDMMYYYY(d) {
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -267,7 +263,7 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) 
           {deducciones.length > 0 && (
             <div data-total-deducciones className="mt-1.5 flex items-center justify-between rounded-lg px-2 py-1.5 border text-[12px]" style={{ borderColor: LINE, background: "#fff" }}>
               <span className="font-bold" style={{ color: NAVY }}>Total deducciones</span>
-              <span className="font-bold">{totalDeducciones(unidad, sub)} {unidad}</span>
+              <span className="font-bold">{formatNum(totalDeducciones(unidad, sub), 0, 3)} {unidad}</span>
             </div>
           )}
         </div>
@@ -335,7 +331,7 @@ function TarjetaActividad({ a, actualizar, quitar, n, total }) {
 
       <div className="p-2 rounded-lg text-center" style={{ background: NAVY }}>
         <div className="text-[10px]" style={{ color: GOLD }}>Total de esta actividad ({subs.length} sitio{subs.length > 1 ? "s" : ""})</div>
-        <div className="text-white font-bold text-[16px]">{Math.round(totalActividad * 1000) / 1000} {unidad}</div>
+        <div className="text-white font-bold text-[16px]">{formatNum(totalActividad, 0, 3)} {unidad}</div>
       </div>
     </div>
   );

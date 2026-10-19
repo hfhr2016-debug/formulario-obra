@@ -4,12 +4,8 @@ import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
+import { numES } from "./formatoNumeros";
 
-function numES(v) {
-  if (v === null || v === undefined || v === "") return 0;
-  const n = Number(String(v).replace(",", "."));
-  return isNaN(n) ? 0 : n;
-}
 
 
 const NAVY = "#1B2A45";

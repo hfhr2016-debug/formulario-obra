@@ -6,14 +6,10 @@ import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
 import { aplicarBandas } from "./bandasFilas";
 import { escribirMemoria, leerMemoria, NOMBRE_HOJA_MEMORIA } from "./memoriaCalculo";
+import { numES, formatPesos, formatNum, aTextoCampo } from "./formatoNumeros";
 
-function numES(v) {
-  if (v === null || v === undefined || v === "") return 0;
-  const n = Number(String(v).replace(",", "."));
-  return isNaN(n) ? 0 : n;
-}
 function formatoMoneda(n) {
-  return "$ " + (Math.round((n || 0) * 100) / 100).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatPesos(Math.round((n || 0) * 100) / 100);
 }
 function aFechaDDMMYYYY(d) {
   const dd = String(d.getDate()).padStart(2, "0");
@@ -308,7 +304,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
     const subs = [...(fila.subs || [])];
     subs[si] = { ...subs[si], ...cambios };
     const cantTotal = subs.reduce((acc, s) => acc + calcularSub(fila.unidad, fila.actividad, s), 0);
-    actualizarFila(i, { subs, cantidad: cantTotal ? String(Math.round(cantTotal * 1000) / 1000) : fila.cantidad });
+    actualizarFila(i, { subs, cantidad: cantTotal ? aTextoCampo(cantTotal) : fila.cantidad });
   };
   const agregarSub = (i) => {
     const fila = filas[i];
@@ -320,7 +316,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
     const fila = filas[i];
     const subs = (fila.subs || []).filter((_, k) => k !== si);
     const cantTotal = subs.reduce((acc, s) => acc + calcularSub(fila.unidad, fila.actividad, s), 0);
-    actualizarFila(i, { subs, cantidad: cantTotal ? String(Math.round(cantTotal * 1000) / 1000) : "" });
+    actualizarFila(i, { subs, cantidad: cantTotal ? aTextoCampo(cantTotal) : "" });
   };
 
   const agregarFila = () => setFilas([...filas, filaVacia()]);
@@ -685,7 +681,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                             {(sub.deducciones || []).length > 0 && (
                               <div data-total-deducciones className="mt-1.5 flex items-center justify-between rounded-lg px-2 py-1.5 border text-[12px]" style={{ borderColor: LINE, background: "#fff" }}>
                                 <span className="font-bold" style={{ color: NAVY }}>Total deducciones</span>
-                                <span className="font-bold">{totalDeducciones(f.unidad, sub)} {f.unidad}</span>
+                                <span className="font-bold">{formatNum(totalDeducciones(f.unidad, sub), 0, 3)} {f.unidad}</span>
                               </div>
                             )}
                           </>

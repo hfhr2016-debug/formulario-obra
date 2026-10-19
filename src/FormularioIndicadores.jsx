@@ -13,6 +13,7 @@ import { useFaltantes } from "./sstFaltantes";
 import { decidirDistribucion, fechaHoyISO } from "./sstBase";
 import { ChipsOpcion } from "./sstControles";
 import { TraerDeFicha } from "./sstComunes";
+import { formatNum } from "./formatoNumeros";
 
 const CLAVE_BORRADOR = "ryr_borrador_indicadores";
 const CLAVE_INDICADORES = "ryr_sst_indicadores";             // los datos de cada año: para seguir llenando mes a mes
@@ -24,7 +25,7 @@ function datosIniciales() {
 function tieneContenido(d) {
   return !!(d.contratista || d.anio || d.responsable || d.analisis || d.elaboroNombre || d.revisoNombre || d.voboNombre || mesesConDatos(d).length);
 }
-const f = (v, dec = 2) => (v === null || v === undefined ? "—" : Number(v).toLocaleString("es-CO", { minimumFractionDigits: dec, maximumFractionDigits: dec }));
+const f = (v, dec = 2) => (v === null || v === undefined ? "—" : formatNum(Number(v), dec, dec));
 const pct = (v) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)} %`);
 
 export default function FormularioIndicadores({ onVolver }) {
