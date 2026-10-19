@@ -1680,7 +1680,7 @@ function AjustesNumeros({ cerrar }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.55)" }} data-ajustes-numeros>
       <div className="bg-white rounded-xl p-4 w-full max-w-sm max-h-[90vh] overflow-auto">
         <div className="flex items-center justify-between mb-3">
-          <div className="font-bold text-[15px]" style={{ color: "#1B2A45" }}>⚙️ Configuración</div>
+          <div className="font-bold text-[15px]" style={{ color: "#1B2A45" }}>Configuración</div>
           <button type="button" onClick={cerrar} data-cerrar-ajustes className="text-[18px] px-2">✕</button>
         </div>
         <div className="text-[12px] font-bold mb-2 pb-1 border-b" style={{ color: "#17365D" }}>Formato de números</div>
@@ -1756,15 +1756,15 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
               const est = { borderColor: LINE, color: NAVY };
               return (
                 <div className="flex-1">
-                  {perfil?.esAdmin && <button type="button" data-menu-usuarios className={item} style={est} onClick={() => { setMenu(false); onIrAdmin && onIrAdmin(); }}><span>👥</span> Administrar usuarios</button>}
-                  {perfil?.esAdmin && onIrCatalogos && <button type="button" data-menu-catalogos className={item} style={est} onClick={() => { setMenu(false); onIrCatalogos(); }}><span>📚</span> Catálogos</button>}
-                  <button type="button" data-menu-config className={item} style={est} onClick={() => { setMenu(false); setVerAjustes(true); }}><span>⚙️</span> Configuración</button>
-                  <button type="button" data-menu-manual className={item} style={est} onClick={() => { setMenu(false); setVerManual(true); }}><span>📖</span> Manual de usuario</button>
+                  {perfil?.esAdmin && <button type="button" data-menu-usuarios className={item} style={est} onClick={() => { setMenu(false); onIrAdmin && onIrAdmin(); }}>Administrar usuarios</button>}
+                  {perfil?.esAdmin && onIrCatalogos && <button type="button" data-menu-catalogos className={item} style={est} onClick={() => { setMenu(false); onIrCatalogos(); }}>Catálogos</button>}
+                  <button type="button" data-menu-config className={item} style={est} onClick={() => { setMenu(false); setVerAjustes(true); }}>Configuración</button>
+                  <button type="button" data-menu-manual className={item} style={est} onClick={() => { setMenu(false); setVerManual(true); }}>Manual de usuario</button>
                   <div className="border-b" style={{ borderColor: LINE }}>
                     <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="w-full text-left px-4 py-3 text-[14px]" style={{ color: NAVY }} />
                   </div>
-                  <button type="button" data-menu-acerca className={item} style={est} onClick={() => { setMenu(false); setVerAcerca(true); }}><span>ℹ️</span> Acerca de</button>
-                  <button type="button" data-menu-salir className={item} style={{ borderColor: LINE, color: "#B3261E" }} onClick={() => { setMenu(false); onCerrarSesion && onCerrarSesion(); }}><span>🚪</span> Cerrar sesión</button>
+                  <button type="button" data-menu-acerca className={item} style={est} onClick={() => { setMenu(false); setVerAcerca(true); }}>Acerca de</button>
+                  <button type="button" data-menu-salir className={item} style={{ borderColor: LINE, color: "#B3261E" }} onClick={() => { setMenu(false); onCerrarSesion && onCerrarSesion(); }}>Cerrar sesión</button>
                 </div>
               );
             })()}
