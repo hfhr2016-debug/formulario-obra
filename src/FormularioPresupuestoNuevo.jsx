@@ -391,43 +391,51 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
           const AZUL = "FF1F3864", CLARO = "FFEAF0F6";
           const borde = { style: "thin", color: { argb: "FFBFC9D9" } };
           const bordes = { top: borde, left: borde, bottom: borde, right: borde };
+          const clonar = (o) => JSON.parse(JSON.stringify(o || {}));
+          const enPlantilla = textoCelda(ws.getCell(528, c0).value).trim() !== "";   // plantilla con el resumen ya diseñado
+          // Estilos de la plantilla (títulos y filas modelo) antes de escribir
+          const modeloDato = [], modeloTotal = [];
+          for (let k = 0; k <= 6; k++) { modeloDato.push(clonar(ws.getCell(530, c0 + k).style)); modeloTotal.push(clonar(ws.getCell(532, c0 + k).style)); }
           let r = 528;
-          const t = ws.getCell(r, c0);
-          t.value = "RESUMEN POR CAPÍTULO";
-          ws.mergeCells(r, c0, r, c0 + 6);
-          t.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
-          t.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL } };
-          t.alignment = { horizontal: "center", vertical: "middle" };
-          r++;
-          [[c0 + 2, "Capítulo"], [c0 + 6, "Subtotal"]].forEach(([col, txt]) => { ws.getCell(r, col).value = txt; });
-          for (let k = 0; k <= 6; k++) {
-            const c = ws.getCell(r, c0 + k);
-            c.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
-            c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL } };
-            c.alignment = { horizontal: "center", vertical: "middle" }; c.border = bordes;
+          if (!enPlantilla) {
+            const t = ws.getCell(r, c0);
+            t.value = "RESUMEN POR CAPÍTULO";
+            ws.mergeCells(r, c0, r, c0 + 6);
+            t.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+            t.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL } };
+            t.alignment = { horizontal: "center", vertical: "middle" };
+            ws.getCell(r + 1, c0 + 2).value = "Capítulo"; ws.getCell(r + 1, c0 + 6).value = "Subtotal";
+            for (let k = 0; k <= 6; k++) {
+              const c = ws.getCell(r + 1, c0 + k);
+              c.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+              c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL } };
+              c.alignment = { horizontal: "center", vertical: "middle" }; c.border = bordes;
+            }
           }
+          r++;
           const primera = r + 1;
+          const poner = (fila, modelo, extra) => {
+            for (let k = 0; k <= 6; k++) {
+              const c = ws.getCell(fila, c0 + k);
+              if (enPlantilla) c.style = clonar(modelo[k]);
+              else {
+                c.font = { name: "Calibri", size: 10, bold: !!extra }; c.border = bordes;
+                if (extra) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CLARO } };
+                c.alignment = { vertical: "middle", horizontal: k === 6 ? "right" : "left" };
+              }
+            }
+            ws.getCell(fila, c0 + 6).numFmt = '"$" #,##0.00';
+          };
           capitulos.forEach((cap) => {
             r++;
             ws.getCell(r, c0 + 2).value = cap;
             ws.getCell(r, c0 + 6).value = { formula: "SUMIF($B$14:$B$512,C" + r + ",$G$14:$G$512)" };
-            for (let k = 0; k <= 6; k++) {
-              const c = ws.getCell(r, c0 + k);
-              c.font = { name: "Calibri", size: 10 }; c.border = bordes;
-              c.alignment = { vertical: "middle", horizontal: k === 6 ? "right" : "left" };
-            }
-            ws.getCell(r, c0 + 6).numFmt = '"$" #,##0.00';
+            poner(r, modeloDato, false);
           });
           r++;
           ws.getCell(r, c0 + 2).value = "TOTAL";
           ws.getCell(r, c0 + 6).value = { formula: "SUM(G" + primera + ":G" + (r - 1) + ")" };
-          for (let k = 0; k <= 6; k++) {
-            const c = ws.getCell(r, c0 + k);
-            c.font = { name: "Calibri", size: 10, bold: true }; c.border = bordes;
-            c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CLARO } };
-            c.alignment = { vertical: "middle", horizontal: k === 6 ? "right" : "left" };
-          }
-          ws.getCell(r, c0 + 6).numFmt = '"$" #,##0.00';
+          poner(r, modeloTotal, true);
         }
       } catch (e) { console.error("No se pudo escribir el resumen por capítulo", e); }
 
