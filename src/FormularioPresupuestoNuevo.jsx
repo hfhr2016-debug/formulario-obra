@@ -331,6 +331,54 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
         fila++;
       });
 
+      // Resumen por capítulo: debajo del presupuesto, con las mismas columnas (Capítulo en C, Subtotal en G)
+      try {
+        const capitulos = [];
+        filas.forEach((f) => { if (f.actividad && (numES(f.cantidad) || numES(f.precio)) && f.capitulo && !capitulos.includes(f.capitulo)) capitulos.push(f.capitulo); });
+        if (capitulos.length) {
+          const AZUL = "FF1F3864", CLARO = "FFEAF0F6";
+          const borde = { style: "thin", color: { argb: "FFBFC9D9" } };
+          const bordes = { top: borde, left: borde, bottom: borde, right: borde };
+          let r = 528;
+          const t = ws.getCell(r, c0);
+          t.value = "RESUMEN POR CAPÍTULO";
+          ws.mergeCells(r, c0, r, c0 + 6);
+          t.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+          t.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL } };
+          t.alignment = { horizontal: "center", vertical: "middle" };
+          r++;
+          [[c0 + 2, "Capítulo"], [c0 + 6, "Subtotal"]].forEach(([col, txt]) => { ws.getCell(r, col).value = txt; });
+          for (let k = 0; k <= 6; k++) {
+            const c = ws.getCell(r, c0 + k);
+            c.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+            c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AZUL } };
+            c.alignment = { horizontal: "center", vertical: "middle" }; c.border = bordes;
+          }
+          const primera = r + 1;
+          capitulos.forEach((cap) => {
+            r++;
+            ws.getCell(r, c0 + 2).value = cap;
+            ws.getCell(r, c0 + 6).value = { formula: "SUMIF($B$14:$B$512,C" + r + ",$G$14:$G$512)" };
+            for (let k = 0; k <= 6; k++) {
+              const c = ws.getCell(r, c0 + k);
+              c.font = { name: "Calibri", size: 10 }; c.border = bordes;
+              c.alignment = { vertical: "middle", horizontal: k === 6 ? "right" : "left" };
+            }
+            ws.getCell(r, c0 + 6).numFmt = '"$" #,##0.00';
+          });
+          r++;
+          ws.getCell(r, c0 + 2).value = "TOTAL";
+          ws.getCell(r, c0 + 6).value = { formula: "SUM(G" + primera + ":G" + (r - 1) + ")" };
+          for (let k = 0; k <= 6; k++) {
+            const c = ws.getCell(r, c0 + k);
+            c.font = { name: "Calibri", size: 10, bold: true }; c.border = bordes;
+            c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CLARO } };
+            c.alignment = { vertical: "middle", horizontal: k === 6 ? "right" : "left" };
+          }
+          ws.getCell(r, c0 + 6).numFmt = '"$" #,##0.00';
+        }
+      } catch (e) { console.error("No se pudo escribir el resumen por capítulo", e); }
+
       if (ocultarSinUsar) {
         for (let r = fila; r <= 513; r++) {
           ws.getRow(r).hidden = true;
