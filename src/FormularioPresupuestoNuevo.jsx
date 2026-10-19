@@ -269,7 +269,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       const metros = numES(sub.metros);
       bruta = (denom && PESO_ACERO_KG_POR_METRO[denom] ? metros * PESO_ACERO_KG_POR_METRO[denom] : 0) * numElem * factor;
     } else if (unidadNecesitaAlto(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem * factor;
-    else if (unidadEsArea(unidad)) bruta = largo * (ancho || 1) * numElem * factor;
+    else if (unidadEsArea(unidad)) bruta = largo * (ancho || alto || 1) * numElem * factor;   // en m²: Largo × Ancho, o Largo × Alto (muros)
     else if (unidadEsLineal(unidad)) bruta = largo * numElem * factor;
     const dedTotal = (sub.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
     return Math.round(Math.max(0, bruta - dedTotal) * 1000) / 1000;
@@ -523,8 +523,8 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                             {!unidadEsLineal(f.unidad) && (
                               <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho || ""} onChange={(e) => actualizarSub(i, si, { ancho: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                             )}
-                            {unidadNecesitaAlto(f.unidad) && (
-                              <input placeholder="Alto" type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizarSub(i, si, { alto: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            {(unidadNecesitaAlto(f.unidad) || unidadEsArea(f.unidad)) && (
+                              <input placeholder="Alto" data-medicion-alto type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizarSub(i, si, { alto: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                             )}
                           </div>
                         )}
