@@ -1737,6 +1737,8 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
           </button>
         )}
         <div className="text-white font-bold text-[20px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
+        <div className="text-white/90 text-[13px] mt-0.5" data-saludo>{saludoUsuario(perfil)}</div>
+        <div className="text-white/70 text-[11.5px] capitalize" data-fecha>{new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
       </div>
 
       {menu && (
