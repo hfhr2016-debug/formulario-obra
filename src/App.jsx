@@ -1737,8 +1737,14 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
           </button>
         )}
         <div className="text-white font-bold text-[20px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
-        <div className="text-white/90 text-[13px] mt-0.5" data-saludo>{saludoUsuario(perfil)}</div>
-        <div className="text-white/70 text-[11.5px] capitalize" data-fecha>{new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+        {perfil && (
+          <div data-saludo className="text-[20px] md:text-[22px] font-bold mt-0.5 md:mt-1.5" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
+            {saludoUsuario(perfil)}
+          </div>
+        )}
+        <div data-fecha className="text-[11.5px] mt-0.5" style={{ color: GOLD }}>
+          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())}
+        </div>
       </div>
 
       {menu && (
