@@ -186,6 +186,11 @@ export function actividadesVigentes() {
   if (raw) {
     try {
       const m = JSON.parse(raw);
+      // Actividades nuevas del código (marcadas «nueva»): se agregan UNA vez al catálogo guardado; si luego se borran, no vuelven.
+      if (m && typeof m === "object" && !Array.isArray(m) && incorporarNuevas(m)) {
+        guardar(ACTIVIDADES.clave, m);
+        try { raw = localStorage.getItem(ACTIVIDADES.clave); } catch (e) { /* queda el anterior */ }
+      }
       const items = Object.values(m && typeof m === "object" ? m : {}).filter((x) => x && txt(x.actividad) && x.tipo);
       if (items.length) valor = ordenarAct(items);
     } catch (e) { /* queda el del código */ }
@@ -195,6 +200,21 @@ export function actividadesVigentes() {
   return valor;
 }
 const mapaAct = () => leer(ACTIVIDADES.clave);
+const MARCA_NUEVAS = "__nuevas_actividades_v1";
+function incorporarNuevas(m) {
+  if (m[MARCA_NUEVAS]) return false;
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return false;   // sin catálogo propio se usa el del código completo
+  const existentes = new Set(Object.values(m).filter((x) => x && txt(x.actividad) && x.tipo).map(clavAct));
+  const llaves = llavesDeLaBase();
+  CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => {
+    if (!it.nueva || existentes.has(clavAct(it))) return;
+    const { nueva, ...datos } = it;
+    let k = llaves[i]; while (m[k]) k += "~n";
+    m[k] = { ...datos, orden: ordenParaNueva(m, datos), actualizado: Date.now() };
+  });
+  m[MARCA_NUEVAS] = { nuevasActividades: 1, actualizado: Date.now() };
+  return true;
+}
 // Para los formularios que solo necesitan elegir una actividad (Acta, Memoria, Semanal, Mensual): nombres del catálogo vigente del tipo de proyecto, sin repetir.
 export function listaActividadesTipo(tipo) {
   const vistos = new Set(); const lista = [];
