@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
+import { aplicarBandas } from "./bandasFilas";
 import { escribirMemoria, leerMemoria, NOMBRE_HOJA_MEMORIA } from "./memoriaCalculo";
 
 function numES(v) {
@@ -509,6 +510,7 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
       }
 
       estilarEscritos(workbook, fotoEstilo);
+      aplicarBandas(ws, 9, fila - 1, 1, 28);
 
       try { escribirMemoria(workbook, bloquesMemoria, { proyecto, fecha: aFechaDDMMYYYY(fechaLocalHoy()) }); }
       catch (e) { console.error("No se pudo escribir la hoja de memoria de cálculo", e); }
