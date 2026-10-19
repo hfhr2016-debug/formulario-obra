@@ -32,6 +32,13 @@ function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); retu
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
 function unidadEsLineal(unidad) { const u=(unidad||"").toLowerCase(); return u==='ml'||u==='m'; }
 
+// La plantilla empieza en la columna A; si alguien le insertó columnas, se busca dónde quedó «Tipo de Proyecto» para escribir en el lugar correcto.
+function textoCelda(v) { if (v && typeof v === "object") return String(v.text || (v.richText ? v.richText.map((x) => x.text).join("") : "") || ""); return String(v ?? ""); }
+function columnaInicial(ws) {
+  try { for (let c = 1; c <= 8; c++) if (textoCelda(ws.getCell(13, c).value).trim().toLowerCase() === "tipo de proyecto") return c; } catch (e) { /* si no se encuentra, la A */ }
+  return 1;
+}
+
 const NAVY = "#1B2A45";
 const GOLD = "#D9A233";
 const PAPER = "#F7F7F5";
@@ -216,15 +223,16 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       if (!ws) throw new Error("No se encontró la hoja Presupuesto");
 
       const nuevasFilas = [];
+      const c0 = columnaInicial(ws);
       for (let r = 14; r <= 513; r++) {
-        const act = ws.getCell(`C${r}`).value;
+        const act = ws.getCell(r, c0 + 2).value;
         if (!act) continue;
         nuevasFilas.push({
-          actividad: String(act),
-          capitulo: ws.getCell(`B${r}`).value || "",
-          unidad: ws.getCell(`D${r}`).value || "",
-          cantidad: String(ws.getCell(`E${r}`).value || ""),
-          precio: String(ws.getCell(`F${r}`).value || ""),
+          actividad: textoCelda(act),
+          capitulo: textoCelda(ws.getCell(r, c0 + 1).value),
+          unidad: textoCelda(ws.getCell(r, c0 + 3).value),
+          cantidad: String(ws.getCell(r, c0 + 4).value || ""),
+          precio: String(ws.getCell(r, c0 + 5).value || ""),
           subs: [],
         });
       }
@@ -306,17 +314,18 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       const fotoEstilo = fotoLibro(workbook);
       const ws = workbook.getWorksheet("Presupuesto");
 
-      ws.getCell("G6").value = aFechaDDMMYYYY(fechaLocalHoy());
+      const c0 = columnaInicial(ws);
+      ws.getCell(6, c0 + 6).value = aFechaDDMMYYYY(fechaLocalHoy());
 
       let fila = 14;
       filas.forEach((f) => {
         if (!f.actividad || (!numES(f.cantidad) && !numES(f.precio))) return;
-        ws.getCell(`A${fila}`).value = nombresTipo[tipoActivo];
-        ws.getCell(`B${fila}`).value = f.capitulo;
-        ws.getCell(`C${fila}`).value = f.actividad;
-        ws.getCell(`D${fila}`).value = f.unidad;
-        ws.getCell(`E${fila}`).value = numES(f.cantidad) || 0;
-        ws.getCell(`F${fila}`).value = numES(f.precio) || 0;
+        ws.getCell(fila, c0).value = nombresTipo[tipoActivo];
+        ws.getCell(fila, c0 + 1).value = f.capitulo;
+        ws.getCell(fila, c0 + 2).value = f.actividad;
+        ws.getCell(fila, c0 + 3).value = f.unidad;
+        ws.getCell(fila, c0 + 4).value = numES(f.cantidad) || 0;
+        ws.getCell(fila, c0 + 5).value = numES(f.precio) || 0;
         fila++;
       });
 
@@ -496,7 +505,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                             <select
                               value={sub.denominacion || ""}
                               onChange={(e) => actualizarSub(i, si, { denominacion: e.target.value })}
-                              className="border rounded px-2 py-1.5 text-[12px]"
+                              className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]"
                               style={{ borderColor: LINE }}
                             >
                               <option value="">Denominación de varilla</option>
@@ -504,23 +513,23 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                                 <option key={d} value={d}>{d} — {PESO_ACERO_KG_POR_METRO[d]} kg/m</option>
                               ))}
                             </select>
-                            <input placeholder="Metros lineales" type="text" inputMode="decimal" value={sub.metros || ""} onChange={(e) => actualizarSub(i, si, { metros: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            <input placeholder="Metros lineales" type="text" inputMode="decimal" value={sub.metros || ""} onChange={(e) => actualizarSub(i, si, { metros: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                           </div>
                         ) : (unidadNecesitaAlto(f.unidad) || unidadEsArea(f.unidad) || unidadEsLineal(f.unidad)) && (
                           <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-                            <input placeholder="Largo" type="text" inputMode="decimal" value={sub.largo || ""} onChange={(e) => actualizarSub(i, si, { largo: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                            <input placeholder="Largo" type="text" inputMode="decimal" value={sub.largo || ""} onChange={(e) => actualizarSub(i, si, { largo: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                             {!unidadEsLineal(f.unidad) && (
-                              <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho || ""} onChange={(e) => actualizarSub(i, si, { ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                              <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho || ""} onChange={(e) => actualizarSub(i, si, { ancho: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                             )}
                             {unidadNecesitaAlto(f.unidad) && (
-                              <input placeholder="Alto" type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizarSub(i, si, { alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                              <input placeholder="Alto" type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizarSub(i, si, { alto: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                             )}
                           </div>
                         )}
 
                         <div className="grid grid-cols-2 gap-1.5 mb-1">
-                          <input placeholder="N° elem." type="text" inputMode="decimal" value={sub.numElem || ""} onChange={(e) => actualizarSub(i, si, { numElem: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                          <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={sub.factor || ""} onChange={(e) => actualizarSub(i, si, { factor: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                          <input placeholder="N° elem." type="text" inputMode="decimal" value={sub.numElem || ""} onChange={(e) => actualizarSub(i, si, { numElem: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                          <input placeholder="Factor de desperdicio" type="text" inputMode="decimal" value={sub.factor || ""} onChange={(e) => actualizarSub(i, si, { factor: e.target.value })} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                         </div>
                         {sub.factor && (
                           <div className="text-[10px] text-gray-500 mb-1">⚡ Factor sugerido según desperdicio típico — ajústalo si tu caso es distinto.</div>
@@ -528,24 +537,23 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
 
                         {!esActividadAcero(f.actividad) && (
                           <>
-                            <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional):</div>
-                            {(sub.deducciones || []).map((d, di) => (
-                              <div key={di} className="flex gap-1.5 mb-1 items-center">
-                                <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
-                                  const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
-                                  actualizarSub(i, si, { deducciones: nuevas });
-                                }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                                <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
-                                  const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
-                                  actualizarSub(i, si, { deducciones: nuevas });
-                                }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                                <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
-                                  const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
-                                  actualizarSub(i, si, { deducciones: nuevas });
-                                }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-                                <button type="button" onMouseDown={() => actualizarSub(i, si, { deducciones: (sub.deducciones || []).filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
+                            <div className="text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Deducciones (opcional) <span className="font-normal text-gray-500">— medidas que se descuentan</span></div>
+                            {(sub.deducciones || []).length > 0 && (
+                              <div className="grid gap-1.5 mb-0.5 text-[10px] text-gray-500" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 24px" }}>
+                                <span>Largo</span><span>Ancho</span><span>Alto</span><span></span>
                               </div>
-                            ))}
+                            )}
+                            {(sub.deducciones || []).map((d, di) => {
+                              const cambiar = (campo, valor) => { const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], [campo]: valor }; actualizarSub(i, si, { deducciones: nuevas }); };
+                              return (
+                                <div key={di} data-deduccion className="grid gap-1.5 mb-1 items-center" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 24px" }}>
+                                  <input placeholder="Largo" type="text" inputMode="decimal" value={d.largo} onChange={(e) => cambiar("largo", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                                  <input placeholder="Ancho" type="text" inputMode="decimal" value={d.ancho} onChange={(e) => cambiar("ancho", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                                  <input placeholder="Alto" type="text" inputMode="decimal" value={d.alto} onChange={(e) => cambiar("alto", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                                  <button type="button" onMouseDown={() => actualizarSub(i, si, { deducciones: (sub.deducciones || []).filter((_, k) => k !== di) })} className="text-[12px] text-red-500 text-center" aria-label="Quitar deducción">✕</button>
+                                </div>
+                              );
+                            })}
                             <button
                               type="button"
                               onMouseDown={() => actualizarSub(i, si, { deducciones: [...(sub.deducciones || []), { largo: "", ancho: "", alto: "" }] })}
@@ -568,27 +576,41 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                   </div>
                 )}
 
-                <div className="flex flex-wrap gap-1.5">
-                  <input
-                    placeholder="Cantidad"
-                    type="text" inputMode="decimal"
-                    value={f.cantidad}
-                    onChange={(e) => actualizarFila(i, { cantidad: e.target.value })}
-                    className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"
-                    style={{ borderColor: LINE }}
-                  />
-                  <input
-                    placeholder="Precio Unitario"
-                    type="text" inputMode="decimal"
-                    value={f.precio}
-                    onChange={(e) => actualizarFila(i, { precio: e.target.value, precioDeAPU: false })}
-                    className="flex-1 border rounded px-2 py-1.5 text-[12.5px]"
-                    style={{ borderColor: LINE }}
-                  />
-                  <div className="flex-1 text-[12px] text-right font-medium pt-1.5" style={{ color: NAVY }}>
-                    {formatoMoneda((numES(f.cantidad) || 0) * (numES(f.precio) || 0))}
+                <div className="rounded-lg border p-2.5" style={{ borderColor: LINE, background: PAPER }} data-totales>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="text-[12.5px] font-bold shrink-0" style={{ color: NAVY, width: 112 }}>Total</div>
+                    <input
+                      placeholder="Cantidad"
+                      aria-label="Total de la cantidad"
+                      type="text" inputMode="decimal"
+                      value={f.cantidad}
+                      onChange={(e) => actualizarFila(i, { cantidad: e.target.value })}
+                      className="flex-1 min-w-0 border rounded px-2 py-1.5 text-[14px] font-bold text-right"
+                      style={{ borderColor: LINE, color: NAVY }}
+                    />
+                    <div className="text-[12.5px] font-bold shrink-0 w-10" style={{ color: NAVY }} data-unidad-total>{f.unidad}</div>
                   </div>
-                  {f.precioDeAPU && <div className="basis-full text-[10.5px] text-gray-500" data-precio-apu>Precio unitario traído del APU de esta actividad (puedes cambiarlo).</div>}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="text-[12px] font-semibold shrink-0" style={{ color: NAVY, width: 112 }}>Precio Unitario</div>
+                    <input
+                      placeholder="Precio Unitario"
+                      type="text" inputMode="decimal"
+                      value={f.precio}
+                      onChange={(e) => actualizarFila(i, { precio: e.target.value, precioDeAPU: false })}
+                      className="flex-1 min-w-0 border rounded px-2 py-1.5 text-[13px] text-right"
+                      style={{ borderColor: LINE }}
+                    />
+                    <div className="text-[11px] text-gray-500 shrink-0 w-10">{f.unidad ? "/ " + f.unidad : ""}</div>
+                  </div>
+                  {f.precioDeAPU
+                    ? <div className="text-[10.5px] mb-1.5" style={{ color: "#2E7D32" }} data-precio-apu>✓ Precio unitario traído del APU de esta actividad (puedes cambiarlo).</div>
+                    : (!f.precio && <div className="text-[10.5px] text-gray-500 mb-1.5" data-sin-apu>Esta actividad aún no tiene APU guardado: escribe el precio o crea el APU y se cargará solo.</div>)}
+                  <div className="flex items-center gap-2 pt-1.5 border-t" style={{ borderColor: LINE }}>
+                    <div className="text-[12.5px] font-bold shrink-0" style={{ color: NAVY, width: 112 }}>Valor Total</div>
+                    <div className="flex-1 text-right text-[15px] font-bold" style={{ color: NAVY }} data-valor-total>
+                      {formatoMoneda((numES(f.cantidad) || 0) * (numES(f.precio) || 0))}
+                    </div>
+                  </div>
                 </div>
               </>
             )}

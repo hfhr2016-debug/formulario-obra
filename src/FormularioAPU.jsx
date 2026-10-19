@@ -1106,9 +1106,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
               ⚡ Rendimiento sugerido: {rendimientoBase} {actividad.unidad}/jornada por cuadrilla (promedio del sector — ajústalo según tu experiencia)
             </div>
           )}
-          {actividad && buscarPorNombre(DESPERDICIO_REFERENCIA, actividad.actividad) !== undefined && (
+          {actividad && DESPERDICIO_REFERENCIA[actividad.actividad] !== undefined && (
             <div className="text-[11px] mt-1" style={{ color: GOLD }}>
-              ⚡ Desperdicio típico de esta actividad: ~{(buscarPorNombre(DESPERDICIO_REFERENCIA, actividad.actividad) * 100).toFixed(0)}% — considera aumentarlo en las cantidades de materiales de abajo.
+              ⚡ Desperdicio típico de esta actividad: ~{(DESPERDICIO_REFERENCIA[actividad.actividad] * 100).toFixed(0)}% — considera aumentarlo en las cantidades de materiales de abajo.
             </div>
           )}
         </Campo>
