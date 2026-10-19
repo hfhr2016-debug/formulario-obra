@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
+import { escribirMemoria, leerMemoria, NOMBRE_HOJA_MEMORIA } from "./memoriaCalculo";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -29,6 +30,15 @@ const PESO_ACERO_KG_POR_METRO = {
 };
 function esActividadAcero(nombre) { return /acero/i.test(nombre || ""); }
 function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
+// Valor de UNA deducción según la unidad: m³ = L×A×H, m² = L×(Ancho o Alto), lineal = L
+function valorDeduccion(unidad, d) {
+  const u = (unidad || "").toLowerCase();
+  const l = numES(d.largo) || 0, an = numES(d.ancho) || 0, h = numES(d.alto) || 0;
+  if (u === "m³" || u === "m3") return l * (an || 1) * (h || 1);
+  if (u === "m²" || u === "m2") return l * (an || h || 1);
+  return l;
+}
+function totalDeducciones(unidad, sub) { return Math.round((sub.deducciones || []).reduce((acc, d) => acc + valorDeduccion(unidad, d), 0) * 1000) / 1000; }
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
 function unidadEsLineal(unidad) { const u=(unidad||"").toLowerCase(); return u==='ml'||u==='m'; }
 
@@ -224,6 +234,8 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
 
       const nuevasFilas = [];
       const c0 = columnaInicial(ws);
+      let memoria = new Map();
+      try { memoria = leerMemoria(workbook.getWorksheet(NOMBRE_HOJA_MEMORIA)); } catch (e) { /* archivo sin hoja de memoria */ }
       for (let r = 14; r <= 513; r++) {
         const act = ws.getCell(r, c0 + 2).value;
         if (!act) continue;
@@ -233,7 +245,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
           unidad: textoCelda(ws.getCell(r, c0 + 3).value),
           cantidad: String(ws.getCell(r, c0 + 4).value || ""),
           precio: String(ws.getCell(r, c0 + 5).value || ""),
-          subs: [],
+          subs: (memoria.get("P-" + String(r).padStart(3, "0")) || []).map((m) => ({ ubicacion: m.ubicacion, largo: m.largo, ancho: m.ancho, alto: m.alto, numElem: m.numElem, factor: m.factor, deducciones: m.deducciones, denominacion: "", metros: "" })),
         });
       }
       setFilas(nuevasFilas.length ? nuevasFilas : [filaVacia()]);
@@ -257,7 +269,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
     setFilas(nuevas);
   };
 
-  function calcularSub(unidad, actividad, sub) {
+  function brutaSub(unidad, actividad, sub) {
     const largo = numES(sub.largo);
     const ancho = numES(sub.ancho);
     const alto = numES(sub.alto);
@@ -271,8 +283,11 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
     } else if (unidadNecesitaAlto(unidad)) bruta = largo * (ancho || 1) * (alto || 1) * numElem * factor;
     else if (unidadEsArea(unidad)) bruta = largo * (ancho || alto || 1) * numElem * factor;   // en m²: Largo × Ancho, o Largo × Alto (muros)
     else if (unidadEsLineal(unidad)) bruta = largo * numElem * factor;
-    const dedTotal = (sub.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-    return Math.round(Math.max(0, bruta - dedTotal) * 1000) / 1000;
+    return bruta;
+  }
+  function calcularSub(unidad, actividad, sub) {
+    const dedTotal = totalDeducciones(unidad, sub);
+    return Math.round(Math.max(0, brutaSub(unidad, actividad, sub) - dedTotal) * 1000) / 1000;
   }
 
   const actualizarSub = (i, si, cambios) => {
@@ -303,6 +318,29 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
     [filas]
   );
 
+  function armarBloqueMemoria(f, fila) {
+    const id = "P-" + String(fila).padStart(3, "0");
+    const subsConDatos = (f.subs || []).filter((sb) => calcularSub(f.unidad, f.actividad, sb) > 0 || brutaSub(f.unidad, f.actividad, sb) > 0);
+    if (!subsConDatos.length) {
+      return { id, capitulo: f.capitulo, actividad: f.actividad, unidad: f.unidad, subs: [{ tipo: "manual", final: numES(f.cantidad) || 0 }] };
+    }
+    return {
+      id, capitulo: f.capitulo, actividad: f.actividad, unidad: f.unidad,
+      subs: subsConDatos.map((sb) => {
+        const acero = esActividadAcero(f.actividad);
+        return {
+          ubicacion: sb.ubicacion || "", tipo: acero ? "acero" : "dim",
+          largo: numES(sb.largo) || 0, ancho: numES(sb.ancho) || 0, alto: numES(sb.alto) || 0,
+          numElem: numES(sb.numElem) || 1, factor: numES(sb.factor) || 1,
+          metros: numES(sb.metros) || 0, kgPorMetro: (sb.denominacion && PESO_ACERO_KG_POR_METRO[sb.denominacion]) || 0,
+          bruta: brutaSub(f.unidad, f.actividad, sb),
+          deducciones: acero ? [] : (sb.deducciones || []).filter((d) => (d.nombre || "").trim() || valorDeduccion(f.unidad, d)).map((d) => ({ nombre: d.nombre || "", largo: numES(d.largo) || 0, ancho: numES(d.ancho) || 0, alto: numES(d.alto) || 0, valor: valorDeduccion(f.unidad, d) })),
+          final: calcularSub(f.unidad, f.actividad, sb),
+        };
+      }),
+    };
+  }
+
   async function generarExcel() {
     setGenerando(true);
     try {
@@ -320,8 +358,10 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       try { if (proyecto) ws.getCell(12, c0 + 1).value = proyecto; } catch (e) { /* el nombre del proyecto es opcional */ }
 
       let fila = 14;
+      const bloquesMemoria = [];
       filas.forEach((f) => {
         if (!f.actividad || (!numES(f.cantidad) && !numES(f.precio))) return;
+        try { bloquesMemoria.push(armarBloqueMemoria(f, fila)); } catch (e) { console.error("memoria de cálculo", e); }
         ws.getCell(fila, c0).value = nombresTipo[tipoActivo];
         ws.getCell(fila, c0 + 1).value = f.capitulo;
         ws.getCell(fila, c0 + 2).value = f.actividad;
@@ -386,6 +426,9 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
       }
 
       estilarEscritos(workbook, fotoEstilo);
+
+      try { escribirMemoria(workbook, bloquesMemoria, { proyecto, fecha: aFechaDDMMYYYY(fechaLocalHoy()) }); }
+      catch (e) { console.error("No se pudo escribir la hoja de memoria de cálculo", e); }
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -587,16 +630,17 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
 
                         {!esActividadAcero(f.actividad) && (
                           <>
-                            <div className="text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Deducciones (opcional) <span className="font-normal text-gray-500">— medidas que se descuentan</span></div>
+                            <div className="text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>Deducciones (opcional) <span className="font-normal text-gray-500">— descríbelas (Ventana 1, Puerta…) y quedan en la memoria del Excel</span></div>
                             {(sub.deducciones || []).length > 0 && (
-                              <div className="grid gap-1.5 mb-0.5 text-[10px] text-gray-500" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 24px" }}>
-                                <span>Largo</span><span>Ancho</span><span>Alto</span><span></span>
+                              <div className="grid gap-1.5 mb-0.5 text-[10px] text-gray-500" style={{ gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 22px" }}>
+                                <span>Descripción</span><span>Largo</span><span>Ancho</span><span>Alto</span><span></span>
                               </div>
                             )}
                             {(sub.deducciones || []).map((d, di) => {
                               const cambiar = (campo, valor) => { const nuevas = [...(sub.deducciones || [])]; nuevas[di] = { ...nuevas[di], [campo]: valor }; actualizarSub(i, si, { deducciones: nuevas }); };
                               return (
-                                <div key={di} data-deduccion className="grid gap-1.5 mb-1 items-center" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 24px" }}>
+                                <div key={di} data-deduccion className="grid gap-1.5 mb-1 items-center" style={{ gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 22px" }}>
+                                  <input placeholder="Ej. Ventana 1" data-deduccion-nombre type="text" value={d.nombre || ""} onChange={(e) => cambiar("nombre", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                                   <input placeholder="Largo" type="text" inputMode="decimal" value={d.largo} onChange={(e) => cambiar("largo", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                                   <input placeholder="Ancho" type="text" inputMode="decimal" value={d.ancho} onChange={(e) => cambiar("ancho", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
                                   <input placeholder="Alto" type="text" inputMode="decimal" value={d.alto} onChange={(e) => cambiar("alto", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
@@ -606,12 +650,18 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
                             })}
                             <button
                               type="button"
-                              onMouseDown={() => actualizarSub(i, si, { deducciones: [...(sub.deducciones || []), { largo: "", ancho: "", alto: "" }] })}
+                              onMouseDown={() => actualizarSub(i, si, { deducciones: [...(sub.deducciones || []), { nombre: "", largo: "", ancho: "", alto: "" }] })}
                               className="w-full py-1.5 rounded-lg text-[11px] font-semibold border"
                               style={{ borderColor: GOLD, color: NAVY }}
                             >
                               + Agregar deducción
                             </button>
+                            {(sub.deducciones || []).length > 0 && (
+                              <div data-total-deducciones className="mt-1.5 flex items-center justify-between rounded-lg px-2 py-1.5 border text-[12px]" style={{ borderColor: LINE, background: "#fff" }}>
+                                <span className="font-bold" style={{ color: NAVY }}>Total deducciones</span>
+                                <span className="font-bold">{totalDeducciones(f.unidad, sub)} {f.unidad}</span>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>

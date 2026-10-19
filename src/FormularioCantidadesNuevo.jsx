@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto } from "./MenuLateral";
 import { pedirProyectoFicha } from "./proyectoElegir.js";
+import { escribirMemoria, leerMemoria, NOMBRE_HOJA_MEMORIA } from "./memoriaCalculo";
 
 function numES(v) {
   if (v === null || v === undefined || v === "") return 0;
@@ -53,6 +54,14 @@ function factorDesperdicioSugerido(nombreActividad) {
   return null;
 }
 function unidadNecesitaAlto(unidad) { const u = (unidad||"").toLowerCase(); return u==='m³'||u==='m3'; }
+// Valor de UNA deducción según la unidad: m³ = L×A×H, m² = L×(Ancho o Alto), lineal = L
+function valorDeduccion(unidad, d) {
+  const l = numES(d.largo) || 0, an = numES(d.ancho) || 0, h = numES(d.alto) || 0;
+  if (unidadNecesitaAlto(unidad)) return l * (an || 1) * (h || 1);
+  if (unidadEsArea(unidad)) return l * (an || h || 1);
+  return l;
+}
+function totalDeducciones(unidad, sub) { return Math.round((sub.deducciones || []).reduce((acc, d) => acc + valorDeduccion(unidad, d), 0) * 1000) / 1000; }
 function unidadEsArea(unidad) { const u=(unidad||"").toLowerCase(); return u==='m²'||u==='m2'; }
 function unidadEsLineal(unidad) { const u=(unidad||"").toLowerCase(); return u==='ml'||u==='m'; }
 function esUnidadDirecta(unidad) {
@@ -90,22 +99,25 @@ function catalogoFiltrado() {
   return { tipoActivo, catalogo: filtrado };
 }
 
-function calcularNeta(unidad, sub) {
+function brutaNoAcero(unidad, sub) {
   const L = numES(sub.largo) || 0;
   const An = numES(sub.ancho) || 0;
   const H = numES(sub.alto) || 0;
   const N = numES(sub.numElementos) || 1;
   const R = numES(sub.repeticiones) || 1;
   const F = numES(sub.factor) || 1;
-  const D = (sub.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
   const CD = numES(sub.cantidadDirecta) || 0;
   let bruta = 0;
   if (esUnidadDirecta(unidad)) bruta = CD * N * R * F;
   else if (unidadNecesitaAlto(unidad)) bruta = L * (An||1) * (H||1) * N * R * F;
-  else if (unidadEsArea(unidad)) bruta = L * (An||1) * N * R * F;
+  else if (unidadEsArea(unidad)) bruta = L * (An||H||1) * N * R * F;
   else if (unidadEsLineal(unidad)) bruta = L * N * R * F;
   else bruta = CD * N * R * F;
-  return Math.round(Math.max(0, bruta - D) * 1000) / 1000;
+  return bruta;
+}
+function calcularNeta(unidad, sub) {
+  const D = totalDeducciones(unidad, sub);
+  return Math.round(Math.max(0, brutaNoAcero(unidad, sub) - D) * 1000) / 1000;
 }
 
 function BuscadorActividad({ valor, onSeleccionar, catalogo, placeholder, limpiarTrasSeleccionar }) {
@@ -199,8 +211,8 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) 
           {!unidadEsLineal(unidad) && (
             <input placeholder="Ancho" type="text" inputMode="decimal" value={sub.ancho || ""} onChange={(e) => actualizar({ ...sub, ancho: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           )}
-          {unidadNecesitaAlto(unidad) && (
-            <input placeholder="Alto" type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+          {(unidadNecesitaAlto(unidad) || unidadEsArea(unidad)) && (
+            <input placeholder="Alto" data-medicion-alto type="text" inputMode="decimal" value={sub.alto || ""} onChange={(e) => actualizar({ ...sub, alto: e.target.value })} className="border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
           )}
         </div>
       )}
@@ -215,28 +227,34 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) 
 
       {!directa && (
         <div className="mb-1.5">
-          <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional):</div>
-          {deducciones.map((d, di) => (
-            <div key={di} className="flex gap-1.5 mb-1 items-center">
-              <input placeholder="Largo desc." type="text" inputMode="decimal" value={d.largo} onChange={(e) => {
-                const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], largo: e.target.value };
-                actualizar({ ...sub, deducciones: nuevas });
-              }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-              <input placeholder="Ancho desc." type="text" inputMode="decimal" value={d.ancho} onChange={(e) => {
-                const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], ancho: e.target.value };
-                actualizar({ ...sub, deducciones: nuevas });
-              }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-              <input placeholder="Alto desc." type="text" inputMode="decimal" value={d.alto} onChange={(e) => {
-                const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], alto: e.target.value };
-                actualizar({ ...sub, deducciones: nuevas });
-              }} className="flex-1 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
-              <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: deducciones.filter((_, k) => k !== di) })} className="text-[11px] text-red-500 px-1">✕</button>
+          <div className="text-[10px] text-gray-500 mb-1">Deducciones (opcional) — descríbelas para dejar la memoria del cálculo:</div>
+          {deducciones.length > 0 && (
+            <div className="grid gap-1.5 mb-0.5 text-[10px] text-gray-500" style={{ gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 22px" }}>
+              <span>Descripción</span><span>Largo</span><span>Ancho</span><span>Alto</span><span></span>
             </div>
-          ))}
-          <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: [...deducciones, { largo: "", ancho: "", alto: "" }] })}
+          )}
+          {deducciones.map((d, di) => {
+            const cambiar = (campo, valor) => { const nuevas = [...deducciones]; nuevas[di] = { ...nuevas[di], [campo]: valor }; actualizar({ ...sub, deducciones: nuevas }); };
+            return (
+              <div key={di} data-deduccion className="grid gap-1.5 mb-1 items-center" style={{ gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 22px" }}>
+                <input placeholder="Ej. Ventana 1" data-deduccion-nombre type="text" value={d.nombre || ""} onChange={(e) => cambiar("nombre", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Largo" type="text" inputMode="decimal" value={d.largo} onChange={(e) => cambiar("largo", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Ancho" type="text" inputMode="decimal" value={d.ancho} onChange={(e) => cambiar("ancho", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <input placeholder="Alto" type="text" inputMode="decimal" value={d.alto} onChange={(e) => cambiar("alto", e.target.value)} className="w-full min-w-0 border rounded px-2 py-1.5 text-[12px]" style={{ borderColor: LINE }} />
+                <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: deducciones.filter((_, k) => k !== di) })} className="text-[12px] text-red-500 text-center" aria-label="Quitar deducción">✕</button>
+              </div>
+            );
+          })}
+          <button type="button" onMouseDown={() => actualizar({ ...sub, deducciones: [...deducciones, { nombre: "", largo: "", ancho: "", alto: "" }] })}
             className="w-full py-1.5 rounded-lg text-[11px] font-semibold border" style={{ borderColor: GOLD, color: NAVY }}>
             + Agregar deducción
           </button>
+          {deducciones.length > 0 && (
+            <div data-total-deducciones className="mt-1.5 flex items-center justify-between rounded-lg px-2 py-1.5 border text-[12px]" style={{ borderColor: LINE, background: "#fff" }}>
+              <span className="font-bold" style={{ color: NAVY }}>Total deducciones</span>
+              <span className="font-bold">{totalDeducciones(unidad, sub)} {unidad}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -353,6 +371,8 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
       const ws = workbook.getWorksheet("Cantidades de Obra");
       if (!ws) throw new Error("No se encontró la hoja Cantidades de Obra");
 
+      let memoria = new Map();
+      try { memoria = leerMemoria(workbook.getWorksheet(NOMBRE_HOJA_MEMORIA)); } catch (e) { /* archivo sin hoja de memoria */ }
       const mapaActividades = new Map();
       for (let r = 9; r <= 508; r++) {
         const nombreAct = ws.getCell(`F${r}`).value;
@@ -373,7 +393,12 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
           factor: String(ws.getCell(`R${r}`).value || ""),
           cantidadDirecta: esAcero ? String(ws.getCell(`K${r}`).value || "") : "",
           denominacion: "", metros: "",
-          deducciones: [],
+          // el total de deducciones guardado en el Excel (col. S) se recupera como una sola deducción
+          deducciones: (() => {
+            const idFila = String(ws.getCell(`A${r}`).value || "");
+            const mem = memoria.get(idFila);
+            if (mem && mem[0] && mem[0].deducciones.length) return mem[0].deducciones;   // con su descripción
+            const v = ws.getCell(`S${r}`).value; const n = typeof v === "number" ? v : numES(String(v || "")); return n > 0 ? [{ largo: String(n), ancho: "", alto: "" }] : []; })(),
         };
         mapaActividades.get(claveAct).subs.push(sub);
       }
@@ -414,11 +439,29 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
 
       let fila = 9;
       let contador = 1;
+      const bloquesMemoria = [];
       actividades.forEach((a) => {
         const subs = a.subs || [];
         subs.forEach((s) => {
           const resultado = calcularSub(a.unidad, a.actividad, s);
           ws.getCell(`A${fila}`).value = `MQ-${String(contador).padStart(3, "0")}`;
+          try {
+            const tipoMem = esActividadAcero(a.actividad) ? "acero" : esUnidadDirecta(a.unidad) ? "directa" : "dim";
+            const denomMem = s.denominacion;
+            bloquesMemoria.push({
+              id: `MQ-${String(contador).padStart(3, "0")}`, capitulo: a.capitulo, actividad: a.actividad, unidad: a.unidad,
+              subs: [{
+                ubicacion: s.ubicacion || "", tipo: tipoMem,
+                largo: numES(s.largo) || 0, ancho: numES(s.ancho) || 0, alto: numES(s.alto) || 0,
+                numElem: numES(s.numElementos) || 1, factor: numES(s.factor) || 1,
+                metros: numES(s.metros) || 0, kgPorMetro: (denomMem && PESO_ACERO_KG_POR_METRO[denomMem]) || 0,
+                cantidadDirecta: numES(s.cantidadDirecta) || 0,
+                bruta: tipoMem === "acero" ? resultado : brutaNoAcero(a.unidad, s),
+                deducciones: tipoMem === "dim" ? (s.deducciones || []).filter((d) => (d.nombre || "").trim() || valorDeduccion(a.unidad, d)).map((d) => ({ nombre: d.nombre || "", largo: numES(d.largo) || 0, ancho: numES(d.ancho) || 0, alto: numES(d.alto) || 0, valor: valorDeduccion(a.unidad, d) })) : [],
+                final: resultado,
+              }],
+            });
+          } catch (e) { console.error("memoria de cálculo", e); }
           ws.getCell(`B${fila}`).value = nombresTipo[tipoActivo];
           ws.getCell(`C${fila}`).value = a.capitulo;
           ws.getCell(`F${fila}`).value = a.actividad;
@@ -434,8 +477,9 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
           ws.getCell(`P${fila}`).value = numES(s.numElementos) || 1;
           ws.getCell(`Q${fila}`).value = 1;
           ws.getCell(`R${fila}`).value = numES(s.factor) || 1;
-          const dedTotal = (s.deducciones || []).reduce((acc, d) => acc + (numES(d.largo) || 0) * (numES(d.ancho) || 1) * (numES(d.alto) || 1), 0);
-          ws.getCell(`S${fila}`).value = dedTotal;
+          ws.getCell(`S${fila}`).value = totalDeducciones(a.unidad, s);
+          ws.getCell(`T${fila}`).value = Math.round(((numES(s.factor) || 1) - 1) * 10000) / 100;   // desperdicio %
+          ws.getCell(`U${fila}`).value = resultado;                                                // cantidad neta (ya sin deducciones)
           ws.getCell(`V${fila}`).value = resultado;
           ws.getCell(`AA${fila}`).value = aFechaDDMMYYYY(fechaLocalHoy());
           fila++;
@@ -448,6 +492,9 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
       }
 
       estilarEscritos(workbook, fotoEstilo);
+
+      try { escribirMemoria(workbook, bloquesMemoria, { proyecto, fecha: aFechaDDMMYYYY(fechaLocalHoy()) }); }
+      catch (e) { console.error("No se pudo escribir la hoja de memoria de cálculo", e); }
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
