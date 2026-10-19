@@ -280,7 +280,7 @@ function FilaSub({ sub, actualizar, quitar, mostrarQuitar, unidad, actividad }) 
   );
 }
 
-function TarjetaActividad({ a, actualizar, quitar }) {
+function TarjetaActividad({ a, actualizar, quitar, n, total }) {
   const unidad = a.unidad;
   const subs = a.subs || [subVacio()];
   const totalActividad = useMemo(
@@ -300,7 +300,10 @@ function TarjetaActividad({ a, actualizar, quitar }) {
   const quitarSub = (i) => actualizar({ ...a, subs: subs.filter((_, k) => k !== i) });
 
   return (
-    <div className="border rounded-lg p-2.5 mb-2.5" style={{ borderColor: LINE, background: "white" }}>
+    <div data-tarjeta-actividad={n} className="border rounded-lg p-2.5 mb-5" style={{ borderColor: LINE, borderLeft: "6px solid " + (n % 2 === 0 ? GOLD : NAVY), background: n % 2 === 0 ? "#FFFBF0" : "#F4F7FB", boxShadow: "0 2px 6px rgba(0,0,0,.12)" }}>
+      <div className="flex items-center justify-between -mx-2.5 -mt-2.5 mb-2 px-2.5 py-1 rounded-t-md text-[11px] font-bold tracking-wide" style={{ background: n % 2 === 0 ? GOLD : NAVY, color: n % 2 === 0 ? NAVY : "white" }}>
+        <span>ACTIVIDAD {n} DE {total}</span>
+      </div>
       <div className="flex justify-between items-start mb-2">
         <div>
           <div className="text-[12.5px] font-semibold" style={{ color: NAVY }}>{a.actividad}</div>
@@ -606,12 +609,13 @@ export default function FormularioCantidadesNuevo({ onVolver, onNavegar }) {
         </div>
 
         {actividades.map((a, i) => (
-          <TarjetaActividad key={i} a={a} actualizar={(n) => actualizarActividad(i, n)} quitar={() => quitarActividad(i)} />
+          <TarjetaActividad key={i} n={i + 1} total={actividades.length} a={a} actualizar={(n) => actualizarActividad(i, n)} quitar={() => quitarActividad(i)} />
         ))}
 
         {actividades.length > 0 && (
-          <div className="text-[11.5px] text-center py-2.5 mb-2 rounded-lg" style={{ background: PAPER, color: NAVY }}>
-            ¿Terminaste con esta actividad? ⬆️ Vuelve a buscar arriba para agregar la siguiente.
+          <div className="border-2 border-dashed rounded-lg p-2.5 mb-3" style={{ borderColor: GOLD, background: PAPER }} data-agregar-abajo>
+            <div className="text-[11.5px] font-semibold mb-1.5" style={{ color: NAVY }}>¿Terminaste con esta actividad? Agrega la siguiente aquí mismo:</div>
+            <BuscadorActividad valor="" catalogo={catalogo} placeholder="+ Buscar y agregar otra actividad..." onSeleccionar={agregarActividad} limpiarTrasSeleccionar />
           </div>
         )}
 

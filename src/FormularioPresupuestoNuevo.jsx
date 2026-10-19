@@ -568,7 +568,10 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
         </div>
 
         {filas.map((f, i) => (
-          <div key={i} className="border rounded-lg p-2.5 mb-2" style={{ borderColor: LINE, background: "white" }}>
+          <div key={i} data-tarjeta-actividad={i + 1} className="border rounded-lg p-2.5 mb-5" style={{ borderColor: LINE, borderLeft: "6px solid " + (i % 2 ? GOLD : NAVY), background: i % 2 ? "#FFFBF0" : "#F4F7FB", boxShadow: "0 2px 6px rgba(0,0,0,.12)" }}>
+            <div className="flex items-center justify-between -mx-2.5 -mt-2.5 mb-2 px-2.5 py-1 rounded-t-md text-[11px] font-bold tracking-wide" style={{ background: i % 2 ? GOLD : NAVY, color: i % 2 ? NAVY : "white" }}>
+              <span>ACTIVIDAD {i + 1} DE {filas.length}</span>
+            </div>
             <div className="flex items-start gap-2 mb-2">
               <BuscadorActividad
                 valor={f.actividad}
