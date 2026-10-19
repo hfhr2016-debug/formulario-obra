@@ -1660,6 +1660,7 @@ function saludoUsuario(perfil) {
 }
 
 // Datos de contacto que se muestran en el pie del portal. Se escriben aquí; lo que se deje en "" no aparece.
+const VERSION_APP = "1.0";
 const EMPRESA = { nombre: "Reformas y Remodelaciones", nit: "", direccion: "", telefonos: "", correo: "", web: "" };
 
 const MARCO_DORADO = {
@@ -1679,9 +1680,10 @@ function AjustesNumeros({ cerrar }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.55)" }} data-ajustes-numeros>
       <div className="bg-white rounded-xl p-4 w-full max-w-sm max-h-[90vh] overflow-auto">
         <div className="flex items-center justify-between mb-3">
-          <div className="font-bold text-[15px]" style={{ color: "#1B2A45" }}>Formato de números</div>
+          <div className="font-bold text-[15px]" style={{ color: "#1B2A45" }}>⚙️ Configuración</div>
           <button type="button" onClick={cerrar} data-cerrar-ajustes className="text-[18px] px-2">✕</button>
         </div>
+        <div className="text-[12px] font-bold mb-2 pb-1 border-b" style={{ color: "#17365D" }}>Formato de números</div>
         <div className={fila}><label className="text-[11.5px] font-semibold">Separador de decimales</label>
           <select className={campo} data-aj-decimal value={f.decimal} onChange={(e) => cambiar({ decimal: e.target.value })}><option value=",">Coma (,)</option><option value=".">Punto (.)</option></select></div>
         <div className={fila}><label className="text-[11.5px] font-semibold">Separador de miles</label>
@@ -1705,6 +1707,8 @@ function AjustesNumeros({ cerrar }) {
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const [verManual, setVerManual] = useState(false);
   const [verAjustes, setVerAjustes] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [verAcerca, setVerAcerca] = useState(false);
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
@@ -1715,7 +1719,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
   ];
   const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
   const AZUL_MARINO = "#17365D";   // el mismo azul de los formatos de Gestión Técnica
-  const sombraTexto = "0 1px 3px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.75)";
+  const sombraTexto = "0 1px 2px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,0.95), 0 3px 8px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)";
   return (
     <div
       className="min-h-screen md:h-screen flex flex-col bg-cover bg-center md:overflow-hidden"
@@ -1725,35 +1729,64 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       />
-      {/* Franja superior (azul): nombre de la empresa, saludo y accesos del usuario */}
-      <div className="px-4 pt-2 pb-2 md:pt-3 md:pb-3 text-center shrink-0" style={{ background: NAVY }}>
-        <div className="text-white font-bold text-[18px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          REFORMAS Y REMODELACIONES
-        </div>
+      {/* Franja superior (azul): menú a la izquierda y el nombre de la app */}
+      <div className="px-4 py-2.5 md:py-3 text-center shrink-0 relative" style={{ background: NAVY }}>
         {perfil && (
-          <div className="text-[20px] md:text-[22px] font-bold mt-0.5 md:mt-1.5" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#FFF6E0", WebkitTextStroke: `1.5px ${GOLD}`, paintOrder: "stroke fill", letterSpacing: "0.3px" }}>
-            {saludoUsuario(perfil)}
-          </div>
+          <button type="button" onClick={() => setMenu(true)} data-menu-abrir aria-label="Abrir menú" className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 flex flex-col items-center justify-center gap-[5px] rounded-lg">
+            <span className="block w-6 h-[2.5px] rounded bg-white" /><span className="block w-6 h-[2.5px] rounded bg-white" /><span className="block w-6 h-[2.5px] rounded bg-white" />
+          </button>
         )}
-        <div className="text-[11.5px] mt-0.5" style={{ color: GOLD }}>
-          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase())} <span className="hidden md:inline">· Elige el sistema de gestión que quieres usar</span>
-        </div>
-        {perfil && (
-          <div className="flex items-center justify-center gap-3 mt-1.5 flex-wrap">
-            <span className="text-[10.5px] text-white/70">{perfil.nombre || perfil.correo}</span>
-            {perfil.esAdmin && (
-              <button onClick={onIrAdmin} className="text-[10.5px] underline" style={{ color: GOLD }}>Administrar usuarios</button>
-            )}
-            {perfil.esAdmin && onIrCatalogos && (
-              <button onClick={onIrCatalogos} className="text-[10.5px] underline" style={{ color: GOLD }}>Catálogos</button>
-            )}
-            <button type="button" onClick={() => setVerAjustes(true)} data-ajustes-formato className="text-[10.5px] underline" style={{ color: GOLD }}>⚙ Formato de números</button>
-            <button type="button" onClick={() => setVerManual(true)} data-manual className="text-[10.5px] underline" style={{ color: GOLD }}>📖 Manual de usuario</button>
-            <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="text-[10.5px] underline text-white/70" />
-            <button onClick={onCerrarSesion} className="text-[10.5px] underline text-white/70">Cerrar sesión</button>
-          </div>
-        )}
+        <div className="text-white font-bold text-[20px] tracking-wide" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
       </div>
+
+      {menu && (
+        <div className="fixed inset-0 z-40" data-menu-panel>
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,.5)" }} onClick={() => setMenu(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-[280px] max-w-[85vw] flex flex-col overflow-y-auto" style={{ background: "#fff", boxShadow: "4px 0 16px rgba(0,0,0,.35)" }}>
+            <div className="px-4 py-4" style={{ background: NAVY }}>
+              <div className="text-white font-bold text-[16px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
+              <div className="text-[12.5px] mt-1.5 text-white font-semibold">{perfil?.nombre || perfil?.correo}</div>
+              {perfil?.nombre && perfil?.correo && <div className="text-[11px] text-white/70">{perfil.correo}</div>}
+              <div className="text-[11px] mt-0.5" style={{ color: GOLD }}>{perfil?.esAdmin ? "Administrador" : "Usuario"}</div>
+            </div>
+            {(() => {
+              const item = "w-full text-left px-4 py-3 text-[14px] border-b flex items-center gap-3";
+              const est = { borderColor: LINE, color: NAVY };
+              return (
+                <div className="flex-1">
+                  {perfil?.esAdmin && <button type="button" data-menu-usuarios className={item} style={est} onClick={() => { setMenu(false); onIrAdmin && onIrAdmin(); }}><span>👥</span> Administrar usuarios</button>}
+                  {perfil?.esAdmin && onIrCatalogos && <button type="button" data-menu-catalogos className={item} style={est} onClick={() => { setMenu(false); onIrCatalogos(); }}><span>📚</span> Catálogos</button>}
+                  <button type="button" data-menu-config className={item} style={est} onClick={() => { setMenu(false); setVerAjustes(true); }}><span>⚙️</span> Configuración</button>
+                  <button type="button" data-menu-manual className={item} style={est} onClick={() => { setMenu(false); setVerManual(true); }}><span>📖</span> Manual de usuario</button>
+                  <div className="border-b" style={{ borderColor: LINE }}>
+                    <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="w-full text-left px-4 py-3 text-[14px]" style={{ color: NAVY }} />
+                  </div>
+                  <button type="button" data-menu-acerca className={item} style={est} onClick={() => { setMenu(false); setVerAcerca(true); }}><span>ℹ️</span> Acerca de</button>
+                  <button type="button" data-menu-salir className={item} style={{ borderColor: LINE, color: "#B3261E" }} onClick={() => { setMenu(false); onCerrarSesion && onCerrarSesion(); }}><span>🚪</span> Cerrar sesión</button>
+                </div>
+              );
+            })()}
+            <button type="button" onClick={() => setMenu(false)} data-menu-cerrar className="m-3 py-2 rounded-lg border text-[13px]" style={{ borderColor: LINE, color: NAVY }}>Cerrar menú</button>
+          </div>
+        </div>
+      )}
+
+      {verAcerca && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.55)" }} data-acerca>
+          <div className="bg-white rounded-xl p-5 w-full max-w-sm text-center">
+            <img src="/logo-portal.png" alt="" className="mx-auto mb-2" style={{ width: 90 }} />
+            <div className="text-[18px] font-bold" style={{ color: NAVY, fontFamily: "'Space Grotesk', sans-serif" }}>SAIEA OBRAS</div>
+            <div className="text-[11.5px] mb-3" style={{ color: GOLD }}>Tu obra, ordenada en un solo lugar</div>
+            <div className="text-[12.5px] text-left rounded-lg p-3 mb-3" style={{ background: PAPER, color: NAVY }}>
+              <div>Versión <b>{VERSION_APP}</b></div>
+              <div>Empresa: <b>{EMPRESA.nombre}</b></div>
+              {perfil?.nombre && <div>Usuario: <b>{perfil.nombre}</b></div>}
+            </div>
+            <div className="text-[10.5px] text-gray-500 mb-3">© {new Date().getFullYear()} {EMPRESA.nombre}. Todos los derechos reservados.</div>
+            <button type="button" data-acerca-cerrar onClick={() => setVerAcerca(false)} className="w-full py-2.5 rounded-lg text-white font-semibold text-[13px]" style={{ background: NAVY }}>Cerrar</button>
+          </div>
+        </div>
+      )}
 
       {/* Pantalla dividida en dos mitades: izquierda = aplicaciones, derecha = reseña. Cada contenido va centrado en su mitad */}
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0 px-4 pt-6 pb-6 md:pt-0 md:pb-4">
