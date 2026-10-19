@@ -317,6 +317,7 @@ export default function FormularioPresupuestoNuevo({ onVolver, onNavegar }) {
 
       const c0 = columnaInicial(ws);
       ws.getCell(6, c0 + 6).value = aFechaDDMMYYYY(fechaLocalHoy());
+      try { if (proyecto) ws.getCell(12, c0 + 1).value = proyecto; } catch (e) { /* el nombre del proyecto es opcional */ }
 
       let fila = 14;
       filas.forEach((f) => {
