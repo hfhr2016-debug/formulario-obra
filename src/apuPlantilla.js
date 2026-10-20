@@ -51,7 +51,7 @@ export function mapaApu(ws) {
   const fecha = buscar(ws, /fecha de emisi/i, 12, 15, 5, 14);
   const ubic = buscar(ws, /^ubicaci/i, 12, 15, 5, 14);
   const nombres = [], cargos = [];
-  for (let r = 60; r <= Math.max(ws.rowCount, 60); r++) for (let c = 1; c <= 14; c++) {
+  for (let r = 40; r <= Math.max(ws.rowCount, 40); r++) for (let c = 1; c <= 14; c++) {
     const t = texto(ws.getCell(r, c));
     if (/^nombre:?$/i.test(t)) nombres.push(ws.getCell(r, c).address);
     if (/^cargo:?$/i.test(t)) cargos.push(ws.getCell(r, c).address);
@@ -81,4 +81,19 @@ export function arreglarRendimientoVisible(ws, mp) {
     const f = c.value && typeof c.value === "object" ? c.value.formula : null;
     if (f && /^A1&/.test(f)) c.value = { formula: f.replace(/^A1&/, mp.rendimiento + "&") };
   } catch (e) { /* si no se puede, queda como estaba */ }
+}
+
+// Dónde empieza cada tabla (Materiales, Mano de obra, Equipos) y cuántas filas tiene, según la plantilla (o el archivo que se sube).
+// Así sirve con el formato de 8 filas por sección y también con APUs viejos de 15 filas.
+export function tablasApu(ws) {
+  const out = [];
+  const ultima = Math.max(ws.rowCount || 0, 60);
+  for (let r = 18; r <= ultima; r++) {
+    if (!/^descripci/i.test(texto(ws.getCell(r, 1)))) continue;
+    let fin = r + 1;
+    while (fin <= ultima && !/^subtotal/i.test(texto(ws.getCell(fin, 5))) && !/^subtotal/i.test(texto(ws.getCell(fin, 1)))) fin++;
+    out.push({ inicio: r + 1, filas: Math.max(fin - r - 1, 0) });
+  }
+  const defecto = [{ inicio: 21, filas: 15 }, { inicio: 39, filas: 15 }, { inicio: 57, filas: 15 }];
+  return out.length >= 3 ? out.slice(0, 3) : defecto;
 }

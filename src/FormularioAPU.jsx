@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { MUNICIPIOS_NOMBRES } from "./municipiosColombia";
 import ExcelJS from "exceljs";
 import { fotoLibro, estilarEscritos } from "./sstBase";
-import { mapaApu, valorSimple, arreglarRendimientoVisible } from "./apuPlantilla";
+import { mapaApu, valorSimple, arreglarRendimientoVisible, tablasApu } from "./apuPlantilla";
 import { esActividadPorElemento, buscarMaterialEnLista, coincideBusqueda, rendimientoExtra, evaluarCoherencia, avisosDelApu } from "./apuReglas";
 import { catalogoVigente, actividadesVigentesTodosLosTipos, coincideActividad } from "./catalogoVivo";
 import MenuLateral, { BotonMenu, IndicadorTipoProyecto, tipoProyectoActivo } from "./MenuLateral";
@@ -705,16 +705,19 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
       </div>
       <button
         type="button"
+        data-agregar-fila
+        disabled={filas.length >= FILAS_FORMATO}
         onClick={() => setFilas([...filas, filaVacia()])}
         className="w-full py-2 rounded-b-lg text-[12px] font-semibold border-2 border-t-0"
-        style={{ borderColor: LINE, color: NAVY, background: "white" }}
+        style={{ borderColor: LINE, color: filas.length >= FILAS_FORMATO ? "#9CA3AF" : NAVY, background: "white" }}
       >
-        + Agregar fila
+        {filas.length >= FILAS_FORMATO ? `Máximo ${FILAS_FORMATO} filas (las que caben en el formato)` : "+ Agregar fila"}
       </button>
     </div>
   );
 }
 
+const FILAS_FORMATO = 8;   // filas que caben en cada sección del formato de Excel
 const filaVacia = () => ({ desc: "", und: "", cant: "", vrUnit: "", factor: "", fuenteConsumo: "" });
 const seisFilasVacias = () => Array.from({ length: 6 }, filaVacia);
 
@@ -843,10 +846,11 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       setNoContrato(valorSimple(ws.getCell("C13")) || "");
       setUbicacion(valorSimple(ws.getCell(mp.ubicacion)) || "");
 
-      const leerFilas = (filaInicio, conFactor) => {
+      const tb = tablasApu(ws);
+      const leerFilas = ({ inicio: filaInicio, filas: cuantas }, conFactor) => {
         const filas = [];
         const col = mp.columnas(filaInicio);
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < cuantas; i++) {
           const r = filaInicio + i;
           const desc = valorSimple(ws.getCell(`A${r}`));
           if (desc) {
@@ -862,9 +866,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         while (filas.length < 6) filas.push(filaVacia());
         return filas;
       };
-      setMateriales(leerFilas(21, true));
-      setManoObra(leerFilas(39, true));
-      setEquipos(leerFilas(57, true));
+      setMateriales(leerFilas(tb[0], true));
+      setManoObra(leerFilas(tb[1], true));
+      setEquipos(leerFilas(tb[2], true));
 
       setElaboradoNombre(valorSimple(ws.getCell(mp.elaboroNombre)) || "");
       setElaboradoCargo(valorSimple(ws.getCell(mp.elaboroCargo)) || "");
@@ -906,6 +910,21 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       const ws = workbook.getWorksheet("Apu's");
 
       const mp = mapaApu(ws);
+      {
+        const cap = tablasApu(ws);
+        const sobran = [["Materiales", materiales, cap[0]], ["Mano de obra", manoObra, cap[1]], ["Equipos y herramientas", equipos, cap[2]]]
+          .map(([nombre, filas, t]) => ({ nombre, usadas: filas.filter((f) => f.desc).length, caben: t.filas })).filter((x) => x.usadas > x.caben);
+        if (sobran.length) {
+          await preguntar({
+            titulo: "Hay más filas de las que caben en el formato",
+            mensaje: "El formato del APU tiene " + cap[0].filas + " filas por sección. Quita o junta algunas filas y vuelve a generar el Excel.",
+            lista: sobran.map((x) => `${x.nombre}: tiene ${x.usadas}, caben ${x.caben} (sobran ${x.usadas - x.caben})`),
+            botones: [{ texto: "Entendido", valor: "ok", principal: true }],
+          });
+          setGenerando(false);
+          return;
+        }
+      }
       arreglarRendimientoVisible(ws, mp);
       ws.getCell("A9").value = (actividad.actividad || "").toUpperCase();
       ws.getCell(mp.unidad).value = actividad.unidad;
@@ -918,10 +937,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       ws.getCell(mp.fecha).value = fechaDDMMYYYY();
       ws.getCell(mp.ubicacion).value = ubicacion;
 
-      const escribirFilas = (filas, filaInicio, conFactor) => {
-        filas.forEach((f, i) => {
+      const tb = tablasApu(ws);
+      const escribirFilas = (filas, { inicio: filaInicio }, conFactor) => {
+        filas.filter((f) => f.desc).forEach((f, i) => {
           const r = filaInicio + i;
-          if (!f.desc) return;
           ws.getCell(`A${r}`).value = f.desc;
           ws.getCell(`E${r}`).value = f.und;
           ws.getCell(`F${r}`).value = numES(f.cant) || 0;
@@ -930,9 +949,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           ws.getCell(`${col.vr}${r}`).value = numES(f.vrUnit) || 0;
         });
       };
-      escribirFilas(materiales, 21, true);
-      escribirFilas(manoObra, 39, true);
-      escribirFilas(equipos, 57, true);
+      escribirFilas(materiales, tb[0], true);
+      escribirFilas(manoObra, tb[1], true);
+      escribirFilas(equipos, tb[2], true);
 
       const totalDirectoUnitario = sumarTabla(materiales) + sumarTabla(manoObra) + sumarTabla(equipos);
 
