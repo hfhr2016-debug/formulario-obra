@@ -23,7 +23,7 @@ import { leerMarcaReinicio } from "./reinicioNube";
 import { leerFormato, guardarFormato, formatNum, formatPesos, instalarFormulasEnCampos } from "./formatoNumeros";
 import FormularioAPU from "./FormularioAPU";
 import CargaApp from "./CargaApp";
-import { MiCuenta, EstadoSync, Respaldo, Soporte, Terminos, Novedades, AjustesEquipo, aplicarPrefs, useCierrePorInactividad } from "./MenuExtras";
+import { MiCuenta, EstadoSync, Respaldo, Soporte, Terminos, Novedades, AjustesEquipo, aplicarPrefs } from "./MenuExtras";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
 import FormularioCronograma from "./FormularioCronograma";
@@ -1734,7 +1734,7 @@ function accesoGestion(perfil, id) {
   return lista.some((m) => (id === "presupuesto" ? nivelCP(perfil, m.id) : nivelModulo(perfil, m.id)));
 }
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
-  const { restablecerContrasena } = useAuth();
+  const { restablecerContrasena, eliminarMiCuenta } = useAuth();
   const [verManual, setVerManual] = useState(false);
   const [verAjustes, setVerAjustes] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -1896,7 +1896,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
       </div>
       {verAjustes && <AjustesNumeros cerrar={() => setVerAjustes(false)} />}
-      {panelExtra === "cuenta" && <MiCuenta restablecerContrasena={restablecerContrasena} perfil={perfil} empresa={EMPRESA.nombre} cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "cuenta" && <MiCuenta restablecerContrasena={restablecerContrasena} eliminarMiCuenta={eliminarMiCuenta} perfil={perfil} empresa={EMPRESA.nombre} cerrar={() => setPanelExtra("")} />}
       {panelExtra === "sync" && <EstadoSync cerrar={() => setPanelExtra("")} />}
       {panelExtra === "respaldo" && <Respaldo cerrar={() => setPanelExtra("")} />}
       {panelExtra === "soporte" && <Soporte cerrar={() => setPanelExtra("")} />}
@@ -2685,7 +2685,6 @@ function AppConSesion() {
   // Antes de cerrar sesión se sube lo pendiente y se borra la copia del equipo (otra persona podría usarlo)
   const cerrarSesionSegura = async () => { try { await detenerSync({ limpiar: true }); } catch (e) { /* se cierra igual */ } await cerrarSesion(); };
   useEffect(() => { aplicarPrefs(); }, []);
-  const avisoInactividad = useCierrePorInactividad(cerrarSesionSegura, !!(usuario && perfil));
 
   if (cargando) {
     return <CargaApp texto="Cargando..." />;
@@ -2710,7 +2709,6 @@ function AppConSesion() {
   return (
     <div>
       <BotonSubir />
-      {avisoInactividad}
       <AppInterno perfil={perfil} onCerrarSesion={cerrarSesionSegura} onIrAdmin={() => setVistaExterna("admin")} onIrCatalogos={() => setVistaExterna("catalogos")} versionDatos={sync.version} />
       {(sync.hayNuevos || !sync.enLinea) && (
         <div className="fixed right-2.5 z-40 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md" style={{ bottom: 140, background: sync.hayNuevos ? GOLD : "#FFF4DB", color: sync.hayNuevos ? "white" : "#8A5A00" }}>

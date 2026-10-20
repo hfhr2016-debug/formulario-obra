@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { doc, getDoc, getDocs, deleteDoc, collection } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
 const AuthContext = createContext(null);
@@ -117,6 +117,32 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Eliminar la propia cuenta (inmediato, con la contraseña como confirmación). Los registros que la persona hizo en la empresa se conservan.
+  // Una persona administradora solo puede eliminarse si queda otra administradora activa.
+  async function eliminarMiCuenta(contrasena) {
+    const u = auth.currentUser;
+    if (!u || !u.email) return { ok: false, error: "No hay una sesión activa." };
+    try {
+      await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, contrasena));
+    } catch (e) {
+      return { ok: false, error: (e.code === "auth/too-many-requests") ? "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." : "La contraseña no es correcta." };
+    }
+    try {
+      if (perfil && perfil.esAdmin) {
+        const snap = await getDocs(collection(db, "usuarios"));
+        let otros = 0;
+        snap.forEach((d) => { const x = d.data(); if (d.id !== u.uid && x.esAdmin && x.activo !== false) otros++; });
+        if (!otros) return { ok: false, error: "Eres la única persona administradora. Antes de eliminar tu cuenta, nombra a otra persona administradora." };
+      }
+      await deleteDoc(doc(db, "usuarios", u.uid));
+      await deleteUser(u);
+      return { ok: true };
+    } catch (e) {
+      console.error("Eliminar cuenta:", e);
+      return { ok: false, error: "No se pudo eliminar la cuenta. Intenta de nuevo o pídele al administrador que lo haga." };
+    }
+  }
+
   async function restablecerContrasena(correo) {
     try {
       await sendPasswordResetEmail(auth, correo.trim());
@@ -193,7 +219,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, perfil, cargando, errorLogin, iniciarSesion, cerrarSesion, tieneRol, restablecerContrasena }}>
+    <AuthContext.Provider value={{ usuario, perfil, cargando, errorLogin, iniciarSesion, cerrarSesion, tieneRol, restablecerContrasena, eliminarMiCuenta }}>
       {children}
     </AuthContext.Provider>
   );

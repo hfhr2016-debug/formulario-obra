@@ -1,6 +1,6 @@
 // MenuExtras.jsx — Mi cuenta, Estado de sincronización, Respaldo, Soporte, Términos y Novedades del menú, más las preferencias
-// de la persona (tamaño de letra y cierre automático por inactividad). Todo se guarda solo en este equipo.
-import { useState, useEffect, useRef } from "react";
+// de la persona (tamaño de letra). Se guarda solo en este equipo. El cierre automático por inactividad vive en AuthContext.jsx.
+import { useState, useEffect } from "react";
 import { PREFIJO_DATOS } from "./reinicioApp";
 
 const NAVY = "#1B2A45", GOLD = "#B8893B", PAPER = "#F7F7F5", LINE = "#E3E0D8";
@@ -8,10 +8,9 @@ export const SOPORTE = { correo: "", whatsapp: "" };   // datos de contacto de s
 
 const CLAVE_PREFS = "saiea_prefs_equipo";
 export const LETRAS = [["100", "Normal"], ["112", "Grande"], ["125", "Muy grande"]];
-export const MINUTOS_BLOQUEO = [["0", "Nunca"], ["10", "10 minutos"], ["20", "20 minutos"], ["30", "30 minutos"], ["60", "1 hora"]];
 export function leerPrefs() {
-  try { const p = JSON.parse(localStorage.getItem(CLAVE_PREFS) || "{}"); return { letra: LETRAS.some((l) => l[0] === p.letra) ? p.letra : "100", bloqueo: MINUTOS_BLOQUEO.some((l) => l[0] === p.bloqueo) ? p.bloqueo : "0" }; }
-  catch (e) { return { letra: "100", bloqueo: "0" }; }
+  try { const p = JSON.parse(localStorage.getItem(CLAVE_PREFS) || "{}"); return { letra: LETRAS.some((l) => l[0] === p.letra) ? p.letra : "100" }; }
+  catch (e) { return { letra: "100" }; }
 }
 export function guardarPrefs(cambio) {
   const p = { ...leerPrefs(), ...cambio };
@@ -22,37 +21,6 @@ export function guardarPrefs(cambio) {
 export function aplicarPrefs(p = leerPrefs()) {
   if (typeof document === "undefined" || !document.body) return;
   document.body.style.zoom = p.letra === "100" ? "" : String(Number(p.letra) / 100);
-}
-
-// Cierra la sesión sola si la persona deja el equipo quieto los minutos elegidos (avisa 30 s antes).
-export function useCierrePorInactividad(cerrarSesion, activo) {
-  const [aviso, setAviso] = useState(0);
-  const ultimo = useRef(Date.now());
-  const cerrar = useRef(cerrarSesion); cerrar.current = cerrarSesion;
-  useEffect(() => {
-    if (!activo) return undefined;
-    const marcar = () => { ultimo.current = Date.now(); setAviso(0); };
-    const evs = ["keydown", "pointerdown", "touchstart", "wheel", "input"];
-    evs.forEach((e) => window.addEventListener(e, marcar, true));
-    const t = setInterval(() => {
-      const min = Number(leerPrefs().bloqueo);
-      if (!min) { setAviso(0); return; }
-      const resta = min * 60000 - (Date.now() - ultimo.current);
-      if (resta <= 0) { setAviso(0); cerrar.current && cerrar.current(); }
-      else if (resta <= 30000) setAviso(Math.ceil(resta / 1000)); else setAviso(0);
-    }, 1000);
-    return () => { evs.forEach((e) => window.removeEventListener(e, marcar, true)); clearInterval(t); };
-  }, [activo]);
-  const seguir = () => { ultimo.current = Date.now(); setAviso(0); };
-  return aviso > 0 ? (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.55)" }} data-aviso-inactividad>
-      <div className="bg-white rounded-xl p-5 w-full max-w-xs text-center">
-        <div className="font-bold text-[15px] mb-1" style={{ color: NAVY }}>¿Sigues ahí?</div>
-        <div className="text-[13px] mb-3">Por seguridad, la sesión se cerrará en <b>{aviso}</b> segundos.</div>
-        <button type="button" onClick={seguir} data-seguir-sesion className="w-full py-2.5 rounded-lg text-white font-semibold text-[13px]" style={{ background: NAVY }}>Seguir trabajando</button>
-      </div>
-    </div>
-  ) : null;
 }
 
 function Ventana({ titulo, cerrar, children, marca }) {
@@ -71,7 +39,7 @@ function Ventana({ titulo, cerrar, children, marca }) {
 }
 const Dato = ({ k, v }) => (v ? <div className="flex justify-between gap-3 py-1.5 border-b text-[12.5px]" style={{ borderColor: LINE }}><span className="text-gray-500">{k}</span><b className="text-right break-all" style={{ color: NAVY }}>{v}</b></div> : null);
 
-export function MiCuenta({ perfil, empresa, cerrar, restablecerContrasena }) {
+export function MiCuenta({ perfil, empresa, cerrar, restablecerContrasena, eliminarMiCuenta }) {
   const [msg, setMsg] = useState("");
   const [enviando, setEnviando] = useState(false);
   const enviar = async () => {
@@ -88,7 +56,40 @@ export function MiCuenta({ perfil, empresa, cerrar, restablecerContrasena }) {
       <button type="button" data-cambiar-clave onClick={enviar} disabled={enviando || !perfil?.correo} className="w-full mt-3 py-2 rounded-lg border text-[13px] font-semibold" style={{ borderColor: NAVY, color: NAVY }}>{enviando ? "Enviando…" : "Cambiar mi contraseña"}</button>
       {msg && <div className="text-[12px] mt-2" data-clave-msg style={{ color: msg.startsWith("Te enviamos") ? "#1E6B3A" : "#B3261E" }}>{msg}</div>}
       <div className="text-[10.5px] text-gray-500 mt-2">Para cambiar tu nombre, correo o permisos, pídeselo al administrador.</div>
+      {eliminarMiCuenta && <EliminarCuenta eliminarMiCuenta={eliminarMiCuenta} />}
     </Ventana>
+  );
+}
+
+// Eliminar la propia cuenta: se pide escribir ELIMINAR y la contraseña. Es inmediato y no se puede deshacer.
+function EliminarCuenta({ eliminarMiCuenta }) {
+  const [abierto, setAbierto] = useState(false);
+  const [txt, setTxt] = useState("");
+  const [clave, setClave] = useState("");
+  const [err, setErr] = useState("");
+  const [ocupado, setOcupado] = useState(false);
+  const listo = txt.trim().toUpperCase() === "ELIMINAR" && clave.length > 0 && !ocupado;
+  const eliminar = async () => {
+    setOcupado(true); setErr("");
+    const r = await eliminarMiCuenta(clave);
+    setOcupado(false);
+    if (!r.ok) setErr(r.error || "No se pudo eliminar la cuenta.");
+  };
+  if (!abierto) return <button type="button" data-eliminar-cuenta onClick={() => setAbierto(true)} className="w-full mt-4 py-2 rounded-lg border text-[12.5px] font-semibold" style={{ borderColor: "#B3261E", color: "#B3261E" }}>Eliminar mi cuenta</button>;
+  return (
+    <div className="mt-4 rounded-lg p-3 border" style={{ borderColor: "#B3261E", background: "#FDECEC" }} data-eliminar-panel>
+      <div className="text-[13px] font-bold mb-1" style={{ color: "#B3261E" }}>Eliminar mi cuenta</div>
+      <div className="text-[12px] mb-2" style={{ color: "#5B1A16" }}>Se borra tu usuario de inmediato y <b>no se puede deshacer</b>. Los registros que hiciste en la empresa (informes, actas, formatos) se conservan a nombre de «Usuario eliminado». Si más adelante quieres volver, el administrador tendrá que crearte un usuario nuevo.</div>
+      <label className="text-[11.5px] font-semibold">Escribe ELIMINAR para confirmar</label>
+      <input data-eliminar-texto value={txt} onChange={(e) => setTxt(e.target.value)} className="border rounded px-2 py-1.5 text-[13px] w-full mb-2" autoComplete="off" />
+      <label className="text-[11.5px] font-semibold">Tu contraseña</label>
+      <input data-eliminar-clave type="password" value={clave} onChange={(e) => setClave(e.target.value)} className="border rounded px-2 py-1.5 text-[13px] w-full mb-2" autoComplete="current-password" />
+      {err && <div className="text-[12px] mb-2" data-eliminar-error style={{ color: "#B3261E" }}>{err}</div>}
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { setAbierto(false); setTxt(""); setClave(""); setErr(""); }} className="flex-1 py-2 rounded-lg border text-[12.5px]" style={{ borderColor: "#999", color: "#333", background: "white" }}>Cancelar</button>
+        <button type="button" data-eliminar-confirmar disabled={!listo} onClick={eliminar} className="flex-1 py-2 rounded-lg text-white text-[12.5px] font-semibold" style={{ background: listo ? "#B3261E" : "#C9A5A2" }}>{ocupado ? "Eliminando…" : "Eliminar para siempre"}</button>
+      </div>
+    </div>
   );
 }
 
@@ -148,6 +149,7 @@ export function Terminos({ cerrar }) {
     <Ventana titulo="Términos y privacidad" cerrar={cerrar} marca="data-terminos">
       <P t="Uso de la aplicación" c="SAIEA OBRAS es una herramienta de trabajo para las personas autorizadas por la empresa. Cada persona es responsable de la información que registra y de mantener privada su contraseña." />
       <P t="Tus datos" c="La información de obra pertenece a tu empresa y solo la ven las personas con acceso. Se guarda en servidores seguros y se sincroniza entre tus dispositivos." />
+      <P t="Eliminar tu cuenta" c="Puedes eliminar tu cuenta cuando quieras desde «Mi cuenta». Se borra tu usuario; los registros que hiciste para la empresa se conservan a nombre de «Usuario eliminado»." />
       <P t="Este equipo" c="Al cerrar sesión se borra la copia local de los datos, para proteger la información si el equipo lo usa otra persona." />
       <P t="Derechos de autor" c="El programa, su diseño, formatos y manuales están protegidos por derechos de autor. No se permite copiarlos ni distribuirlos sin autorización." />
       <div className="text-[10.5px] text-gray-500">Resumen informativo. Para dudas sobre el tratamiento de datos personales, consulta con el administrador de tu empresa.</div>
@@ -177,11 +179,9 @@ export function AjustesEquipo() {
   const cambiar = (c) => setP(guardarPrefs(c));
   return (
     <div data-aj-equipo>
-      <div className="text-[12px] font-bold mt-3 mb-2 pb-1 border-b" style={{ color: "#17365D" }}>Pantalla y seguridad</div>
+      <div className="text-[12px] font-bold mt-3 mb-2 pb-1 border-b" style={{ color: "#17365D" }}>Pantalla</div>
       <div className="mb-2.5"><label className="text-[11.5px] font-semibold">Tamaño de la letra</label>
         <select className={campo} data-aj-letra value={p.letra} onChange={(e) => cambiar({ letra: e.target.value })}>{LETRAS.map((l) => <option key={l[0]} value={l[0]}>{l[1]}</option>)}</select></div>
-      <div className="mb-2.5"><label className="text-[11.5px] font-semibold">Cerrar la sesión si no uso la aplicación por</label>
-        <select className={campo} data-aj-bloqueo value={p.bloqueo} onChange={(e) => cambiar({ bloqueo: e.target.value })}>{MINUTOS_BLOQUEO.map((l) => <option key={l[0]} value={l[0]}>{l[1]}</option>)}</select></div>
     </div>
   );
 }
