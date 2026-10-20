@@ -1670,9 +1670,18 @@ const MARCO_DORADO = {
 };
 instalarFormulasEnCampos();
 
+// Monedas que se pueden elegir en Configuración (símbolo, nombre). Si la tuya no está, hay "Otro símbolo…".
+const MONEDAS = [
+  ["$", "Peso (Colombia, México, Chile…) / Dólar"], ["COP", "Peso colombiano"], ["US$", "Dólar estadounidense"], ["USD", "Dólar (código)"],
+  ["€", "Euro"], ["£", "Libra esterlina"], ["¥", "Yen / Yuan"], ["S/", "Sol (Perú)"], ["R$", "Real (Brasil)"], ["Bs", "Bolívar / Boliviano"],
+  ["Q", "Quetzal (Guatemala)"], ["L", "Lempira (Honduras)"], ["C$", "Córdoba (Nicaragua)"], ["₡", "Colón (Costa Rica)"], ["B/.", "Balboa (Panamá)"],
+  ["RD$", "Peso dominicano"], ["MX$", "Peso mexicano"], ["CLP", "Peso chileno"], ["ARS", "Peso argentino"], ["UYU", "Peso uruguayo"],
+  ["₲", "Guaraní (Paraguay)"], ["CAD", "Dólar canadiense"], ["CHF", "Franco suizo"], ["", "Sin símbolo"],
+];
 // Ajustes de números de la persona (en este equipo): separadores, símbolo, decimales y fórmulas en los campos
 function AjustesNumeros({ cerrar }) {
   const [f, setF] = useState(leerFormato());
+  const [otraMoneda, setOtraMoneda] = useState(false);
   const cambiar = (c) => setF(guardarFormato(c));
   const campo = "border rounded px-2 py-1.5 text-[13px] w-full";
   const fila = "mb-2.5";
@@ -1688,8 +1697,15 @@ function AjustesNumeros({ cerrar }) {
           <select className={campo} data-aj-decimal value={f.decimal} onChange={(e) => cambiar({ decimal: e.target.value })}><option value=",">Coma (,)</option><option value=".">Punto (.)</option></select></div>
         <div className={fila}><label className="text-[11.5px] font-semibold">Separador de miles</label>
           <select className={campo} data-aj-miles value={f.miles} onChange={(e) => cambiar({ miles: e.target.value })}><option value=".">Punto (.)</option><option value=",">Coma (,)</option><option value=" ">Espacio</option><option value="">Ninguno</option></select></div>
-        <div className={fila}><label className="text-[11.5px] font-semibold">Símbolo de la moneda</label>
-          <input className={campo} data-aj-simbolo maxLength={4} value={f.simbolo} onChange={(e) => cambiar({ simbolo: e.target.value })} /></div>
+        <div className={fila}><label className="text-[11.5px] font-semibold">Moneda</label>
+          <select className={campo} data-aj-simbolo value={otraMoneda || !MONEDAS.some((m) => m[0] === f.simbolo) ? "__otro" : f.simbolo} onChange={(e) => { if (e.target.value === "__otro") setOtraMoneda(true); else { setOtraMoneda(false); cambiar({ simbolo: e.target.value }); } }}>
+            {MONEDAS.map((m) => <option key={m[0]} value={m[0]}>{m[0]} — {m[1]}</option>)}
+            <option value="__otro">Otro símbolo…</option>
+          </select></div>
+        {(otraMoneda || !MONEDAS.some((m) => m[0] === f.simbolo)) && (
+          <div className={fila}><label className="text-[11.5px] font-semibold">Escribe el símbolo (máx. 4 caracteres)</label>
+            <input className={campo} data-aj-simbolo-otro maxLength={4} value={f.simbolo} onChange={(e) => cambiar({ simbolo: e.target.value })} /></div>
+        )}
         <div className={fila}><label className="text-[11.5px] font-semibold">Decimales de los importes</label>
           <select className={campo} data-aj-dec-importe value={f.decImporte} onChange={(e) => cambiar({ decImporte: Number(e.target.value) })}>{[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
         <label className="flex items-start gap-2 text-[12px] mb-2.5"><input type="checkbox" data-aj-formulas checked={f.formulas} onChange={(e) => cambiar({ formulas: e.target.checked })} className="mt-0.5" />

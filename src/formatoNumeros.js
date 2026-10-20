@@ -36,7 +36,7 @@ export function formatNum(n, min = 0, max = 3) {
   const signo = v < 0 && Number(t) !== 0 ? "-" : "";
   return signo + ent.replace(/\u0001/g, f.miles) + (dec ? f.decimal + dec : "");
 }
-export const formatPesos = (n, dec) => { const f = leerFormato(), d = dec === undefined ? f.decImporte : dec; return f.simbolo + " " + formatNum(n, d, d); };
+export const formatPesos = (n, dec) => { const f = leerFormato(), d = dec === undefined ? f.decImporte : dec; return (f.simbolo ? f.simbolo + " " : "") + formatNum(n, d, d); };
 
 // Número -> texto para un CAMPO (sin separador de miles, con el decimal de la persona): así numES lo lee siempre igual
 export const aTextoCampo = (n) => String(Math.round(Number(n) * 1e6) / 1e6).replace(".", leerFormato().decimal);
