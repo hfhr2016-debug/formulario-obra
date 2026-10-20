@@ -138,14 +138,15 @@ const ACTIVIDADES = [   // en este orden: gana la primera que coincida
   ["demolición", /demolici[oó]n|desmantel|remoci[oó]n|retiro de/],
   ["pavimentos", /pavimento|asf[aá]lt|carpeta|imprimaci[oó]n|riego de|demarcaci[oó]n|se[nñ]alizaci[oó]n|base granular|subbase|afirmado/],
   ["movimiento de tierras", /excavaci[oó]n|relleno|terrapl[eé]n|conformaci[oó]n|explanaci[oó]n|descapote|botadero|corte de/],
-  ["instalaciones eléctricas", /el[eé]ctric|cableado|luminaria|tomacorriente|interruptor|iluminaci[oó]n|conduit|acometida|tablero/],
-  ["instalaciones hidrosanitarias", /tuber[ií]a|sanitari|hidr[aá]ulic|desag[uü]e|acueducto|alcantarillado|lavamanos|inodoro|grifer|aparato/],
-  ["acero y estructura metálica", /acero|refuerzo|varilla|malla electrosoldada|estructura met[aá]lica|perfil(es)? met[aá]lic/],
-  ["acabados", /pa[nñ]ete|estuco|pintura|enchape|cer[aá]mic|porcelanat|piso|cielo raso|drywall|vinilo|guardaescoba|revoque/],
+  ["instalaciones eléctricas", /el[eé]ctric|cableado|luminaria|tomacorriente|interruptor|iluminaci[oó]n|conduit|acometida|tablero(s)? (el[eé]ctric|de distribuci|general|de breaker|de control|de medid)/],
+  ["instalaciones hidrosanitarias", /tuber[ií]a|sanitari|(?<!concreto )(?<!cemento )hidr[aá]ulic|desag[uü]e|acueducto|alcantarillado|lavamanos|inodoro|grifer|aparato/],
+  ["acero y estructura metálica", /acero|refuerzo|varilla|malla electrosoldada|estructura met[aá]lica|perfil(es)? met[aá]lic|perfiler[ií]a/],
+  ["acabados", /pa[nñ]ete|estuco|pintura|enchape|cer[aá]mic|porcelanat|\bpisos?\b|cielo raso|drywall|vinilo|guardaescoba|revoque/],
   ["mampostería", /mamposter|ladrillo|bloque/],
   ["concreto", /concreto|hormig[oó]n|mortero|solado|zapata|pedestal|cimentaci[oó]n|columna|viga|losa|placa|sardinel|bordillo|anden|cuneta/],
 ];
 const MAT = [   // familias de materiales
+  ["otros (cinta, alambre, anclajes, tubería de vaciado)", /cinta|alambre|waterstop|barras? de uni[oó]n|tornillos? de uni[oó]n|para anclajes|tremi|vaciado/],   // no se avisa por estos: se usan en cualquier actividad
   ["cemento, agregados o concreto", /cemento(?!\s+asf)|\barena\b|grava|gravilla|triturado|recebo|concreto|mortero|aditivo|acelerante|plastificante|piedra|r[aá]j[oó]n|sikaset|sikament|grout|\bagua\b/],
   ["acero", /acero|varilla|malla electro|figurado|\bpdr\b/],
   ["madera o formaleta", /madera|tabla|list[oó]n|estaca|guadua|formaleta|triplex|parales?/],
@@ -156,9 +157,10 @@ const MAT = [   // familias de materiales
   ["asfalto", /asf[aá]lt|emulsi[oó]n|mezcla asf/],
 ];
 const EQ = [
-  ["topografía", /estaci[oó]n total|teodolito|nivel (autom|topogr|l[aá]ser)|\bgps\b|gnss|plomada|jal[oó]n|prisma|dron|taquimetro|nivel de precisi/],
+  ["topografía", /estaci[oó]n total|teodolito|nivel (autom|topogr)|\bgps\b|gnss|jal[oó]n|prisma|dron|taquimetro/],
   ["concreto", /mezcladora|concretadora|vibrador|bomba de concreto|mixer|mezclador|allanadora|regla vibratoria|pulidora de concreto/],
-  ["maquinaria pesada", /retroexcavadora|excavadora|bulldozer|buldozer|motoniveladora|cargador|vibrocompactador|compactador|rodillo|pavimentadora|terminadora|finisher|volqueta|cami[oó]n|bobcat|minicargador|pilotera|gr[uú]a|planta de asfalto|barredora|fresadora/],
+  ["transporte e izaje", /volqueta|cami[oó]n|camioneta|camabaja|gr[uú]a|equipo de transporte/],   // se usan en cualquier actividad: no se avisa
+  ["maquinaria pesada", /retroexcavadora|excavadora|bulldozer|buldozer|motoniveladora|cargador|vibrocompactador|compactador|rodillo(?!\s+(para\s+)?(pintur|felpa|espuma|lana|textur))|pavimentadora|terminadora|finisher|bobcat|minicargador|pilotera|planta de asfalto|barredora|fresadora/],
   ["soldadura", /soldadora|equipo de soldadura|plasma|oxicorte|soldadura/],
 ];
 const MO = [
@@ -175,11 +177,11 @@ const NO_CORRESPONDE = {   // por actividad: familias que no se esperan en esa a
     mo: ["oficios de construcción (maestro, oficial, obrero…)", "electricista", "plomero", "pintor", "soldador", "operador de equipo"] },
   "demolición": { mat: ["cemento, agregados o concreto", "pintura o acabados", "tubería y accesorios", "material eléctrico", "ladrillo o bloque", "asfalto"], eq: ["concreto", "topografía"], mo: ["topografía", "pintor", "electricista", "plomero"] },
   "pavimentos": { mat: ["tubería y accesorios", "material eléctrico", "ladrillo o bloque"], eq: ["soldadura"], mo: ["electricista", "plomero"] },
-  "movimiento de tierras": { mat: ["tubería y accesorios", "material eléctrico", "pintura o acabados", "ladrillo o bloque"], eq: ["concreto", "soldadura"], mo: ["electricista", "plomero", "pintor"] },
+  "movimiento de tierras": { mat: ["tubería y accesorios", "material eléctrico", "pintura o acabados", "ladrillo o bloque"], eq: ["soldadura"], mo: ["electricista", "plomero", "pintor"] },
   "instalaciones eléctricas": { mat: ["asfalto", "ladrillo o bloque"], eq: ["topografía", "concreto"], mo: ["topografía", "plomero", "pintor", "soldador"] },
   "instalaciones hidrosanitarias": { mat: ["asfalto", "ladrillo o bloque", "material eléctrico", "pintura o acabados"], eq: ["topografía", "concreto"], mo: ["topografía", "electricista", "pintor"] },
   "acero y estructura metálica": { mat: ["tubería y accesorios", "material eléctrico", "ladrillo o bloque", "asfalto"], eq: ["concreto", "topografía"], mo: ["topografía", "electricista", "plomero", "pintor"] },
-  "acabados": { mat: ["tubería y accesorios", "material eléctrico", "asfalto", "acero"], eq: ["topografía", "maquinaria pesada"], mo: ["topografía", "electricista", "plomero", "soldador", "operador de equipo"] },
+  "acabados": { mat: ["tubería y accesorios", "material eléctrico", "asfalto"], eq: ["topografía", "maquinaria pesada"], mo: ["topografía", "electricista", "plomero", "soldador", "operador de equipo"] },
   "mampostería": { mat: ["tubería y accesorios", "material eléctrico", "asfalto", "pintura o acabados"], eq: ["topografía", "maquinaria pesada"], mo: ["topografía", "electricista", "plomero", "pintor", "soldador", "operador de equipo"] },
   "concreto": { mat: ["tubería y accesorios", "material eléctrico", "asfalto", "ladrillo o bloque", "pintura o acabados"], eq: ["topografía", "soldadura"], mo: ["topografía", "electricista", "plomero", "pintor"] },
 };
