@@ -22,6 +22,7 @@ import { LimpiarEquipoEnlace } from "./ReinicioApp";
 import { leerMarcaReinicio } from "./reinicioNube";
 import { leerFormato, guardarFormato, formatNum, formatPesos, instalarFormulasEnCampos } from "./formatoNumeros";
 import FormularioAPU from "./FormularioAPU";
+import { MiCuenta, EstadoSync, Respaldo, Soporte, Terminos, Novedades, AjustesEquipo, aplicarPrefs, useCierrePorInactividad } from "./MenuExtras";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
 import FormularioCronograma from "./FormularioCronograma";
@@ -1714,6 +1715,7 @@ function AjustesNumeros({ cerrar }) {
         <div className="rounded-lg p-2.5 text-[12px]" style={{ background: "#F7F7F5" }} data-aj-ejemplo>
           Así se verá: <b>{formatPesos(1234567.891)}</b> · <b>{formatNum(1234.5, 0, 3)}</b> · <b>{formatNum(0.125, 0, 3)}</b>
         </div>
+        <AjustesEquipo />
         <div className="text-[10.5px] text-gray-500 mt-2">Esto cambia lo que ves en pantalla. En los Excel, los números se ven según la configuración regional del computador. Se guarda solo en este equipo.</div>
         <button type="button" onClick={cerrar} className="w-full mt-3 py-2.5 rounded-lg text-white font-semibold text-[13px]" style={{ background: "#1B2A45" }}>Listo</button>
       </div>
@@ -1722,10 +1724,12 @@ function AjustesNumeros({ cerrar }) {
 }
 
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
+  const { restablecerContrasena } = useAuth();
   const [verManual, setVerManual] = useState(false);
   const [verAjustes, setVerAjustes] = useState(false);
   const [menu, setMenu] = useState(false);
   const [verAcerca, setVerAcerca] = useState(false);
+  const [panelExtra, setPanelExtra] = useState("");
   const apps = [
     { id: "tecnica", nombre: "Gestión Técnica", icono: "/icons/icon-gestion-tecnica.png", activo: true },
     { id: "sst", nombre: "Gestión SG – SST", icono: "/icons/icon-gestion-sst.png", activo: true },
@@ -1781,11 +1785,17 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
                 <div className="flex-1">
                   {perfil?.esAdmin && <button type="button" data-menu-usuarios className={item} style={est} onClick={() => { setMenu(false); onIrAdmin && onIrAdmin(); }}>Administrar usuarios</button>}
                   {perfil?.esAdmin && onIrCatalogos && <button type="button" data-menu-catalogos className={item} style={est} onClick={() => { setMenu(false); onIrCatalogos(); }}>Catálogos</button>}
+                  <button type="button" data-menu-cuenta className={item} style={est} onClick={() => { setMenu(false); setPanelExtra("cuenta"); }}>Mi cuenta</button>
                   <button type="button" data-menu-config className={item} style={est} onClick={() => { setMenu(false); setVerAjustes(true); }}>Configuración</button>
                   <button type="button" data-menu-manual className={item} style={est} onClick={() => { setMenu(false); setVerManual(true); }}>Manual de usuario</button>
                   <div className="border-b" style={{ borderColor: LINE }}>
                     <LimpiarEquipoEnlace onLimpiarEquipo={async () => { await detenerSync({ sinSubir: true }); limpiarEquipo(window.localStorage); }} className="w-full text-left px-4 py-3 text-[14px]" style={{ color: NAVY }} />
                   </div>
+                  <button type="button" data-menu-sync className={item} style={est} onClick={() => { setMenu(false); setPanelExtra("sync"); }}>Estado de sincronización</button>
+                  <button type="button" data-menu-respaldo className={item} style={est} onClick={() => { setMenu(false); setPanelExtra("respaldo"); }}>Copia de respaldo</button>
+                  <button type="button" data-menu-soporte className={item} style={est} onClick={() => { setMenu(false); setPanelExtra("soporte"); }}>Soporte</button>
+                  <button type="button" data-menu-novedades className={item} style={est} onClick={() => { setMenu(false); setPanelExtra("novedades"); }}>Novedades</button>
+                  <button type="button" data-menu-terminos className={item} style={est} onClick={() => { setMenu(false); setPanelExtra("terminos"); }}>Términos y privacidad</button>
                   <button type="button" data-menu-acerca className={item} style={est} onClick={() => { setMenu(false); setVerAcerca(true); }}>Acerca de</button>
                   <button type="button" data-menu-salir className={item} style={{ borderColor: LINE, color: "#B3261E" }} onClick={() => { setMenu(false); onCerrarSesion && onCerrarSesion(); }}>Cerrar sesión</button>
                 </div>
@@ -1876,6 +1886,12 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
       </div>
       {verAjustes && <AjustesNumeros cerrar={() => setVerAjustes(false)} />}
+      {panelExtra === "cuenta" && <MiCuenta restablecerContrasena={restablecerContrasena} perfil={perfil} empresa={EMPRESA.nombre} cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "sync" && <EstadoSync cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "respaldo" && <Respaldo cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "soporte" && <Soporte cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "novedades" && <Novedades cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "terminos" && <Terminos cerrar={() => setPanelExtra("")} />}
       {verManual && (
         <div data-manual-visor style={{ position: "fixed", inset: 0, zIndex: 60, background: "#E8E6E1", display: "flex", flexDirection: "column" }}>
           <div style={{ background: "#1B2A45", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", paddingTop: "calc(10px + env(safe-area-inset-top))" }}>
@@ -2658,6 +2674,8 @@ function AppConSesion() {
   const sync = useSincronizacion(usuario, perfil);
   // Antes de cerrar sesión se sube lo pendiente y se borra la copia del equipo (otra persona podría usarlo)
   const cerrarSesionSegura = async () => { try { await detenerSync({ limpiar: true }); } catch (e) { /* se cierra igual */ } await cerrarSesion(); };
+  useEffect(() => { aplicarPrefs(); }, []);
+  const avisoInactividad = useCierrePorInactividad(cerrarSesionSegura, !!(usuario && perfil));
 
   if (cargando) {
     return (
@@ -2690,6 +2708,7 @@ function AppConSesion() {
   return (
     <div>
       <BotonSubir />
+      {avisoInactividad}
       <AppInterno perfil={perfil} onCerrarSesion={cerrarSesionSegura} onIrAdmin={() => setVistaExterna("admin")} onIrCatalogos={() => setVistaExterna("catalogos")} versionDatos={sync.version} />
       {(sync.hayNuevos || !sync.enLinea) && (
         <div className="fixed right-2.5 z-40 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md" style={{ bottom: 140, background: sync.hayNuevos ? GOLD : "#FFF4DB", color: sync.hayNuevos ? "white" : "#8A5A00" }}>
