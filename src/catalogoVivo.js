@@ -209,7 +209,7 @@ export function actividadesVigentes() {
     try {
       const m = JSON.parse(raw);
       // Actividades nuevas del código (marcadas «nueva»): se agregan UNA vez al catálogo guardado; si luego se borran, no vuelven.
-      if (m && typeof m === "object" && !Array.isArray(m) && (corregirEstucos(m) | incorporarNuevas(m))) {
+      if (m && typeof m === "object" && !Array.isArray(m) && (corregirEstucos(m) | incorporarNuevas(m) | repararCodigos(m))) {
         guardar(ACTIVIDADES.clave, m);
         try { raw = localStorage.getItem(ACTIVIDADES.clave); } catch (e) { /* queda el anterior */ }
       }
@@ -238,6 +238,25 @@ function corregirEstucos(m) {
     if (ordenBase !== null) x.orden = ordenBase - 1 + (k++) * 0.1;
   });
   m[MARCA_ESTUCO] = { estucoPintura: 1, actualizado: Date.now() };
+  return true;
+}
+// Códigos de actividad: en algunas filas el «código» era un título (p. ej. «1.6. SUMINISTRO E INSTALACIÓN DE JUNTAS») o estaba vacío.
+// Se corrige UNA vez en el catálogo guardado con el código del catálogo base; un código que el administrador cambió a mano se respeta.
+const MARCA_CODIGOS = "__codigos_v1";
+function repararCodigos(m) {
+  if (m[MARCA_CODIGOS]) return false;
+  if (!Object.values(m).some((x) => x && txt(x.actividad))) return false;
+  const llaves = llavesDeLaBase();
+  const valido = (c) => /^\d+(\.\d+)*$/.test(txt(c).trim());
+  CATALOGO_ACTIVIDADES_BASE.forEach((it, i) => {
+    if (it.tipo === "hidrocarburos" || !it.codigo) return;
+    const x = m[llaves[i]];
+    if (!x || typeof x !== "object" || x.codigo === it.codigo) return;
+    const viejoAuto = (it.tipo === "vias" && it.capitulo === "PRELIMINARES" && /^1\.1\.\d+$/.test(txt(x.codigo)))
+      || (it.tipo === "edificacion" && it.subcapitulo === "Estructura metálica" && /^04\.01\.1[01]$/.test(txt(x.codigo)));
+    if (!valido(x.codigo) || viejoAuto) { x.codigo = it.codigo; x.actualizado = Date.now(); }
+  });
+  m[MARCA_CODIGOS] = { codigos: 1, actualizado: Date.now() };
   return true;
 }
 function incorporarNuevas(m) {
