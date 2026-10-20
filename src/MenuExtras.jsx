@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { PREFIJO_DATOS } from "./reinicioApp";
 
 const NAVY = "#1B2A45", GOLD = "#B8893B", PAPER = "#F7F7F5", LINE = "#E3E0D8";
-export const SOPORTE = { correo: "", whatsapp: "" };   // datos de contacto de soporte: se llenan aquí cuando se definan
+export const SOPORTE = { correo: "saieaobras@gmail.com", whatsapp: "" };   // datos de contacto de soporte: se llenan aquí cuando se definan
 
 const CLAVE_PREFS = "saiea_prefs_equipo";
 export const LETRAS = [["100", "Normal"], ["112", "Grande"], ["125", "Muy grande"]];
