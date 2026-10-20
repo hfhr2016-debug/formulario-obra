@@ -146,7 +146,7 @@ const ACTIVIDADES = [   // en este orden: gana la primera que coincida
   ["concreto", /concreto|hormig[oó]n|mortero|solado|zapata|pedestal|cimentaci[oó]n|columna|viga|losa|placa|sardinel|bordillo|anden|cuneta/],
 ];
 const MAT = [   // familias de materiales
-  ["otros (cinta, alambre, anclajes, tubería de vaciado)", /cinta|alambre|waterstop|barras? de uni[oó]n|tornillos? de uni[oó]n|para anclajes|tremi|vaciado/],   // no se avisa por estos: se usan en cualquier actividad
+  ["otros (cinta, alambre, anclajes, tubería de vaciado)", /cinta|alambre|waterstop|barras? de uni[oó]n|tornillos? de uni[oó]n|para anclajes|tremi|vaciado|lija|enmascar|abrasiv|\bdiscos?\b|copa diamantada|cepillo|plato de/],   // no se avisa por estos: se usan en cualquier actividad
   ["cemento, agregados o concreto", /cemento(?!\s+asf)|\barena\b|grava|gravilla|triturado|recebo|concreto|mortero|aditivo|acelerante|plastificante|piedra|r[aá]j[oó]n|sikaset|sikament|grout|\bagua\b/],
   ["acero", /acero|varilla|malla electro|figurado|\bpdr\b/],
   ["madera o formaleta", /madera|tabla|list[oó]n|estaca|guadua|formaleta|triplex|parales?/],
@@ -160,7 +160,7 @@ const EQ = [
   ["topografía", /estaci[oó]n total|teodolito|nivel (autom|topogr)|\bgps\b|gnss|jal[oó]n|prisma|dron|taquimetro/],
   ["concreto", /mezcladora|concretadora|vibrador|bomba de concreto|mixer|mezclador|allanadora|regla vibratoria|pulidora de concreto/],
   ["transporte e izaje", /volqueta|cami[oó]n|camioneta|camabaja|gr[uú]a|equipo de transporte/],   // se usan en cualquier actividad: no se avisa
-  ["maquinaria pesada", /retroexcavadora|excavadora|bulldozer|buldozer|motoniveladora|cargador|vibrocompactador|compactador|rodillo(?!\s+(para\s+)?(pintur|felpa|espuma|lana|textur))|pavimentadora|terminadora|finisher|bobcat|minicargador|pilotera|planta de asfalto|barredora|fresadora/],
+  ["maquinaria pesada", /retroexcavadora|excavadora|bulldozer|buldozer|motoniveladora|cargador|vibrocompactador|compactador|rodillo(?!\s+(para\s+|de\s+)?(pintur|felpa|espuma|lana|textur))|pavimentadora|terminadora|finisher|bobcat|minicargador|pilotera|planta de asfalto|barredora|fresadora/],
   ["soldadura", /soldadora|equipo de soldadura|plasma|oxicorte|soldadura/],
 ];
 const MO = [

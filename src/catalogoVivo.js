@@ -3,13 +3,14 @@
 // Si todavía no hay catálogo guardado, se usa el que trae el código (catalogoPrecios.js): nada se rompe.
 import { CATALOGO_MATERIALES, CATALOGO_MANO_OBRA, CATALOGO_EQUIPOS } from "./catalogoPrecios";
 import { MATERIALES_PEDIDO } from "./catalogoMaterialesPedido";
+import { NUEVOS_MATERIALES, NUEVOS_MANO_OBRA, NUEVOS_EQUIPOS } from "./catalogoNuevosPrecios";
 import { CATALOGO_ACTIVIDADES_BASE } from "./catalogoActividades";
 import { esActividadPorElemento } from "./apuReglas";
 
 export const CATALOGOS = [
-  { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: [...CATALOGO_MATERIALES, ...MATERIALES_PEDIDO], unidadSug: "u" },
-  { id: "mano_obra", titulo: "Mano de obra", clave: "ryr_cat_mano_obra", col: "cat_mano_obra", base: CATALOGO_MANO_OBRA, unidadSug: "día" },
-  { id: "equipos", titulo: "Equipos y herramientas", clave: "ryr_cat_equipos", col: "cat_equipos", base: CATALOGO_EQUIPOS, unidadSug: "día" },
+  { id: "materiales", titulo: "Materiales", clave: "ryr_cat_materiales", col: "cat_materiales", base: [...CATALOGO_MATERIALES, ...MATERIALES_PEDIDO, ...NUEVOS_MATERIALES], unidadSug: "u" },
+  { id: "mano_obra", titulo: "Mano de obra", clave: "ryr_cat_mano_obra", col: "cat_mano_obra", base: [...CATALOGO_MANO_OBRA, ...NUEVOS_MANO_OBRA], unidadSug: "día" },
+  { id: "equipos", titulo: "Equipos y herramientas", clave: "ryr_cat_equipos", col: "cat_equipos", base: [...CATALOGO_EQUIPOS, ...NUEVOS_EQUIPOS], unidadSug: "día" },
 ];
 export const catalogoDef = (id) => CATALOGOS.find((c) => c.id === id);
 
@@ -29,21 +30,42 @@ export function precioDeTexto(v) {
   return t !== "" && !isNaN(n) ? n : null;
 }
 
+// Ítems nuevos del código (lijas, cintas, discos, lijadoras y pulidoras…): quien ya tiene su catálogo guardado los recibe UNA sola vez,
+// sin tocar lo que ya tiene (se reconocen por código o por descripción + unidad). Si después los borra, no vuelven.
+const MARCA_PRECIOS = "__nuevos_precios_v1";
+const NUEVOS_POR_ID = { materiales: NUEVOS_MATERIALES, mano_obra: NUEVOS_MANO_OBRA, equipos: NUEVOS_EQUIPOS };
+function leerCat(def) {
+  const m = leer(def.clave);
+  if (m[MARCA_PRECIOS]) return m;
+  const items = Object.values(m).filter((x) => x && txt(x.descripcion));
+  if (!items.length) return m;   // sin catálogo propio se usa el del código completo
+  const codigos = new Set(items.map((x) => txt(x.codigo)));
+  const nombres = new Set(items.map((x) => clave(x.descripcion) + "|" + txt(x.unidad)));
+  (NUEVOS_POR_ID[def.id] || []).forEach((it) => {
+    if (codigos.has(txt(it.codigo)) || nombres.has(clave(it.descripcion) + "|" + txt(it.unidad))) return;
+    let k = txt(it.codigo); let n = 2; while (m[k]) k = `${txt(it.codigo)}~${n++}`;
+    m[k] = { codigo: txt(it.codigo), descripcion: txt(it.descripcion), unidad: txt(it.unidad), precio: Number(it.precio) || 0, actualizado: Date.now() };
+  });
+  m[MARCA_PRECIOS] = { nuevosPrecios: 1, actualizado: Date.now() };
+  guardar(def.clave, m);
+  return m;
+}
+
 // Ítems vigentes de un catálogo: los de la nube/dispositivo si ya hay, o los del código
 export function catalogoVigente(id) {
   const def = catalogoDef(id);
   if (!def) return [];
-  const items = Object.values(leer(def.clave)).filter((x) => x && txt(x.descripcion));
+  const items = Object.values(leerCat(def)).filter((x) => x && txt(x.descripcion));
   if (!items.length) return def.base;
   return items.slice().sort((a, b) => txt(a.descripcion).localeCompare(txt(b.descripcion), "es"));
 }
-export const hayCatalogoPropio = (id) => { const def = catalogoDef(id); return !!def && Object.values(leer(def.clave)).some((x) => x && txt(x.descripcion)); };
-export const mapaDe = (id) => leer(catalogoDef(id).clave);
+export const hayCatalogoPropio = (id) => { const def = catalogoDef(id); return !!def && Object.values(leerCat(def)).some((x) => x && txt(x.descripcion)); };
+export const mapaDe = (id) => leerCat(catalogoDef(id));
 
 // Antes de cambiar algo se copia el catálogo del código al dispositivo (si no estaba): así lo que no se toca sigue ahí.
 export function sembrarBase(id) {
   const def = catalogoDef(id);
-  const m = leer(def.clave);
+  const m = leerCat(def);
   if (Object.values(m).some((x) => x && txt(x.descripcion))) return false;
   const nuevo = {};
   def.base.forEach((it) => {
@@ -56,7 +78,7 @@ export function sembrarBase(id) {
 }
 export function codigoNuevo(id) {
   const def = catalogoDef(id);
-  const m = leer(def.clave);
+  const m = leerCat(def);
   let n = Object.keys(m).length + 1, k;
   do { k = `N-${def.id.slice(0, 3).toUpperCase()}-${String(n++).padStart(3, "0")}`; } while (m[k]);
   return k;
@@ -68,7 +90,7 @@ export function guardarItem(id, item, llave) {
   if (!desc) return { ok: false, error: "Escribe la descripción." };
   if (precio === null || precio < 0) return { ok: false, error: "Escribe un precio válido." };
   sembrarBase(id);
-  const m = leer(def.clave);
+  const m = leerCat(def);
   const codigo = txt(item.codigo) || codigoNuevo(id);
   const k = llave && m[llave] ? llave : codigo;
   if (!llave && m[k]) return { ok: false, error: `Ya existe un ítem con el código ${codigo}.` };
@@ -80,7 +102,7 @@ export function guardarItem(id, item, llave) {
 export function quitarItem(id, llave) {
   const def = catalogoDef(id);
   sembrarBase(id);
-  const m = leer(def.clave);
+  const m = leerCat(def);
   if (!m[llave]) return false;
   delete m[llave];
   guardar(def.clave, m);
@@ -89,7 +111,7 @@ export function quitarItem(id, llave) {
 // Llaves de los ítems vigentes (para editar/quitar) con su ítem
 export function itemsConLlave(id) {
   const def = catalogoDef(id);
-  const m = leer(def.clave);
+  const m = leerCat(def);
   if (!Object.values(m).some((x) => x && txt(x.descripcion))) {
     return def.base.map((it, i) => ({ llave: txt(it.codigo) || `S-${i + 1}`, item: it }));
   }
@@ -117,7 +139,7 @@ export function importarFilas(id, filas) {
   });
   if (!limpias.length) return { nuevos: 0, actualizados: 0, sinCambio: 0, errores: errores.length ? errores : ["El archivo no tiene filas con datos."] };
   sembrarBase(id);
-  const m = leer(def.clave);
+  const m = leerCat(def);
   let nuevos = 0, actualizados = 0, sinCambio = 0;
   limpias.forEach((it) => {
     let k = it.codigo && m[it.codigo] ? it.codigo : null;
@@ -143,7 +165,7 @@ export function importarFilas(id, filas) {
 // Quien ya tiene catálogo propio guardado no recibe los del código solo: este botón agrega los que le faltan (por código o por nombre + unidad),
 // sin tocar los precios que ya tiene.
 const faltantesPedido = () => {
-  const m = leer(catalogoDef("materiales").clave);
+  const m = leerCat(catalogoDef("materiales"));
   const items = Object.values(m).filter((x) => x && txt(x.descripcion));
   if (!items.length) return [];
   const codigos = new Set(items.map((x) => txt(x.codigo)));
@@ -153,7 +175,7 @@ const faltantesPedido = () => {
 export const resumenMaterialesPedido = () => { const f = faltantesPedido(); return f.length ? { faltan: f.length, total: MATERIALES_PEDIDO.length } : null; };
 export function agregarMaterialesPedido() {
   const f = faltantesPedido(); if (!f.length) return { agregados: 0 };
-  const def = catalogoDef("materiales"); const m = leer(def.clave);
+  const def = catalogoDef("materiales"); const m = leerCat(def);
   f.forEach((it) => { let k = txt(it.codigo); let n = 2; while (m[k]) k = `${txt(it.codigo)}~${n++}`; m[k] = { codigo: txt(it.codigo), descripcion: txt(it.descripcion), unidad: txt(it.unidad), precio: Number(it.precio) || 0, actualizado: Date.now() }; });
   guardar(def.clave, m);
   return { agregados: f.length };
