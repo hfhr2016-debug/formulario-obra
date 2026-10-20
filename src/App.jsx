@@ -1723,6 +1723,15 @@ function AjustesNumeros({ cerrar }) {
   );
 }
 
+// ¿Puede entrar a esa Gestión? Debe tenerla asignada y su cargo debe darle al menos un formato en ella.
+function accesoGestion(perfil, id) {
+  if (!perfil) return false;
+  if (perfil.esAdmin) return true;
+  if (!(perfil.roles || []).includes(id)) return false;
+  const lista = { tecnica: MODULOS, sst: MODULOS_SST, ambiental: MODULOS_AMBIENTAL, calidad: MODULOS_CALIDAD, compras: MODULOS_COMPRAS, presupuesto: MODULOS_PRESUPUESTO }[id];
+  if (!lista) return true;
+  return lista.some((m) => (id === "presupuesto" ? nivelCP(perfil, m.id) : nivelModulo(perfil, m.id)));
+}
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
   const { restablecerContrasena } = useAuth();
   const [verManual, setVerManual] = useState(false);
@@ -1738,7 +1747,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
     { id: "compras", nombre: "Gestión de Compras", icono: "/icons/icon-gestion-compras.png", emoji: "🛒", activo: true },
     { id: "presupuesto", nombre: "Control Presupuestal", icono: "/icons/icon-gestion-presupuesto.png", emoji: "💰", activo: true },
   ];
-  const tieneAcceso = (id) => perfil?.esAdmin || (perfil?.roles || []).includes(id);
+  const tieneAcceso = (id) => accesoGestion(perfil, id);
   const AZUL_MARINO = "#17365D";   // el mismo azul de los formatos de Gestión Técnica
   const sombraTexto = "0 1px 2px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,0.95), 0 3px 8px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)";
   return (
@@ -2356,7 +2365,7 @@ function AppInterno({ perfil, onCerrarSesion, onIrAdmin, onIrCatalogos, versionD
         onIrAdmin={onIrAdmin}
         onIrCatalogos={onIrCatalogos}
         onSeleccionar={(id) => {
-          const tieneAcceso = perfil?.esAdmin || (perfil?.roles || []).includes(id);
+          const tieneAcceso = accesoGestion(perfil, id);
           if (!tieneAcceso) {
             alert("No tienes acceso a este módulo. Si crees que deberías tenerlo, contacta al administrador.");
             return;

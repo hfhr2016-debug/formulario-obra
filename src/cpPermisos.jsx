@@ -1,6 +1,7 @@
 // Permisos por cargo dentro de Control Presupuestal.
 // E = ve y edita · V = solo consulta · ausente = no lo ve. El administrador (esAdmin) siempre edita todo.
 import { useEffect, useRef } from "react";
+import { cargoDefineCP, cargoSobreCP } from "./cargos";
 
 export const ROLES_CP = [
   { id: "gerente", nombre: "Gerente" },
@@ -31,6 +32,10 @@ export function nivelCP(perfil, moduloId) {
   if (!perfil) return null;
   if (perfil.esAdmin) return "E";
   if (!(perfil.roles || []).includes("presupuesto")) return null;
+  const extra = perfil.permisosExtra && perfil.permisosExtra[moduloId];          // ajuste individual del administrador
+  if (extra === "E" || extra === "V") return extra;
+  if (extra === "N") return null;
+  if (perfil.cargo && cargoDefineCP(perfil.cargo)) return cargoSobreCP(perfil.cargo, moduloId);   // el cargo manda cuando define sus formatos
   const fila = MATRIZ_CP[moduloId];
   return (fila && fila[perfil.rolCP]) || null;
 }

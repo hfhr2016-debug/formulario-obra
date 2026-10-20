@@ -31,7 +31,8 @@ export const PERMISOS_CARGO = {
   admin_general: { "*": "E" },
   director_obra: { tecnica: "E", "sst-*": "V", "amb-*": "V", "cal-*": "V", "com-*": "E" },
   coord_tecnico: { tecnica: "E" },
-  residente: { ficha: "V", apus: "V", presupuesto: "V", cronograma: "V", cantidades: "E", diario: "E", semanal: "V", mensual: "V", memorias: "E", acta: "E", "com-requisicion": "E", "com-recepcion": "E", "com-pendientes": "V", "com-orden": "V" },
+  // Residente: en Compras solo la Requisición; en Control Presupuestal ninguno por ahora ("N" = decidido: sin acceso).
+  residente: { ficha: "V", apus: "V", presupuesto: "V", cronograma: "V", cantidades: "E", diario: "E", semanal: "V", mensual: "V", memorias: "E", acta: "E", "com-requisicion": "E", "cp-*": "N" },
   programador: { ficha: "V", presupuesto: "V", cantidades: "V", diario: "V", cronograma: "E" },
   admin_frente: { ficha: "V", diario: "V", cantidades: "V", acta: "V", "sst-personal": "E", "sst-asistencia": "E", "sst-epp": "E", "sst-induccion": "E" },
   aux_admin: {},
@@ -60,5 +61,29 @@ export function nivelModulo(perfil, id) {
   if (!perfil.cargo) return "E";                       // sin cargo: como siempre
   const reglas = PERMISOS_CARGO[perfil.cargo];
   if (!reglas) return "E";
-  return expandir(reglas, id) || null;
+  const n = expandir(reglas, id);
+  return n === "E" || n === "V" ? n : null;
 }
+
+// Gestiones (los «roles» de la persona) que un cargo usa: las que tienen al menos un formato con acceso.
+// Es lo que se marca solo al elegir el cargo; el servidor y la sincronización siguen leyendo esos roles.
+const GESTION_DE_PREFIJO = [["sst-", "sst"], ["amb-", "ambiental"], ["cal-", "calidad"], ["com-", "compras"], ["cp-", "presupuesto"]];
+export function gestionesDeCargo(cargoId) {
+  const reglas = PERMISOS_CARGO[cargoId];
+  if (!reglas) return [];
+  const out = new Set();
+  const da = (v) => v === "E" || v === "V";
+  if (da(reglas["*"])) return ["tecnica", "sst", "ambiental", "calidad", "compras", "presupuesto"];
+  Object.entries(reglas).forEach(([k, v]) => {
+    if (!da(v)) return;
+    if (k === "tecnica" || MODULOS_TECNICA.includes(k)) out.add("tecnica");
+    GESTION_DE_PREFIJO.forEach(([pre, g]) => { if (k.startsWith(pre)) out.add(g); });
+  });
+  return Array.from(out);
+}
+// ¿El cargo define reglas propias para Control Presupuestal? (si no, sigue valiendo el «cargo en Control Presupuestal» de siempre)
+export function cargoDefineCP(cargoId) {
+  const reglas = PERMISOS_CARGO[cargoId];
+  return !!reglas && (reglas["*"] !== undefined || Object.keys(reglas).some((k) => k.startsWith("cp-")));
+}
+export const cargoSobreCP = (cargoId, id) => { const r = PERMISOS_CARGO[cargoId]; const n = r ? expandir(r, id) : undefined; return n === "E" || n === "V" ? n : null; };

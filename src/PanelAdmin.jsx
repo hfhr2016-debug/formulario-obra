@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { ROLES_CP } from "./cpPermisos";
-import { CARGOS, nivelModulo } from "./cargos";
+import { ROLES_CP, nivelCP } from "./cpPermisos";
+import { CARGOS, nivelModulo, gestionesDeCargo } from "./cargos";
 import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
 import ResumenRoles from "./ResumenRoles";
-import ReinicioApp from "./ReinicioApp";
+import ReinicioApp from "./ReinicioAppUI";
 import { limpiarEquipo, marcarVisto } from "./reinicioApp";
 import { publicarReinicio } from "./reinicioNube";
 import { detenerSync } from "./sincronizarFirestore";
@@ -148,7 +148,19 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
       alert("No se pudo actualizar. Intenta de nuevo.");
     }
   }
-  const cambiarCargo = (u, cargo) => guardarCampo(u, { cargo });
+  // Al elegir el cargo se marcan solas las Gestiones que ese cargo usa (solo agrega; nunca quita las que ya tenía)
+  const cambiarCargo = (u, cargo) => {
+    const roles = Array.from(new Set([...(u.roles || []), ...gestionesDeCargo(cargo)]));
+    return guardarCampo(u, { cargo, roles });
+  };
+  const ajustarTodosPorCargo = async () => {
+    const lista = usuarios.filter((u) => !u.esAdmin && u.cargo);
+    const cambios = lista.map((u) => [u, Array.from(new Set([...(u.roles || []), ...gestionesDeCargo(u.cargo)]))]).filter(([u, r]) => r.length !== (u.roles || []).length);
+    if (!cambios.length) { alert("Todas las personas con cargo ya tienen marcadas las Gestiones de su cargo."); return; }
+    if (!window.confirm(`Se agregarán las Gestiones que usa su cargo a ${cambios.length} persona(s). No se quita ninguna. ¿Continuar?`)) return;
+    try { for (const [u, r] of cambios) await updateDoc(doc(db, "usuarios", u.uid), { roles: r }); await cargarUsuarios(); }
+    catch (e) { alert("No se pudo completar. Intenta de nuevo."); }
+  };
   const [permisosAbierto, setPermisosAbierto] = useState("");
   // Permiso individual de un módulo: "" = el que le da su cargo; E = edita; V = solo consulta; N = sin acceso
   const cambiarPermisoExtra = (u, moduloId, valor) => {
@@ -204,6 +216,9 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
         <button type="button" data-ver-roles onClick={() => setVerRoles(true)} className="w-full py-3 rounded-xl font-bold text-[13.5px] mb-3 border" style={{ borderColor: NAVY, color: NAVY, background: "white" }}>
           🔐 Resumen de roles y permisos
         </button>
+        <button type="button" data-ajustar-cargos onClick={ajustarTodosPorCargo} className="w-full py-2.5 rounded-xl font-semibold text-[12.5px] mb-3 border" style={{ borderColor: LINE, color: NAVY, background: "white" }}>
+          Completar las Gestiones de todos según su cargo
+        </button>
         <button
           onClick={() => setMostrarForm(!mostrarForm)}
           className="w-full py-3 rounded-xl text-white font-bold text-[13.5px] mb-4"
@@ -224,7 +239,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
             <input type="text" value={contrasena} onChange={(e) => setContrasena(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }} />
 
             <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Cargo</label>
-            <select value={cargoNuevo} onChange={(e) => setCargoNuevo(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }}>
+            <select value={cargoNuevo} onChange={(e) => { setCargoNuevo(e.target.value); const g = gestionesDeCargo(e.target.value); if (g.length) setRolesNuevo((r) => { const n = { ...r }; g.forEach((x) => { n[x] = true; }); return n; }); }} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }}>
               <option value="">Elegir cargo…</option>
               {CARGOS.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
@@ -342,11 +357,11 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
                   {permisosAbierto === u.uid && (
                     <div data-permisos-individuales className="mt-1.5 p-2 rounded-lg" style={{ background: "#F7F7F5", border: `1px solid ${LINE}` }}>
                       <div className="text-[10.5px] mb-1.5" style={{ color: "#6B7280" }}>Por defecto cada módulo sigue el cargo de la persona. Aquí puedes dar o quitar acceso a un módulo en particular.</div>
-                      {[["tecnica", "Gestión Técnica"], ["sst", "Gestión SG-SST"], ["ambiental", "Gestión Ambiental"], ["calidad", "Gestión de Calidad"], ["compras", "Gestión de Compras"]].filter(([a]) => (u.roles || []).includes(a)).map(([area, titulo]) => (
+                      {[["tecnica", "Gestión Técnica"], ["sst", "Gestión SG-SST"], ["ambiental", "Gestión Ambiental"], ["calidad", "Gestión de Calidad"], ["compras", "Gestión de Compras"], ["presupuesto", "Control Presupuestal"]].filter(([a]) => (u.roles || []).includes(a)).map(([area, titulo]) => (
                         <div key={area} className="mb-2">
                           <div className="text-[10.5px] font-semibold mb-1" style={{ color: NAVY }}>{titulo}</div>
                           {(modulosPorArea[area] || []).filter((m) => m.activo !== false).map((m) => {
-                            const porCargo = nivelModulo({ cargo: u.cargo }, m.id);
+                            const porCargo = area === "presupuesto" ? nivelCP({ roles: ["presupuesto"], cargo: u.cargo, rolCP: u.rolCP }, m.id) : nivelModulo({ cargo: u.cargo }, m.id);
                             const textoCargo = porCargo === "E" ? "Editar" : porCargo === "V" ? "Solo consulta" : "Sin acceso";
                             return (
                               <div key={m.id} className="flex items-center justify-between gap-2 mb-1">
