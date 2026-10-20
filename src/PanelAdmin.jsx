@@ -43,8 +43,11 @@ const ROLES_DISPONIBLES = [
 ];
 
 export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
-  const { perfil } = useAuth();
+  const { perfil, usuario: usuarioAuth } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
+  // Cambiar nombre o correo de una persona: solo lo hace el administrador
+  const [edicion, setEdicion] = useState(null);   // { uid, modo: "nombre" | "correo", valor, clave, msg, ok, ocupado }
+
   const [cargando, setCargando] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [verRoles, setVerRoles] = useState(false);
@@ -63,7 +66,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
     try {
       const snap = await getDocs(collection(db, "usuarios"));
       const lista = [];
-      snap.forEach((d) => lista.push({ uid: d.id, ...d.data() }));
+      snap.forEach((d) => { const x = d.data(); if (!x.oculto) lista.push({ uid: d.id, ...x }); });   // los accesos reemplazados por un cambio de correo no se listan
       lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
       setUsuarios(lista);
     } catch (e) {
@@ -120,6 +123,42 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
       await deleteApp(appSecundaria);
       setCreando(false);
     }
+  }
+
+  const abrirEdicion = (u, modo) => setEdicion({ uid: u.uid, modo, valor: modo === "nombre" ? (u.nombre || "") : "", clave: "", msg: "", ok: false, ocupado: false });
+  const ponerEd = (c) => setEdicion((e) => (e ? { ...e, ...c } : e));
+  async function guardarNombre(u) {
+    const nuevo = (edicion.valor || "").trim();
+    if (nuevo.length < 3) return ponerEd({ msg: "Escribe el nombre completo." });
+    ponerEd({ ocupado: true, msg: "" });
+    try { await updateDoc(doc(db, "usuarios", u.uid), { nombre: nuevo }); setEdicion(null); await cargarUsuarios(); }
+    catch (e) { ponerEd({ ocupado: false, msg: "No se pudo cambiar el nombre. Intenta de nuevo." }); }
+  }
+  // Cambiar el correo: se crea el acceso con el correo nuevo (y una contraseña temporal), se le pasa todo el perfil y el acceso viejo queda desactivado y oculto.
+  async function cambiarCorreo(u) {
+    const nuevo = (edicion.valor || "").trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(nuevo)) return ponerEd({ msg: "El correo no es válido." });
+    if (nuevo === String(u.correo || "").toLowerCase()) return ponerEd({ msg: "Ese ya es el correo actual." });
+    if ((edicion.clave || "").length < 6) return ponerEd({ msg: "La contraseña temporal debe tener al menos 6 caracteres." });
+    if (usuarioAuth && usuarioAuth.uid === u.uid) return ponerEd({ msg: "No puedes cambiar tu propio correo. Pídele a otra persona administradora que lo haga." });
+    if (!window.confirm(`Se creará el acceso con ${nuevo} y el correo ${u.correo || "anterior"} dejará de funcionar. ¿Continuar?`)) return;
+    ponerEd({ ocupado: true, msg: "" });
+    const appSecundaria = initializeApp(firebaseConfigSecundaria, "secundaria-" + Date.now());
+    try {
+      const cred = await createUserWithEmailAndPassword(getAuth(appSecundaria), nuevo, edicion.clave);
+      const { uid: _viejo, ...copia } = u;
+      await setDoc(doc(db, "usuarios", cred.user.uid), { ...copia, correo: nuevo, activo: true, correoAnterior: u.correo || "", reemplazaA: u.uid, creadoEn: new Date().toISOString() });
+      await updateDoc(doc(db, "usuarios", u.uid), { activo: false, oculto: true, reemplazadoPor: cred.user.uid });
+      try { await getAuth(appSecundaria).signOut(); } catch (e) { /* se cierra igual */ }
+      ponerEd({ ocupado: false, ok: true, msg: `Listo. ${u.nombre} entra con ${nuevo} y la contraseña temporal que escribiste. Después puede cambiarla desde «Mi cuenta».` });
+      await cargarUsuarios();
+    } catch (err) {
+      let msg = "No se pudo cambiar el correo. Intenta de nuevo.";
+      if (err && err.code === "auth/email-already-in-use") msg = "Ese correo ya está registrado en otro usuario.";
+      else if (err && err.code === "auth/invalid-email") msg = "El correo no es válido.";
+      else if (err && err.code === "auth/weak-password") msg = "La contraseña temporal es muy débil.";
+      ponerEd({ ocupado: false, msg });
+    } finally { try { await deleteApp(appSecundaria); } catch (e) { /* nada */ } }
   }
 
   async function alternarActivo(u) {
@@ -299,6 +338,26 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
                 )}
               </div>
               <div className="text-[11px] text-gray-500 mb-2">{u.correo}</div>
+              <div className="flex gap-3 mb-2">
+                <button type="button" data-cambiar-nombre onClick={() => abrirEdicion(u, "nombre")} className="text-[10.5px] underline" style={{ color: NAVY }}>Cambiar nombre</button>
+                <button type="button" data-cambiar-correo onClick={() => abrirEdicion(u, "correo")} className="text-[10.5px] underline" style={{ color: NAVY }}>Cambiar correo</button>
+              </div>
+              {edicion && edicion.uid === u.uid && (
+                <div data-edicion className="mb-2 p-2 rounded-lg" style={{ background: "#F7F7F5", border: `1px solid ${LINE}` }}>
+                  <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>{edicion.modo === "nombre" ? "Nombre completo" : "Correo nuevo"}</label>
+                  <input data-ed-valor type={edicion.modo === "correo" ? "email" : "text"} value={edicion.valor} onChange={(e) => ponerEd({ valor: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} />
+                  {edicion.modo === "correo" && (<>
+                    <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>Contraseña temporal</label>
+                    <input data-ed-clave type="text" value={edicion.clave} onChange={(e) => ponerEd({ clave: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} autoComplete="off" />
+                    <div className="text-[10px] text-gray-500 mb-1.5">Se crea el acceso con el correo nuevo y se le pasa todo lo de la persona. El correo anterior deja de funcionar. Entrégale la contraseña temporal.</div>
+                  </>)}
+                  {edicion.msg && <div data-ed-msg className="text-[11px] mb-1.5" style={{ color: edicion.ok ? "#1E6B3A" : "#B3261E" }}>{edicion.msg}</div>}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setEdicion(null)} className="flex-1 py-1.5 rounded border text-[11.5px]" style={{ borderColor: LINE, color: NAVY, background: "white" }}>{edicion.ok ? "Cerrar" : "Cancelar"}</button>
+                    {!edicion.ok && <button type="button" data-ed-guardar disabled={edicion.ocupado} onClick={() => (edicion.modo === "nombre" ? guardarNombre(u) : cambiarCorreo(u))} className="flex-1 py-1.5 rounded text-white text-[11.5px] font-semibold" style={{ background: edicion.ocupado ? "#9AA0A8" : NAVY }}>{edicion.ocupado ? "Guardando…" : "Guardar"}</button>}
+                  </div>
+                </div>
+              )}
               {!u.esAdmin && (
                 <div className="flex flex-wrap gap-1.5">
                   {ROLES_DISPONIBLES.map((r) => {
