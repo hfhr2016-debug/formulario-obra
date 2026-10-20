@@ -387,7 +387,13 @@ function Vender({ e, avisar, ir }) {
   const [todosClientes, setTodosClientes] = useState(false);
   const cfg = useContext(CfgCtx);
   const familias = [...new Set(e.productos.map((p) => p.familia).filter(Boolean))].sort();
-  const lista = e.productos.filter((p) => D.esActivo(p) && p.nombre.toLowerCase().includes(busca.toLowerCase()) && (!familia || p.familia === familia));
+  // Búsqueda: primero los que EMPIEZAN por lo escrito, luego los que tienen una palabra que empieza así, y al final los que lo contienen. Sin importar tildes ni mayúsculas.
+  const sinTilde = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const q = sinTilde(busca).trim();
+  const rango = (p) => { const n = sinTilde(p.nombre); if (!q) return 0; if (n.startsWith(q)) return 0; if (n.split(/[\s\-/(),.]+/).some((w) => w.startsWith(q))) return 1; return n.includes(q) ? 2 : 9; };
+  const coinciden = e.productos.filter((p) => D.esActivo(p) && (!familia || p.familia === familia) && rango(p) < 9).sort((x, y) => rango(x) - rango(y) || sinTilde(x.nombre).localeCompare(sinTilde(y.nombre)));
+  const TOPE = 60;   // con catálogos grandes no se dibuja todo: se escribe para filtrar
+  const lista = coinciden.slice(0, TOPE);
   const yo = useContext(UsuarioCtx).trim().toLowerCase();
   const clientesActivos = e.clientes.filter(D.esActivo);
   const misClientes = rol === "vendedor" ? clientesActivos.filter((c) => (c.vendedor || "").trim().toLowerCase() === yo) : [];
@@ -511,6 +517,7 @@ function Vender({ e, avisar, ir }) {
             <b>{x.nombre}</b><div className="sub">{D.textoOferta(x, e.productos)}{x.hasta ? " · hasta el " + D.fechaTxt(x.hasta) : ""}</div>
             <button type="button" className="s" data-oferta-compartir style={{ marginTop: 4 }} onClick={() => compartirOferta(e, x, cfg.nombreComercial || "", avisar)}>Enviar por WhatsApp</button></div>)}
         </div>; })()}
+      {coinciden.length > TOPE && <div className="sub" data-tope-lista style={{ margin: "4px 0" }}>Mostrando {TOPE} de {coinciden.length} productos. Escribe las primeras letras del producto para encontrarlo.</div>}
       {calc && <TecladoCantidad titulo={calc.nombre} inicial={calc.valor} alCancelar={() => setCalc(null)} alAceptar={(n) => { poner(calc.id, n); setCalc(null); }} />}
       {lista.map((p) => {
         const c = items[p.id] || 0;
