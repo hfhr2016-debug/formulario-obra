@@ -22,6 +22,7 @@ import { LimpiarEquipoEnlace } from "./ReinicioApp";
 import { leerMarcaReinicio } from "./reinicioNube";
 import { leerFormato, guardarFormato, formatNum, formatPesos, instalarFormulasEnCampos } from "./formatoNumeros";
 import FormularioAPU from "./FormularioAPU";
+import CargaApp from "./CargaApp";
 import { MiCuenta, EstadoSync, Respaldo, Soporte, Terminos, Novedades, AjustesEquipo, aplicarPrefs, useCierrePorInactividad } from "./MenuExtras";
 import FormularioFicha from "./FormularioFicha";
 import FormularioPresupuestoNuevo from "./FormularioPresupuestoNuevo";
@@ -2687,11 +2688,7 @@ function AppConSesion() {
   const avisoInactividad = useCierrePorInactividad(cerrarSesionSegura, !!(usuario && perfil));
 
   if (cargando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: PAPER }}>
-        <div className="text-[13px]" style={{ color: NAVY }}>Cargando...</div>
-      </div>
-    );
+    return <CargaApp texto="Cargando..." />;
   }
 
   if (!usuario || !perfil) {
@@ -2703,11 +2700,7 @@ function AppConSesion() {
   }
 
   if (!sync.listo) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: PAPER }}>
-        <div className="text-[13px]" style={{ color: NAVY }}>Sincronizando datos...</div>
-      </div>
-    );
+    return <CargaApp texto="Sincronizando datos..." />;
   }
 
   if (vistaExterna === "catalogos" && perfil.esAdmin) {
