@@ -7,7 +7,7 @@ import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore"
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
 import ResumenRoles from "./ResumenRoles";
-import ReinicioApp from "./ReinicioAppUI";
+import ReinicioApp from "./ReinicioApp";
 import { limpiarEquipo, marcarVisto } from "./reinicioApp";
 import { publicarReinicio } from "./reinicioNube";
 import { detenerSync } from "./sincronizarFirestore";
