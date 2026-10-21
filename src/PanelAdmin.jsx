@@ -7,6 +7,7 @@ import { collection, doc, setDoc, getDocs, updateDoc } from "firebase/firestore"
 import { db } from "./firebaseConfig";
 import { useAuth } from "./AuthContext";
 import ResumenRoles from "./ResumenRoles";
+import { errorClave, REQUISITOS_CLAVE } from "./clave";
 import ReinicioApp from "./ReinicioApp";
 import { limpiarEquipo, marcarVisto } from "./reinicioApp";
 import { publicarReinicio } from "./reinicioNube";
@@ -86,8 +87,8 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
       setError("Completa nombre, correo y contraseña.");
       return;
     }
-    if (contrasena.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+    if (errorClave(contrasena)) {
+      setError(errorClave(contrasena));
       return;
     }
     setCreando(true);
@@ -139,7 +140,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
     const nuevo = (edicion.valor || "").trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(nuevo)) return ponerEd({ msg: "El correo no es válido." });
     if (nuevo === String(u.correo || "").toLowerCase()) return ponerEd({ msg: "Ese ya es el correo actual." });
-    if ((edicion.clave || "").length < 6) return ponerEd({ msg: "La contraseña temporal debe tener al menos 6 caracteres." });
+    if (errorClave(edicion.clave)) return ponerEd({ msg: errorClave(edicion.clave) });
     if (usuarioAuth && usuarioAuth.uid === u.uid) return ponerEd({ msg: "No puedes cambiar tu propio correo. Pídele a otra persona administradora que lo haga." });
     if (!window.confirm(`Se creará el acceso con ${nuevo} y el correo ${u.correo || "anterior"} dejará de funcionar. ¿Continuar?`)) return;
     ponerEd({ ocupado: true, msg: "" });
@@ -274,8 +275,9 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
             <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Correo</label>
             <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }} />
 
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña (mínimo 6 caracteres)</label>
-            <input type="text" value={contrasena} onChange={(e) => setContrasena(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }} />
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña</label>
+            <input type="text" value={contrasena} onChange={(e) => setContrasena(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-1" style={{ borderColor: LINE }} />
+            <div data-requisitos-clave className="text-[10.5px] text-gray-500 mb-3">{REQUISITOS_CLAVE}</div>
 
             <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Cargo</label>
             <select value={cargoNuevo} onChange={(e) => { setCargoNuevo(e.target.value); const g = gestionesDeCargo(e.target.value); if (g.length) setRolesNuevo((r) => { const n = { ...r }; g.forEach((x) => { n[x] = true; }); return n; }); }} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }}>
@@ -349,6 +351,7 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
                   {edicion.modo === "correo" && (<>
                     <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>Contraseña temporal</label>
                     <input data-ed-clave type="text" value={edicion.clave} onChange={(e) => ponerEd({ clave: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} autoComplete="off" />
+                    <div className="text-[10px] text-gray-500 mb-1.5">{REQUISITOS_CLAVE}</div>
                     <div className="text-[10px] text-gray-500 mb-1.5">Se crea el acceso con el correo nuevo y se le pasa todo lo de la persona. El correo anterior deja de funcionar. Entrégale la contraseña temporal.</div>
                   </>)}
                   {edicion.msg && <div data-ed-msg className="text-[11px] mb-1.5" style={{ color: edicion.ok ? "#1E6B3A" : "#B3261E" }}>{edicion.msg}</div>}
