@@ -1734,7 +1734,7 @@ function accesoGestion(perfil, id) {
   return lista.some((m) => (id === "presupuesto" ? nivelCP(perfil, m.id) : nivelModulo(perfil, m.id)));
 }
 function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCatalogos }) {
-  const { restablecerContrasena, eliminarMiCuenta } = useAuth();
+  const { restablecerContrasena, eliminarMiCuenta, cambiarContrasena } = useAuth();
   const [verManual, setVerManual] = useState(false);
   const [verAjustes, setVerAjustes] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -1896,7 +1896,7 @@ function SelectorApps({ onSeleccionar, perfil, onCerrarSesion, onIrAdmin, onIrCa
         <div className="text-[10px] mt-1" style={{ color: GOLD }}>© {new Date().getFullYear()} {EMPRESA.nombre} · SAIEA OBRAS</div>
       </div>
       {verAjustes && <AjustesNumeros cerrar={() => setVerAjustes(false)} />}
-      {panelExtra === "cuenta" && <MiCuenta restablecerContrasena={restablecerContrasena} eliminarMiCuenta={eliminarMiCuenta} perfil={perfil} empresa={EMPRESA.nombre} cerrar={() => setPanelExtra("")} />}
+      {panelExtra === "cuenta" && <MiCuenta restablecerContrasena={restablecerContrasena} eliminarMiCuenta={eliminarMiCuenta} cambiarContrasena={cambiarContrasena} perfil={perfil} empresa={EMPRESA.nombre} cerrar={() => setPanelExtra("")} />}
       {panelExtra === "sync" && <EstadoSync cerrar={() => setPanelExtra("")} />}
       {panelExtra === "respaldo" && <Respaldo cerrar={() => setPanelExtra("")} />}
       {panelExtra === "soporte" && <Soporte cerrar={() => setPanelExtra("")} />}

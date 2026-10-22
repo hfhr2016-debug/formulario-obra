@@ -43,6 +43,8 @@ const ROLES_DISPONIBLES = [
   { id: "presupuesto", nombre: "Control Presupuestal" },
 ];
 
+const Req = () => <span aria-hidden="true" style={{ color: "#E53935", fontWeight: 700 }}> *</span>;   // marca de campo obligatorio
+
 export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
   const { perfil, usuario: usuarioAuth } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
@@ -269,13 +271,14 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
 
         {mostrarForm && (
           <form onSubmit={crearUsuario} className="bg-white rounded-xl p-4 mb-5" style={{ border: `1px solid ${LINE}` }}>
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Nombre completo</label>
+            <div data-nota-req className="text-[10.5px] text-gray-500 mb-2"><span style={{ color: "#E53935", fontWeight: 700 }}>*</span> Campo obligatorio</div>
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Nombre completo<Req /></label>
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }} />
 
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Correo</label>
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Correo<Req /></label>
             <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-3" style={{ borderColor: LINE }} />
 
-            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña</label>
+            <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña<Req /></label>
             <input type="text" value={contrasena} onChange={(e) => setContrasena(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-1" style={{ borderColor: LINE }} />
             <div data-requisitos-clave className="text-[10.5px] text-gray-500 mb-3">{REQUISITOS_CLAVE}</div>
 
@@ -346,10 +349,10 @@ export default function PanelAdmin({ onVolver, modulosPorArea = {} }) {
               </div>
               {edicion && edicion.uid === u.uid && (
                 <div data-edicion className="mb-2 p-2 rounded-lg" style={{ background: "#F7F7F5", border: `1px solid ${LINE}` }}>
-                  <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>{edicion.modo === "nombre" ? "Nombre completo" : "Correo nuevo"}</label>
+                  <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>{edicion.modo === "nombre" ? "Nombre completo" : "Correo nuevo"}<Req /></label>
                   <input data-ed-valor type={edicion.modo === "correo" ? "email" : "text"} value={edicion.valor} onChange={(e) => ponerEd({ valor: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} />
                   {edicion.modo === "correo" && (<>
-                    <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>Contraseña temporal</label>
+                    <label className="text-[10.5px] font-semibold" style={{ color: NAVY }}>Contraseña temporal<Req /></label>
                     <input data-ed-clave type="text" value={edicion.clave} onChange={(e) => ponerEd({ clave: e.target.value })} className="w-full border rounded px-2 py-1.5 text-[12px] mb-1.5" style={{ borderColor: LINE }} autoComplete="off" />
                     <div className="text-[10px] text-gray-500 mb-1.5">{REQUISITOS_CLAVE}</div>
                     <div className="text-[10px] text-gray-500 mb-1.5">Se crea el acceso con el correo nuevo y se le pasa todo lo de la persona. El correo anterior deja de funcionar. Entrégale la contraseña temporal.</div>

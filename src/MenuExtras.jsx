@@ -2,6 +2,7 @@
 // de la persona (tamaño de letra). Se guarda solo en este equipo. El cierre automático por inactividad vive en AuthContext.jsx.
 import { useState, useEffect } from "react";
 import { PREFIJO_DATOS } from "./reinicioApp";
+import { errorClave, REQUISITOS_CLAVE } from "./clave";
 
 const NAVY = "#1B2A45", GOLD = "#B8893B", PAPER = "#F7F7F5", LINE = "#E3E0D8";
 export const SOPORTE = { correo: "saieaobras@gmail.com", whatsapp: "" };   // datos de contacto de soporte: se llenan aquí cuando se definan
@@ -39,9 +40,20 @@ function Ventana({ titulo, cerrar, children, marca }) {
 }
 const Dato = ({ k, v }) => (v ? <div className="flex justify-between gap-3 py-1.5 border-b text-[12.5px]" style={{ borderColor: LINE }}><span className="text-gray-500">{k}</span><b className="text-right break-all" style={{ color: NAVY }}>{v}</b></div> : null);
 
-export function MiCuenta({ perfil, empresa, cerrar, restablecerContrasena, eliminarMiCuenta }) {
+export function MiCuenta({ perfil, empresa, cerrar, restablecerContrasena, eliminarMiCuenta, cambiarContrasena }) {
   const [msg, setMsg] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [c, setC] = useState({ actual: "", nueva: "", repetir: "" });
+  const [cMsg, setCMsg] = useState({ texto: "", ok: false });
+  const [cOcupado, setCOcupado] = useState(false);
+  const guardarClave = async () => {
+    const err = !c.actual ? "Escribe tu clave actual." : errorClave(c.nueva) || (c.nueva !== c.repetir ? "La confirmación no coincide con la clave nueva." : "") || (c.nueva === c.actual ? "La clave nueva debe ser distinta de la actual." : "");
+    if (err) return setCMsg({ texto: err, ok: false });
+    setCOcupado(true); setCMsg({ texto: "", ok: false });
+    const r = cambiarContrasena ? await cambiarContrasena(c.actual, c.nueva) : { ok: false, error: "No se pudo cambiar la clave ahora." };
+    setCOcupado(false);
+    if (r.ok) { setC({ actual: "", nueva: "", repetir: "" }); setCMsg({ texto: "Clave cambiada.", ok: true }); } else setCMsg({ texto: r.error, ok: false });
+  };
   const enviar = async () => {
     if (!perfil?.correo) return;
     setEnviando(true); setMsg("");
@@ -53,7 +65,17 @@ export function MiCuenta({ perfil, empresa, cerrar, restablecerContrasena, elimi
     <Ventana titulo="Mi cuenta" cerrar={cerrar} marca="data-mi-cuenta">
       <Dato k="Nombre" v={perfil?.nombre} /><Dato k="Correo" v={perfil?.correo} /><Dato k="Empresa" v={empresa} />
       <Dato k="Tipo de usuario" v={perfil?.esAdmin ? "Administrador" : "Usuario"} /><Dato k="Cargo" v={perfil?.cargo} />
-      <button type="button" data-cambiar-clave onClick={enviar} disabled={enviando || !perfil?.correo} className="w-full mt-3 py-2 rounded-lg border text-[13px] font-semibold" style={{ borderColor: NAVY, color: NAVY }}>{enviando ? "Enviando…" : "Cambiar mi contraseña"}</button>
+      {cambiarContrasena && (
+        <div data-form-clave className="mt-3 border rounded-lg p-3" style={{ borderColor: LINE }}>
+          <div className="text-[12px] font-bold mb-2" style={{ color: NAVY }}>Cambiar mi clave</div>
+          <input data-c="actual" type="password" autoComplete="current-password" placeholder="Clave actual" value={c.actual} onChange={(e) => setC({ ...c, actual: e.target.value })} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-2" style={{ borderColor: LINE }} />
+          <input data-c="nueva" type="password" autoComplete="new-password" placeholder="Clave nueva" value={c.nueva} onChange={(e) => setC({ ...c, nueva: e.target.value })} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-2" style={{ borderColor: LINE }} />
+          <input data-c="repetir" type="password" autoComplete="new-password" placeholder="Confirmar clave nueva" value={c.repetir} onChange={(e) => setC({ ...c, repetir: e.target.value })} className="w-full border rounded-lg px-3 py-2 text-[13px] mb-1" style={{ borderColor: LINE }} />
+          <div data-requisitos-clave className="text-[10.5px] text-gray-500 mb-2">{REQUISITOS_CLAVE}</div>
+          <button type="button" data-guardar-clave onClick={guardarClave} disabled={cOcupado} className="w-full py-2 rounded-lg text-white text-[13px] font-semibold" style={{ background: NAVY }}>{cOcupado ? "Guardando…" : "Cambiar clave"}</button>
+          {cMsg.texto && <div data-clave-nueva-msg className="text-[12px] mt-2" style={{ color: cMsg.ok ? "#1E6B3A" : "#B3261E" }}>{cMsg.texto}</div>}
+        </div>)}
+      <button type="button" data-cambiar-clave onClick={enviar} disabled={enviando || !perfil?.correo} className="w-full mt-3 py-2 rounded-lg border text-[13px] font-semibold" style={{ borderColor: NAVY, color: NAVY }}>{enviando ? "Enviando…" : "Olvidé mi clave actual: enviarme un correo"}</button>
       {msg && <div className="text-[12px] mt-2" data-clave-msg style={{ color: msg.startsWith("Te enviamos") ? "#1E6B3A" : "#B3261E" }}>{msg}</div>}
       <div className="text-[10.5px] text-gray-500 mt-2">Para cambiar tu nombre, correo o permisos, pídeselo al administrador.</div>
       {eliminarMiCuenta && <EliminarCuenta eliminarMiCuenta={eliminarMiCuenta} />}

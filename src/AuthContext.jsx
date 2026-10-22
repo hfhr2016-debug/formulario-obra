@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { doc, getDoc, getDocs, deleteDoc, collection } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
@@ -143,6 +143,24 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Cambiar la propia contraseña: se confirma con la actual y se guarda la nueva.
+  async function cambiarContrasena(actual, nueva) {
+    const u = auth.currentUser;
+    if (!u || !u.email) return { ok: false, error: "No hay una sesión activa." };
+    try {
+      await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, actual));
+    } catch (e) {
+      return { ok: false, error: (e.code === "auth/too-many-requests") ? "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." : (e.code === "auth/network-request-failed") ? "Sin conexión a internet." : "La clave actual no es correcta." };
+    }
+    try {
+      await updatePassword(u, nueva);
+      return { ok: true };
+    } catch (e) {
+      console.error("Cambiar contraseña:", e);
+      return { ok: false, error: e.code === "auth/weak-password" ? "La clave nueva es muy débil." : e.code === "auth/network-request-failed" ? "Sin conexión a internet." : "No se pudo cambiar la clave. Intenta de nuevo." };
+    }
+  }
+
   async function restablecerContrasena(correo) {
     try {
       await sendPasswordResetEmail(auth, correo.trim());
@@ -219,7 +237,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, perfil, cargando, errorLogin, iniciarSesion, cerrarSesion, tieneRol, restablecerContrasena, eliminarMiCuenta }}>
+    <AuthContext.Provider value={{ usuario, perfil, cargando, errorLogin, iniciarSesion, cerrarSesion, tieneRol, restablecerContrasena, eliminarMiCuenta, cambiarContrasena }}>
       {children}
     </AuthContext.Provider>
   );
