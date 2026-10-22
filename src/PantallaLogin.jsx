@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { leerCorreoRecordado, guardarCorreoRecordado } from "./correoRecordado";
 import { faceIdDisponible, faceIdActivado, faceIdRegistrar, faceIdGuardar, faceIdIngresar, faceIdDesactivar, faceIdCorreoGuardado } from "./faceId";
 
 const NAVY = "#1B2A45";
@@ -9,7 +10,8 @@ const LINE = "#D9DCE1";
 
 export default function PantallaLogin() {
   const { iniciarSesion, errorLogin, restablecerContrasena } = useAuth();
-  const [correo, setCorreo] = useState("");
+  const [correo, setCorreo] = useState(() => leerCorreoRecordado());
+  const [recordar, setRecordar] = useState(true);
   const [contrasena, setContrasena] = useState("");
   const [cargando, setCargando] = useState(false);
   const [verContrasena, setVerContrasena] = useState(false);
@@ -45,6 +47,7 @@ export default function PantallaLogin() {
       catch { setAvisoFace("No se activó Face ID (se canceló). Puedes volver a intentarlo."); }
     }
     const r = await iniciarSesion(correo.trim(), contrasena);
+    if (r && r.ok) guardarCorreoRecordado(recordar ? correo.trim() : "");
     if (r && r.ok && idCred) {
       try { await faceIdGuardar(idCred, correo.trim(), contrasena); } catch { /* el ingreso ya se hizo */ }
     }
@@ -123,6 +126,11 @@ export default function PantallaLogin() {
             style={{ borderColor: LINE }}
             autoComplete="username"
           />
+
+          <label className="flex items-center gap-2 mb-3 -mt-1 text-[11.5px]" style={{ color: NAVY }}>
+            <input type="checkbox" data-recordar-correo checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
+            <span>Recordar mi correo en este aparato</span>
+          </label>
 
           <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña</label>
           <div className="relative mb-1">
