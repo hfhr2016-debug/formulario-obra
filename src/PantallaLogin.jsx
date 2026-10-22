@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
-import { leerCorreoRecordado, guardarCorreoRecordado } from "./correoRecordado";
+import { leerCorreosRecordados, agregarCorreoRecordado, olvidarCorreoRecordado } from "./correoRecordado";
 import { faceIdDisponible, faceIdActivado, faceIdRegistrar, faceIdGuardar, faceIdIngresar, faceIdDesactivar, faceIdCorreoGuardado } from "./faceId";
 
 const NAVY = "#1B2A45";
@@ -10,8 +10,12 @@ const LINE = "#D9DCE1";
 
 export default function PantallaLogin() {
   const { iniciarSesion, errorLogin, restablecerContrasena } = useAuth();
-  const [correo, setCorreo] = useState(() => leerCorreoRecordado());
+  const [correo, setCorreo] = useState("");
   const [recordar, setRecordar] = useState(true);
+  const [correos, setCorreos] = useState(() => leerCorreosRecordados());
+  const [foco, setFoco] = useState(false);
+  const qc = correo.trim().toLowerCase();
+  const sugeridos = foco ? correos.filter((c) => c.toLowerCase() !== qc && c.toLowerCase().includes(qc)).slice(0, 5) : [];
   const [contrasena, setContrasena] = useState("");
   const [cargando, setCargando] = useState(false);
   const [verContrasena, setVerContrasena] = useState(false);
@@ -47,7 +51,7 @@ export default function PantallaLogin() {
       catch { setAvisoFace("No se activó Face ID (se canceló). Puedes volver a intentarlo."); }
     }
     const r = await iniciarSesion(correo.trim(), contrasena);
-    if (r && r.ok) guardarCorreoRecordado(recordar ? correo.trim() : "");
+    if (r && r.ok && recordar) setCorreos(agregarCorreoRecordado(correo.trim()));
     if (r && r.ok && idCred) {
       try { await faceIdGuardar(idCred, correo.trim(), contrasena); } catch { /* el ingreso ya se hizo */ }
     }
@@ -117,15 +121,29 @@ export default function PantallaLogin() {
           </div>
 
           <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Correo</label>
-          <input
-            type="email"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            placeholder="tucorreo@ejemplo.com"
-            className="w-full border rounded-lg px-3 py-2.5 text-[13.5px] mb-3"
-            style={{ borderColor: LINE }}
-            autoComplete="username"
-          />
+          <div className="relative mb-3">
+            <input
+              type="email"
+              value={correo}
+              onChange={(e) => { setCorreo(e.target.value); setFoco(true); }}
+              onFocus={() => setFoco(true)}
+              onBlur={() => setTimeout(() => setFoco(false), 150)}
+              placeholder="tucorreo@ejemplo.com"
+              className="w-full border rounded-lg px-3 py-2.5 text-[13.5px]"
+              style={{ borderColor: LINE }}
+              autoComplete="username"
+            />
+            {sugeridos.length > 0 && (
+              <div data-correos-sugeridos role="listbox" className="absolute left-0 right-0 bg-white border rounded-lg overflow-hidden shadow-lg" style={{ top: "100%", marginTop: 2, borderColor: LINE, zIndex: 20 }}>
+                {sugeridos.map((c) => (
+                  <div key={c} className="flex items-center">
+                    <button type="button" data-correo-sugerido={c} onMouseDown={(e) => e.preventDefault()} onClick={() => { setCorreo(c); setFoco(false); }} className="flex-1 text-left px-3 py-2.5 text-[13px]" style={{ color: NAVY }}>{c}</button>
+                    <button type="button" data-correo-olvidar={c} aria-label={"Olvidar " + c} onMouseDown={(e) => e.preventDefault()} onClick={() => setCorreos(olvidarCorreoRecordado(c))} className="px-3 py-2.5 text-[12px]" style={{ color: "#8A93A0" }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <label className="flex items-center gap-2 mb-3 -mt-1 text-[11.5px]" style={{ color: NAVY }}>
             <input type="checkbox" data-recordar-correo checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
