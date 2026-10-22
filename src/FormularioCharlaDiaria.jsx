@@ -153,7 +153,7 @@ function Campo({ label, value, onChange, placeholder, type = "text", lista, inpu
 // "opciones" (sin importar tildes ni mayúsculas). Siempre se puede escribir un valor que no esté en la lista.
 // Con "onLimpiar" aparece una × para borrar. La sugerencia se elige con un toque COMPLETO (click): se evita que la
 // casilla pierda el foco antes (mousedown), que en el celular cerraba la lista antes de poder tocarla.
-function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opciones, opcionesAlAbrir, placeholder, onBlurValor, maxResultados = 8 }) {
+function BuscadorLista({ label, value, onChange, onElegir, onLimpiar, opciones, opcionesAlAbrir, placeholder, onBlurValor, maxResultados = 20 }) {
   const [abierto, setAbierto] = useState(false);
   const inputRef = useRef(null);
   const eligiendo = useRef(false);

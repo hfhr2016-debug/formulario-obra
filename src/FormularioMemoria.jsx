@@ -98,7 +98,7 @@ function CampoNombre({ value, onChange, placeholder }) {
         className="w-full border rounded-lg px-3 py-2.5 text-[14px]"
       />
       {abierto && resultados.length > 0 && (
-        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-30 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {resultados.map((r, i) => (
             <button key={i} type="button" onMouseDown={() => { onChange(r); setAbierto(false); }}
               className="w-full text-left px-2.5 py-1.5 border-b last:border-b-0 hover:bg-gray-50 text-[12.5px]">
@@ -135,7 +135,7 @@ function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
       const bE = sinTildes(b).startsWith(q) ? 0 : 1;
       return aE - bE || a.length - b.length;
     });
-    return [...new Set(filtrados)].slice(0, 8);
+    return [...new Set(filtrados)].slice(0, 20);
   }, [value, catalogo, campo]);
   return (
     <div className="relative">

@@ -142,7 +142,7 @@ function BuscadorTexto({ value, onChange, catalogo, campo, placeholder }) {
       const bE = sinTildes(b).startsWith(q) ? 0 : 1;
       return aE - bE || a.length - b.length;
     });
-    return [...new Set(filtrados)].slice(0, 8);
+    return [...new Set(filtrados)].slice(0, 20);
   }, [value, catalogo, campo]);
   return (
     <div className="relative">

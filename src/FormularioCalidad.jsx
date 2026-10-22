@@ -179,11 +179,11 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
     if (c.tipo === "calculado") { const cv = c.calc ? c.calc(datos) : ""; return <Calculado key={c.k} label={etq} valor={c.formato === "pesos" && cv !== "" ? pesosCom(cv) : cv} />; }
     if (c.fuente && fmt.fuentes && fmt.fuentes[c.fuente]) {
       const ops = fmt.fuentes[c.fuente]({ obraId: reg && reg.obraId, idRegistro: reg && reg.id, datos });
-      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={ops} opcionesAlAbrir={ops.slice(0, 8)} placeholder={ops.length ? "Elige de la lista o escribe" : "Escribe (aún no hay opciones guardadas)"}
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={ops} opcionesAlAbrir={ops.slice(0, 20)} placeholder={ops.length ? "Elige de la lista o escribe" : "Escribe (aún no hay opciones guardadas)"}
         onElegir={(o) => setVarios({ [c.k]: o.texto, ...(o.patch || {}) })} />;
     }
     if (c.fuente === "proveedores") {
-      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={opcionesProveedor} opcionesAlAbrir={opcionesProveedor.slice(0, 8)} placeholder="Elige uno guardado o escribe uno nuevo"
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => set(c.k, x)} opciones={opcionesProveedor} opcionesAlAbrir={opcionesProveedor.slice(0, 20)} placeholder="Elige uno guardado o escribe uno nuevo"
         onElegir={(o) => setVarios({ [c.k]: o.texto, ...(o.nit && !texto(datos.nit) ? { nit: o.nit } : {}), ...(o.tipo && "tipoTercero" in datos && !texto(datos.tipoTercero) ? { tipoTercero: o.tipo } : {}) })} />;
     }
     if (c.tipo === "listaOtro") {
@@ -225,12 +225,12 @@ export default function FormularioCalidad({ fmt, onVolver, puedeCalidad = true, 
     if (c.soloCalidad && !puedeCalidad) return <Calculado key={c.k} label={etq} valor={c.k === "estado" || c.k === "version" ? v : (c.tipo === "fecha" ? v : v)} semaforo={c.semaforo} />;
     if (c.fuente === "codigosMaestro") {
       const ops = (datos[s.k] || []).filter((x, j) => j !== i && texto(x.codigo) && x.estado !== "Obsoleto").map((x) => ({ texto: texto(x.codigo), detalle: texto(x.nombre) }));
-      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={ops} opcionesAlAbrir={ops.slice(0, 8)} placeholder="Elige el código del registro nuevo o déjalo vacío" />;
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={ops} opcionesAlAbrir={ops.slice(0, 20)} placeholder="Elige el código del registro nuevo o déjalo vacío" />;
     }
     if (c.tipo === "hora" || c.tipo === "horaExcel") return <SelectorHora key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} />;
     if (c.tipo === "fechahora") return <Campo key={c.k} label={etq} type="datetime-local" value={v} onChange={(x) => act({ [c.k]: x })} />;
     if (c.fuente === "materiales") {
-      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={materiales} opcionesAlAbrir={materiales.slice(0, 8)} placeholder="Elige del catálogo o escribe"
+      return <BuscadorLista key={c.k} label={etq} value={v} onChange={(x) => act({ [c.k]: x })} opciones={materiales} opcionesAlAbrir={materiales.slice(0, 20)} placeholder="Elige del catálogo o escribe"
         onElegir={(o) => { const col = s.cols.find((x) => x.k === "unidad"); act({ [c.k]: o.texto, ...(col && col.opciones && !texto(fila.unidad) && col.opciones.includes(o.unidad) ? { unidad: o.unidad } : {}) }); }} />;
     }
     if (c.tipo === "area") return <AreaTexto key={c.k} label={etq} value={v} filas={2} onChange={(x) => act({ [c.k]: x })} />;
