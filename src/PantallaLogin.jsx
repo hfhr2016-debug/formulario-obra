@@ -11,7 +11,7 @@ const LINE = "#D9DCE1";
 export default function PantallaLogin() {
   const { iniciarSesion, errorLogin, restablecerContrasena } = useAuth();
   const [correo, setCorreo] = useState("");
-  const [recordar, setRecordar] = useState(true);
+  const recordar = true; // el correo siempre se recuerda en este aparato (nunca la contraseña)
   const [correos, setCorreos] = useState(() => leerCorreosRecordados());
   const [foco, setFoco] = useState(false);
   const qc = correo.trim().toLowerCase();
@@ -146,10 +146,6 @@ export default function PantallaLogin() {
             )}
           </div>
 
-          <label className="flex items-center gap-2 mb-3 -mt-1 text-[11.5px]" style={{ color: NAVY }}>
-            <input type="checkbox" data-recordar-correo checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
-            <span>Recordar mi correo en este aparato</span>
-          </label>
 
           <label className="block text-[11px] font-semibold mb-1" style={{ color: NAVY }}>Contraseña</label>
           <div className="relative mb-1">
