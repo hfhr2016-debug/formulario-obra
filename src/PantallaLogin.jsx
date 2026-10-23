@@ -51,6 +51,7 @@ export default function PantallaLogin() {
       catch { setAvisoFace("No se activó Face ID (se canceló). Puedes volver a intentarlo."); }
     }
     const r = await iniciarSesion(correo.trim(), contrasena);
+    if (r && !r.ok) setContrasena(""); // clave incorrecta: se debe escribir completa de nuevo
     if (r && r.ok && recordar) setCorreos(agregarCorreoRecordado(correo.trim()));
     if (r && r.ok && idCred) {
       try { await faceIdGuardar(idCred, correo.trim(), contrasena); } catch { /* el ingreso ya se hizo */ }
