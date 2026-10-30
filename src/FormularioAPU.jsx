@@ -832,7 +832,13 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
     } catch (e) { return []; }
   };
   async function abrirApuGuardado(a) {
-    if (!a.datos) return;
+    // APU guardado antes de la mejora: solo se conservó un resumen. Se abre con lo que haya (actividad, proyecto, cuadrilla, rendimiento) y el resto se vuelve a llenar.
+    const incompleto = !a.datos;
+    if (incompleto) {
+      let act = null;
+      try { act = actividadesVigentesTodosLosTipos().find((x) => String(x.actividad).trim().toLowerCase() === String(a.actividad).trim().toLowerCase()) || null; } catch (e) {}
+      a = { ...a, datos: { actividad: act || { actividad: a.actividad, unidad: a.unidad || "" }, proyecto: a.proyecto || "", cuadrilla: a.cuadrilla || "", rendimiento: a.rendimiento ? String(a.rendimiento).replace(".", ",") : "" } };
+    }
     if (hayDatosApu()) {
       const r = await preguntar({
         titulo: "Tienes un APU en pantalla",
@@ -842,6 +848,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       if (r !== "abrir") return;
     }
     aplicarDatos(a.datos); setApuGenerado(null); setModo("nuevo");
+    if (incompleto) { try { await preguntar({ titulo: "APU abierto con lo básico", mensaje: "Este APU se guardó antes de la mejora y solo conservó la actividad, el rendimiento y el valor. Vuelve a poner los materiales, mano de obra y equipos y descárgalo otra vez: desde ahí quedará completo para corregirlo cuando quieras.", botones: [{ texto: "Entendido", valor: "ok", principal: true }] }); } catch (e) {} }
     try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
   }
   function descartarBorrador() {
@@ -1128,9 +1135,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
                   <div className="text-[13.5px] font-bold" style={{ color: NAVY }}>{a.actividad}</div>
                   <div className="text-[12px] text-gray-500">{a.proyecto ? a.proyecto + " · " : ""}{a.fecha || ""}{a.unidad ? " · por " + a.unidad : ""}</div>
                   <div className="text-[12.5px] mb-2" style={{ color: NAVY }}>Total directo unitario: <b>$ {formatNum(a.total || 0, 2, 2)}</b></div>
-                  {a.datos
-                    ? <button data-apu-abrir onClick={() => abrirApuGuardado(a)} className="px-3 py-2 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: NAVY }}>Abrir para corregir</button>
-                    : <div className="text-[11.5px] text-gray-500">Se guardó antes de esta mejora: solo quedó su valor. Para corregirlo, vuelve a hacerlo una vez y quedará completo.</div>}
+                  <button data-apu-abrir onClick={() => abrirApuGuardado(a)} className="px-3 py-2 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: NAVY }}>Abrir para corregir</button>
+                  {!a.datos && <div className="text-[11.5px] text-gray-500 mt-1.5">Guardado antes de la mejora: se abre con lo básico y se completa una vez.</div>}
                 </div>
               ))}
             </div>
