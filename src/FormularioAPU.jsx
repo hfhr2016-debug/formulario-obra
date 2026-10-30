@@ -1135,7 +1135,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
                   <div className="text-[13.5px] font-bold" style={{ color: NAVY }}>{a.actividad}</div>
                   <div className="text-[12px] text-gray-500">{a.proyecto ? a.proyecto + " · " : ""}{a.fecha || ""}{a.unidad ? " · por " + a.unidad : ""}</div>
                   <div className="text-[12.5px] mb-2" style={{ color: NAVY }}>Total directo unitario: <b>$ {formatNum(a.total || 0, 2, 2)}</b></div>
-                  <button data-apu-abrir onClick={() => abrirApuGuardado(a)} className="px-3 py-2 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: NAVY }}>Abrir para corregir</button>
+                  <button data-apu-abrir onClick={() => abrirApuGuardado(a)} className="px-3 py-2 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: NAVY }}>Abrir</button>
                   {!a.datos && <div className="text-[11.5px] text-gray-500 mt-1.5">Guardado antes de la mejora: se abre con lo básico y se completa una vez.</div>}
                 </div>
               ))}
