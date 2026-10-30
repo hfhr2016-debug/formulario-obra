@@ -752,6 +752,9 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
   const [interventoriaCargo, setInterventoriaCargo] = useState("");
 
   const [generando, setGenerando] = useState(false);
+  const [claveForm, setClaveForm] = useState(0);   // al cambiar, el formulario se vuelve a montar (los buscadores guardan su propio texto)
+  const [apuGenerado, setApuGenerado] = useState(null);   // nombre del APU recién descargado: muestra «Crear otro APU»
+  const [buscarGuardado, setBuscarGuardado] = useState("");
 
   // Ventana de aviso propia (la nativa del navegador a veces no aparece). Devuelve una promesa con el botón que se eligió.
   const [aviso, setAviso] = useState(null);
@@ -791,20 +794,55 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
     try { return !localStorage.getItem("ryr_borrador_apu"); } catch (e) { return true; }
   });
 
+  // Todos los datos del APU que se está haciendo (sirven para el borrador, para los APU guardados y para reabrirlos)
+  const datosActuales = () => ({
+    actividad, proyecto, noContrato, ubicacion, cuadrilla, jornada, rendimiento, numCuadrillas,
+    materiales, manoObra, equipos, elaboradoNombre, elaboradoCargo, interventoriaNombre, interventoriaCargo,
+  });
+  function aplicarDatos(d) {
+    setActividad(d.actividad || null); setProyecto(d.proyecto || ""); setNoContrato(d.noContrato || "");
+    setUbicacion(d.ubicacion || ""); setCuadrilla(d.cuadrilla || ""); setJornada(d.jornada ?? 8);
+    setRendimiento(d.rendimiento || ""); setNumCuadrillas(d.numCuadrillas ?? 1);
+    setMateriales(d.materiales || seisFilasVacias()); setManoObra(d.manoObra || seisFilasVacias()); setEquipos(d.equipos || seisFilasVacias());
+    setElaboradoNombre(d.elaboradoNombre || ""); setElaboradoCargo(d.elaboradoCargo || "");
+    setInterventoriaNombre(d.interventoriaNombre || ""); setInterventoriaCargo(d.interventoriaCargo || "");
+    setRendimientoBase(null); setCuadrillaBase(null); setClaveForm((n) => n + 1);
+  }
   function restaurarBorrador() {
     try {
       const d = JSON.parse(localStorage.getItem("ryr_borrador_apu") || "null");
-      if (d) {
-        setActividad(d.actividad || null); setProyecto(d.proyecto || ""); setNoContrato(d.noContrato || "");
-        setUbicacion(d.ubicacion || ""); setCuadrilla(d.cuadrilla || ""); setJornada(d.jornada ?? 8);
-        setRendimiento(d.rendimiento || ""); setNumCuadrillas(d.numCuadrillas ?? 1);
-        setMateriales(d.materiales || seisFilasVacias()); setManoObra(d.manoObra || seisFilasVacias()); setEquipos(d.equipos || seisFilasVacias());
-        setElaboradoNombre(d.elaboradoNombre || ""); setElaboradoCargo(d.elaboradoCargo || "");
-        setInterventoriaNombre(d.interventoriaNombre || ""); setInterventoriaCargo(d.interventoriaCargo || "");
-      }
+      if (d) aplicarDatos(d);
     } catch (e) {}
     setBorradorAplicado(true);
     setBorradorDisponible(false);
+  }
+  // Deja el formato en blanco para hacer otro APU. Se conservan los datos del proyecto y de quienes firman (son los mismos para todos los APU de la obra).
+  function nuevoApuEnBlanco() {
+    setActividad(null); setCuadrilla(""); setJornada(8); setRendimiento(""); setNumCuadrillas(1);
+    setRendimientoBase(null); setCuadrillaBase(null);
+    setMateriales(seisFilasVacias()); setManoObra(seisFilasVacias()); setEquipos(seisFilasVacias());
+    setApuGenerado(null); setModo("nuevo"); setArchivoBase(null); setClaveForm((n) => n + 1);
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+  }
+  const hayDatosApu = () => !!actividad || materiales.some((f) => f.desc) || manoObra.some((f) => f.desc) || equipos.some((f) => f.desc);
+  const apusGuardadosLista = () => {
+    try {
+      const g = JSON.parse(localStorage.getItem("ryr_apus_guardados") || "{}");
+      return Object.entries(g).map(([k, v]) => ({ clave: k, ...v })).sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
+    } catch (e) { return []; }
+  };
+  async function abrirApuGuardado(a) {
+    if (!a.datos) return;
+    if (hayDatosApu()) {
+      const r = await preguntar({
+        titulo: "Tienes un APU en pantalla",
+        mensaje: "Si abres el APU guardado, lo que tienes ahora en pantalla se reemplaza (no se pierde nada de lo ya descargado).",
+        botones: [{ texto: "Abrir el guardado", valor: "abrir", principal: true }, { texto: "Cancelar", valor: "no" }],
+      });
+      if (r !== "abrir") return;
+    }
+    aplicarDatos(a.datos); setApuGenerado(null); setModo("nuevo");
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
   }
   function descartarBorrador() {
     try { localStorage.removeItem("ryr_borrador_apu"); } catch (e) {}
@@ -969,6 +1007,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           equipos: equiposUsados,
           manoObra: moUsada,
           fecha: fechaLocalHoy(),
+          proyecto: proyecto || "",
+          datos: datosActuales(),   // todo el APU, para poder abrirlo y corregirlo sin rehacerlo
         };
         localStorage.setItem(clave, JSON.stringify(guardados));
       } catch (e) {
@@ -996,6 +1036,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       try { localStorage.removeItem("ryr_borrador_apu"); } catch (e) {}
+      setApuGenerado(actividad.actividad);
     } catch (err) {
       console.error(err);
       alert("Hubo un error generando el Excel. Revisa la consola.");
@@ -1066,7 +1107,35 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
             style={modo === "actualizar" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
             Actualizar existente
           </button>
+          <button data-apu-tab-guardados onClick={() => setModo("guardados")} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+            style={modo === "guardados" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
+            APU guardados
+          </button>
         </div>
+        {modo === "guardados" && (() => {
+          const todos = apusGuardadosLista();
+          const q = buscarGuardado.trim().toLowerCase();
+          const lista = todos.filter((a) => !q || String(a.actividad || "").toLowerCase().includes(q) || String(a.proyecto || "").toLowerCase().includes(q));
+          return (
+            <div data-apu-guardados className="mb-4">
+              <div className="text-[12px] text-gray-500 mb-2">Cada APU que descargas en Excel queda guardado aquí. Ábrelo para corregirlo y volver a descargarlo, sin empezar de cero.</div>
+              <input data-apu-buscar-guardado value={buscarGuardado} onChange={(e) => setBuscarGuardado(e.target.value)} placeholder="Buscar por actividad o proyecto…"
+                className="w-full mb-2 px-3 py-2 rounded-lg border text-[13px]" style={{ borderColor: LINE }} />
+              {!todos.length && <div className="text-[13px] text-gray-500 p-3 border rounded-lg" style={{ borderColor: LINE }}>Aún no hay APU guardados. Aparecerán aquí cuando descargues el primero.</div>}
+              {todos.length > 0 && !lista.length && <div className="text-[13px] text-gray-500">Ninguno coincide con la búsqueda.</div>}
+              {lista.map((a) => (
+                <div key={a.clave} data-apu-guardado={a.actividad} className="p-3 border rounded-lg mb-2" style={{ borderColor: LINE, background: "white" }}>
+                  <div className="text-[13.5px] font-bold" style={{ color: NAVY }}>{a.actividad}</div>
+                  <div className="text-[12px] text-gray-500">{a.proyecto ? a.proyecto + " · " : ""}{a.fecha || ""}{a.unidad ? " · por " + a.unidad : ""}</div>
+                  <div className="text-[12.5px] mb-2" style={{ color: NAVY }}>Total directo unitario: <b>$ {formatNum(a.total || 0, 2, 2)}</b></div>
+                  {a.datos
+                    ? <button data-apu-abrir onClick={() => abrirApuGuardado(a)} className="px-3 py-2 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: NAVY }}>Abrir para corregir</button>
+                    : <div className="text-[11.5px] text-gray-500">Se guardó antes de esta mejora: solo quedó su valor. Para corregirlo, vuelve a hacerlo una vez y quedará completo.</div>}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
         {modo === "actualizar" && (
           <div className="mb-4 p-3 border rounded-lg" style={{ borderColor: LINE }}>
             <label className="block text-[12px] font-semibold mb-1.5" style={{ color: NAVY }}>Sube el APU que quieres actualizar</label>
@@ -1075,6 +1144,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
             {archivoBase && !cargando && <div className="text-[12px] mt-1" style={{ color: GOLD }}>✓ Datos cargados de "{archivoBase.name}"</div>}
           </div>
         )}
+        <div key={claveForm} data-apu-formulario style={{ display: modo === "guardados" ? "none" : "block" }}>
         <Campo label="Actividad">
           <BuscadorActividad
             value={actividad?.actividad}
@@ -1249,6 +1319,23 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         >
           {generando ? "Generando..." : "Descargar APU en Excel"}
         </button>
+        {apuGenerado && (
+          <div data-apu-listo className="mt-3 p-3 rounded-xl border-2" style={{ borderColor: GOLD, background: "#FFFBEB" }}>
+            <div className="text-[13px] font-bold mb-0.5" style={{ color: NAVY }}>✓ APU descargado y guardado</div>
+            <div className="text-[12px] text-gray-600 mb-2">«{apuGenerado}». Lo encuentras en la pestaña «APU guardados» para corregirlo cuando quieras.</div>
+            <div className="flex gap-2 flex-wrap">
+              <button data-apu-otro onClick={nuevoApuEnBlanco} className="flex-1 py-2.5 rounded-lg text-white font-bold text-[13px]" style={{ background: NAVY }}>Limpiar y crear otro APU</button>
+              <button data-apu-seguir onClick={() => setApuGenerado(null)} className="px-3 py-2.5 rounded-lg text-[13px] font-semibold border" style={{ borderColor: LINE, color: NAVY }}>Seguir editando</button>
+            </div>
+          </div>
+        )}
+        {!apuGenerado && hayDatosApu() && (
+          <button data-apu-limpiar onClick={async () => {
+            const r = await preguntar({ titulo: "¿Limpiar el formato?", mensaje: "Se borra lo que llevas de este APU para empezar otro. Los datos del proyecto y de quienes firman se conservan. Los APU ya descargados siguen guardados.", botones: [{ texto: "Limpiar", valor: "si", principal: true }, { texto: "Cancelar", valor: "no" }] });
+            if (r === "si") nuevoApuEnBlanco();
+          }} className="w-full mt-2 py-2.5 rounded-lg text-[12.5px] font-semibold border" style={{ borderColor: LINE, color: NAVY }}>Limpiar y crear otro APU</button>
+        )}
+        </div>
         {aviso && (
           <div data-modal-aviso-apu className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,.45)" }}>
             <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-4">
