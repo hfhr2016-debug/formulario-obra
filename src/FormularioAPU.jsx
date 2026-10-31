@@ -979,6 +979,10 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         }
       }
       arreglarRendimientoVisible(ws, mp);
+      // El formato del APU ya trae la alineación y el tamaño de letra que se quieren (Unidad, Cantidad y Rendimiento centrados; nombre de la actividad centrado, tamaño 14): se guardan para devolverlos después del formato automático
+      const copiaEstilo = (cel) => ({ alignment: cel.alignment ? { ...cel.alignment } : undefined, font: cel.font ? { ...cel.font } : undefined });
+      const estiloA9 = copiaEstilo(ws.getCell("A9"));
+      const estiloCentrado = {};
       ws.getCell("A9").value = (actividad.actividad || "").toUpperCase();
       ws.getCell(mp.unidad).value = actividad.unidad;
       ws.getCell(mp.cuadrilla).value = cuadrilla;
@@ -998,6 +1002,7 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
           ws.getCell(`E${r}`).value = f.und;
           ws.getCell(`F${r}`).value = numES(f.cant) || 0;
           const col = mp.columnas(filaInicio);
+          [`E${r}`, `F${r}`, `${col.factor}${r}`].forEach((d) => { estiloCentrado[d] = copiaEstilo(ws.getCell(d)); });
           if (conFactor) ws.getCell(`${col.factor}${r}`).value = numES(f.factor) || 1;
           ws.getCell(`${col.vr}${r}`).value = numES(f.vrUnit) || 0;
         });
@@ -1036,6 +1041,12 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
       ws.getCell(mp.interCargo).value = interventoriaCargo;
 
       estilarEscritos(workbook, fotoEstilo);
+      try {
+        const a9 = ws.getCell("A9");
+        if (estiloA9.alignment) a9.alignment = estiloA9.alignment;
+        if (estiloA9.font) a9.font = estiloA9.font;
+        Object.entries(estiloCentrado).forEach(([dir, e]) => { if (e.alignment) ws.getCell(dir).alignment = e.alignment; });
+      } catch (e) { /* si no se puede, queda con el formato automático */ }
 
       const outBuffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([outBuffer], {
