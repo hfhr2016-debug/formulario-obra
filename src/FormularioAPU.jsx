@@ -1114,7 +1114,15 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
 
       <div className="p-4 max-w-xl mx-auto">
         <div className="flex gap-2 mb-4">
-          <button onClick={() => { setModo("nuevo"); setArchivoBase(null); }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
+          <button data-apu-tab-nuevo onClick={async () => {
+            // Si ya estás en «APU nuevo» y tienes datos, el botón ofrece empezar en blanco (antes no hacía nada)
+            if (modo === "nuevo" && hayDatosApu()) {
+              const r = await preguntar({ titulo: "¿Empezar un APU en blanco?", mensaje: "Se borra lo que llevas de este APU. Los datos del proyecto y de quienes firman se conservan. Los APU ya descargados siguen guardados en «APU guardados».", botones: [{ texto: "Empezar en blanco", valor: "si", principal: true }, { texto: "Seguir con este", valor: "no" }] });
+              if (r === "si") nuevoApuEnBlanco();
+              return;
+            }
+            setModo("nuevo"); setArchivoBase(null);
+          }} className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border-2"
             style={modo === "nuevo" ? { background: NAVY, color: "white", borderColor: NAVY } : { borderColor: LINE, color: NAVY }}>
             APU nuevo
           </button>
