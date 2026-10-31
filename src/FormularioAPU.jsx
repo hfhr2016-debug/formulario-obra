@@ -511,7 +511,7 @@ function consumoMaterialSugeridoPorKeyword(nombreMaterial) {
   return null;
 }
 
-function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal, rendimientoActividad, clase, unidadActividad, onAviso }) {
+function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateriales, modoRendimiento, actividadPrincipal, rendimientoActividad, clase, unidadActividad, onAviso, horasJornada }) {
   const actualizar = (i, campo, val) => {
     const nuevas = [...filas];
     nuevas[i] = { ...nuevas[i], [campo]: val, ...(campo === "factor" ? { factorAuto: false } : {}) };
@@ -559,12 +559,20 @@ function TablaFilas({ titulo, filas, setFilas, catalogo, mostrarFactor, esMateri
       }
     }
 
+    // Mano de obra y equipos se calculan por JORNADA (el tiempo por unidad va en jornadas): si el precio del catálogo viene por hora, se pasa a valor de la jornada
+    let undSel = seleccion.und, vrSel = seleccion.vrUnit;
+    if (modoRendimiento && /^(h|hr|hora|horas)$/i.test(String(undSel || "").trim()) && numES(vrSel) > 0) {
+      const hrs = numES(horasJornada) > 0 ? numES(horasJornada) : 8;
+      const porHora = numES(vrSel);
+      vrSel = String(Math.round(porHora * hrs)); undSel = "jornada";
+      fuenteConsumo = (fuenteConsumo ? fuenteConsumo + " " : "") + `El catálogo trae este precio por hora ($${formatNum(porHora, 0, 0)}); se multiplicó por ${hrs} horas de la jornada.`;
+    }
     nuevas[i] = {
       ...nuevas[i],
       desc: seleccion.desc,
       fuenteConsumo: fuenteConsumo || nuevas[i].fuenteConsumo,
-      und: seleccion.und !== undefined ? seleccion.und : nuevas[i].und,
-      vrUnit: seleccion.vrUnit !== undefined ? seleccion.vrUnit : nuevas[i].vrUnit,
+      und: undSel !== undefined ? undSel : nuevas[i].und,
+      vrUnit: vrSel !== undefined ? vrSel : nuevas[i].vrUnit,
       cant: cantSugerida,
       factor: factorSugerido,
       factorAuto: autoFactor || (nuevas[i].factorAuto && factorSugerido === nuevas[i].factor),
@@ -1282,8 +1290,8 @@ export default function FormularioAPU({ onVolver, onNavegar }) {
         </div>
 
         <TablaFilas titulo="1. MATERIALES" filas={materiales} setFilas={setMateriales} catalogo={catMateriales} mostrarFactor esMateriales actividadPrincipal={actividad?.actividad} clase="materiales" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
-        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={catManoObra} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} clase="mano_obra" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
-        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={catEquipos} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} clase="equipos" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
+        <TablaFilas titulo="2. MANO DE OBRA" filas={manoObra} setFilas={setManoObra} catalogo={catManoObra} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} horasJornada={jornada} clase="mano_obra" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
+        <TablaFilas titulo="3. EQUIPOS Y HERRAMIENTAS" filas={equipos} setFilas={setEquipos} catalogo={catEquipos} mostrarFactor modoRendimiento actividadPrincipal={actividad?.actividad} rendimientoActividad={rendimiento} horasJornada={jornada} clase="equipos" unidadActividad={actividad?.unidad} onAviso={avisarFila} />
 
         <div
           className="text-[12.5px] font-bold text-white px-3 py-2 rounded-t-lg mt-2"
